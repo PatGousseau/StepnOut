@@ -32,6 +32,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "fonts": {
+      "ABeeZee": "./assets/fonts/ABeeZee-Regular.ttf" 
     }
   }
 }
