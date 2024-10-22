@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; 
-import colors from '../constants/Colors';
+import { colors } from '../constants/Colors';
 
 interface UserProgressProps {
   challengeData: {
