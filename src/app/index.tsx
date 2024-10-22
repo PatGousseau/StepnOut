@@ -15,7 +15,7 @@ const Home = () => {
       <View style={{ padding: 16 }}>
         <TakeChallenge
           title="Compliment a Stranger"
-          description="This week we're challenging you to **give a stranger a compliment**. It could be about their style, their smile, or just the positive energy they bring into a room. Be genuine and brighten someone's day!"
+          description="This week we're challenging you to **give a stranger a compliment**. It could be about their style, their smile, or just the positive energy they bring into a room."
 
           onTakeChallenge={handleTakeChallenge}
         />
