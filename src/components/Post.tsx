@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Modal, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import Comments from './Comments'; 
+import { colors } from '../constants/Colors';
 
 interface PostProps {
   profilePicture: any; 
@@ -14,11 +15,13 @@ interface PostProps {
 
 const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, comments }) => {
   const [showComments, setShowComments] = useState(false);
-  const [commentList, setCommentList] = useState<{ id: number; text: string }[]>([]); 
+  const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]); // Adjust type if needed
 
   const handleAddComment = (comment: string) => {
-    const newComment = { id: commentList.length + 1, text: comment };
-    setCommentList([...commentList, newComment]); 
+    if (comment.trim()) {
+      const newComment = { id: commentList.length + 1, text: comment, userName: 'User' }; // Replace 'User' with actual user name
+      setCommentList([...commentList, newComment]);
+    }
   };
 
   return (
@@ -41,14 +44,21 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
           </View>
         </TouchableOpacity>
       </View>
-      
+
       <Modal
-        animationType="slide"
+        animationType="fade" 
         transparent={true}
         visible={showComments}
         onRequestClose={() => setShowComments(false)}
       >
-        <View style={styles.modalContainer}>
+        <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
+          <View style={styles.modalBackground} />
+        </TouchableWithoutFeedback>
+        
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
           <View style={styles.modalContent}>
             <Pressable onPress={() => setShowComments(false)} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Close</Text>
@@ -58,7 +68,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
               onAddComment={handleAddComment} 
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -70,11 +80,8 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 8,
-    borderLeftWidth: 0.2,
-    borderTopWidth: 0.2,
-    borderRightWidth: 2,  
-    borderBottomWidth: 2, 
-    borderColor: '#ccc',  
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   header: {
     flexDirection: 'row',
@@ -115,16 +122,21 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 14,
   },
-  modalContainer: {
+  modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Dark transparent background
+  },
+  modalContainer: {
+    justifyContent: 'flex-end',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    backgroundColor: "black"
   },
   modalContent: {
-    width: '80%',
+    width: '100%', 
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
     padding: 20,
     elevation: 5,
   },
@@ -134,7 +146,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: colors.light.primary,
   },
 });
 
