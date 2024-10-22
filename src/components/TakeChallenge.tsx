@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import Colors from '../constants/Colors'; 
+import { colors } from '../constants/Colors';
+import Markdown from 'react-native-markdown-display';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 interface ChallengeCardProps {
   title: string;
@@ -8,45 +10,63 @@ interface ChallengeCardProps {
   onTakeChallenge: () => void;
 }
 
+const markdownStyles = StyleSheet.create({
+  body: {
+    color: 'white',
+  },
+});
+
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description, onTakeChallenge }) => {
-  const opacity = new Animated.Value(0);
-  const translateY = new Animated.Value(-20);
+  const [expanded, setExpanded] = useState(false);
+  const animation = useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
+  const toggleExpand = () => {
+    setExpanded(!expanded);
+  };
 
-    Animated.timing(translateY, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
+  useEffect(() => {
+    Animated.timing(animation, {
+      toValue: expanded ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
     }).start();
-  }, [opacity, translateY]);
+  }, [expanded, animation]);
+
+  const animatedHeight = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 100], 
+  });
 
   return (
-    <Animated.View style={[styles.card, { opacity, transform: [{ translateY }] }]}>
-      <View style={styles.cardContent}>
-        <View style={styles.textContainer}>
-          <View style={styles.textBlock}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.description}>{description}</Text>
-          </View>
+    <Animated.View style={[styles.card]}>
+      <TouchableOpacity style={styles.cardContent} onPress={toggleExpand} activeOpacity={1}>
+        <View style={styles.topContainer}>
           <TouchableOpacity style={styles.button} onPress={onTakeChallenge}>
-            <Text style={styles.buttonText}>Take Challenge</Text>
+            <Text style={styles.buttonText}>Upload</Text>
           </TouchableOpacity>
+          <View style={styles.challengeText}>
+            <Text style={styles.thisWeeksChallengeLabel}>This Week's Challenge</Text>
+            <Text style={styles.title}>{title}</Text>
+          </View>
+          <MaterialIcons name={expanded ? "expand-less" : "expand-more"} size={18} color="white" />
         </View>
-      </View>
+        <Animated.View style={[styles.descriptionContainer, { height: animatedHeight }]}>
+          <Markdown style={markdownStyles}>{description}</Markdown>
+        </Animated.View>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  thisWeeksChallengeLabel: {
+    fontSize: 14,
+    color: colors.dark.text,
+    marginBottom: 4,
+  },
   card: {
     marginBottom: 16,
-    backgroundColor: Colors.light.primary, 
+    backgroundColor: colors.dark.tint, 
     borderRadius: 16,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -58,34 +78,32 @@ const styles = StyleSheet.create({
   cardContent: {
     padding: 16,
   },
-  textContainer: {
+  challengeText: {
+    marginLeft: 0,
+    padding: 0,
+  },
+  topContainer: {
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center',
   },
-  textBlock: {
-    flex: 1, 
-    marginRight: 8, 
+  descriptionContainer: {
+    overflow: 'hidden',
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: Colors.light.text, 
-  },
-  description: {
-    fontSize: 16,
-    opacity: 0.9,
-    color: Colors.light.text,
+    color: colors.dark.text, 
+    flex: 1,
   },
   button: {
-    backgroundColor: Colors.light.accent, 
+    backgroundColor: colors.light.accent, 
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 16,
   },
   buttonText: {
-    color: Colors.light.text, 
+    color: colors.dark.text, 
     fontSize: 14,
     fontWeight: 'bold',
   },

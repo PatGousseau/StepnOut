@@ -70,10 +70,11 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
+    borderLeftWidth: 0.2,
+    borderTopWidth: 0.2,
+    borderRightWidth: 2,  
+    borderBottomWidth: 2, 
+    borderColor: '#ccc',  
   },
   header: {
     flexDirection: 'row',
@@ -101,14 +102,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   footer: {
-    flexDirection: 'row', // Set footer to a row
-    alignItems: 'center', // Center icons vertically
+    flexDirection: 'row', 
+    alignItems: 'center', 
     marginTop: 10,
   },
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16, // Space between icons
+    marginRight: 16, 
   },
   iconText: {
     marginLeft: 4,
@@ -116,7 +117,7 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
     justifyContent: 'center',
     alignItems: 'center',
   },

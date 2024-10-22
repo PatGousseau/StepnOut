@@ -7,31 +7,32 @@ import TakeChallenge from '../components/TakeChallenge';
 
 const Home = () => {
   const handleTakeChallenge = () => {
-    alert('Challenge taken!'); 
+    alert('Challenge taken!');
   };
 
   return (
     <ScrollView>
       <View style={{ padding: 16 }}>
         <TakeChallenge
-          title="New Challenge"
-          description="Compliment a stranger"
+          title="Compliment a Stranger"
+          description="This week we're challenging you to **give a stranger a compliment**. It could be about their style, their smile, or just the positive energy they bring into a room. Be genuine and brighten someone's day!"
+
           onTakeChallenge={handleTakeChallenge}
         />
         <Post
-          profilePicture={ProfilePic} 
+          profilePicture={ProfilePic}
           name="Patrizio"
           text="Hey Challengers! This week, we're spreading positivity by complimenting strangers. Watch how I approached this challenge, and remember: a kind word can brighten someone's day. You've got this!"
-          image={ImagePost} 
+          image={ImagePost}
           likes={109} comments={19} />
         <Post
-          profilePicture={ProfilePic} 
+          profilePicture={ProfilePic}
           name="Eshaq"
-          text="I complimented a stranger on their unique style today. Their surprised smile made my heart warm. Small act, big impact! #ComfortZoneChallenge" likes={30} comments={3}        />
+          text="I complimented a stranger on their unique style today. Their surprised smile made my heart warm. Small act, big impact! #ComfortZoneChallenge" likes={30} comments={3} />
         <Post
-          profilePicture={ProfilePic} 
+          profilePicture={ProfilePic}
           name="Zach"
-          text="I did it! Gave a compliment to a stranger at the coffee shop. Their smile made my day!" likes={67} comments={7}        />
+          text="I did it! Gave a compliment to a stranger at the coffee shop. Their smile made my day!" likes={67} comments={7} />
       </View>
     </ScrollView>
   );

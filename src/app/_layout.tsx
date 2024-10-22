@@ -1,33 +1,41 @@
-// src/app/_layout.tsx
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // Import icon library
+import { Ionicons } from '@expo/vector-icons'; 
+import { colors } from '../constants/Colors'; 
 
 const Layout = () => {
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: '#007AFF', // Active tab color
-        tabBarLabelStyle: { fontSize: 16 }, // Tab label style
-        tabBarStyle: { paddingBottom: 5 }, // Tab bar style
+        tabBarActiveTintColor: colors.light.primary, 
+        tabBarLabelStyle: { fontSize: 16 },
+        tabBarStyle: { paddingBottom: 5 },
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'index') {
-            iconName = 'home'; // Icon for Home screen
+            iconName = 'home';
           } else if (route.name === 'profile') {
-            iconName = 'person'; // Icon for Profile screen
+            iconName = 'person'; 
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
       <Tabs.Screen
-        name="index" // Route name for the home screen
-        options={{ title: 'Home' }} // Tab title
+        name="index"
+        options={{ 
+          title: 'Home',
+          headerStyle: { backgroundColor: colors.light.primary },
+          headerTintColor: '#fff',
+        }}
       />
       <Tabs.Screen
-        name="profile" // Route name for the profile screen
-        options={{ title: 'Profile' }} // Tab title
+        name="profile" 
+        options={{ 
+          title: 'Profile',
+          headerStyle: { backgroundColor: colors.light.secondary },
+          headerTintColor: '#fff', 
+        }}
       />
     </Tabs>
   );
