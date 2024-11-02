@@ -1,48 +1,50 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { supabase } from '../lib/supabase';
 import { colors } from '../constants/Colors';
-import { Challenge } from '../types';
 
 const ChallengeCreation: React.FC = () => {
-  const [title, setTitle] = useState<string>(''); 
-  const [description, setDescription] = useState<string>(''); 
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy'); 
-  const [startDate, setStartDate] = useState<Date>(new Date()); 
-  const [endDate, setEndDate] = useState<Date>(new Date(Date.now() + 86400000)); 
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [duration, setDuration] = useState<number>(1);
   const [openDifficulty, setOpenDifficulty] = useState<boolean>(false);
 
   const createChallengeInDatabase = async () => {
-    const newChallenge: Challenge = {
-      title,
-      description,
-      difficulty,
-      start_date: startDate,
-      end_date: endDate,
-      created_by: '4e723784-b86d-44a2-9ff3-912115398421',
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-  
     try {
+      const newChallenge = {
+        title, 
+        description, 
+        difficulty, 
+        created_by: '4e723784-b86d-44a2-9ff3-912115398421',
+        created_at: new Date().toISOString().split('T')[0], 
+        updated_at: new Date().toISOString().split('T')[0], 
+        duration, 
+      };
+  
       const { error } = await supabase.from('challenges').insert([newChallenge]);
   
       if (error) {
-        console.log(error);
-        throw error;
+        console.error('Error inserting data:', error);
+        Alert.alert('Error', error.message);
+      } else {
+        console.log('Challenge created successfully');
+        Alert.alert('Success', 'Challenge created successfully!');
+        setTitle('');
+        setDescription('');
+        setDifficulty('easy');
+        setDuration(1);
+        setOpenDifficulty(false);
       }
-  
-      Alert.alert('Success', 'Challenge created successfully!');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       Alert.alert('Error', errorMessage);
     }
   };
 
   const handleCreateChallenge = () => {
-    if (!title || !description || !difficulty || !startDate || !endDate) {
+    if (!title || !description || !difficulty || !duration) {
       Alert.alert('Error', 'All fields must be filled out.');
       return;
     }
@@ -52,7 +54,12 @@ const ChallengeCreation: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Title</Text>
-      <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Enter title" />
+      <TextInput 
+        style={styles.input} 
+        value={title} 
+        onChangeText={setTitle} 
+        placeholder="Enter title" 
+      />
 
       <Text style={styles.label}>Description</Text>
       <TextInput
@@ -78,56 +85,18 @@ const ChallengeCreation: React.FC = () => {
         style={styles.dropdown}
       />
 
-      <Text style={styles.label}>Start Date & Time</Text>
-      <View style={styles.dateTimeContainer}>
-        <DateTimePicker
-          value={startDate || new Date()}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            if (selectedDate) {
-              setStartDate((prev) => (prev ? new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())) : selectedDate));
-            }
-          }}
-          style={styles.datePicker}
-        />
-        <DateTimePicker
-          value={startDate || new Date()}
-          mode="time"
-          display="default"
-          onChange={(event, selectedTime) => {
-            if (selectedTime) setStartDate(new Date(startDate!.setHours(selectedTime.getHours(), selectedTime.getMinutes())));
-          }}
-          style={styles.datePicker}
-        />
-      </View>
+      <Text style={styles.label}>Duration (in days)</Text>
+      <TextInput
+        style={styles.input}
+        value={duration.toString()}
+        onChangeText={(text) => setDuration(Number(text))}
+        placeholder="Enter duration in days"
+        keyboardType="numeric"
+      />
 
-      <Text style={styles.label}>End Date & Time</Text>
-      <View style={styles.dateTimeContainer}>
-        <DateTimePicker
-          value={endDate || new Date()}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            if (selectedDate) {
-              setEndDate((prev) => (prev ? new Date(selectedDate.setHours(prev.getHours(), prev.getMinutes())) : selectedDate));
-            }
-          }}
-          style={styles.datePicker}
-        />
-        <DateTimePicker
-          value={endDate || new Date()}
-          mode="time"
-          display="default"
-          onChange={(event, selectedTime) => {
-            if (selectedTime) setEndDate(new Date(endDate!.setHours(selectedTime.getHours(), selectedTime.getMinutes())));
-          }}
-          style={styles.datePicker}
-        />
-      </View>
       <TouchableOpacity style={styles.createChallengeButton} onPress={handleCreateChallenge}>
-      <Text style={styles.buttonText}>Create Challenge</Text>
-    </TouchableOpacity>
+        <Text style={styles.buttonText}>Create Challenge</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -154,22 +123,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
     zIndex: 1,
   },
-  dateTimeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    marginTop: 8,
-  },
-  datePicker: {
-    marginHorizontal: 4,
-  },
   createChallengeButton: {
-    backgroundColor: colors.light.secondary, 
+    backgroundColor: colors.light.secondary,
     width: 160,
     paddingVertical: 16,
     borderRadius: 8,
-    alignItems: 'center', 
-    elevation: 5, 
-    marginTop: 20, 
+    alignItems: 'center',
+    elevation: 5,
+    marginTop: 20,
   },
   buttonText: {
     fontSize: 16,
