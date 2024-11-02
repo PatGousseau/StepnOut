@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   challengeText: {
-    marginLeft: 0,
+    marginLeft: 12,
     padding: 0,
   },
   topContainer: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.dark.text, 
     flex: 1,
