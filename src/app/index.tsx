@@ -10,11 +10,7 @@ import { Challenge } from '../types';
 const Home = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const handleTakeChallenge = () => {
-    alert('Challenge taken!');
-  };
-
+  
   useEffect(() => {
     const fetchActiveChallenge = async () => {
       const { data, error } = await supabase
@@ -43,13 +39,11 @@ const Home = () => {
     <ScrollView>
       <View style={{ padding: 16 }}>
         {activeChallenge ? (
-          <TakeChallenge
-            title={activeChallenge.title}
-            description={activeChallenge.description}
-            onTakeChallenge={handleTakeChallenge}
-          />
-        ) : null}
-        
+        <TakeChallenge
+          title={activeChallenge.title}
+          description={activeChallenge.description}
+        />
+          ) : null}
         <Post
           profilePicture={ProfilePic}
           name="Patrizio"

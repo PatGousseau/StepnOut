@@ -15,4 +15,9 @@ export const colors = {
     background: '#000',
     tint: '#23395B',
   },
+  neutral: {
+    grey1: '#BEBEBE',
+    grey2: '#E5E5E5',
+    darkGrey: '#7F8C8D',
+  },
 };
