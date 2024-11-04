@@ -6,19 +6,14 @@ import ImagePost from '../assets/images/adaptive-icon.png';
 import TakeChallenge from '../components/TakeChallenge';
 
 const Home = () => {
-  const handleTakeChallenge = () => {
-    alert('Challenge taken!');
-  };
-
   return (
     <ScrollView>
       <View style={{ padding: 16 }}>
         <TakeChallenge
           title="Compliment a Stranger"
           description="This week we're challenging you to **give a stranger a compliment**. It could be about their style, their smile, or just the positive energy they bring into a room."
-
-          onTakeChallenge={handleTakeChallenge}
         />
+
         <Post
           profilePicture={ProfilePic}
           name="Patrizio"
