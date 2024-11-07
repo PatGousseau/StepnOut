@@ -1,16 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import Post from '../components/Post';
-import ProfilePic from '../assets/images/profile-pic.png';
-import ImagePost from '../assets/images/adaptive-icon.png';
 import TakeChallenge from '../components/TakeChallenge';
 import { supabase } from '../lib/supabase';
 import { Challenge } from '../types';
 
+interface PostData {
+  id: number;
+  user_id: string;
+  media_id?: number;
+  created_at: string;
+  featured: boolean;
+  body: string;
+  media_file_path?: string;
+}
+
 const Home = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     const fetchActiveChallenge = async () => {
       const { data, error } = await supabase
@@ -18,51 +27,75 @@ const Home = () => {
         .select('challenge_id, challenges(*)')
         .eq('is_active', true)
         .single();
-  
+
       if (error) {
         console.error('Error fetching active challenge:', error);
       } else if (data && data.challenges) {
         setActiveChallenge(data.challenges);
       }
+    };
+
+    const fetchPosts = async () => {
+      const { data, error } = await supabase
+        .from('post')
+        .select(`
+          id, 
+          user_id, 
+          created_at, 
+          featured, 
+          body, 
+          media_id, 
+          media (
+            file_path
+          )
+        `)
+        .order('created_at', { ascending: false });
+    
+      if (error) {
+        console.error('Error fetching posts:', error);
+      } else if (data) {
+        const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
+    
+        const formattedPosts = data.map((post) => ({
+          ...post,
+          media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+        }));
+
+        setPosts(formattedPosts);
+      }
       setLoading(false);
     };
-  
+    
+    
+
     fetchActiveChallenge();
+    fetchPosts();
   }, []);
-  
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />; 
+    return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
   return (
     <ScrollView>
       <View style={{ padding: 16 }}>
         {activeChallenge ? (
-        <TakeChallenge
-          title={activeChallenge.title}
-          description={activeChallenge.description}
-        />
-          ) : null}
-        <Post
-          profilePicture={ProfilePic}
-          name="Patrizio"
-          text="Hey Challengers! This week, we're spreading positivity by complimenting strangers. Watch how I approached this challenge, and remember: a kind word can brighten someone's day. You've got this!"
-          image={ImagePost}
-          likes={109} comments={19}
-        />
-        <Post
-          profilePicture={ProfilePic}
-          name="Eshaq"
-          text="I complimented a stranger on their unique style today. Their surprised smile made my heart warm. Small act, big impact! #ComfortZoneChallenge"
-          likes={30} comments={3}
-        />
-        <Post
-          profilePicture={ProfilePic}
-          name="Zach"
-          text="I did it! Gave a compliment to a stranger at the coffee shop. Their smile made my day!"
-          likes={67} comments={7}
-        />
+          <TakeChallenge
+            title={activeChallenge.title}
+            description={activeChallenge.description}
+          />
+        ) : null}
+        {posts.map((post) => (
+          <Post
+            key={post.id}
+            profilePicture={require('../assets/images/profile-pic.png')}
+            name="User Name"  // Replace this with actual username if available
+            text={post.body}
+            image={post.media_file_path ? { uri: post.media_file_path } : undefined}
+            likes={Math.floor(Math.random() * 100)}  // Replace with actual likes data if available
+            comments={Math.floor(Math.random() * 20)} // Replace with actual comments data if available
+          />
+        ))}
       </View>
     </ScrollView>
   );
