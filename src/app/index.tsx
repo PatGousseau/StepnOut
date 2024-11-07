@@ -3,6 +3,7 @@ import { View, ScrollView, ActivityIndicator } from 'react-native';
 import Post from '../components/Post';
 import TakeChallenge from '../components/TakeChallenge';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
+import { colors } from '../constants/Colors';
 
 const Home = () => {
   const { activeChallenge, posts, loading } = useFetchHomeData();
@@ -12,7 +13,7 @@ const Home = () => {
   }
 
   return (
-    <ScrollView>
+    <ScrollView style={{ backgroundColor: colors.light.background }}>
       <View style={{ padding: 16 }}>
         {activeChallenge && (
           <TakeChallenge title={activeChallenge.title} description={activeChallenge.description} />

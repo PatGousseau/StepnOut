@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 24,
-    fontFamily: 'Marker Felt Thin',
+    fontFamily: 'Helvetica-bold',
     color: '#fff',
   },
   notificationIcon: {
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: -4,
-    backgroundColor: 'red', 
+    backgroundColor: colors.light.alertRed, 
     borderRadius: 10,
     width: 20,
     height: 20,
