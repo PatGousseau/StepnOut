@@ -34,7 +34,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
       {image && <Image source={image} style={styles.postImage} />}
       <View style={styles.footer}>
         <View style={styles.iconContainer}>
-          <Icon name="heart" size={16} color="#FF0000" />
+          <Icon name="heart" size={16} color= "#eb656b" />
           <Text style={styles.iconText}>{likes}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowComments(true)}>
@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 8,
-    borderWidth: 1,
     borderColor: '#ccc',
   },
   header: {

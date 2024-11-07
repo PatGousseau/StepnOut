@@ -7,3 +7,13 @@ export interface Challenge {
     updated_at: Date;
     duration: number;
   }
+
+  export interface Post {
+    id: number;
+    user_id: string;
+    media_id?: number;
+    created_at: string;
+    featured: boolean;
+    body: string;
+    media_file_path?: string;
+  }
