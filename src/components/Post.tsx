@@ -14,14 +14,16 @@ interface PostProps {
   comments: number;
   postId: number;
   userId: string;
+  setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
 }
 
-const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, comments, postId, userId }) => {
+const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, comments, postId, userId, setPostCounts }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
-  const { toggleLike, fetchLikes } = useFetchHomeData();
+  const [commentCount, setCommentCount] = useState(comments); 
+  const { toggleLike, fetchLikes, fetchComments, addComment } = useFetchHomeData();
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -29,26 +31,76 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
       setLiked(likes.some((like) => like.user_id === userId));
       setLikeCount(likes.length);
     };
-    initializeLikes();
-  }, [fetchLikes, postId, userId]);
+
+    if (postId) {
+      initializeLikes();
+    }
+  }, [postId]);
+
+  useEffect(() => {
+    const fetchCommentCount = async () => {
+      const commentsData = await fetchComments(postId);
+      setCommentList(commentsData.map(comment => ({
+        id: comment.id,
+        text: comment.body,
+        userName: comment.user_id,
+      })));
+      setCommentCount(commentsData.length); // Set comment count directly
+    };
+    
+    if (postId) {
+      fetchCommentCount();
+    }
+  }, [postId]);
 
   const handleLikeToggle = async () => {
     if (!postId || !userId) {
-      console.error("postId or userId is undefined", { postId, userId });
-      return;
+        console.error("postId or userId is undefined", { postId, userId });
+        return;
     }
-    const result = await toggleLike(postId, userId);
-    if (result) {
-      setLiked(result.liked);
-      setLikeCount((prev) => (result.liked ? prev + 1 : prev - 1));
-    }
-  };
-  
 
-  const handleAddComment = (comment: string) => {
-    if (comment.trim()) {
-      const newComment = { id: commentList.length + 1, text: comment, userName: 'User' };
-      setCommentList([...commentList, newComment]);
+    // Optimistically update the UI
+    setLiked(prevLiked => !prevLiked);
+    setLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+
+    // Attempt to update the database
+    const result = await toggleLike(postId, userId);
+
+    // Revert the UI update if there was an error
+    if (!result) {
+        setLiked(prevLiked => !prevLiked);  // Revert liked state
+        setLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);  // Revert like count
+    }
+};
+
+
+  const handleAddComment = async (comment: { text: string; userName: string }) => {
+    if (comment.text.trim()) {
+      // Immediately update the UI with the new comment
+      setCommentList(prevComments => [
+        ...prevComments,
+        { id: Date.now(), text: comment.text, userName: comment.userName }, // Use a temp id until it's saved
+      ]);
+      setCommentCount(prevCount => prevCount + 1); // Optimistically update the comment count
+
+      // Add the comment to the database
+      const newComment = await addComment(postId, userId, comment.text);
+
+      if (newComment) {
+        // Replace temp id with actual id from the database
+        setCommentList(prevComments =>
+          prevComments.map(c => (c.id === Date.now() ? { ...c, id: newComment.id } : c))
+        );
+
+        // Update global postCounts state if needed
+        setPostCounts(prevCounts => ({
+          ...prevCounts,
+          [postId]: {
+            ...prevCounts[postId],
+            comments: (prevCounts[postId]?.comments || 0) + 1,
+          },
+        }));
+      }
     }
   };
 
@@ -64,13 +116,15 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
         <TouchableOpacity onPress={handleLikeToggle}>
           <View style={styles.iconContainer}>
             <Icon name="heart" size={16} color={liked ? "#eb656b" : "#ccc"} />
-            <Text style={styles.iconText}>{likeCount}</Text>
+            {/* Ensure likeCount is wrapped and rendered separately */}
+            <Text style={styles.iconText}>{likeCount.toString()}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setShowComments(true)}>
           <View style={styles.iconContainer}>
             <Icon name="comment" size={16} color="#5A5A5A" />
-            <Text style={styles.iconText}>{comments}</Text>
+            {/* Ensure commentCount is wrapped and rendered separately */}
+            <Text style={styles.iconText}>{commentCount.toString()}</Text>
           </View>
         </TouchableOpacity>
       </View>

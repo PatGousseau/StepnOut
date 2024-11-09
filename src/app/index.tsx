@@ -13,8 +13,7 @@ const Home = () => {
     const loadCounts = async () => {
       const counts: { [key: number]: { likes: number; comments: number } } = {};
       for (const post of posts) {
-        const likesData = await fetchLikes(post.id);
-        const commentsData = await fetchComments(post.id);
+        const [likesData, commentsData] = await Promise.all([fetchLikes(post.id), fetchComments(post.id)]);
         counts[post.id] = {
           likes: likesData.length,
           comments: commentsData.length,
@@ -24,9 +23,9 @@ const Home = () => {
     };
 
     if (posts.length > 0) {
-      loadCounts();
+      loadCounts(); // Trigger immediately when posts are fetched
     }
-  }, [posts, fetchLikes, fetchComments]);
+  }, [posts]);
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -38,20 +37,20 @@ const Home = () => {
         {activeChallenge && (
           <TakeChallenge title={activeChallenge.title} description={activeChallenge.description} />
         )}
-          {posts.map(post => (
-            <Post
-              key={post.id}
-              profilePicture={require('../assets/images/profile-pic.png')}
-              name="User Name"
-              text={post.body}
-              image={post.media_file_path ? { uri: post.media_file_path } : undefined}
-              likes={postCounts[post.id]?.likes || 0}
-              comments={postCounts[post.id]?.comments || 0}
-              postId={post.id} // Add this line
-              userId="4e723784-b86d-44a2-9ff3-912115398421" // Replace with the actual user ID
-            />
-          ))}
-
+        {posts.map(post => (
+          <Post
+            key={post.id}
+            profilePicture={require('../assets/images/profile-pic.png')}
+            name="User Name"
+            text={post.body}
+            image={post.media_file_path ? { uri: post.media_file_path } : undefined}
+            likes={postCounts[post.id]?.likes || 0}
+            comments={postCounts[post.id]?.comments || 0}
+            postId={post.id}
+            userId="4e723784-b86d-44a2-9ff3-912115398421"
+            setPostCounts={setPostCounts}
+          />
+        ))}
       </View>
     </ScrollView>
   );
