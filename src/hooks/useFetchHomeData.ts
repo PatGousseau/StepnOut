@@ -50,5 +50,89 @@ export const useFetchHomeData = () => {
     fetchPosts();
   }, []);
 
-  return { activeChallenge, posts, loading };
+  // Fetch likes for a specific post
+  const fetchLikes = async (postId: number) => {
+    const { data, error } = await supabase
+      .from('likes')
+      .select('user_id')
+      .eq('post_id', postId);
+
+    if (error) {
+      console.error('Error fetching likes:', error);
+      return [];
+    }
+    return data || [];
+  };
+
+  // Toggle like for a specific post
+  const toggleLike = async (postId: number, userId: string) => {
+    const { data, error } = await supabase
+      .from('likes')
+      .select('id')
+      .eq('post_id', postId)
+      .eq('user_id', userId)
+      .single();
+
+    if (data) {
+      // If a like already exists, remove it
+      const { error: deleteError } = await supabase
+        .from('likes')
+        .delete()
+        .eq('id', data.id);
+
+      if (deleteError) console.error('Error removing like:', deleteError);
+      else return { liked: false };
+    } else {
+      // If no like exists, add one
+      const { data: insertData, error: insertError } = await supabase
+        .from('likes')
+        .insert([{ post_id: postId, user_id: userId }]);
+
+      if (insertError) console.error('Error adding like:', insertError);
+      else return { liked: true };
+    }
+  };
+
+  // Fetch comments for a specific post
+  const fetchComments = async (postId: number) => {
+    const { data, error } = await supabase
+      .from('comments')
+      .select(`
+        id,
+        user_id,
+        body,
+        created_at
+      `)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      return [];
+    }
+    return data || [];
+  };
+
+  // Add a new comment to a specific post
+  const addComment = async (postId: number, userId: string, body: string) => {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([{ post_id: postId, user_id: userId, body }]);
+
+    if (error) {
+      console.error('Error adding comment:', error);
+      return null;
+    }
+    return data ? data[0] : null;
+  };
+
+  return {
+    activeChallenge,
+    posts,
+    loading,
+    fetchLikes,
+    toggleLike,
+    fetchComments,
+    addComment
+  };
 };
