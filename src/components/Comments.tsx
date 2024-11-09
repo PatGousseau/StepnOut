@@ -1,33 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, FlatList } from 'react-native';
 import { colors } from '../constants/Colors';
 
 interface Comment {
-  id: number; 
-  text: string; 
-  userName: string; 
+  id: number;
+  text: string;
+  userName: string;
 }
 
 interface CommentsProps {
-  initialComments: Comment[]; 
-  onAddComment: (comment: { text: string; userName: string }) => void; 
+  initialComments: Comment[];
+  onAddComment: (comment: { text: string; userName: string }) => void;
 }
 
 const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment }) => {
   const [newComment, setNewComment] = useState('');
-  const [username] = useState('User'); 
+  const [comments, setComments] = useState(initialComments);
+
+  // Sync comments with the initialComments prop when it changes
+  useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
 
   const handleAddComment = () => {
     if (newComment.trim()) {
-      onAddComment({ text: newComment, userName: username }); 
-      setNewComment(''); 
+      const newCommentObj = { id: Date.now(), text: newComment, userName: 'User' };
+      
+      // Update the local comment list immediately
+      setComments((prevComments) => [...prevComments, newCommentObj]);
+      
+      // Call onAddComment to update the database or parent component
+      onAddComment(newCommentObj);
+      
+      // Clear the new comment input field
+      setNewComment('');
     }
   };
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={initialComments}
+        data={comments}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <Text style={styles.comment}>
@@ -40,7 +53,7 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment }) =>
           value={newComment}
           onChangeText={setNewComment}
           placeholder="Add a comment..."
-          placeholderTextColor="#888" 
+          placeholderTextColor="#888"
           style={styles.input}
         />
         <Pressable onPress={handleAddComment} style={styles.postButton}>
@@ -53,7 +66,7 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment }) =>
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff', 
+    backgroundColor: '#ffffff',
     padding: 10,
   },
   comment: {
@@ -63,7 +76,7 @@ const styles = StyleSheet.create({
   },
   commentUser: {
     fontWeight: 'bold',
-    color: colors.light.primary, 
+    color: colors.light.primary,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -77,16 +90,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginRight: 10,
-    backgroundColor: '#f0f0f0', 
+    backgroundColor: '#f0f0f0',
   },
   postButton: {
-    backgroundColor: colors.light.primary, 
+    backgroundColor: colors.light.primary,
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 15,
   },
   postButtonText: {
-    color: '#ffffff', 
+    color: '#ffffff',
     fontWeight: 'bold',
   },
 });
