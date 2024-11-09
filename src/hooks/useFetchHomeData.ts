@@ -65,33 +65,45 @@ export const useFetchHomeData = () => {
   };
 
   // Toggle like for a specific post
-  const toggleLike = async (postId: number, userId: string) => {
-    const { data, error } = await supabase
-      .from('likes')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('user_id', userId)
-      .single();
-
-    if (data) {
-      // If a like already exists, remove it
-      const { error: deleteError } = await supabase
+  const toggleLike = async (postId, userId) => {
+    try {
+      // Step 1: Check if the user has already liked the post
+      const { data, count, error } = await supabase
         .from('likes')
-        .delete()
-        .eq('id', data.id);
-
-      if (deleteError) console.error('Error removing like:', deleteError);
-      else return { liked: false };
-    } else {
-      // If no like exists, add one
-      const { data: insertData, error: insertError } = await supabase
-        .from('likes')
-        .insert([{ post_id: postId, user_id: userId }]);
-
-      if (insertError) console.error('Error adding like:', insertError);
-      else return { liked: true };
+        .select('id', { count: 'exact' })
+        .eq('post_id', postId)
+        .eq('user_id', userId)
+        .is('comment_id', null);
+  
+      if (error) {
+        console.error('Error checking for existing like:', error);
+        return;
+      }
+  
+      if (count > 0 && data && data.length > 0) {
+        // Step 2: Like exists, so remove it
+        const { error: deleteError } = await supabase
+          .from('likes')
+          .delete()
+          .eq('id', data[0].id); // Delete by ID to ensure exact match
+  
+        if (deleteError) console.error('Error removing like:', deleteError);
+        else return { liked: false };
+      } else {
+        // Step 3: Like does not exist, so add it
+        const { data: insertData, error: insertError } = await supabase
+          .from('likes')
+          .insert([{ post_id: postId, user_id: userId, comment_id: null }]);
+  
+        if (insertError) console.error('Error adding like:', insertError);
+        else return { liked: true };
+      }
+    } catch (err) {
+      console.error("Unexpected error in toggleLike:", err);
     }
   };
+  
+  
 
   // Fetch comments for a specific post
   const fetchComments = async (postId: number) => {

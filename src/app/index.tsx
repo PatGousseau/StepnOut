@@ -38,17 +38,20 @@ const Home = () => {
         {activeChallenge && (
           <TakeChallenge title={activeChallenge.title} description={activeChallenge.description} />
         )}
-        {posts.map(post => (
-          <Post
-            key={post.id}
-            profilePicture={require('../assets/images/profile-pic.png')}
-            name="User Name"
-            text={post.body}
-            image={post.media_file_path ? { uri: post.media_file_path } : undefined}
-            likes={postCounts[post.id]?.likes || 0}
-            comments={postCounts[post.id]?.comments || 0}
-          />
-        ))}
+          {posts.map(post => (
+            <Post
+              key={post.id}
+              profilePicture={require('../assets/images/profile-pic.png')}
+              name="User Name"
+              text={post.body}
+              image={post.media_file_path ? { uri: post.media_file_path } : undefined}
+              likes={postCounts[post.id]?.likes || 0}
+              comments={postCounts[post.id]?.comments || 0}
+              postId={post.id} // Add this line
+              userId="4e723784-b86d-44a2-9ff3-912115398421" // Replace with the actual user ID
+            />
+          ))}
+
       </View>
     </ScrollView>
   );
