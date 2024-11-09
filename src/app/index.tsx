@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { Audio } from 'expo-av';
 import Post from '../components/Post';
 import TakeChallenge from '../components/TakeChallenge';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
@@ -27,6 +28,21 @@ const Home = () => {
     }
   }, [posts]);
 
+  // allows audio to play
+  useEffect(() => {
+    const configureAudio = async () => {
+      await Audio.setAudioModeAsync({
+        staysActiveInBackground: true,  // maybe not
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+      });
+    };
+
+    configureAudio();
+  }, []);
+
   if (loading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
@@ -43,12 +59,14 @@ const Home = () => {
             profilePicture={require('../assets/images/profile-pic.png')}
             name="User Name"
             text={post.body}
-            image={post.media_file_path ? { uri: post.media_file_path } : undefined}
             likes={postCounts[post.id]?.likes || 0}
             comments={postCounts[post.id]?.comments || 0}
             postId={post.id}
             userId="4e723784-b86d-44a2-9ff3-912115398421"
             setPostCounts={setPostCounts}
+            media={post.media_file_path ? { uri: post.media_file_path } : undefined}
+            likes={Math.floor(Math.random() * 100)}
+            comments={Math.floor(Math.random() * 20)}
           />
         ))}
       </View>

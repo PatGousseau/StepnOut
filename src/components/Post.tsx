@@ -1,15 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Modal, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import Comments from './Comments';
-import { colors } from '../constants/Colors';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
+import React, { useState, useEffect } from 'react';
+import { View, 
+  Text,
+  Image,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback
+} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome'; 
+import Comments from './Comments'; 
+import { colors } from '../constants/Colors';
+import { Video } from 'expo-av';
+import { ResizeMode } from 'expo-av';
 
 interface PostProps {
-  profilePicture: any;
-  name: string;
-  text?: string;
-  image?: any;
+  profilePicture: any; 
+  name: string;        
+  text?: string;      
+  media?: { uri: string } | undefined;     
   likes: number;
   comments: number;
   postId: number;
@@ -17,7 +29,7 @@ interface PostProps {
   setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
 }
 
-const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, comments, postId, userId, setPostCounts }) => {
+const Post: React.FC<PostProps> = ({ profilePicture, name, text, media, likes, comments, postId, userId, setPostCounts  }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]);
   const [liked, setLiked] = useState(false);
@@ -104,6 +116,34 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
     }
   };
 
+  const isVideo = (source: any) => {
+    return source?.uri?.match(/\.(mp4|mov|avi|wmv)$/i);
+  };
+
+  const renderMedia = () => {
+    if (!media) return null;
+    
+    if (isVideo(media)) {
+      return (
+        <Video
+          source={media}
+          style={styles.mediaContent}
+          resizeMode={ResizeMode.COVER}
+          useNativeControls={true}
+          shouldPlay={false}
+          isMuted={false}
+          volume={1.0}
+          isLooping={false}
+          onError={(error) => {
+            console.log('Video Error:', error);
+          }}
+        />
+      );
+    }
+    
+    return <Image source={media} style={styles.mediaContent} />;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -111,7 +151,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, image, likes, c
         <Text style={styles.name}>{name}</Text>
       </View>
       {text && <Text style={styles.text}>{text}</Text>}
-      {image && <Image source={image} style={styles.postImage} />}
+      {renderMedia()}
       <View style={styles.footer}>
         <TouchableOpacity onPress={handleLikeToggle}>
           <View style={styles.iconContainer}>
@@ -185,7 +225,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 8,
   },
-  postImage: {
+  mediaContent: {
     width: '100%',
     height: 200,
     borderRadius: 8,

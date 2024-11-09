@@ -5,6 +5,8 @@ import Markdown from 'react-native-markdown-display';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
+import { Video, ResizeMode } from 'expo-av';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 
 interface ChallengeCardProps {
   title: string;
@@ -25,6 +27,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [showNotification, setShowNotification] = useState(false);
   const notificationAnim = useRef(new Animated.Value(0)).current;
+  const [isVideo, setIsVideo] = useState(false);
+  const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
 
   const fadeIn = () => {
     setModalVisible(true);
@@ -102,23 +106,43 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: true,
         quality: 0.8,
+        videoMaxDuration: 60,
       });
 
       if (!result.canceled) {
         const file = result.assets[0];
-        setMediaPreview(file.uri);
-        
+        const isVideoFile = file.type === 'video';
+        setIsVideo(isVideoFile);
+
+        if (isVideoFile) {
+          // Generate video thumbnail
+          try {
+            const { uri } = await VideoThumbnails.getThumbnailAsync(file.uri, {
+              time: 0,
+              quality: 0.5,
+            });
+            setVideoThumbnail(uri);
+            setMediaPreview(uri); // Use thumbnail as preview
+          } catch (e) {
+            console.warn("Couldn't generate thumbnail", e);
+            setMediaPreview(file.uri); // Fallback to video uri
+          }
+        } else {
+          setMediaPreview(file.uri);
+        }
+
         const mediaType = file.type || 'image';
-        const fileName = `${mediaType}/${Date.now()}.jpg`;
+        const fileExtension = mediaType === 'video' ? '.mp4' : '.jpg';
+        const fileName = `${mediaType}/${Date.now()}${fileExtension}`;
         
         const formData = new FormData();
         formData.append('file', {
           uri: file.uri,
           name: fileName,
-          type: 'image/jpeg',
+          type: mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
         } as any);
 
         // Upload file to storage
@@ -134,14 +158,15 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
         const { data: mediaData, error: dbError } = await supabase
           .from('media')
           .insert([
-            { file_path: fileName }
+            { 
+              file_path: fileName,
+            }
           ])
           .select('id')
           .single();
 
         if (dbError) throw dbError;
 
-        // Store the media ID
         setUploadedMediaId(mediaData.id);
       }
     } catch (error) {
@@ -235,21 +260,27 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
                 </View>
                 
                 <TouchableOpacity style={styles.mediaUploadButton} onPress={handleMediaUpload}>
-                  {mediaPreview ? (
-                    <Image 
-                      source={{ uri: mediaPreview }} 
-                      style={styles.mediaPreview} 
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <>
-                      <View style={styles.mediaIconsContainer}>
-                        <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
-                        <MaterialIcons name="videocam" size={24} color={colors.neutral.darkGrey} />
-                        <MaterialIcons name="mic" size={24} color={colors.neutral.darkGrey} />
-                      </View>
-                      <Text style={styles.uploadButtonText}>Tap to upload photo, video or audio</Text>
-                    </>
+                  {mediaPreview && (
+                    <View style={styles.mediaPreviewContainer}>
+                      {isVideo ? (
+                        <View style={styles.videoPreviewContainer}>
+                          <Image 
+                            source={{ uri: videoThumbnail || mediaPreview }} 
+                            style={styles.mediaPreview} 
+                            resizeMode="cover"
+                          />
+                          <View style={styles.playIconOverlay}>
+                            <MaterialIcons name="play-circle-filled" size={40} color="white" />
+                          </View>
+                        </View>
+                      ) : (
+                        <Image 
+                          source={{ uri: mediaPreview }} 
+                          style={styles.mediaPreview} 
+                          resizeMode="cover"
+                        />
+                      )}
+                    </View>
                   )}
                 </TouchableOpacity>
 
@@ -427,6 +458,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 13,
+  },
+  mediaPreviewContainer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  videoPreviewContainer: {
+    position: 'relative',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
