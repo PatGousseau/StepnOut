@@ -1,48 +1,41 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import UserProgress from '../components/UserProgress';
 import Post from '../components/Post';
 import ProfilePic from '../assets/images/profile-pic.png';
 import ImagePost from '../assets/images/adaptive-icon.png';
-
-const weekData = [
-  { week: 1, hasStreak: true },
-  { week: 2, hasStreak: true },
-  { week: 3, hasStreak: true },
-  { week: 4, hasStreak: true },
-  { week: 5, hasStreak: false },
-  { week: 6, hasStreak: true },
-  { week: 7, hasStreak: true },
-  { week: 8, hasStreak: true },
-];
-
-const challengeData = {
-  easy: 15,
-  medium: 8,
-  hard: 3,
-};
+import useUserProgress from '../hooks/useUserProgress';
 
 const ProfileScreen: React.FC = () => {
+  const { data, loading, error } = useUserProgress();
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
+
+  if (error) {
+    return <Text>Error: {error}</Text>;
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
-        <Image
-          source={ProfilePic}
-          style={styles.avatar}
-        />
+        <Image source={ProfilePic} style={styles.avatar} />
         <View style={styles.userInfo}>
           <Text style={styles.username}>Jane Doe</Text>
           <Text style={styles.userTitle}>Comfort Zone Challenger</Text>
         </View>
       </View>
-      <UserProgress challengeData={challengeData} weekData={weekData} />
+      {data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
       <Text style={styles.pastChallengesTitle}>Your Past Challenges</Text>
       <Post
-          profilePicture={ProfilePic} 
-          name="Patrizio"
-          text="Hey Challengers! This week, we're spreading positivity by complimenting strangers. Watch how I approached this challenge, and remember: a kind word can brighten someone's day. You've got this!"
-          image={ImagePost} 
-          likes={109} comments={19} />
+        profilePicture={ProfilePic}
+        name="Patrizio"
+        text="Hey Challengers! This week, we're spreading positivity by complimenting strangers. Watch how I approached this challenge, and remember: a kind word can brighten someone's day. You've got this!"
+        image={ImagePost}
+        likes={109}
+        comments={19}
+      />
     </ScrollView>
   );
 };
