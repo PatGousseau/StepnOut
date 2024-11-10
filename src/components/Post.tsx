@@ -1,11 +1,21 @@
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Modal, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, TouchableWithoutFeedback } from 'react-native';
+import { View, 
+  Image,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback
+} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import Comments from './Comments'; 
 import { colors } from '../constants/Colors';
 import { Video } from 'expo-av';
 import { ResizeMode } from 'expo-av';
+import { Text } from './StyledText';
 
 interface PostProps {
   profilePicture: any;
@@ -134,20 +144,23 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     <View style={styles.container}>
       <View style={styles.header}>
         <Image source={profilePicture} style={styles.profilePicture} />
-        <Text style={styles.name}>{name}</Text>
+        <View style={styles.nameContainer}>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.username}>@{username}</Text>
+        </View>
       </View>
       {text && <Text style={styles.text}>{text}</Text>}
       {renderMedia()}
       <View style={styles.footer}>
         <TouchableOpacity onPress={handleLikeToggle}>
           <View style={styles.iconContainer}>
-            <Icon name="heart" size={16} color={liked ? "#eb656b" : "#ccc"} />
+            <Icon name={liked ? "heart" : "heart-o"} size={16} color={liked ? "#eb656b" : colors.neutral.grey1} />
             <Text style={styles.iconText}>{likeCount.toString()}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setShowComments(true)}>
           <View style={styles.iconContainer}>
-            <Icon name="comment" size={16} color="#5A5A5A" />
+            <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
             <Text style={styles.iconText}>{commentCount.toString()}</Text>
           </View>
         </TouchableOpacity>
@@ -202,9 +215,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
+  nameContainer: {
+    flexDirection: 'column',
+  },
   name: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
+  },
+  username: {
+    fontSize: 12,
+    color: '#666',
   },
   text: {
     fontSize: 14,
@@ -220,15 +240,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
+    marginLeft: 5,
   },
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 32, 
   },
   iconText: {
     marginLeft: 4,
     fontSize: 14,
+    color: '#5A5A5A',
   },
   modalBackground: {
     flex: 1,
@@ -253,7 +275,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   closeButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.light.primary,
   },
 });

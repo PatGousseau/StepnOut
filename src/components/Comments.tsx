@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, FlatList } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, FlatList } from 'react-native';
+import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 
 interface Comment {

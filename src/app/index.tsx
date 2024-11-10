@@ -52,7 +52,7 @@ const Home = () => {
               userId="4e723784-b86d-44a2-9ff3-912115398421"
               setPostCounts={setPostCounts}
               media={post.media_file_path ? { uri: post.media_file_path } : undefined}
-              userMap={userMap} // Pass userMap to Post for comments
+              userMap={userMap} 
             />
           );
         })}
