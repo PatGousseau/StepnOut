@@ -38,7 +38,8 @@ const Home = () => {
           <Post
             key={post.id}
             profilePicture={require('../assets/images/profile-pic.png')}
-            name="User Name"
+            name="Zach"
+            username="zachi"
             text={post.body}
             media={post.media_file_path ? { uri: post.media_file_path } : undefined}
             likes={Math.floor(Math.random() * 100)}

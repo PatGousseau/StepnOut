@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { colors } from '../constants/Colors';
 import Markdown from 'react-native-markdown-display';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { Video, ResizeMode } from 'expo-av';
+import { Text } from './StyledText';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 
 interface ChallengeCardProps {
@@ -29,6 +30,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
   const notificationAnim = useRef(new Animated.Value(0)).current;
   const [isVideo, setIsVideo] = useState(false);
   const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
+  const [contentHeight, setContentHeight] = useState(0);
 
   const fadeIn = () => {
     setModalVisible(true);
@@ -188,11 +190,16 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [expanded, animation]);
+  }, [expanded]);
 
   const animatedHeight = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 100], 
+    outputRange: [0, contentHeight],
+  });
+
+  const marginTop = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 12],
   });
 
   return (
@@ -214,7 +221,14 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
       )}
 
       <Animated.View style={[styles.card]}>
-        <TouchableOpacity style={styles.cardContent} onPress={toggleExpand} activeOpacity={1}>
+        <TouchableOpacity 
+          style={[
+            styles.cardContent,
+            expanded && styles.expandedCardContent
+          ]} 
+          onPress={toggleExpand} 
+          activeOpacity={1}
+        >
           <View style={styles.topContainer}>
             <TouchableOpacity style={styles.accentButton} onPress={fadeIn}>
               <Text style={styles.buttonText}>Upload</Text>
@@ -225,8 +239,24 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
             </View>
             <MaterialIcons name={expanded ? "expand-less" : "expand-more"} size={18} color="white" />
           </View>
-          <Animated.View style={[styles.descriptionContainer, { height: animatedHeight }]}>
-            <Markdown style={markdownStyles}>{description}</Markdown>
+          <Animated.View 
+            style={[
+              styles.descriptionContainer, 
+              { 
+                height: animatedHeight, 
+                opacity: animation,
+                marginTop
+              }
+            ]}
+          >
+            <View 
+              style={styles.measureContainer}
+              onLayout={(event) => {
+                setContentHeight(event.nativeEvent.layout.height);
+              }}
+            >
+              <Markdown style={markdownStyles}>{description}</Markdown>
+            </View>
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
@@ -316,7 +346,7 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    backgroundColor: colors.dark.tint, 
+    backgroundColor: colors.light.secondary, 
     borderRadius: 16,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -328,17 +358,25 @@ const styles = StyleSheet.create({
   cardContent: {
     padding: 16,
   },
+  expandedCardContent: {
+    paddingBottom: 16,
+  },
   challengeText: {
+    flex: 1,
     marginLeft: 12,
     padding: 0,
   },
   topContainer: {
     flexDirection: 'row', 
-    justifyContent: 'space-between', 
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   descriptionContainer: {
     overflow: 'hidden',
+  },
+  measureContainer: {
+    position: 'absolute',
+    width: '100%',
   },
   title: {
     fontSize: 16,

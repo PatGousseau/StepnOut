@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 
@@ -34,11 +35,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 10,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 10,
   },
   logo: {
     fontSize: 24,
-    fontFamily: 'Helvetica-bold',
+    fontFamily: 'PingFangSC-Medium',
     color: '#fff',
   },
   notificationIcon: {

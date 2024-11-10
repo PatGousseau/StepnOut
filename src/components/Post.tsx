@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, 
-  Text,
   Image,
   StyleSheet,
   Modal,
@@ -15,17 +14,19 @@ import Comments from './Comments';
 import { colors } from '../constants/Colors';
 import { Video } from 'expo-av';
 import { ResizeMode } from 'expo-av';
+import { Text } from './StyledText';
 
 interface PostProps {
   profilePicture: any; 
   name: string;        
+  username: string;
   text?: string;      
   media?: { uri: string } | undefined;    
   likes: number;    
   comments: number;  
 }
 
-const Post: React.FC<PostProps> = ({ profilePicture, name, text, media, likes, comments }) => {
+const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media, likes, comments }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]); // Adjust type if needed
 
@@ -68,18 +69,21 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, text, media, likes, c
     <View style={styles.container}>
       <View style={styles.header}>
         <Image source={profilePicture} style={styles.profilePicture} />
-        <Text style={styles.name}>{name}</Text>
+        <View style={styles.nameContainer}>
+          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.username}>@{username}</Text>
+        </View>
       </View>
       {text && <Text style={styles.text}>{text}</Text>}
       {renderMedia()}
       <View style={styles.footer}>
         <View style={styles.iconContainer}>
-          <Icon name="heart" size={16} color= "#eb656b" />
+          <Icon name="heart-o" size={16} color={colors.neutral.grey1} />
           <Text style={styles.iconText}>{likes}</Text>
         </View>
         <TouchableOpacity onPress={() => setShowComments(true)}>
           <View style={styles.iconContainer}>
-            <Icon name="comment" size={16} color="#5A5A5A" />
+            <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
             <Text style={styles.iconText}>{comments}</Text>
           </View>
         </TouchableOpacity>
@@ -133,9 +137,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
+  nameContainer: {
+    flexDirection: 'column',
+  },
   name: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 14,
+  },
+  username: {
+    fontSize: 12,
+    color: '#666',
   },
   text: {
     fontSize: 14,
@@ -151,15 +162,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     marginTop: 10,
+    marginLeft: 5,
   },
   iconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16, 
+    marginRight: 32, 
   },
   iconText: {
     marginLeft: 4,
     fontSize: 14,
+    color: '#5A5A5A',
   },
   modalBackground: {
     flex: 1,
@@ -184,7 +197,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   closeButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     color: colors.light.primary,
   },
 });
