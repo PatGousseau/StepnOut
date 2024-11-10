@@ -159,15 +159,13 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
       <View style={styles.footer}>
         <TouchableOpacity onPress={handleLikeToggle}>
           <View style={styles.iconContainer}>
-            <Icon name="heart-o" size={16} color={liked ? "#eb656b" : colors.neutral.grey1} />
-            {/* Ensure likeCount is wrapped and rendered separately */}
+            <Icon name={liked ? "heart" : "heart-o"} size={16} color={liked ? "#eb656b" : colors.neutral.grey1} />
             <Text style={styles.iconText}>{likeCount.toString()}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setShowComments(true)}>
           <View style={styles.iconContainer}>
             <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
-            {/* Ensure commentCount is wrapped and rendered separately */}
             <Text style={styles.iconText}>{commentCount.toString()}</Text>
           </View>
         </TouchableOpacity>
