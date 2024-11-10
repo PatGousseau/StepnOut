@@ -6,34 +6,28 @@ import { colors } from '../constants/Colors';
 interface Comment {
   id: number;
   text: string;
-  userName: string;
+  userId: string;
 }
 
 interface CommentsProps {
   initialComments: Comment[];
-  onAddComment: (comment: { text: string; userName: string }) => void;
+  onAddComment: (comment: { text: string; userId: string }) => void;
+  userMap: { [key: string]: { username: string; name: string } };
 }
 
-const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment }) => {
+const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, userMap }) => {
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState(initialComments);
 
-  // Sync comments with the initialComments prop when it changes
   useEffect(() => {
     setComments(initialComments);
   }, [initialComments]);
 
   const handleAddComment = () => {
     if (newComment.trim()) {
-      const newCommentObj = { id: Date.now(), text: newComment, userName: 'User' };
-      
-      // Update the local comment list immediately
-      setComments((prevComments) => [...prevComments, newCommentObj]);
-      
-      // Call onAddComment to update the database or parent component
+      const newCommentObj = { id: Date.now(), text: newComment, userId: 'placeholder-user-id' };
+      setComments(prevComments => [...prevComments, newCommentObj]);
       onAddComment(newCommentObj);
-      
-      // Clear the new comment input field
       setNewComment('');
     }
   };
@@ -42,10 +36,12 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment }) =>
     <View style={styles.container}>
       <FlatList
         data={comments}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         renderItem={({ item }) => (
           <Text style={styles.comment}>
-            <Text style={styles.commentUser}>{item.userName}:</Text> {item.text}
+            <Text style={styles.commentUser}>
+              {userMap[item.userId]?.username || 'Unknown'}:
+            </Text> {item.text}
           </Text>
         )}
       />
