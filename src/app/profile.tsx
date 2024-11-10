@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import UserProgress from '../components/UserProgress';
 import Post from '../components/Post';
 import ProfilePic from '../assets/images/profile-pic.png';
-import ImagePost from '../assets/images/adaptive-icon.png';
+import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import useUserProgress from '../hooks/useUserProgress';
 
-const ProfileScreen: React.FC = () => {
-  const { data, loading, error } = useUserProgress();
+const HARDCODED_USER_ID = '4e723784-b86d-44a2-9ff3-912115398421';
 
-  if (loading) {
+const ProfileScreen: React.FC = () => {
+  const { data, loading: progressLoading, error } = useUserProgress();
+  const { posts, userMap, loading: postsLoading } = useFetchHomeData();
+  const [userPosts, setUserPosts] = useState([]);
+
+  useEffect(() => {
+    const loadUserPosts = () => {
+      const filteredPosts = posts.filter(post => post.user_id === HARDCODED_USER_ID);
+      setUserPosts(filteredPosts);
+    };
+    loadUserPosts();
+  }, [posts]);
+
+  if (progressLoading || postsLoading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
 
@@ -17,25 +29,35 @@ const ProfileScreen: React.FC = () => {
     return <Text>Error: {error}</Text>;
   }
 
+  const user = userMap[HARDCODED_USER_ID] || { username: 'Unknown User', name: 'Unknown' };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         <Image source={ProfilePic} style={styles.avatar} />
         <View style={styles.userInfo}>
-          <Text style={styles.username}>Jane Doe</Text>
+          <Text style={styles.username}>{user.name}</Text>
           <Text style={styles.userTitle}>Comfort Zone Challenger</Text>
         </View>
       </View>
       {data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
       <Text style={styles.pastChallengesTitle}>Your Past Challenges</Text>
-      <Post
-        profilePicture={ProfilePic}
-        name="Patrizio"
-        text="Hey Challengers! This week, we're spreading positivity by complimenting strangers. Watch how I approached this challenge, and remember: a kind word can brighten someone's day. You've got this!"
-        image={ImagePost}
-        likes={109}
-        comments={19}
-      />
+      {userPosts.map((post) => (
+        <Post
+          key={post.id}
+          profilePicture={ProfilePic}
+          name={user.name}
+          username={user.username}
+          text={post.body}
+          media={post.media_file_path ? { uri: post.media_file_path } : undefined}
+          likes={post.likes || 0}
+          comments={post.comments || 0}
+          postId={post.id}
+          userId={HARDCODED_USER_ID}
+          setPostCounts={() => {}}
+          userMap={userMap}
+        />
+      ))}
     </ScrollView>
   );
 };
