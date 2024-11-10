@@ -57,7 +57,8 @@ const Home = () => {
           <Post
             key={post.id}
             profilePicture={require('../assets/images/profile-pic.png')}
-            name="User Name"
+            name="Zach"
+            username="zachi"
             text={post.body}
             likes={postCounts[post.id]?.likes || 0}
             comments={postCounts[post.id]?.comments || 0}
