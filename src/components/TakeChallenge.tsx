@@ -16,7 +16,7 @@ interface ChallengeCardProps {
 
 const markdownStyles = StyleSheet.create({
   body: {
-    color: 'white',
+    color: colors.light.text, 
   },
 });
 
@@ -237,7 +237,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
               <Text style={styles.thisWeeksChallengeLabel}>This Week's Challenge</Text>
               <Text style={styles.title}>{title}</Text>
             </View>
-            <MaterialIcons name={expanded ? "expand-less" : "expand-more"} size={18} color="white" />
+            <MaterialIcons name={expanded ? "expand-less" : "expand-more"} size={18} color="#333" />
           </View>
           <Animated.View 
             style={[
@@ -341,7 +341,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
 const styles = StyleSheet.create({
   thisWeeksChallengeLabel: {
     fontSize: 14,
-    color: colors.dark.text,
+    color: colors.light.text, 
     marginBottom: 4,
   },
   card: {
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.dark.text, 
+    color: colors.light.text, 
     flex: 1,
   },
   button: {
