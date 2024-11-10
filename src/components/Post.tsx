@@ -166,7 +166,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setShowComments(true)}>
           <View style={styles.iconContainer}>
-            <Icon name="comment-o" size={16} color=colors.neutral.grey1 />
+            <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
             {/* Ensure commentCount is wrapped and rendered separately */}
             <Text style={styles.iconText}>{commentCount.toString()}</Text>
           </View>
