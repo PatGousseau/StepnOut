@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useFetchHomeData } from '../hooks/useFetchHomeData';
+import React, { useState, useEffect } from 'react';
 import { View, 
   Image,
   StyleSheet,
@@ -21,19 +22,98 @@ interface PostProps {
   name: string;        
   username: string;
   text?: string;      
-  media?: { uri: string } | undefined;    
-  likes: number;    
-  comments: number;  
+  media?: { uri: string } | undefined;     
+  likes: number;
+  comments: number;
+  postId: number;
+  userId: string;
+  setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
 }
 
-const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media, likes, comments }) => {
+const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media, likes, comments, postId, userId, setPostCounts  }) => {
   const [showComments, setShowComments] = useState(false);
-  const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]); // Adjust type if needed
+  const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(likes);
+  const [commentCount, setCommentCount] = useState(comments); 
+  const { toggleLike, fetchLikes, fetchComments, addComment } = useFetchHomeData();
 
-  const handleAddComment = (comment: string) => {
-    if (comment.trim()) {
-      const newComment = { id: commentList.length + 1, text: comment, userName: 'User' }; // Replace 'User' with actual user name
-      setCommentList([...commentList, newComment]);
+  useEffect(() => {
+    const initializeLikes = async () => {
+      const likes = await fetchLikes(postId);
+      setLiked(likes.some((like) => like.user_id === userId));
+      setLikeCount(likes.length);
+    };
+
+    if (postId) {
+      initializeLikes();
+    }
+  }, [postId]);
+
+  useEffect(() => {
+    const fetchCommentCount = async () => {
+      const commentsData = await fetchComments(postId);
+      setCommentList(commentsData.map(comment => ({
+        id: comment.id,
+        text: comment.body,
+        userName: comment.user_id,
+      })));
+      setCommentCount(commentsData.length); // Set comment count directly
+    };
+    
+    if (postId) {
+      fetchCommentCount();
+    }
+  }, [postId]);
+
+  const handleLikeToggle = async () => {
+    if (!postId || !userId) {
+        console.error("postId or userId is undefined", { postId, userId });
+        return;
+    }
+
+    // Optimistically update the UI
+    setLiked(prevLiked => !prevLiked);
+    setLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+
+    // Attempt to update the database
+    const result = await toggleLike(postId, userId);
+
+    // Revert the UI update if there was an error
+    if (!result) {
+        setLiked(prevLiked => !prevLiked);  // Revert liked state
+        setLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);  // Revert like count
+    }
+};
+
+
+  const handleAddComment = async (comment: { text: string; userName: string }) => {
+    if (comment.text.trim()) {
+      // Immediately update the UI with the new comment
+      setCommentList(prevComments => [
+        ...prevComments,
+        { id: Date.now(), text: comment.text, userName: comment.userName }, // Use a temp id until it's saved
+      ]);
+      setCommentCount(prevCount => prevCount + 1); // Optimistically update the comment count
+
+      // Add the comment to the database
+      const newComment = await addComment(postId, userId, comment.text);
+
+      if (newComment) {
+        // Replace temp id with actual id from the database
+        setCommentList(prevComments =>
+          prevComments.map(c => (c.id === Date.now() ? { ...c, id: newComment.id } : c))
+        );
+
+        // Update global postCounts state if needed
+        setPostCounts(prevCounts => ({
+          ...prevCounts,
+          [postId]: {
+            ...prevCounts[postId],
+            comments: (prevCounts[postId]?.comments || 0) + 1,
+          },
+        }));
+      }
     }
   };
 
@@ -77,20 +157,24 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
       {text && <Text style={styles.text}>{text}</Text>}
       {renderMedia()}
       <View style={styles.footer}>
-        <View style={styles.iconContainer}>
-          <Icon name="heart-o" size={16} color={colors.neutral.grey1} />
-          <Text style={styles.iconText}>{likes}</Text>
-        </View>
+        <TouchableOpacity onPress={handleLikeToggle}>
+          <View style={styles.iconContainer}>
+            <Icon name="heart-o" size={16} color={liked ? "#eb656b" : colors.neutral.grey1} />
+            {/* Ensure likeCount is wrapped and rendered separately */}
+            <Text style={styles.iconText}>{likeCount.toString()}</Text>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => setShowComments(true)}>
           <View style={styles.iconContainer}>
-            <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
-            <Text style={styles.iconText}>{comments}</Text>
+            <Icon name="comment-o" size={16} color=colors.neutral.grey1 />
+            {/* Ensure commentCount is wrapped and rendered separately */}
+            <Text style={styles.iconText}>{commentCount.toString()}</Text>
           </View>
         </TouchableOpacity>
       </View>
 
       <Modal
-        animationType="fade" 
+        animationType="fade"
         transparent={true}
         visible={showComments}
         onRequestClose={() => setShowComments(false)}
@@ -98,7 +182,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
         <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
           <View style={styles.modalBackground} />
         </TouchableWithoutFeedback>
-        
+
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalContainer}
@@ -107,9 +191,9 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
             <Pressable onPress={() => setShowComments(false)} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Close</Text>
             </Pressable>
-            <Comments 
-              initialComments={commentList} 
-              onAddComment={handleAddComment} 
+            <Comments
+              initialComments={commentList}
+              onAddComment={handleAddComment}
             />
           </View>
         </KeyboardAvoidingView>
