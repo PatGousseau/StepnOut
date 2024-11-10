@@ -18,21 +18,22 @@ import { ResizeMode } from 'expo-av';
 import { Text } from './StyledText';
 
 interface PostProps {
-  profilePicture: any; 
-  name: string;        
+  profilePicture: any;
   username: string;
-  text?: string;      
-  media?: { uri: string } | undefined;     
+  name: string;
+  text?: string;
+  media?: { uri: string } | undefined;
   likes: number;
   comments: number;
   postId: number;
   userId: string;
   setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
+  userMap: { [key: string]: { username: string; name: string } };
 }
 
-const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media, likes, comments, postId, userId, setPostCounts  }) => {
+const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media, likes, comments, postId, userId, setPostCounts, userMap }) => {
   const [showComments, setShowComments] = useState(false);
-  const [commentList, setCommentList] = useState<{ id: number; text: string; userName: string }[]>([]);
+  const [commentList, setCommentList] = useState<{ id: number; text: string; userId: string }[]>([]);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
   const [commentCount, setCommentCount] = useState(comments); 
@@ -51,61 +52,55 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
   }, [postId]);
 
   useEffect(() => {
-    const fetchCommentCount = async () => {
+    const fetchCommentData = async () => {
       const commentsData = await fetchComments(postId);
-      setCommentList(commentsData.map(comment => ({
-        id: comment.id,
-        text: comment.body,
-        userName: comment.user_id,
-      })));
-      setCommentCount(commentsData.length); // Set comment count directly
+      setCommentList(
+        commentsData.map(comment => ({
+          id: comment.id,
+          text: comment.body,
+          userId: comment.user_id,
+        }))
+      );
+      setCommentCount(commentsData.length);
     };
-    
+
     if (postId) {
-      fetchCommentCount();
+      fetchCommentData();
     }
-  }, [postId]);
+  }, [postId, userMap]);
 
   const handleLikeToggle = async () => {
     if (!postId || !userId) {
-        console.error("postId or userId is undefined", { postId, userId });
-        return;
+      console.error("postId or userId is undefined", { postId, userId });
+      return;
     }
 
-    // Optimistically update the UI
     setLiked(prevLiked => !prevLiked);
     setLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
 
-    // Attempt to update the database
     const result = await toggleLike(postId, userId);
 
-    // Revert the UI update if there was an error
     if (!result) {
-        setLiked(prevLiked => !prevLiked);  // Revert liked state
-        setLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);  // Revert like count
+      setLiked(prevLiked => !prevLiked);
+      setLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
     }
-};
+  };
 
-
-  const handleAddComment = async (comment: { text: string; userName: string }) => {
+  const handleAddComment = async (comment: { text: string; userId: string }) => {
     if (comment.text.trim()) {
-      // Immediately update the UI with the new comment
       setCommentList(prevComments => [
         ...prevComments,
-        { id: Date.now(), text: comment.text, userName: comment.userName }, // Use a temp id until it's saved
+        { id: Date.now(), text: comment.text, userId },
       ]);
-      setCommentCount(prevCount => prevCount + 1); // Optimistically update the comment count
+      setCommentCount(prevCount => prevCount + 1);
 
-      // Add the comment to the database
       const newComment = await addComment(postId, userId, comment.text);
 
       if (newComment) {
-        // Replace temp id with actual id from the database
         setCommentList(prevComments =>
           prevComments.map(c => (c.id === Date.now() ? { ...c, id: newComment.id } : c))
         );
 
-        // Update global postCounts state if needed
         setPostCounts(prevCounts => ({
           ...prevCounts,
           [postId]: {
@@ -123,14 +118,14 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
 
   const renderMedia = () => {
     if (!media) return null;
-    
+
     if (isVideo(media)) {
       return (
         <Video
           source={media}
           style={styles.mediaContent}
           resizeMode={ResizeMode.COVER}
-          useNativeControls={true}
+          useNativeControls
           shouldPlay={false}
           isMuted={false}
           volume={1.0}
@@ -141,7 +136,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
         />
       );
     }
-    
+
     return <Image source={media} style={styles.mediaContent} />;
   };
 
@@ -173,7 +168,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
 
       <Modal
         animationType="fade"
-        transparent={true}
+        transparent
         visible={showComments}
         onRequestClose={() => setShowComments(false)}
       >
@@ -192,6 +187,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, name, username, text, media
             <Comments
               initialComments={commentList}
               onAddComment={handleAddComment}
+              userMap={userMap}
             />
           </View>
         </KeyboardAvoidingView>
@@ -241,8 +237,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   footer: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 10,
     marginLeft: 5,
   },
@@ -258,16 +254,16 @@ const styles = StyleSheet.create({
   },
   modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Dark transparent background
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContainer: {
     justifyContent: 'flex-end',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
-    backgroundColor: "black"
+    backgroundColor: 'black',
   },
   modalContent: {
-    width: '100%', 
+    width: '100%',
     backgroundColor: 'white',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
