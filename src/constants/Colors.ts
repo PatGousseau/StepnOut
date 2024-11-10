@@ -1,20 +1,18 @@
 export const colors = {
   light: {
-    background: '#f5eee9',  // Off-white
-    primary: '#9dcfcc',     // Primary Blue #97ceae
-    secondary: '#48A9A6',   // Light Green
-    accent: '#e79054',      // Orange
-    text: '#000',        // Dark Color 
+    background: '#F5F2ED',  // off-white background
+    primary: '#75AFE1',     // e.g. banner
+    secondary: '#4D5382',   // e.g. take challenge
+    accent: '#F5A572',      // e.g. submit button
+    text: '#000',        // dark text 
     lightText: '#7F8C8D',   // Light
     cardBg: '#FFFFFF',      // White
     success: '#66BB6A',     // Success 
-    tint: '#2f95dc',
     alertRed: "#e64e54",
   },
   dark: {
-    text: '#fff',
+    text: '#fff',  // light text
     background: '#000',
-    tint: '#73a1d4',
   },
   neutral: {
     grey1: '#BEBEBE',
