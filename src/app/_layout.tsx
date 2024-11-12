@@ -15,7 +15,9 @@ const Layout = () => {
       <Tabs
         screenOptions={({ route }) => ({
           tabBarActiveTintColor: colors.light.primary,
-          tabBarStyle: { paddingBottom: 5 },
+          tabBarStyle: { 
+            paddingBottom: 5,
+          },
           tabBarIcon: ({ color, size }) => {
             let iconName;
 
@@ -25,8 +27,8 @@ const Layout = () => {
               iconName = 'person';
             } else if (route.name === 'admin') {
               iconName = 'settings';
-            } else if (route.name === 'fonts') {
-              iconName = 'text';
+            // } else if (route.name === 'fonts') {
+            //   iconName = 'text';
             }
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -60,7 +62,7 @@ const Layout = () => {
             headerShown: false,
           }}
         />
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="fonts"
           options={{
             title: 'Fonts',
@@ -68,7 +70,7 @@ const Layout = () => {
             headerTintColor: '#fff',
             headerShown: false,
           }}
-        />
+        /> */}
       </Tabs>
     </>
   );

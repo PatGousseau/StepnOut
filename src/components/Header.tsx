@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
@@ -10,12 +10,12 @@ const Header = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.logo}>Stepn Out</Text>
         <TouchableOpacity>
-          <Ionicons name="add" size={24} color={colors.light.primary} />
+          <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
+        <Text style={styles.stepnOut}>Stepn Out</Text>
         <TouchableOpacity style={styles.notificationIcon}>
-          <Ionicons name="notifications" size={32} color={colors.light.cardBg} />
+          <Ionicons name="notifications" size={28} color={colors.light.primary} />
           {notificationCount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{notificationCount}</Text>
@@ -29,7 +29,8 @@ const Header = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: colors.light.primary,
+    // backgroundColor: colors.light.primary,
+    backgroundColor: colors.light.background
   },
   header: {
     flexDirection: 'row',
@@ -40,9 +41,13 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   logo: {
-    fontSize: 24,
+    width: 28,
+    height: 28,
+  },
+  stepnOut: {
+    fontSize: 18,
     fontFamily: 'PingFangSC-Medium',
-    color: '#fff',
+    color: colors.light.primary,
   },
   notificationIcon: {
     marginLeft: 15, 

@@ -1,6 +1,7 @@
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import React, { useState, useEffect } from 'react';
-import { View, 
+import { 
+  View, 
   Image,
   StyleSheet,
   Modal,
@@ -198,11 +199,14 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 8,
     padding: 10,
-    backgroundColor: '#fff',
+    paddingBottom: 16,
+    // backgroundColor: '#fff',
     borderRadius: 8,
     borderColor: '#ccc',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
   header: {
     flexDirection: 'row',
