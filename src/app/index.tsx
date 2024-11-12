@@ -6,25 +6,18 @@ import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { colors } from '../constants/Colors';
 
 const Home = () => {
-  const { activeChallenge, posts, userMap, fetchLikes, fetchComments, loading } = useFetchHomeData();
+  const { activeChallenge, posts, userMap, loading } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<{ [key: number]: { likes: number; comments: number } }>({});
 
   useEffect(() => {
-    const loadCounts = async () => {
-      const counts: { [key: number]: { likes: number; comments: number } } = {};
-      for (const post of posts) {
-        const [likesData, commentsData] = await Promise.all([fetchLikes(post.id), fetchComments(post.id)]);
-        counts[post.id] = {
-          likes: likesData.length,
-          comments: commentsData.length,
-        };
+    const counts = posts.reduce((acc, post) => ({
+      ...acc,
+      [post.id]: {
+        likes: post.likes_count,
+        comments: post.comments_count,
       }
-      setPostCounts(counts);
-    };
-
-    if (posts.length > 0) {
-      loadCounts();
-    }
+    }), {});
+    setPostCounts(counts);
   }, [posts]);
 
   if (loading) {

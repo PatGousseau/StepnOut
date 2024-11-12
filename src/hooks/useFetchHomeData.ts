@@ -32,7 +32,9 @@ export const useFetchHomeData = () => {
             media_id, 
             media (
               file_path
-            )
+            ),
+            likes:likes(count),
+            comments:comments(count)
           `)
           .order('created_at', { ascending: false });
 
@@ -55,6 +57,8 @@ export const useFetchHomeData = () => {
         const formattedPosts = postData.map(post => ({
           ...post,
           media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+          likes_count: post.likes[0]?.count ?? 0,
+          comments_count: post.comments[0]?.count ?? 0,
         }));
 
         setPosts(formattedPosts);
@@ -68,6 +72,33 @@ export const useFetchHomeData = () => {
 
     fetchActiveChallenge();
     fetchPostsAndUsers();
+  }, []);
+
+  useEffect(() => {
+    // Subscribe to likes and comments changes
+    const subscription = supabase
+      .channel('public:likes_comments')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'likes' 
+      }, payload => {
+        // Update likes count
+        handleLikesChange(payload);
+      })
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'comments' 
+      }, payload => {
+        // Update comments count
+        handleCommentsChange(payload);
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchLikes = async (postId: number) => {
