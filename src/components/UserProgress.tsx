@@ -10,32 +10,55 @@ interface UserProgressProps {
     medium: number;
     hard: number;
   };
-  weekData: { week: number; hasStreak: boolean }[];
+  weekData: { week: number; hasStreak: boolean; challengeId: number; startDate: string; endDate: string; isActive: boolean; isCompleted: boolean }[];
 }
 
-const StreakCalendar: React.FC<{ weekData: { hasStreak: boolean }[] }> = ({ weekData }) => {
-  const currentStreak = weekData.reverse().findIndex(week => !week.hasStreak);
-  const streakCount = currentStreak === -1 ? weekData.length : currentStreak;
+interface WeekData {
+  week: number;
+  hasStreak: boolean;
+  challengeId: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  isCompleted: boolean;
+}
+
+const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
+  const getBoxStyle = (week: WeekData) => {
+    if (week.isCompleted) {
+      return {
+        backgroundColor: '#66BB6A',
+        borderColor: '#66BB6A',
+      };
+    }
+    if (week.isActive) {
+      return {
+        backgroundColor: colors.light.primary,
+        borderColor: colors.light.primary,
+      };
+    }
+    // Past uncompleted challenges
+    return {
+      backgroundColor: 'transparent',
+      borderColor: colors.light.primary,
+    };
+  };
 
   return (
     <View style={styles.streakCalendarContainer}>
       <View style={styles.streakHeader}>
         <View style={styles.streakTitle}>
           <FontAwesome name="calendar" size={14} color={colors.light.primary} />
-          <Text style={styles.streakTitleText}>Streak</Text>
+          <Text style={styles.streakTitleText}>Latest Challenges</Text>
         </View>
-        <Text style={styles.streakCountText}>{streakCount} weeks</Text>
       </View>
       <View style={styles.calendarGrid}>
-        {weekData.reverse().map((week, index) => (
+        {[...weekData].reverse().map((week, index) => (
           <TouchableOpacity
             key={index}
             style={[
               styles.calendarBox,
-              {
-                backgroundColor: week.hasStreak ? '#66BB6A' : 'transparent',
-                borderColor: week.hasStreak ? '#66BB6A' : colors.light.text,
-              },
+              getBoxStyle(week),
             ]}
             activeOpacity={0.8}
           />
