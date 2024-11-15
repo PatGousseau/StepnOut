@@ -10,7 +10,6 @@ SplashScreen.preventAutoHideAsync();
 
 const Layout = () => {
   useEffect(() => {
-    // Hide splash screen once the app is ready
     const hideSplash = async () => {
       await SplashScreen.hideAsync();
     };
@@ -28,16 +27,20 @@ const Layout = () => {
             paddingBottom: 5,
           },
           tabBarIcon: ({ color, size }) => {
-            let iconName;
+            let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
-            if (route.name === 'index') {
-              iconName = 'home';
-            } else if (route.name === 'profile') {
-              iconName = 'person';
-            } else if (route.name === 'admin') {
-              iconName = 'settings';
-            // } else if (route.name === 'fonts') {
-            //   iconName = 'text';
+            switch (route.name) {
+              case 'index':
+                iconName = 'home';
+                break;
+              case 'profile':
+                iconName = 'person';
+                break;
+              case 'admin':
+                iconName = 'settings';
+                break;
+              default:
+                iconName = 'home';
             }
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -71,15 +74,6 @@ const Layout = () => {
             headerShown: false,
           }}
         />
-        {/* <Tabs.Screen
-          name="fonts"
-          options={{
-            title: 'Fonts',
-            headerStyle: { backgroundColor: colors.light.primary },
-            headerTintColor: '#fff',
-            headerShown: false,
-          }}
-        /> */}
       </Tabs>
     </>
   );

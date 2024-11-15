@@ -16,6 +16,8 @@ export interface Challenge {
     featured: boolean;
     body: string;
     media_file_path?: string;
+    likes_count: number;
+    comments_count: number;
   }
 
   export interface ChallengeProgress {
