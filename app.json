@@ -15,7 +15,6 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
@@ -33,13 +32,21 @@
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "fonts": {
       "ABeeZee": "./assets/fonts/ABeeZee-Regular.ttf"
-    }
+    },
+    "newArchEnabled": true
   }
 }
