@@ -17,3 +17,19 @@ export interface Challenge {
     body: string;
     media_file_path?: string;
   }
+
+  export interface ChallengeProgress {
+    easy: number;  
+    medium: number; 
+    hard: number;   
+  }
+  
+  export interface WeekData {
+    week: number;
+    hasStreak: boolean;
+  }
+  
+  export interface UserProgress {
+    challengeProgress: ChallengeProgress;
+    weekData: WeekData[];
+  }
