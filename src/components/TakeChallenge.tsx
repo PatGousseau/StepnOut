@@ -5,7 +5,6 @@ import Markdown from 'react-native-markdown-display';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
-import { Video, ResizeMode } from 'expo-av';
 import { Text } from './StyledText';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 

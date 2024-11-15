@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons'; 
 import { colors } from '../constants/Colors'; 
@@ -9,6 +9,15 @@ import * as SplashScreen from 'expo-splash-screen';
 SplashScreen.preventAutoHideAsync();
 
 const Layout = () => {
+  useEffect(() => {
+    // Hide splash screen once the app is ready
+    const hideSplash = async () => {
+      await SplashScreen.hideAsync();
+    };
+    
+    hideSplash();
+  }, []);
+
   return (
     <>
       <Header />
