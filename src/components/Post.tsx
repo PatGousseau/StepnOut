@@ -14,8 +14,7 @@ import {
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import Comments from './Comments'; 
 import { colors } from '../constants/Colors';
-import { Video } from 'expo-av';
-import { ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
 
 interface PostProps {
@@ -121,19 +120,14 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     if (!media) return null;
 
     if (isVideo(media)) {
+      const player = useVideoPlayer(media.uri);
+      
       return (
-        <Video
-          source={media}
+        <VideoView
+          player={player}
           style={styles.mediaContent}
-          resizeMode={ResizeMode.COVER}
-          useNativeControls
-          shouldPlay={false}
-          isMuted={false}
-          volume={1.0}
-          isLooping={false}
-          onError={(error) => {
-            console.log('Video Error:', error);
-          }}
+          contentFit="cover"
+          nativeControls
         />
       );
     }
