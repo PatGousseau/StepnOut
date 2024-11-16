@@ -11,53 +11,52 @@ export const useFetchHomeData = () => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const POSTS_PER_PAGE = 10;
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchAllData = async (pageNumber = 1) => {
+  const fetchAllData = async (pageNumber = 1, isLoadMore = false) => {
     setLoading(true);
     try {
-      const { data: challengeData } = await supabase
-        .from('challenges_status')
-        .select('challenge_id, challenges(*)')
-        .eq('is_active', true)
-        .single();
+      // Fetch posts and user likes in parallel
+      const [postResponse, likesResponse] = await Promise.all([
+        supabase
+          .from('post')
+          .select(`
+            id, 
+            user_id, 
+            created_at, 
+            featured, 
+            body, 
+            media_id, 
+            media (file_path),
+            likes:likes(count),
+            comments:comments(
+              id,
+              user_id,
+              body,
+              created_at
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .range((pageNumber - 1) * POSTS_PER_PAGE, pageNumber * POSTS_PER_PAGE - 1),
 
-      if (challengeData?.challenges) setActiveChallenge(challengeData.challenges);
+        supabase
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', "4e723784-b86d-44a2-9ff3-912115398421")
+      ]);
 
-      const { data: postData, error: postError } = await supabase
-        .from('post')
-        .select(`
-          id, 
-          user_id, 
-          created_at, 
-          featured, 
-          body, 
-          media_id, 
-          media (file_path),
-          likes:likes(count),
-          comments:comments(
-            id,
-            user_id,
-            body,
-            created_at
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .range((pageNumber - 1) * POSTS_PER_PAGE, pageNumber * POSTS_PER_PAGE - 1);
+      const [postData, postError] = [postResponse.data, postResponse.error];
+      const [userLikes, likesError] = [likesResponse.data, likesResponse.error];
 
       if (postError) throw postError;
-
-      const { data: userLikes, error: likesError } = await supabase
-        .from('likes')
-        .select('post_id')
-        .eq('user_id', "4e723784-b86d-44a2-9ff3-912115398421");
-
       if (likesError) throw likesError;
 
+      // Process all data before updating state
       const likedPostIds = new Set(userLikes?.map(like => like.post_id));
-
       const uniqueUserIds = [...new Set(postData.map(post => post.user_id))];
       const uncachedUserIds = uniqueUserIds.filter(id => !userCache[id]);
 
+      // Fetch any uncached users
       if (uncachedUserIds.length > 0) {
         const { data: userData, error: userError } = await supabase
           .from('users')
@@ -71,6 +70,7 @@ export const useFetchHomeData = () => {
         });
       }
 
+      // Prepare all data before any state updates
       const userMap = uniqueUserIds.reduce((acc, userId) => {
         acc[userId] = userCache[userId] || { username: 'Unknown', name: 'Unknown' };
         return acc;
@@ -92,8 +92,11 @@ export const useFetchHomeData = () => {
         })) ?? []
       }));
 
-      setPosts(formattedPosts);
-      setUserMap(userMap);
+      // Batch state updates
+      setHasMore(postData.length === POSTS_PER_PAGE);
+      setPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);
+      setUserMap(prev => ({ ...prev, ...userMap }));
+
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -185,9 +188,13 @@ export const useFetchHomeData = () => {
     return data ? data[0] : null;
   };
 
-  const loadMorePosts = () => {
-    setPage(prev => prev + 1);
-  };
+  const loadMorePosts = useCallback(() => {
+    if (!loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchAllData(nextPage, true);
+    }
+  }, [loading, hasMore, page]);
 
   const memoizedFormatPosts = useCallback((postData, likedPostIds) => {
     return postData.map(post => ({
@@ -216,6 +223,6 @@ export const useFetchHomeData = () => {
     fetchComments,
     addComment,
     loadMorePosts,
-    hasMore: posts.length >= page * POSTS_PER_PAGE,
+    hasMore,
   };
 };

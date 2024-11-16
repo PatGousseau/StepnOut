@@ -14,7 +14,9 @@ const Home = () => {
     posts, 
     userMap, 
     loading, 
-    fetchAllData 
+    fetchAllData,
+    loadMorePosts,
+    hasMore 
   } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
   const [refreshing, setRefreshing] = useState(false);
@@ -41,10 +43,6 @@ const Home = () => {
     setRefreshing(false);
   }, [fetchAllData]);
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
-  }
-
   return (
     <ScrollView 
       style={{ backgroundColor: colors.light.background }}
@@ -54,6 +52,18 @@ const Home = () => {
           onRefresh={onRefresh}
         />
       }
+      maintainVisibleContentPosition={{
+        minIndexForVisible: 0,
+      }}
+      onScroll={({ nativeEvent }) => {
+        const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+        
+        if (isCloseToBottom && !loading && hasMore) {
+          loadMorePosts();
+        }
+      }}
+      scrollEventThrottle={400}
     >
       <View style={{ padding: 16 }}>
         {activeChallenge && (
@@ -82,6 +92,12 @@ const Home = () => {
           );
         })}
       </View>
+      
+      {loading && (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color="#0000ff" />
+        </View>
+      )}
     </ScrollView>
   );
 };
