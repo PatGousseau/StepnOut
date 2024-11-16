@@ -30,15 +30,27 @@ export const useFetchHomeData = () => {
             featured, 
             body, 
             media_id, 
-            media (
-              file_path
-            ),
+            media (file_path),
             likes:likes(count),
-            comments:comments(count)
+            comments:comments(
+              id,
+              user_id,
+              body,
+              created_at
+            )
           `)
           .order('created_at', { ascending: false });
 
         if (postError) throw postError;
+
+        const { data: userLikes, error: likesError } = await supabase
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', "4e723784-b86d-44a2-9ff3-912115398421");
+
+        if (likesError) throw likesError;
+
+        const likedPostIds = new Set(userLikes?.map(like => like.post_id));
 
         const uniqueUserIds = [...new Set(postData.map(post => post.user_id))];
         const { data: userData, error: userError } = await supabase
@@ -54,11 +66,19 @@ export const useFetchHomeData = () => {
         }, {});
 
         const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
+        
         const formattedPosts = postData.map(post => ({
           ...post,
           media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
-          likes_count: post.likes[0]?.count ?? 0,
-          comments_count: post.comments[0]?.count ?? 0,
+          likes_count: post.likes?.[0]?.count ?? 0,
+          comments_count: post.comments?.length ?? 0,
+          liked: likedPostIds.has(post.id),
+          latest_comments: post.comments?.slice(0, 3).map(comment => ({
+            id: comment.id,
+            text: comment.body,
+            userId: comment.user_id,
+            created_at: comment.created_at
+          })) ?? []
         }));
 
         setPosts(formattedPosts);
@@ -74,34 +94,12 @@ export const useFetchHomeData = () => {
     fetchPostsAndUsers();
   }, []);
 
-  useEffect(() => {
-    // Subscribe to likes and comments changes
-    const subscription = supabase
-      .channel('public:likes_comments')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'likes' 
-      }, payload => {
-        // Update likes count
-        handleLikesChange(payload);
-      })
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'comments' 
-      }, payload => {
-        // Update comments count
-        handleCommentsChange(payload);
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
   const fetchLikes = async (postId: number) => {
+    const post = posts.find(p => p.id === postId);
+    if (post?.likes) {
+      return post.likes;
+    }
+
     const { data, error } = await supabase
       .from('likes')
       .select('user_id')
@@ -114,7 +112,7 @@ export const useFetchHomeData = () => {
     return data || [];
   };
 
-  const toggleLike = async (postId, userId) => {
+  const toggleLike = async (postId: number, userId: string) => {
     try {
       const { data, count, error } = await supabase
         .from('likes')
@@ -137,7 +135,7 @@ export const useFetchHomeData = () => {
         if (deleteError) console.error('Error removing like:', deleteError);
         else return { liked: false };
       } else {
-        const { data: insertData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('likes')
           .insert([{ post_id: postId, user_id: userId, comment_id: null }]);
 
