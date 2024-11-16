@@ -1,98 +1,105 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Challenge, Post } from '../types';
+
+const userCache: { [key: string]: { username: string; name: string } } = {};
 
 export const useFetchHomeData = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [userMap, setUserMap] = useState<{ [key: string]: { username: string; name: string } }>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const POSTS_PER_PAGE = 10;
 
-  useEffect(() => {
-    const fetchActiveChallenge = async () => {
-      const { data, error } = await supabase
+  const fetchAllData = async (pageNumber = 1) => {
+    setLoading(true);
+    try {
+      const { data: challengeData } = await supabase
         .from('challenges_status')
         .select('challenge_id, challenges(*)')
         .eq('is_active', true)
         .single();
-      if (error) console.error('Error fetching active challenge:', error);
-      else if (data && data.challenges) setActiveChallenge(data.challenges);
-    };
 
-    const fetchPostsAndUsers = async () => {
-      try {
-        const { data: postData, error: postError } = await supabase
-          .from('post')
-          .select(`
-            id, 
-            user_id, 
-            created_at, 
-            featured, 
-            body, 
-            media_id, 
-            media (file_path),
-            likes:likes(count),
-            comments:comments(
-              id,
-              user_id,
-              body,
-              created_at
-            )
-          `)
-          .order('created_at', { ascending: false });
+      if (challengeData?.challenges) setActiveChallenge(challengeData.challenges);
 
-        if (postError) throw postError;
+      const { data: postData, error: postError } = await supabase
+        .from('post')
+        .select(`
+          id, 
+          user_id, 
+          created_at, 
+          featured, 
+          body, 
+          media_id, 
+          media (file_path),
+          likes:likes(count),
+          comments:comments(
+            id,
+            user_id,
+            body,
+            created_at
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .range((pageNumber - 1) * POSTS_PER_PAGE, pageNumber * POSTS_PER_PAGE - 1);
 
-        const { data: userLikes, error: likesError } = await supabase
-          .from('likes')
-          .select('post_id')
-          .eq('user_id', "4e723784-b86d-44a2-9ff3-912115398421");
+      if (postError) throw postError;
 
-        if (likesError) throw likesError;
+      const { data: userLikes, error: likesError } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', "4e723784-b86d-44a2-9ff3-912115398421");
 
-        const likedPostIds = new Set(userLikes?.map(like => like.post_id));
+      if (likesError) throw likesError;
 
-        const uniqueUserIds = [...new Set(postData.map(post => post.user_id))];
+      const likedPostIds = new Set(userLikes?.map(like => like.post_id));
+
+      const uniqueUserIds = [...new Set(postData.map(post => post.user_id))];
+      const uncachedUserIds = uniqueUserIds.filter(id => !userCache[id]);
+
+      if (uncachedUserIds.length > 0) {
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('id, username, name')
-          .in('id', uniqueUserIds);
+          .in('id', uncachedUserIds);
 
         if (userError) throw userError;
 
-        const userMap = userData.reduce((acc, user) => {
-          acc[user.id] = { username: user.username, name: user.name };
-          return acc;
-        }, {});
-
-        const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
-        
-        const formattedPosts = postData.map(post => ({
-          ...post,
-          media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
-          likes_count: post.likes?.[0]?.count ?? 0,
-          comments_count: post.comments?.length ?? 0,
-          liked: likedPostIds.has(post.id),
-          latest_comments: post.comments?.slice(0, 3).map(comment => ({
-            id: comment.id,
-            text: comment.body,
-            userId: comment.user_id,
-            created_at: comment.created_at
-          })) ?? []
-        }));
-
-        setPosts(formattedPosts);
-        setUserMap(userMap);
-      } catch (error) {
-        console.error('Error fetching posts and users:', error);
-      } finally {
-        setLoading(false);
+        userData?.forEach(user => {
+          userCache[user.id] = { username: user.username, name: user.name };
+        });
       }
-    };
 
-    fetchActiveChallenge();
-    fetchPostsAndUsers();
-  }, []);
+      const userMap = uniqueUserIds.reduce((acc, userId) => {
+        acc[userId] = userCache[userId] || { username: 'Unknown', name: 'Unknown' };
+        return acc;
+      }, {});
+
+      const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
+      
+      const formattedPosts = postData.map(post => ({
+        ...post,
+        media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+        likes_count: post.likes?.[0]?.count ?? 0,
+        comments_count: post.comments?.length ?? 0,
+        liked: likedPostIds.has(post.id),
+        latest_comments: post.comments?.slice(0, 3).map(comment => ({
+          id: comment.id,
+          text: comment.body,
+          userId: comment.user_id,
+          created_at: comment.created_at
+        })) ?? []
+      }));
+
+      setPosts(formattedPosts);
+      setUserMap(userMap);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchLikes = async (postId: number) => {
     const post = posts.find(p => p.id === postId);
@@ -178,14 +185,37 @@ export const useFetchHomeData = () => {
     return data ? data[0] : null;
   };
 
+  const loadMorePosts = () => {
+    setPage(prev => prev + 1);
+  };
+
+  const memoizedFormatPosts = useCallback((postData, likedPostIds) => {
+    return postData.map(post => ({
+      ...post,
+      media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+      likes_count: post.likes?.[0]?.count ?? 0,
+      comments_count: post.comments?.length ?? 0,
+      liked: likedPostIds.has(post.id),
+      latest_comments: post.comments?.slice(0, 3).map(comment => ({
+        id: comment.id,
+        text: comment.body,
+        userId: comment.user_id,
+        created_at: comment.created_at
+      })) ?? []
+    }));
+  }, []);
+
   return {
     activeChallenge,
     posts,
     userMap,
     loading,
+    fetchAllData,
     fetchLikes,
     toggleLike,
     fetchComments,
     addComment,
+    loadMorePosts,
+    hasMore: posts.length >= page * POSTS_PER_PAGE,
   };
 };
