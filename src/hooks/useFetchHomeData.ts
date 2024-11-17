@@ -4,7 +4,6 @@ import { Challenge, Post } from '../types';
 
 const userCache: { [key: string]: { username: string; name: string } } = {};
 
-// Update UserMap interface to remove nested user_metadata
 interface UserMap {
   [key: string]: {
     username: string;
@@ -24,7 +23,7 @@ export const useFetchHomeData = () => {
   const fetchAllData = async (pageNumber = 1, isLoadMore = false) => {
     setLoading(true);
     try {
-      // Fetch posts and user likes in parallel
+
       const [postResponse, likesResponse] = await Promise.all([
         supabase
           .from('post')
@@ -71,44 +70,18 @@ export const useFetchHomeData = () => {
           .select('id, username, name')
           .in('id', uncachedUserIds);
 
-        // console.log('userData', userData);
-
         if (userError) throw userError;
 
         userData?.forEach(user => {
           userCache[user.id] = { username: user.username, name: user.name };
         });
-        const userMap = userData.reduce((acc, user) => {
-          // console.log('user', user);
-          acc[user.id] = {
-            username: user.username || 'Unknown',
-            name: user.name || 'Unknown'
-          };
-          console.log('acc', acc);
-          return acc;
-        }, {} as UserMap);
-
-        const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
-        const formattedPosts = postData.map(post => ({
-          ...post,
-          media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
-          likes_count: post.likes[0]?.count ?? 0,
-          comments_count: post.comments[0]?.count ?? 0,
-        }));
-
-        setPosts(formattedPosts);
-        setUserMap(userMap);
-      } catch (error) {
-        console.error('Error fetching posts and users:', error);
-      } finally {
-        setLoading(false);
       }
 
       // Prepare all data before any state updates
       const userMap = uniqueUserIds.reduce((acc, userId) => {
         acc[userId] = userCache[userId] || { username: 'Unknown', name: 'Unknown' };
         return acc;
-      }, {});
+      }, {} as UserMap);
 
       const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
       

@@ -4,10 +4,7 @@ import Post from '../components/Post';
 import TakeChallenge from '../components/TakeChallenge';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { colors } from '../constants/Colors';
-import { Post as PostType, Challenge } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-
-type UserMap = Record<string, { username: string; name: string }>;
 
 const Home = () => {
   const { user } = useAuth();
@@ -68,7 +65,7 @@ const Home = () => {
         )}
         {posts.map(post => {
           const userData = userMap[post.user_id];
-          console.log('userData!!', userData);
+
           const userMetadata = userData || { username: 'Unknown', name: 'Unknown' };
           return (
             <Post

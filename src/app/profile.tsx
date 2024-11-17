@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Modal } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Modal, RefreshControl } from 'react-native';
 import UserProgress from '../components/UserProgress';
 import Post from '../components/Post';
 import ProfilePic from '../assets/images/profile-pic.png';
@@ -10,7 +10,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 
-// Update type for user profile data
 type UserProfile = {
   username: string;
   name: string;
@@ -19,13 +18,23 @@ type UserProfile = {
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth();
   const { data, loading: progressLoading, error } = useUserProgress();
-  const { posts, userMap, loading: postsLoading } = useFetchHomeData();
+  const { 
+    posts, 
+    userMap, 
+    loading: postsLoading, 
+    hasMore, 
+    loadMorePosts,
+    fetchAllData 
+  } = useFetchHomeData();
   const [userPosts, setUserPosts] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [page, setPage] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
+
       if (!user?.id) return;
       
       const { data: profile, error } = await supabase
@@ -46,12 +55,15 @@ const ProfileScreen: React.FC = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    const loadUserPosts = () => {
-      const filteredPosts = posts.filter(post => post.user_id === user?.id);
-      setUserPosts(filteredPosts);
-    };
-    loadUserPosts();
-  }, [posts, user?.id]);
+    if (posts && user?.id) {
+      const filteredPosts = posts.filter(post => post.user_id === user.id);
+      setUserPosts(prev => page === 1 ? filteredPosts : [...prev, ...filteredPosts]);
+    }
+  }, [posts, user?.id, page]);
+
+  useEffect(() => {
+    fetchAllData(1);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -60,6 +72,13 @@ const ProfileScreen: React.FC = () => {
       Alert.alert('Error signing out', (error as Error).message);
     }
   };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setPage(1);
+    await fetchAllData(1);
+    setRefreshing(false);
+  }, [fetchAllData]);
 
   if (progressLoading || postsLoading || !userProfile) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -70,7 +89,25 @@ const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      }
+      onScroll={({ nativeEvent }) => {
+        const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+        const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+        
+        if (isCloseToBottom && !postsLoading && hasMore) {
+          setPage(prev => prev + 1);
+          loadMorePosts();
+        }
+      }}
+      scrollEventThrottle={400}
+    >
       <View style={styles.profileHeader}>
         <View style={styles.headerLeft}>
           <Image source={ProfilePic} style={styles.avatar} />
@@ -122,6 +159,11 @@ const ProfileScreen: React.FC = () => {
           userMap={userMap}
         />
       ))}
+      {postsLoading && (
+        <View style={{ padding: 20, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color="#0000ff" />
+        </View>
+      )}
     </ScrollView>
   );
 };
