@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { Text } from './StyledText';
 import * as VideoThumbnails from 'expo-video-thumbnails';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ChallengeCardProps {
   title: string;
@@ -20,6 +21,7 @@ const markdownStyles = StyleSheet.create({
 });
 
 const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => {
+  const { user } = useAuth();
   const [modalVisible, setModalVisible] = React.useState(false);
   const [uploadedMediaId, setUploadedMediaId] = React.useState<number | null>(null);
   const [postText, setPostText] = useState('');
@@ -68,12 +70,17 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      alert('You must be logged in to submit a challenge.');
+      return;
+    }
+
     try {
       const { error: postError } = await supabase
         .from('post')
         .insert([
           {
-            user_id: '4e723784-b86d-44a2-9ff3-912115398421',
+            user_id: user.id,
             media_id: uploadedMediaId,
             body: postText,
             featured: false
@@ -88,7 +95,6 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
       setMediaPreview(null);
       fadeOut();
 
-      // Replace setShowNotification(true) with the new animation
       showNotificationWithAnimation();
 
     } catch (error) {

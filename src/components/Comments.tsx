@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Pressable, StyleSheet, FlatList } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Comment {
   id: number;
@@ -9,13 +10,23 @@ interface Comment {
   userId: string;
 }
 
+interface UserMap {
+  [key: string]: {
+    user_metadata: {
+      username: string;
+      name: string;
+    }
+  }
+}
+
 interface CommentsProps {
   initialComments: Comment[];
   onAddComment: (comment: { text: string; userId: string }) => void;
-  userMap: { [key: string]: { username: string; name: string } };
+  userMap: UserMap;
 }
 
 const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, userMap }) => {
+  const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState(initialComments);
 
@@ -24,8 +35,12 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, user
   }, [initialComments]);
 
   const handleAddComment = () => {
-    if (newComment.trim()) {
-      const newCommentObj = { id: Date.now(), text: newComment, userId: 'placeholder-user-id' };
+    if (newComment.trim() && user) {
+      const newCommentObj = {
+        id: Date.now(),
+        text: newComment,
+        userId: user.id
+      };
       setComments(prevComments => [...prevComments, newCommentObj]);
       onAddComment(newCommentObj);
       setNewComment('');
@@ -40,7 +55,7 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, user
         renderItem={({ item }) => (
           <Text style={styles.comment}>
             <Text style={styles.commentUser}>
-              {userMap[item.userId]?.username || 'Unknown'}:
+              {userMap[item.userId]?.user_metadata.username || 'Unknown'}:
             </Text> {item.text}
           </Text>
         )}
@@ -53,7 +68,14 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, user
           placeholderTextColor="#888"
           style={styles.input}
         />
-        <Pressable onPress={handleAddComment} style={styles.postButton}>
+        <Pressable 
+          onPress={handleAddComment} 
+          style={[
+            styles.postButton,
+            !user && styles.postButtonDisabled
+          ]}
+          disabled={!user}
+        >
           <Text style={styles.postButtonText}>Post</Text>
         </Pressable>
       </View>
@@ -99,6 +121,9 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: 'bold',
   },
+  postButtonDisabled: {
+    backgroundColor: colors.light.primary + '80',
+  }
 });
 
 export default Comments;

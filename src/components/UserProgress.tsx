@@ -10,7 +10,7 @@ interface UserProgressProps {
     medium: number;
     hard: number;
   };
-  weekData: { week: number; hasStreak: boolean; challengeId: number; startDate: string; endDate: string; isActive: boolean; isCompleted: boolean }[];
+  weekData: WeekData[];
 }
 
 interface WeekData {
