@@ -13,6 +13,8 @@ import { supabase } from '../lib/supabase';
 type UserProfile = {
   username: string;
   name: string;
+  profile_media_id: string;
+  profile_image_url?: string;
 };
 
 const ProfileScreen: React.FC = () => {
@@ -34,12 +36,18 @@ const ProfileScreen: React.FC = () => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-
       if (!user?.id) return;
       
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('username, name')
+        .select(`
+          username, 
+          name,
+          profile_media_id,
+          media!profiles_profile_media_id_fkey (
+            file_path
+          )
+        `)
         .eq('id', user.id)
         .single();
 
@@ -48,7 +56,12 @@ const ProfileScreen: React.FC = () => {
         return;
       }
 
-      setUserProfile(profile);
+      setUserProfile({
+        username: profile.username,
+        name: profile.name,
+        profile_media_id: profile.profile_media_id,
+        profile_image_url: profile.media?.file_path
+      });
     };
 
     fetchUserProfile();
@@ -110,7 +123,10 @@ const ProfileScreen: React.FC = () => {
     >
       <View style={styles.profileHeader}>
         <View style={styles.headerLeft}>
-          <Image source={ProfilePic} style={styles.avatar} />
+          <Image 
+            source={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic} 
+            style={styles.avatar} 
+          />
           <View style={styles.userInfo}>
             <Text style={styles.username}>{userProfile.name}</Text>
             <Text style={styles.userTitle}>Comfort Zone Challenger</Text>

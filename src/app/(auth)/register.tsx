@@ -16,11 +16,8 @@ import { Alert } from 'react-native';
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(true);
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,8 +29,8 @@ export default function RegisterScreen() {
     setIsEmailValid(text === '' || isValidEmail(text));
   };
 
-  const handleRegister = async () => {
-    if (!email || !password || !username || !displayName) {
+  const handleNextStep = async () => {
+    if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -43,19 +40,11 @@ export default function RegisterScreen() {
       return;
     }
 
-    try {
-      setLoading(true);
-      await signUp(email, password, username, displayName);
-      Alert.alert(
-        'Registration Successful', 
-        'Please check your email to verify your account.'
-      );
-      router.replace('/login');
-    } catch (error) {
-      Alert.alert('Error', (error as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to next step with credentials
+    router.push({
+      pathname: '/register-profile',
+      params: { email, password }
+    });
   };
 
   return (
@@ -64,13 +53,10 @@ export default function RegisterScreen() {
       style={styles.container}
     >
       <View style={styles.form}>
-        <Text style={styles.requiredText}>* All fields are required</Text>
+        <Text style={styles.requiredText}>Step 1: Account Details</Text>
         
         <TextInput
-          style={[
-            styles.input,
-            !isEmailValid && styles.inputError
-          ]}
+          style={[styles.input, !isEmailValid && styles.inputError]}
           placeholder="Email*"
           placeholderTextColor="#666"
           value={email}
@@ -84,35 +70,18 @@ export default function RegisterScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Username*"
-          placeholderTextColor="#666"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Display Name*"
-          placeholderTextColor="#666"
-          value={displayName}
-          onChangeText={setDisplayName}
-        />
-        <TextInput
-          style={styles.input}
           placeholder="Password*"
           placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
+
         <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={handleRegister}
-          disabled={loading}
+          style={styles.button}
+          onPress={handleNextStep}
         >
-          <Text style={styles.buttonText}>
-            {loading ? 'Creating Account...' : 'Register'}
-          </Text>
+          <Text style={styles.buttonText}>Next</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
