@@ -369,7 +369,7 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
         {data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
-        <Text style={styles.pastChallengesTitle}>Your Past Challenges</Text>
+        <Text style={styles.pastChallengesTitle}>Your Posts</Text>
         {userPosts.map((post) => (
           <Post
             key={post.id}
