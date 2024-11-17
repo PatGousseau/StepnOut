@@ -180,6 +180,18 @@ export const useFetchHomeData = () => {
         return;
       }
 
+      // Get post owner's ID for notification
+      const { data: postData, error: postError } = await supabase
+        .from('post')
+        .select('user_id')
+        .eq('id', postId)
+        .single();
+
+      if (postError) {
+        console.error('Error fetching post data:', postError);
+        return;
+      }
+
       if (count > 0 && data && data.length > 0) {
         const { error: deleteError } = await supabase
           .from('likes')
@@ -193,8 +205,28 @@ export const useFetchHomeData = () => {
           .from('likes')
           .insert([{ post_id: postId, user_id: userId, comment_id: null }]);
 
-        if (insertError) console.error('Error adding like:', insertError);
-        else return { liked: true };
+        if (insertError) {
+          console.error('Error adding like:', insertError);
+        } else {
+          // Don't create notification if user likes their own post
+          if (postData.user_id !== userId) {
+            // Create notification for post owner
+            const { error: notificationError } = await supabase
+              .from('notifications')
+              .insert([{
+                user_id: postData.user_id,
+                trigger_user_id: userId,
+                post_id: postId,
+                action_type: 'like',
+                is_read: false
+              }]);
+
+            if (notificationError) {
+              console.error('Error creating notification:', notificationError);
+            }
+          }
+          return { liked: true };
+        }
       }
     } catch (err) {
       console.error("Unexpected error in toggleLike:", err);
