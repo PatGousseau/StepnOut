@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
+import { useNotifications } from '../hooks/useNotifications';
+import NotificationSidebar from './NotificationSidebar';
 
 const Header = () => {
-  const notificationCount = 3;
+  const { unreadCount } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleSidebarClose = () => {
+    setShowNotifications(false);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -14,15 +21,23 @@ const Header = () => {
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
         <Text style={styles.stepnOut}>Stepn Out</Text>
-        <TouchableOpacity style={styles.notificationIcon}>
+        <TouchableOpacity 
+          style={styles.notificationIcon}
+          onPress={() => setShowNotifications(true)}
+        >
           <Ionicons name="notifications" size={28} color={colors.light.primary} />
-          {notificationCount > 0 && (
+          {unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{notificationCount}</Text>
+              <Text style={styles.badgeText}>{unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
+
+      <NotificationSidebar 
+        visible={showNotifications}
+        onClose={handleSidebarClose}
+      />
     </SafeAreaView>
   );
 };
