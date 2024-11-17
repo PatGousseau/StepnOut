@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Modal, RefreshControl } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Modal, RefreshControl, TextInput } from 'react-native';
 import UserProgress from '../components/UserProgress';
 import Post from '../components/Post';
 import ProfilePic from '../assets/images/profile-pic.png';
@@ -37,6 +37,9 @@ const ProfileScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+  const [editedUsername, setEditedUsername] = useState('');
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -172,8 +175,51 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  // Add this function to handle profile updates
+  const handleSaveProfile = async () => {
+    try {
+      // Check if username is already taken (only if username changed)
+      if (editedUsername !== userProfile?.username) {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', editedUsername)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
+
+        if (existingUser) {
+          throw new Error('Username is already taken');
+        }
+      }
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          username: editedUsername,
+          name: editedName 
+        })
+        .eq('id', user?.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setUserProfile(prev => ({
+        ...prev!,
+        username: editedUsername,
+        name: editedName
+      }));
+      setIsEditing(false);
+    } catch (error) {
+      Alert.alert('Error', (error as Error).message);
+    }
+  };
+
   if (progressLoading || postsLoading || !userProfile) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return <ActivityIndicator size="large" color={colors.light.primary} />;
   }
 
   if (error) {
@@ -181,49 +227,51 @@ const ProfileScreen: React.FC = () => {
   }
 
   return (
-    <>
-      <TouchableOpacity 
-        activeOpacity={1} 
-        style={StyleSheet.absoluteFill} 
-        onPress={handlePressOutside}
-        pointerEvents={showMenu ? "auto" : "none"}
-      >
-        <ScrollView 
-          style={styles.container}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-            />
+    <View style={{ flex: 1 }}>
+      {showMenu && (
+        <TouchableOpacity 
+          activeOpacity={1} 
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]} 
+          onPress={handlePressOutside}
+        />
+      )}
+      <ScrollView 
+        style={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+          const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+          
+          if (isCloseToBottom && !postsLoading && hasMore) {
+            setPage(prev => prev + 1);
+            loadMorePosts();
           }
-          onScroll={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-            
-            if (isCloseToBottom && !postsLoading && hasMore) {
-              setPage(prev => prev + 1);
-              loadMorePosts();
-            }
-          }}
-          scrollEventThrottle={400}
-        >
-          <View style={styles.profileHeader}>
-            <View style={styles.headerLeft}>
-              <TouchableOpacity 
-                onPress={() => setShowFullImage(true)}
-                style={styles.avatarContainer}
-                disabled={imageUploading}
-              >
-                {imageUploading ? (
-                  <View style={[styles.avatar, styles.avatarLoader]}>
-                    <ActivityIndicator size="small" color={colors.light.primary} />
-                  </View>
-                ) : (
-                  <Image 
-                    source={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic} 
-                    style={styles.avatar} 
-                  />
-                )}
+        }}
+        scrollEventThrottle={400}
+      >
+        <View style={styles.profileHeader}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity 
+              onPress={() => setShowFullImage(true)}
+              style={styles.avatarContainer}
+              disabled={imageUploading}
+            >
+              {imageUploading ? (
+                <View style={[styles.avatar, styles.avatarLoader]}>
+                  <ActivityIndicator size="small" color={colors.light.primary} />
+                </View>
+              ) : (
+                <Image 
+                  source={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic} 
+                  style={styles.avatar} 
+                />
+              )}
+              {isEditing && (
                 <TouchableOpacity 
                   style={styles.editAvatarButton}
                   onPress={handleUpdateProfilePicture}
@@ -231,80 +279,119 @@ const ProfileScreen: React.FC = () => {
                 >
                   <FontAwesome name="pencil" size={14} color={colors.light.primary} />
                 </TouchableOpacity>
-              </TouchableOpacity>
-              <View style={styles.userInfo}>
-                <Text style={styles.username}>{userProfile.name}</Text>
-                <Text style={styles.userTitle}>{userProfile.username}</Text>
-              </View>
-            </View>
-            <View style={styles.headerButtons}>
-              <View>
-                <TouchableOpacity 
-                  style={styles.settingsButton}
-                  onPress={(e) => {
-                    e.stopPropagation(); // Prevent the click from bubbling up
-                    setShowMenu(!showMenu);
-                  }}
-                >
-                  <Icon name="settings-outline" size={24} color="#333" />
-                </TouchableOpacity>
-                
-                {showMenu && (
-                  <View style={styles.menuContainer}>
+              )}
+            </TouchableOpacity>
+            <View style={styles.userInfo}>
+              {isEditing ? (
+                <View style={styles.userInfo}>
+                  <View style={styles.editInputContainer}>
+                    <TextInput
+                      style={[styles.username, styles.editableText]}
+                      value={editedName}
+                      onChangeText={setEditedName}
+                      placeholder="Name"
+                      maxLength={16}
+                    />
+                    <TextInput
+                      style={[styles.userTitle, styles.editableText]}
+                      value={editedUsername}
+                      onChangeText={setEditedUsername}
+                      placeholder="Username"
+                      maxLength={16}
+                    />
+                  </View>
+                  <View style={styles.editButtonsContainer}>
                     <TouchableOpacity 
-                      style={styles.menuItem}
-                      onPress={() => {
-                        setShowMenu(false);
-                        console.log('Navigate to edit profile');
-                      }}
+                      style={styles.saveButton}
+                      onPress={handleSaveProfile}
                     >
-                      <View style={styles.menuItemContent}>
-                        <Icon name="pencil-outline" size={16} color={colors.light.primary} />
-                        <Text style={styles.menuOptionText}>Edit Profile</Text>
-                      </View>
+                      <Text style={styles.saveButtonText}>Save</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={styles.menuItem}
-                      onPress={() => {
-                        setShowMenu(false);
-                        handleSignOut();
-                      }}
+                      style={styles.cancelButton}
+                      onPress={() => setIsEditing(false)}
                     >
-                      <View style={styles.menuItemContent}>
-                        <Icon name="log-out-outline" size={16} color={colors.light.primary} />
-                        <Text style={styles.menuOptionText}>Sign Out</Text>
-                      </View>
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
                   </View>
-                )}
-              </View>
+                </View>
+              ) : (
+                <View style={styles.userInfoStacked}>
+                  <Text style={styles.username}>{userProfile.name}</Text>
+                  <Text style={styles.userTitle}>{userProfile.username}</Text>
+                </View>
+              )}
             </View>
           </View>
-          {data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
-          <Text style={styles.pastChallengesTitle}>Your Past Challenges</Text>
-          {userPosts.map((post) => (
-            <Post
-              key={post.id}
-              profilePicture={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic}
-              name={userProfile.name}
-              username={userProfile.username}
-              text={post.body}
-              media={post.media_file_path ? { uri: post.media_file_path } : undefined}
-              likes={post.likes || 0}
-              comments={post.comments || 0}
-              postId={post.id}
-              userId={user?.id}
-              setPostCounts={() => {}}
-              userMap={userMap}
-            />
-          ))}
-          {postsLoading && (
-            <View style={{ padding: 20, alignItems: 'center' }}>
-              <ActivityIndicator size="small" color="#0000ff" />
+          <View style={styles.headerButtons}>
+            <View>
+              <TouchableOpacity 
+                style={styles.settingsButton}
+                onPress={(e) => {
+                  e.stopPropagation(); // Prevent the click from bubbling up
+                  setShowMenu(!showMenu);
+                }}
+              >
+                <Icon name="settings-outline" size={24} color="#333" />
+              </TouchableOpacity>
+              
+              {showMenu && (
+                <View style={styles.menuContainer}>
+                  <TouchableOpacity 
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      setIsEditing(true);
+                      setEditedName(userProfile?.name || '');
+                      setEditedUsername(userProfile?.username || '');
+                    }}
+                  >
+                    <View style={styles.menuItemContent}>
+                      <Icon name="pencil-outline" size={16} color={colors.light.primary} />
+                      <Text style={styles.menuOptionText}>Edit Profile</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setShowMenu(false);
+                      handleSignOut();
+                    }}
+                  >
+                    <View style={styles.menuItemContent}>
+                      <Icon name="log-out-outline" size={16} color={colors.light.primary} />
+                      <Text style={styles.menuOptionText}>Sign Out</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-          )}
-        </ScrollView>
-      </TouchableOpacity>
+          </View>
+        </View>
+        {data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
+        <Text style={styles.pastChallengesTitle}>Your Past Challenges</Text>
+        {userPosts.map((post) => (
+          <Post
+            key={post.id}
+            profilePicture={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic}
+            name={userProfile.name}
+            username={userProfile.username}
+            text={post.body}
+            media={post.media_file_path ? { uri: post.media_file_path } : undefined}
+            likes={post.likes || 0}
+            comments={post.comments || 0}
+            postId={post.id}
+            userId={user?.id}
+            setPostCounts={() => {}}
+            userMap={userMap}
+          />
+        ))}
+        {postsLoading && (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={colors.light.primary} />
+          </View>
+        )}
+      </ScrollView>
 
       <Modal
         visible={showFullImage}
@@ -325,7 +412,7 @@ const ProfileScreen: React.FC = () => {
           />
         </View>
       </Modal>
-    </>
+    </View>
   );
 };
 
@@ -351,7 +438,13 @@ const styles = StyleSheet.create({
     borderRadius: 40,
   },
   userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  userInfoStacked: {
     marginLeft: 16,
+    gap: 4,
   },
   username: {
     fontSize: 24,
@@ -372,16 +465,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-  },
-  editButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   menuOptionText: {
     fontSize: 14,
@@ -448,6 +531,71 @@ const styles = StyleSheet.create({
   avatarLoader: {
     backgroundColor: '#e1e1e1',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.light.primary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 8,
+  },
+  editButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editButtonEditProfile: {
+    backgroundColor: colors.light.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    flex: 1,
+    alignItems: 'center',
+  },
+  editButtonTextEditProfile: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  editInputContainer: {
+    gap: 2,
+  },
+  editableText: {
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: colors.light.primary,
+    marginLeft: 7,
+  },
+  editButtonsContainer: {
+    flexDirection: 'column',
+    gap: 4,
+    marginTop: 4,
+    marginBottom: -24,
+  },
+  saveButton: {
+    backgroundColor: colors.light.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  cancelButtonText: {
+    color: colors.light.primary,
+    fontWeight: '500',
+    fontSize: 14,
+    textAlign: 'center',
+    paddingBottom: 12,
+  },
+  cancelButton: {
+    paddingBottom: 12,
     alignItems: 'center',
   },
 });
