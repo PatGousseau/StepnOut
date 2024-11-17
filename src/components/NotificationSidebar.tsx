@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Modal,
@@ -7,6 +7,9 @@ import {
   TouchableWithoutFeedback,
   FlatList,
   Dimensions,
+  SafeAreaView,
+  Platform,
+  Animated,
 } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -19,8 +22,51 @@ interface NotificationSidebarProps {
   onClose: () => void;
 }
 
+const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.8;
+
 const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onClose }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const translateX = useRef(new Animated.Value(SIDEBAR_WIDTH)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
   const { notifications, markAsRead, markAllAsRead } = useNotifications();
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      translateX.setValue(SIDEBAR_WIDTH);
+      opacity.setValue(0);
+      Animated.parallel([
+        Animated.timing(translateX, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
+
+  const handleClose = () => {
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: SIDEBAR_WIDTH,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setModalVisible(false);
+      onClose();
+    });
+  };
 
   const renderNotification = ({ item }) => {
     const isUnread = !item.is_read;
@@ -45,45 +91,56 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 
   return (
     <Modal
-      visible={visible}
+      visible={modalVisible}
       transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      animationType="none"
+      onRequestClose={handleClose}
     >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay} />
-      </TouchableWithoutFeedback>
+      <Animated.View style={[styles.overlay, { opacity }]}>
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.overlayTouch} />
+        </TouchableWithoutFeedback>
+      </Animated.View>
       
-      <View style={styles.sidebar}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Notifications</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color={colors.light.primary} />
-          </TouchableOpacity>
-        </View>
-
-        {notifications.length > 0 ? (
-          <>
-            <TouchableOpacity 
-              style={styles.markAllButton}
-              onPress={markAllAsRead}
-            >
-              <Text style={styles.markAllText}>Mark all as read</Text>
+      <Animated.View 
+        style={[
+          styles.sidebar,
+          {
+            transform: [{ translateX }]
+          }
+        ]}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Notifications</Text>
+            <TouchableOpacity onPress={handleClose}>
+              <Ionicons name="close" size={24} color={colors.light.primary} />
             </TouchableOpacity>
-
-            <FlatList
-              data={notifications}
-              renderItem={renderNotification}
-              keyExtractor={item => item.notification_id.toString()}
-              contentContainerStyle={styles.listContainer}
-            />
-          </>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
           </View>
-        )}
-      </View>
+
+          {notifications.length > 0 ? (
+            <>
+              <TouchableOpacity 
+                style={styles.markAllButton}
+                onPress={markAllAsRead}
+              >
+                <Text style={styles.markAllText}>Mark all as read</Text>
+              </TouchableOpacity>
+
+              <FlatList
+                data={notifications}
+                renderItem={renderNotification}
+                keyExtractor={item => item.notification_id.toString()}
+                contentContainerStyle={styles.listContainer}
+              />
+            </>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No notifications yet</Text>
+            </View>
+          )}
+        </SafeAreaView>
+      </Animated.View>
     </Modal>
   );
 };
@@ -106,11 +163,15 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
+  safeArea: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
+    paddingTop: Platform.OS === 'android' ? 16 : 0,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
