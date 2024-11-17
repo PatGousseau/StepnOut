@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   mediaUploadIcon: {
-    padding: 12,
+    paddingTop: 12,
     alignItems: 'flex-start',
   },
   mediaPreview: {
