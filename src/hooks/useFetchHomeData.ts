@@ -70,8 +70,6 @@ export const useFetchHomeData = () => {
           .select('id, username, name')
           .in('id', uncachedUserIds);
 
-        // console.log('userData', userData);
-
         if (userError) throw userError;
 
         userData?.forEach(user => {
@@ -79,12 +77,10 @@ export const useFetchHomeData = () => {
         });
         
         const userMap = userData.reduce((acc, user) => {
-          // console.log('user', user);
           acc[user.id] = {
             username: user.username || 'Unknown',
             name: user.name || 'Unknown'
           };
-          console.log('acc', acc);
           return acc;
         }, {} as UserMap);
 
