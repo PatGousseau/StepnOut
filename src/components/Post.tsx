@@ -8,7 +8,8 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Dimensions
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import Comments from './Comments'; 
@@ -45,6 +46,9 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
   const [likeCount, setLikeCount] = useState(likes);
   const [commentCount, setCommentCount] = useState(comments); 
   const { toggleLike, fetchLikes, fetchComments, addComment } = useFetchHomeData();
+  const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -146,13 +150,15 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     }
 
     return (
-      <Image
-      source={{ uri: media.uri }}
-      style={styles.mediaContent}
-      cachePolicy="memory-disk" 
-      contentFit="cover"
-      transition={200}
-    />
+      <TouchableOpacity onPress={() => setShowFullScreenImage(true)}>
+        <Image
+          source={{ uri: media.uri }}
+          style={styles.mediaContent}
+          cachePolicy="memory-disk" 
+          contentFit="contain"
+          transition={200}
+        />
+      </TouchableOpacity>
     );
   };
 
@@ -208,6 +214,26 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={showFullScreenImage}
+        onRequestClose={() => setShowFullScreenImage(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowFullScreenImage(false)}>
+          <View style={styles.fullScreenContainer}>
+            <Image
+              source={{ uri: media?.uri }}
+              style={{
+                width: screenWidth,
+                height: screenHeight,
+                contentFit: 'contain',
+              }}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -251,7 +277,7 @@ const styles = StyleSheet.create({
   },
   mediaContent: {
     width: '100%',
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 8,
     marginTop: 8,
   },
@@ -296,6 +322,12 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 14,
     color: colors.light.primary,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
