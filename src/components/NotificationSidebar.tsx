@@ -51,7 +51,6 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 
       (async () => {
         await markAllAsRead();
-        console.log('markAllAsRead completed');
       })();
     }
   }, [visible]);
@@ -76,7 +75,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 
   const renderNotification = ({ item }: { item: Notification }) => {
     const isUnread = !item.is_read;
-    const triggerUserName = item.trigger_profile?.name || item.trigger_profile?.username || 'Unknown User';
+    const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || 'Unknown User';
     
     return (
       <TouchableOpacity 

@@ -73,7 +73,6 @@ export const useNotifications = () => {
       );
       setUnreadCount(prev => {
         const newCount = Math.max(0, prev - 1);
-        console.log('Marked as read, new unreadCount:', newCount);
         return newCount;
       });
     } catch (error) {
@@ -116,7 +115,6 @@ export const useNotifications = () => {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('Received real-time update:', payload.eventType);
             if (payload.eventType === 'INSERT') {
               setNotifications(prev => [payload.new as Notification, ...prev]);
               setUnreadCount(prev => prev + 1);
@@ -129,7 +127,6 @@ export const useNotifications = () => {
                 );
                 const newUnreadCount = updated.filter(n => !n.is_read).length;
                 setUnreadCount(newUnreadCount);
-                console.log('Updated unreadCount after real-time update:', newUnreadCount);
                 return updated;
               });
             }
@@ -146,7 +143,6 @@ export const useNotifications = () => {
 
   // Add memoization to ensure stable reference
   const value = React.useMemo(() => {
-    console.log('useNotifications hook returning value:', { unreadCount });
     return {
       notifications,
       unreadCount,
