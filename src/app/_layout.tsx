@@ -11,7 +11,7 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext';
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
-  const { session, loading } = useAuth();
+  const { session, loading, isAdmin } = useAuth();
 
   useEffect(() => {
     const hideSplash = async () => {
@@ -79,7 +79,7 @@ function RootLayoutNav() {
         <Tabs.Screen
           name="(auth)"
           options={{
-            href: null, // This will hide the tab
+            href: null, // This hides the tab
           }}
         />
         <Tabs.Screen
@@ -103,6 +103,7 @@ function RootLayoutNav() {
         <Tabs.Screen
           name="admin"
           options={{
+            href: !isAdmin ? null : undefined, // This will hide the tab when not admin
             title: 'Admin',
             headerStyle: { backgroundColor: colors.light.primary },
             headerTintColor: '#fff',

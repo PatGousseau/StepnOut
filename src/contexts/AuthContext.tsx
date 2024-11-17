@@ -6,6 +6,7 @@ type AuthContextType = {
   session: Session | null;
   user: Session['user'] | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string, username: string, displayName: string, profileMediaId?: number | null) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -16,16 +17,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Listen for auth changes
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        // Fetch admin status
+        const { data } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+        setIsAdmin(data?.is_admin || false);
+      }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
+      if (session?.user) {
+        // Fetch admin status
+        const { data } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+        setIsAdmin(data?.is_admin || false);
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -97,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session, 
       user: session?.user || null, 
       loading, 
+      isAdmin, 
       signUp, 
       signIn, 
       signOut 
