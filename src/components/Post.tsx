@@ -2,7 +2,6 @@ import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
-  Image,
   StyleSheet,
   Modal,
   TouchableOpacity,
@@ -16,6 +15,7 @@ import Comments from './Comments';
 import { colors } from '../constants/Colors';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
+import { Image } from 'expo-image';
 
 interface PostProps {
   profilePicture: any;
@@ -118,6 +118,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
 
   const renderMedia = () => {
     if (!media) return null;
+    
 
     if (isVideo(media)) {
       const player = useVideoPlayer(media.uri);
@@ -132,7 +133,15 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
       );
     }
 
-    return <Image source={media} style={styles.mediaContent} />;
+    return (
+      <Image
+      source={{ uri: media.uri }}
+      style={styles.mediaContent}
+      cachePolicy="memory-disk" 
+      contentFit="cover"
+      transition={200}
+    />
+    );
   };
 
   return (
