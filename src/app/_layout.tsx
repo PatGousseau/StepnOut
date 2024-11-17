@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 import Header from '../components/Header';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -19,6 +20,7 @@ const Layout = () => {
 
   return (
     <>
+      <StatusBar style="dark" />
       <Header />
       <Tabs
         screenOptions={({ route }) => ({
@@ -26,6 +28,7 @@ const Layout = () => {
           tabBarStyle: { 
             paddingBottom: 5,
           },
+          statusBarStyle: 'dark',
           tabBarIcon: ({ color, size }) => {
             let iconName: keyof typeof Ionicons.glyphMap = 'home';
 

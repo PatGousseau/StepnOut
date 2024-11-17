@@ -4,11 +4,11 @@ import Post from '../components/Post';
 import TakeChallenge from '../components/TakeChallenge';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { colors } from '../constants/Colors';
-import { Post as PostType, Challenge } from '../types';
 
 type UserMap = Record<string, { username: string; name: string }>;
 
 const Home = () => {
+  
   const { 
     activeChallenge, 
     posts, 
