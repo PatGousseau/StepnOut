@@ -16,6 +16,7 @@ import { colors } from '../constants/Colors';
 import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
+import { Notification } from '../types';
 
 interface NotificationSidebarProps {
   visible: boolean;
@@ -28,7 +29,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   const [modalVisible, setModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(SIDEBAR_WIDTH)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
 
   useEffect(() => {
     if (visible) {
@@ -47,6 +48,11 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
           useNativeDriver: true,
         }),
       ]).start();
+
+      (async () => {
+        await markAllAsRead();
+        console.log('markAllAsRead completed');
+      })();
     }
   }, [visible]);
 
@@ -68,8 +74,9 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
     });
   };
 
-  const renderNotification = ({ item }) => {
+  const renderNotification = ({ item }: { item: Notification }) => {
     const isUnread = !item.is_read;
+    const triggerUserName = item.trigger_profile?.name || item.trigger_profile?.username || 'Unknown User';
     
     return (
       <TouchableOpacity 
@@ -78,6 +85,8 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
       >
         <View style={styles.notificationContent}>
           <Text style={styles.notificationText}>
+            <Text style={styles.userName}>{triggerUserName}</Text>
+            {' '}
             {item.action_type === 'like' ? 'liked your post' : 'commented on your post'}
           </Text>
           <Text style={styles.timeText}>
@@ -98,7 +107,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
     >
       <Animated.View style={[styles.overlay, { opacity }]}>
         <TouchableWithoutFeedback onPress={handleClose}>
-          <View style={styles.overlayTouch} />
+          <View />
         </TouchableWithoutFeedback>
       </Animated.View>
       
@@ -119,21 +128,12 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
           </View>
 
           {notifications.length > 0 ? (
-            <>
-              <TouchableOpacity 
-                style={styles.markAllButton}
-                onPress={markAllAsRead}
-              >
-                <Text style={styles.markAllText}>Mark all as read</Text>
-              </TouchableOpacity>
-
-              <FlatList
-                data={notifications}
-                renderItem={renderNotification}
-                keyExtractor={item => item.notification_id.toString()}
-                contentContainerStyle={styles.listContainer}
-              />
-            </>
+            <FlatList
+              data={notifications}
+              renderItem={renderNotification}
+              keyExtractor={item => item.notification_id.toString()}
+              contentContainerStyle={styles.listContainer}
+            />
           ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No notifications yet</Text>
@@ -180,15 +180,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.light.primary,
   },
-  markAllButton: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  markAllText: {
-    color: colors.light.primary,
-    textAlign: 'center',
-  },
   listContainer: {
     flexGrow: 1,
   },
@@ -228,6 +219,9 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#666',
     fontSize: 16,
+  },
+  userName: {
+    fontWeight: 'bold',
   },
 });
 

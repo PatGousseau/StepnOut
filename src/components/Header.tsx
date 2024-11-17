@@ -10,6 +10,10 @@ const Header = () => {
   const { unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const handleSidebarClose = () => {
+    setShowNotifications(false);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -32,7 +36,7 @@ const Header = () => {
 
       <NotificationSidebar 
         visible={showNotifications}
-        onClose={() => setShowNotifications(false)}
+        onClose={handleSidebarClose}
       />
     </SafeAreaView>
   );
