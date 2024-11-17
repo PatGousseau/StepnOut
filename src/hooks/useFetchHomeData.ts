@@ -70,11 +70,34 @@ export const useFetchHomeData = () => {
           .select('id, username, name')
           .in('id', uncachedUserIds);
 
+        // console.log('userData', userData);
+
         if (userError) throw userError;
 
         userData?.forEach(user => {
           userCache[user.id] = { username: user.username, name: user.name };
         });
+        
+        const userMap = userData.reduce((acc, user) => {
+          // console.log('user', user);
+          acc[user.id] = {
+            username: user.username || 'Unknown',
+            name: user.name || 'Unknown'
+          };
+          console.log('acc', acc);
+          return acc;
+        }, {} as UserMap);
+
+        const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
+        const formattedPosts = postData.map(post => ({
+          ...post,
+          media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+          likes_count: post.likes[0]?.count ?? 0,
+          comments_count: post.comments[0]?.count ?? 0,
+        }));
+
+        setPosts(formattedPosts);
+        setUserMap(userMap);
       }
 
       // Prepare all data before any state updates
@@ -105,7 +128,7 @@ export const useFetchHomeData = () => {
       setUserMap(prev => ({ ...prev, ...userMap }));
 
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching posts and users:', error);
     } finally {
       setLoading(false);
     }

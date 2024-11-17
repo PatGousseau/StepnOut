@@ -24,6 +24,13 @@ interface UserMap {
   }
 }
 
+interface UserMap {
+  [key: string]: {
+    username: string;
+    name: string;
+  }
+}
+
 interface PostProps {
   profilePicture: any;
   username: string;
