@@ -3,9 +3,10 @@ import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-n
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
+import { useNotifications } from '../hooks/useNotifications';
 
 const Header = () => {
-  const notificationCount = 3;
+  const { unreadCount } = useNotifications();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -16,9 +17,9 @@ const Header = () => {
         <Text style={styles.stepnOut}>Stepn Out</Text>
         <TouchableOpacity style={styles.notificationIcon}>
           <Ionicons name="notifications" size={28} color={colors.light.primary} />
-          {notificationCount > 0 && (
+          {unreadCount > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{notificationCount}</Text>
+              <Text style={styles.badgeText}>{unreadCount}</Text>
             </View>
           )}
         </TouchableOpacity>
