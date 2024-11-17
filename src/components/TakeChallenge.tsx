@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { Text } from './StyledText';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useAuth } from '../contexts/AuthContext';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 interface ChallengeCardProps {
   title: string;
@@ -295,7 +296,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
                 </View>
                 
                 <TouchableOpacity style={styles.mediaUploadButton} onPress={handleMediaUpload}>
-                  {mediaPreview && (
+                  {mediaPreview ? (
                     <View style={styles.mediaPreviewContainer}>
                       {isVideo ? (
                         <View style={styles.videoPreviewContainer}>
@@ -316,6 +317,14 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
                         />
                       )}
                     </View>
+                  ) : (
+                    <>
+                      <View style={styles.mediaIconsContainer}>
+                        <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
+                        <MaterialCommunityIcons name="video" size={24} color={colors.neutral.darkGrey} />
+                      </View>
+                      <Text style={styles.uploadButtonText}>Tap to upload photo or video</Text>
+                    </>
                   )}
                 </TouchableOpacity>
 
