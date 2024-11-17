@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { ChallengeProgress, UserProgress, WeekData } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
-const hardCodedUserId = '4e723784-b86d-44a2-9ff3-912115398421'; // hard coded until auth is built in
-
-const useUserProgress = (): { data: UserProgress | null; loading: boolean; error: string | null } => {
+const useUserProgress = () => {
+  const { user } = useAuth();
   const [data, setData] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!user?.id) {
+      // Clear data and stop loading if there's no authenticated user
+      setData(null);
+      setLoading(false);
+      setError('User not authenticated');
+      return;
+    }
+
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -17,10 +25,8 @@ const useUserProgress = (): { data: UserProgress | null; loading: boolean; error
         // Fetch submissions for the user
         const { data: submissionData, error: submissionError } = await supabase
           .from('submission')
-          .select(`
-            challenge_id
-          `)
-          .eq('user_id', hardCodedUserId);
+          .select(`challenge_id`)
+          .eq('user_id', user.id);
 
         if (submissionError) throw submissionError;
 
@@ -31,7 +37,17 @@ const useUserProgress = (): { data: UserProgress | null; loading: boolean; error
           .eq('is_active', true)
           .single();
 
-        if (activeError) throw activeError;
+        if (activeError) {
+          // If no active challenge is found, set empty data instead of throwing
+          if (activeError.code === 'PGRST116') {
+            setData({ 
+              challengeData: { easy: 0, medium: 0, hard: 0 }, 
+              weekData: [] 
+            });
+            return;
+          }
+          throw activeError;
+        }
 
         // Fetch 8 challenges before the active one
         const { data: previousChallenges, error: challengesError } = await supabase
@@ -53,7 +69,12 @@ const useUserProgress = (): { data: UserProgress | null; loading: boolean; error
         const challengesData = previousChallenges || [];
 
         if (!submissionData || !challengesData) {
-          throw new Error('No data returned from the database');
+          // on error set empty data
+          setData({ 
+            challengeData: { easy: 0, medium: 0, hard: 0 }, 
+            weekData: [] 
+          });
+          return;
         }
 
         const completedChallengeIds = submissionData.map(s => s.challenge_id);
@@ -78,7 +99,7 @@ const useUserProgress = (): { data: UserProgress | null; loading: boolean; error
               difficulty
             )
           `)
-          .eq('user_id', hardCodedUserId);
+          .eq('user_id', user.id);
 
         if (difficultyError) throw difficultyError;
 
@@ -91,14 +112,20 @@ const useUserProgress = (): { data: UserProgress | null; loading: boolean; error
 
         setData({ challengeData, weekData });
       } catch (err) {
-        setError('Failed to fetch progress data', err);
+        console.error('Error fetching progress data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch progress data');
+        // Set empty data on error
+        setData({ 
+          challengeData: { easy: 0, medium: 0, hard: 0 }, 
+          weekData: [] 
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [user?.id]);
 
   return { data, loading, error };
 };

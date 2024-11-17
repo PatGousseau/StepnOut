@@ -17,6 +17,13 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
 import { Image } from 'expo-image';
 
+interface UserMap {
+  [key: string]: {
+    username: string;
+    name: string;
+  }
+}
+
 interface PostProps {
   profilePicture: any;
   username: string;
@@ -26,9 +33,9 @@ interface PostProps {
   likes: number;
   comments: number;
   postId: number;
-  userId: string;
+  userId: string | undefined;
   setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
-  userMap: { [key: string]: { username: string; name: string } };
+  userMap: UserMap;
 }
 
 const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media, likes, comments, postId, userId, setPostCounts, userMap }) => {
@@ -87,6 +94,11 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
   };
 
   const handleAddComment = async (comment: { text: string; userId: string }) => {
+    if (!userId) {
+      console.error("User not authenticated");
+      return;
+    }
+
     if (comment.text.trim()) {
       setCommentList(prevComments => [
         ...prevComments,
