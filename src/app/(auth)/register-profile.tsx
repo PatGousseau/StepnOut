@@ -4,17 +4,18 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  Text,
   KeyboardAvoidingView,
   Platform,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
+import { Text } from '../../components/StyledText';
 
 export default function RegisterProfileScreen() {
   const { email, password } = useLocalSearchParams<{ email: string; password: string }>();
@@ -24,6 +25,7 @@ export default function RegisterProfileScreen() {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -35,6 +37,7 @@ export default function RegisterProfileScreen() {
 
     if (!result.canceled) {
       try {
+        setImageUploading(true);
         const file = result.assets[0];
         const fileName = `profile/${Date.now()}.jpg`;
         
@@ -69,6 +72,8 @@ export default function RegisterProfileScreen() {
       } catch (error) {
         console.error('Error uploading profile image:', error);
         Alert.alert('Error', 'Failed to upload profile image');
+      } finally {
+        setImageUploading(false);
       }
     }
   };
@@ -100,38 +105,53 @@ export default function RegisterProfileScreen() {
       style={styles.container}
     >
       <View style={styles.form}>
-        <Text style={styles.requiredText}>Step 2: Profile Details</Text>
+        <View style={styles.logoContainer}>
+          <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
+          <Text style={styles.stepnOut}>Stepn Out</Text>
+        </View>
 
-        <TouchableOpacity style={styles.imageContainer} onPress={pickImage}>
-          {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
-          ) : (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>Add Photo</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.profileSection}>
+          <TouchableOpacity 
+            style={styles.imageContainer} 
+            onPress={pickImage}
+            disabled={imageUploading}
+          >
+            {imageUploading ? (
+              <View style={styles.placeholderImage}>
+                <ActivityIndicator size="large" color={colors.light.primary} />
+              </View>
+            ) : profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.placeholderImage}>
+                <Text style={styles.placeholderText}>Add Photo</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Username*"
-          placeholderTextColor="#666"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Display Name*"
-          placeholderTextColor="#666"
-          value={displayName}
-          onChangeText={setDisplayName}
-        />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Username*"
+              placeholderTextColor="#666"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Display Name*"
+              placeholderTextColor="#666"
+              value={displayName}
+              onChangeText={setDisplayName}
+            />
+          </View>
+        </View>
 
         <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[styles.button, (loading || imageUploading) && styles.buttonDisabled]}
           onPress={handleRegister}
-          disabled={loading}
+          disabled={loading || imageUploading}
         >
           <Text style={styles.buttonText}>
             {loading ? 'Creating Account...' : 'Complete Registration'}
@@ -155,8 +175,8 @@ const styles = StyleSheet.create({
       input: {
         borderWidth: 1,
         borderColor: '#ddd',
-        padding: 15,
-        marginBottom: 15,
+        padding: 12,
+        marginBottom: 12,
         borderRadius: 5,
       },
       button: {
@@ -170,37 +190,9 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
       },
-      linkButton: {
-        marginTop: 15,
-        alignItems: 'center',
-      },
-      linkText: {
-        color: colors.light.primary,
-      },
       buttonDisabled: {
         opacity: 0.7,
       },
-      requiredText: {
-        color: '#666',
-        marginBottom: 15,
-        fontSize: 14,
-        textAlign: 'center',
-      },
-      inputError: {
-        borderColor: '#ff0000',
-        borderWidth: 1,
-      },
-      errorText: {
-        color: '#ff0000',
-        fontSize: 12,
-        marginTop: -10,
-        marginBottom: 10,
-        marginLeft: 5,
-      },
-  imageContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   profileImage: {
     width: 120,
     height: 120,
@@ -219,5 +211,34 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: '#666',
     fontSize: 14,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: 60,
+    height: 60,
+    marginBottom: 10,
+  },
+  stepnOut: {
+    fontSize: 24,
+    fontFamily: 'PingFangSC-Medium',
+    color: colors.light.primary,
+  },
+  profileSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 15,
+  },
+  imageContainer: {
+    marginBottom: 10,
+    marginRight: 5,
+    justifyContent: 'center',
+  },
+  inputContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
 });

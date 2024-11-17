@@ -12,10 +12,8 @@ interface Comment {
 
 interface UserMap {
   [key: string]: {
-    user_metadata: {
-      username: string;
-      name: string;
-    }
+    username: string;
+    name: string;
   }
 }
 
@@ -55,7 +53,7 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, user
         renderItem={({ item }) => (
           <Text style={styles.comment}>
             <Text style={styles.commentUser}>
-              {userMap[item.userId]?.user_metadata.username || 'Unknown'}:
+              {userMap[item.userId]?.username || 'Unknown'}:
             </Text> {item.text}
           </Text>
         )}

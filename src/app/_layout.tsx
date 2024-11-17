@@ -26,7 +26,10 @@ function RootLayoutNav() {
   useEffect(() => {
     if (!loading && !session) {
       // Redirect to login if not authenticated
-      router.replace('/login');
+      router.replace('/(auth)/login');
+    } else if (!loading && session) {
+      // Redirect to home if authenticated
+      router.replace('/');
     }
   }, [session, loading]);
 
@@ -50,9 +53,10 @@ function RootLayoutNav() {
           tabBarStyle: { 
             paddingTop: 10,
           },
+          tabBarShowLabel: false,
           statusBarStyle: 'dark',
           tabBarIcon: ({ color, size }) => {
-            let iconName: keyof typeof Ionicons.glyphMap = 'home';
+            let iconName: keyof typeof Ionicons.glyphMap;
 
             switch (route.name) {
               case 'index':
@@ -73,9 +77,15 @@ function RootLayoutNav() {
         })}
       >
         <Tabs.Screen
+          name="(auth)"
+          options={{
+            href: null, // This will hide the tab
+          }}
+        />
+        <Tabs.Screen
           name="index"
           options={{
-            title: '',
+            title: 'Home',
             headerStyle: { backgroundColor: colors.light.primary },
             headerTintColor: '#fff',
             headerShown: false,
@@ -84,7 +94,7 @@ function RootLayoutNav() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: '',
+            title: 'Profile',
             headerStyle: { backgroundColor: colors.light.primary },
             headerTintColor: '#fff',
             headerShown: false,
@@ -93,7 +103,7 @@ function RootLayoutNav() {
         <Tabs.Screen
           name="admin"
           options={{
-            title: '',
+            title: 'Admin',
             headerStyle: { backgroundColor: colors.light.primary },
             headerTintColor: '#fff',
             headerShown: false,

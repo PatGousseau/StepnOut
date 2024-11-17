@@ -67,10 +67,14 @@ const Home = () => {
         {posts.map(post => {
           const userData = userMap[post.user_id];
           const userMetadata = userData || { username: 'Unknown', name: 'Unknown' };
+          const profileImageUrl = userData?.profileImageUrl || require('../assets/images/profile-pic.png');
+
+          console.log('profileImageUrl', profileImageUrl);
+
           return (
             <Post
               key={post.id}
-              profilePicture={require('../assets/images/profile-pic.png')}
+              profilePicture={profileImageUrl}
               name={userMetadata.name}
               username={userMetadata.username}
               text={post.body}

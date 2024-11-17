@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseStorageUrl } from '../lib/supabase';
 import { Challenge, Post } from '../types';
 
-const userCache: { [key: string]: { username: string; name: string } } = {};
+const userCache: { [key: string]: { username: string; name: string; profile_media?: { file_path: string } } } = {};
 
 interface UserMap {
   [key: string]: {
     username: string;
     name: string;
+    profile_media?: {
+      file_path: string;
+    };
   }
 }
 
@@ -76,33 +79,40 @@ export const useFetchHomeData = () => {
       if (uncachedUserIds.length > 0) {
         const { data: userData, error: userError } = await supabase
           .from('profiles')
-          .select('id, username, name')
+          .select(`
+            id, 
+            username, 
+            name,
+            profile_media_id,
+            profile_media:media!profiles_profile_media_id_fkey (
+              file_path
+            )
+          `)
           .in('id', uncachedUserIds);
 
         if (userError) throw userError;
 
         userData?.forEach(user => {
-          userCache[user.id] = { username: user.username, name: user.name };
+          userCache[user.id] = { 
+            username: user.username, 
+            name: user.name,
+            profile_media: user.profile_media,
+            profileImageUrl: user.profile_media?.file_path 
+              ? `${supabaseStorageUrl}/${user.profile_media.file_path}`
+              : null
+          };
         });
         
-        const userMap = userData.reduce((acc, user) => {
+        const newUserMap = userData.reduce((acc, user) => {
           acc[user.id] = {
             username: user.username || 'Unknown',
-            name: user.name || 'Unknown'
+            name: user.name || 'Unknown',
+            profile_media: user.profile_media
           };
           return acc;
         }, {} as UserMap);
 
-        const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
-        const formattedPosts = postData.map(post => ({
-          ...post,
-          media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
-          likes_count: post.likes[0]?.count ?? 0,
-          comments_count: post.comments[0]?.count ?? 0,
-        }));
-
-        setPosts(formattedPosts);
-        setUserMap(userMap);
+        setUserMap(prev => ({ ...prev, ...newUserMap }));
       }
 
       // Prepare all data before any state updates
@@ -111,11 +121,9 @@ export const useFetchHomeData = () => {
         return acc;
       }, {} as UserMap);
 
-      const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
-      
       const formattedPosts = postData.map(post => ({
         ...post,
-        media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+        media_file_path: post.media ? `${supabaseStorageUrl}/${post.media.file_path}` : null,
         likes_count: post.likes?.[0]?.count ?? 0,
         comments_count: post.comments?.length ?? 0,
         liked: likedPostIds.has(post.id),
@@ -234,7 +242,7 @@ export const useFetchHomeData = () => {
   const memoizedFormatPosts = useCallback((postData, likedPostIds) => {
     return postData.map(post => ({
       ...post,
-      media_file_path: post.media ? `${BASE_URL}/${post.media.file_path}` : null,
+      media_file_path: post.media ? `${supabaseStorageUrl}/${post.media.file_path}` : null,
       likes_count: post.likes?.[0]?.count ?? 0,
       comments_count: post.comments?.length ?? 0,
       liked: likedPostIds.has(post.id),

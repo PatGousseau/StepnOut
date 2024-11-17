@@ -68,19 +68,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
     if (!user) throw new Error('No user returned after signup');
 
-    // Create profile with optional profile_media_id
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([
-        {
-          id: user.id,
-          username,
-          name: displayName,
-          profile_media_id: profileMediaId || null,
-        },
-      ]);
+    // If a profile picture was uploaded, update the profile
+    if (profileMediaId) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_media_id: profileMediaId })
+        .eq('id', user.id);
 
-    if (profileError) throw profileError;
+      if (updateError) throw updateError;
+    }
   };
 
   const signIn = async (email: string, password: string) => {
