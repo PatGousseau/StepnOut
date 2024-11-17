@@ -1,5 +1,5 @@
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   StyleSheet,
@@ -9,7 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Dimensions
+  Dimensions,
+  PanResponder,
+  Animated
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import Comments from './Comments'; 
@@ -49,6 +51,10 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
+  const [animationState, setAnimationState] = useState<{
+    translateY: Animated.Value;
+    opacity: Animated.Value;
+  } | null>(null);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -79,6 +85,17 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
       fetchCommentData();
     }
   }, [postId, userMap]);
+
+  useEffect(() => {
+    if (showFullScreenImage) {
+      setAnimationState({
+        translateY: new Animated.Value(0),
+        opacity: new Animated.Value(1),
+      });
+    } else {
+      setAnimationState(null);
+    }
+  }, [showFullScreenImage]);
 
   const handleLikeToggle = async () => {
     if (!postId || !userId) {
@@ -150,7 +167,10 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     }
 
     return (
-      <TouchableOpacity onPress={() => setShowFullScreenImage(true)}>
+      <TouchableOpacity 
+        onPress={() => setShowFullScreenImage(true)}
+        activeOpacity={1}
+      >
         <Image
           source={{ uri: media.uri }}
           style={styles.mediaContent}
@@ -161,6 +181,45 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
       </TouchableOpacity>
     );
   };
+
+  const panResponder = useMemo(() => {
+    if (!animationState) return PanResponder.create({ onStartShouldSetPanResponder: () => false });
+
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        animationState.translateY.setValue(gestureState.dy);
+        animationState.opacity.setValue(1 - Math.abs(gestureState.dy) / (screenHeight / 2));
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (Math.abs(gestureState.dy) > 150) {
+          Animated.parallel([
+            Animated.timing(animationState.translateY, {
+              toValue: gestureState.dy > 0 ? screenHeight : -screenHeight,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(animationState.opacity, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => setShowFullScreenImage(false));
+        } else {
+          Animated.parallel([
+            Animated.spring(animationState.translateY, {
+              toValue: 0,
+              useNativeDriver: true,
+            }),
+            Animated.spring(animationState.opacity, {
+              toValue: 1,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+    });
+  }, [animationState]);
 
   return (
     <View style={styles.container}>
@@ -221,18 +280,30 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
         visible={showFullScreenImage}
         onRequestClose={() => setShowFullScreenImage(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowFullScreenImage(false)}>
-          <View style={styles.fullScreenContainer}>
-            <Image
-              source={{ uri: media?.uri }}
-              style={{
-                width: screenWidth,
-                height: screenHeight,
-                contentFit: 'contain',
-              }}
-            />
-          </View>
-        </TouchableWithoutFeedback>
+        <View style={styles.fullScreenContainer}>
+          {animationState && (
+            <Animated.View
+              style={[
+                styles.fullScreenImageWrapper,
+                {
+                  transform: [{ translateY: animationState.translateY }],
+                  opacity: animationState.opacity,
+                },
+              ]}
+              {...panResponder.panHandlers}
+            >
+              <Image
+                source={{ uri: media?.uri }}
+                style={{
+                  width: screenWidth,
+                  height: screenHeight,
+                }}
+                contentFit="contain"
+                transition={200}
+              />
+            </Animated.View>
+          )}
+        </View>
       </Modal>
     </View>
   );
@@ -326,6 +397,12 @@ const styles = StyleSheet.create({
   fullScreenContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImageWrapper: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
