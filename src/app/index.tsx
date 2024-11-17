@@ -62,14 +62,13 @@ const Home = () => {
           <TakeChallenge 
             title={activeChallenge.title} 
             description={activeChallenge.description} 
+            challengeId={activeChallenge.id}
           />
         )}
         {posts.map(post => {
           const userData = userMap[post.user_id];
           const userMetadata = userData || { username: 'Unknown', name: 'Unknown' };
           const profileImageUrl = userData?.profileImageUrl || require('../assets/images/profile-pic.png');
-
-          console.log('profileImageUrl', profileImageUrl);
 
           return (
             <Post

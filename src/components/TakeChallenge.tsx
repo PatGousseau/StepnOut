@@ -13,6 +13,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 interface ChallengeCardProps {
   title: string;
   description: string;
+  challengeId: number;
 }
 
 const markdownStyles = StyleSheet.create({
@@ -21,7 +22,7 @@ const markdownStyles = StyleSheet.create({
   },
 });
 
-const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => {
+const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description, challengeId }) => {
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = React.useState(false);
   const [uploadedMediaId, setUploadedMediaId] = React.useState<number | null>(null);
@@ -33,6 +34,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
   const [isVideo, setIsVideo] = useState(false);
   const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
   const [contentHeight, setContentHeight] = useState(0);
+
+  console.log('challengeId', challengeId);
 
   const fadeIn = () => {
     setModalVisible(true);
@@ -77,7 +80,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
     }
 
     try {
-      const { error: postError } = await supabase
+      const { data: postData, error: postError } = await supabase
         .from('post')
         .insert([
           {
@@ -86,11 +89,26 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
             body: postText,
             featured: false
           }
-        ]);
+        ])
+        .select()
+        .single();
 
       if (postError) throw postError;
 
-      // Clear form and close modal
+      const { error: submissionError } = await supabase
+        .from('submission')
+        .insert([
+          {
+            user_id: user.id,
+            challenge_id: challengeId,
+            post_id: postData.id,
+            media_id: uploadedMediaId,
+            body: postText
+          }
+        ]);
+
+      if (submissionError) throw submissionError;
+
       setPostText('');
       setUploadedMediaId(null);
       setMediaPreview(null);
@@ -99,8 +117,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description }) => 
       showNotificationWithAnimation();
 
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert('Error creating post.');
+      console.error('Error creating submission:', error);
+      alert('Error submitting challenge.');
     }
   };
 
