@@ -1,22 +1,44 @@
 import React, { useEffect } from 'react';
-import { Tabs } from 'expo-router';
+import { Slot, Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons'; 
 import { colors } from '../constants/Colors'; 
 import Header from '../components/Header';
 import * as SplashScreen from 'expo-splash-screen';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-const Layout = () => {
+function RootLayoutNav() {
+  const { session, loading } = useAuth();
+
   useEffect(() => {
     const hideSplash = async () => {
       await SplashScreen.hideAsync();
     };
     
-    hideSplash();
-  }, []);
+    if (!loading) {
+      hideSplash();
+    }
+  }, [loading]);
 
+  useEffect(() => {
+    if (!loading && !session) {
+      // Redirect to login if not authenticated
+      router.replace('/login');
+    }
+  }, [session, loading]);
+
+  if (loading) {
+    return null;
+  }
+
+  // If not authenticated, show auth screens
+  if (!session) {
+    return <Slot />;
+  }
+
+  // If authenticated, show main app tabs
   return (
     <>
       <Header />
@@ -24,7 +46,7 @@ const Layout = () => {
         screenOptions={({ route }) => ({
           tabBarActiveTintColor: colors.light.primary,
           tabBarStyle: { 
-            paddingBottom: 5,
+            paddingTop: 10,
           },
           tabBarIcon: ({ color, size }) => {
             let iconName: keyof typeof Ionicons.glyphMap = 'home';
@@ -77,6 +99,12 @@ const Layout = () => {
       </Tabs>
     </>
   );
-};
+}
 
-export default Layout;
+export default function Layout() {
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
+}

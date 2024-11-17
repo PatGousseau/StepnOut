@@ -5,10 +5,10 @@ import TakeChallenge from '../components/TakeChallenge';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { colors } from '../constants/Colors';
 import { Post as PostType, Challenge } from '../types';
-
-type UserMap = Record<string, { username: string; name: string }>;
+import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
+  const { user } = useAuth();
   const { activeChallenge, posts, userMap, loading } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
 
@@ -37,18 +37,20 @@ const Home = () => {
           />
         )}
         {posts.map(post => {
-          const user = userMap[post.user_id] || { username: 'Unknown', name: 'Unknown' };
+          const userData = userMap[post.user_id];
+          console.log('userData!!', userData);
+          const userMetadata = userData || { username: 'Unknown', name: 'Unknown' };
           return (
             <Post
               key={post.id}
               profilePicture={require('../assets/images/profile-pic.png')}
-              name={user.name}
-              username={user.username}
+              name={userMetadata.name}
+              username={userMetadata.username}
               text={post.body}
               likes={postCounts[post.id]?.likes ?? 0}
               comments={postCounts[post.id]?.comments ?? 0}
               postId={post.id}
-              userId="4e723784-b86d-44a2-9ff3-912115398421"
+              userId={user?.id}
               setPostCounts={setPostCounts}
               media={post.media_file_path ? { uri: post.media_file_path } : undefined}
               userMap={userMap} 

@@ -2,10 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Challenge, Post } from '../types';
 
+// Update UserMap interface to remove nested user_metadata
+interface UserMap {
+  [key: string]: {
+    username: string;
+    name: string;
+  }
+}
+
 export const useFetchHomeData = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [userMap, setUserMap] = useState<{ [key: string]: { username: string; name: string } }>({});
+  const [userMap, setUserMap] = useState<UserMap>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,16 +50,23 @@ export const useFetchHomeData = () => {
 
         const uniqueUserIds = [...new Set(postData.map(post => post.user_id))];
         const { data: userData, error: userError } = await supabase
-          .from('users')
+          .from('profiles')
           .select('id, username, name')
           .in('id', uniqueUserIds);
+
+        // console.log('userData', userData);
 
         if (userError) throw userError;
 
         const userMap = userData.reduce((acc, user) => {
-          acc[user.id] = { username: user.username, name: user.name };
+          // console.log('user', user);
+          acc[user.id] = {
+            username: user.username || 'Unknown',
+            name: user.name || 'Unknown'
+          };
+          console.log('acc', acc);
           return acc;
-        }, {});
+        }, {} as UserMap);
 
         const BASE_URL = 'https://kiplxlahalqyahstmmjg.supabase.co/storage/v1/object/public/challenge-uploads';
         const formattedPosts = postData.map(post => ({
@@ -114,7 +129,7 @@ export const useFetchHomeData = () => {
     return data || [];
   };
 
-  const toggleLike = async (postId, userId) => {
+  const toggleLike = async (postId: number, userId: string) => {
     try {
       const { data, count, error } = await supabase
         .from('likes')
