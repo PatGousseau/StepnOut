@@ -9,27 +9,20 @@ import { View, ImageBackground, StyleSheet } from 'react-native';
 
 function RootLayoutNav() {
   const { session, loading, isAdmin } = useAuth();
-  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAppIsReady(true);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (appIsReady) {
-      if (!loading && !session) {
+    if (!loading) {
+      // Only handle navigation after auth state is determined
+      if (!session) {
         router.replace('/(auth)/login');
-      } else if (!loading && session) {
+      } else {
         router.replace('/');
       }
     }
-  }, [session, loading, appIsReady]);
+  }, [session, loading]);
 
-  if (loading || !appIsReady) {
+  // Show splash screen while loading auth state
+  if (loading) {
     return (
       <View style={[styles.container, StyleSheet.absoluteFill]}>
         <ImageBackground
