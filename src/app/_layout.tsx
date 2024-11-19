@@ -1,40 +1,46 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Slot, Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons'; 
 import { colors } from '../constants/Colors'; 
 import Header from '../components/Header';
-import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
+import { View, ImageBackground, StyleSheet } from 'react-native';
 
 function RootLayoutNav() {
   const { session, loading, isAdmin } = useAuth();
+  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
-    const hideSplash = async () => {
-      await SplashScreen.hideAsync();
-    };
-    
-    if (!loading) {
-      hideSplash();
-    }
-  }, [loading]);
+    const timer = setTimeout(() => {
+      setAppIsReady(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    if (!loading && !session) {
-      // Redirect to login if not authenticated
-      router.replace('/(auth)/login');
-    } else if (!loading && session) {
-      // Redirect to home if authenticated
-      router.replace('/');
+    if (appIsReady) {
+      if (!loading && !session) {
+        router.replace('/(auth)/login');
+      } else if (!loading && session) {
+        router.replace('/');
+      }
     }
-  }, [session, loading]);
+  }, [session, loading, appIsReady]);
 
-  if (loading) {
-    return null;
+  if (loading || !appIsReady) {
+    return (
+      <View style={[styles.container, StyleSheet.absoluteFill]}>
+        <ImageBackground
+          imageStyle={[styles.bgStyle, StyleSheet.absoluteFill]}
+          resizeMode="contain"
+          source={require('../assets/images/splash.png')}
+        >
+          <View style={{ height: '100%' }} />
+        </ImageBackground>
+      </View>
+    );
   }
 
   // If not authenticated, show auth screens
@@ -122,3 +128,13 @@ export default function Layout() {
     </AuthProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  bgStyle: {
+    flex: 1,
+  },
+});

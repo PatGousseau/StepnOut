@@ -35,8 +35,6 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description, chall
   const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
   const [contentHeight, setContentHeight] = useState(0);
 
-  console.log('challengeId', challengeId);
-
   const fadeIn = () => {
     setModalVisible(true);
     Animated.timing(fadeAnim, {

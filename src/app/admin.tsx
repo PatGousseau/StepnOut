@@ -29,7 +29,6 @@ const ChallengeCreation: React.FC = () => {
         console.error('Error inserting data:', error);
         Alert.alert('Error', error.message);
       } else {
-        console.log('Challenge created successfully');
         Alert.alert('Success', 'Challenge created successfully!');
         setTitle('');
         setDescription('');

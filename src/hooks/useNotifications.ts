@@ -135,7 +135,6 @@ export const useNotifications = () => {
         .subscribe();
 
       return () => {
-        console.log('Cleaning up subscription');
         subscription.unsubscribe();
       };
     }
