@@ -69,7 +69,6 @@ export const useFetchHomeData = () => {
       if (likesError) throw likesError;
       if (challengeError) console.error('Error fetching active challenge:', challengeError);
       else if (challengeData && challengeData.challenges) setActiveChallenge(challengeData.challenges);
-      console.log('challengeData', challengeData);
 
       // Process all data before updating state
       const likedPostIds = new Set(userLikes?.map(like => like.post_id));
