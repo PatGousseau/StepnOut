@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,12 +7,22 @@ import { useNotifications } from '../hooks/useNotifications';
 import NotificationSidebar from './NotificationSidebar';
 
 const Header = () => {
-  const { unreadCount } = useNotifications();
+  const { unreadCount, markAllAsRead } = useNotifications();
+  
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleNotificationPress = () => {
+    markAllAsRead();
+    setShowNotifications(true);
+  };
 
   const handleSidebarClose = () => {
     setShowNotifications(false);
   };
+
+  useEffect(()=> {
+    console.log('unreadCount: ', unreadCount)
+  }, [unreadCount])
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -23,7 +33,7 @@ const Header = () => {
         <Text style={styles.stepnOut}>Stepn Out</Text>
         <TouchableOpacity 
           style={styles.notificationIcon}
-          onPress={() => setShowNotifications(true)}
+          onPress={handleNotificationPress}
         >
           <Ionicons name="notifications" size={28} color={colors.light.primary} />
           {unreadCount > 0 && (

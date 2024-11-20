@@ -29,7 +29,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   const [modalVisible, setModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(SIDEBAR_WIDTH)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const { notifications, markAsRead, markAllAsRead, fetchNotifications } = useNotifications();
+  const { notifications } = useNotifications();
 
   useEffect(() => {
     if (visible) {
@@ -48,10 +48,6 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
           useNativeDriver: true,
         }),
       ]).start();
-
-      (async () => {
-        await markAllAsRead();
-      })();
     }
   }, [visible]);
 
@@ -74,14 +70,10 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   };
 
   const renderNotification = ({ item }: { item: Notification }) => {
-    const isUnread = !item.is_read;
     const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || 'Unknown User';
     
     return (
-      <TouchableOpacity 
-        style={[styles.notificationItem, isUnread && styles.unreadItem]}
-        onPress={() => markAsRead(item.notification_id)}
-      >
+      <TouchableOpacity style={styles.notificationItem}>
         <View style={styles.notificationContent}>
           <Text style={styles.notificationText}>
             <Text style={styles.userName}>{triggerUserName}</Text>
@@ -92,7 +84,6 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
             {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
           </Text>
         </View>
-        {isUnread && <View style={styles.unreadDot} />}
       </TouchableOpacity>
     );
   };
@@ -189,9 +180,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
     alignItems: 'center',
   },
-  unreadItem: {
-    backgroundColor: colors.light.background,
-  },
   notificationContent: {
     flex: 1,
   },
@@ -202,13 +190,6 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 12,
     color: '#666',
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.light.primary,
-    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,
