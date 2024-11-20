@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
 import { colors } from '../constants/Colors';
 import Markdown from 'react-native-markdown-display';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -287,22 +287,26 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description, chall
         transparent={true}
         visible={modalVisible}
         onRequestClose={fadeOut}
+        statusBarTranslucent={true}
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+        <Animated.View 
+          style={[
+            StyleSheet.absoluteFillObject,
+            styles.modalOverlay,
+            { opacity: fadeAnim }
+          ]}
         >
-          <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardView}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+          >
             <TouchableOpacity 
-              style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} 
+              style={styles.modalContainer}
               activeOpacity={1} 
               onPress={fadeOut}
             >
-              <TouchableOpacity 
-                activeOpacity={1} 
-                onPress={e => e.stopPropagation()} 
-                style={styles.modalContent}
-              >
+              <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>How did it go?</Text>
                   <Text style={styles.modalSubtitle}>Share your experience with the community</Text>
@@ -345,7 +349,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description, chall
                 </TouchableOpacity>
 
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput]}
                   multiline
                   placeholder="Write about your experience..."
                   placeholderTextColor="#999"
@@ -359,10 +363,10 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({ title, description, chall
                 >
                   <Text style={styles.buttonText}>Submit</Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </View>
             </TouchableOpacity>
-          </Animated.View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </Animated.View>
       </Modal>
     </>
   );
@@ -430,18 +434,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  modalOverlay: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '90%',
   },
   modalTitle: {
     fontSize: 22,
@@ -464,7 +474,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: colors.light.accent,
-    marginHorizontal: 16,
+    marginTop: 16,
   },
   textInput: {
     borderWidth: 1,
@@ -472,7 +482,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginVertical: 10,
-    minHeight: 100,
+    minHeight: 80,
     minWidth: '100%',
     textAlignVertical: 'top',
   },
@@ -482,7 +492,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    aspectRatio: 1.5,
+    aspectRatio: 2,
     width: '100%',
   },
   mediaIconsContainer: {
