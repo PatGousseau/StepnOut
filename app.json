@@ -7,14 +7,14 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./src/assets/images/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
       "splash": {
-        "image": "./assets/images/splash.png",
+        "image": "./src/assets/images/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
@@ -25,7 +25,7 @@
         "backgroundColor": "#000000"
       },
       "splash": {
-        "image": "./assets/images/splash.png",
+        "image": "./src/assets/images/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
