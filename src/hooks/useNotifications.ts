@@ -104,38 +104,28 @@ export const useNotifications = () => {
     if (user) {
       fetchNotifications();
 
-      const subscription = supabase
+      const channel = supabase
         .channel('notifications')
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`,
+            table: 'notifications'
           },
           (payload) => {
             if (payload.eventType === 'INSERT') {
               setNotifications(prev => [payload.new as Notification, ...prev]);
               setUnreadCount(prev => prev + 1);
-            } else if (payload.eventType === 'UPDATE') {
-              setNotifications(prev => {
-                const updated = prev.map(n =>
-                  n.notification_id === (payload.new as Notification).notification_id
-                    ? payload.new as Notification
-                    : n
-                );
-                const newUnreadCount = updated.filter(n => !n.is_read).length;
-                setUnreadCount(newUnreadCount);
-                return updated;
-              });
             }
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log("Subscription status:", status);
+        });
 
       return () => {
-        subscription.unsubscribe();
+        channel.unsubscribe();
       };
     }
   }, [user]);
