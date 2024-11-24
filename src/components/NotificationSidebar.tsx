@@ -20,16 +20,19 @@ import { Notification } from '../types';
 
 interface NotificationSidebarProps {
   visible: boolean;
+  notifications: Notification[];
   onClose: () => void;
 }
 
 const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.8;
 
-const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onClose }) => {
+const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onClose, notifications }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(SIDEBAR_WIDTH)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-  const { notifications } = useNotifications();
+
+
+  console.log("sidebar notifications: ", notifications.length)
 
   useEffect(() => {
     if (visible) {
