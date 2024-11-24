@@ -21,6 +21,9 @@ export const useNotifications = () => {
           trigger_profile:profiles!notifications_trigger_user_id_fkey (
             username,
             name
+          ),
+          comment:comments (
+            body
           )
         `)
         .eq('user_id', user.id)
@@ -30,7 +33,8 @@ export const useNotifications = () => {
 
       const notifications = (data || []).map(notification => ({
         ...notification,
-        trigger_user: notification.trigger_profile
+        trigger_user: notification.trigger_profile,
+        comment_text: notification.comment?.[0]?.body || ''
       }));
       
       setNotifications(notifications);
@@ -101,13 +105,12 @@ export const useNotifications = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.id}` // Only listen for notifications for this user
+          filter: `user_id=eq.${user.id}`
         },
         async (payload) => {
           if (payload.eventType === 'INSERT') {
             console.log("got a new notification");
             
-            // Instead of immediately fetching and updating, queue the update
             const { data: fullNotification, error } = await supabase
               .from('notifications')
               .select(`
@@ -115,25 +118,26 @@ export const useNotifications = () => {
                 trigger_profile:profiles!notifications_trigger_user_id_fkey (
                   username,
                   name
+                ),
+                comment:comments (
+                  body
                 )
               `)
               .eq('notification_id', payload.new.notification_id)
               .single();
 
             if (!error && fullNotification) {
-              // Use functional update to ensure we're working with latest state
               setNotifications(prev => {
-                // Check if notification already exists
                 const exists = prev.some(n => n.notification_id === fullNotification.notification_id);
                 if (exists) return prev;
                 
                 return [{
                   ...fullNotification,
-                  trigger_user: fullNotification.trigger_profile
+                  trigger_user: fullNotification.trigger_profile,
+                  comment_text: fullNotification.comment?.[0]?.body || ''
                 }, ...prev];
               });
 
-              // Update unread count
               setUnreadCount(prev => prev + 1);
             }
           }

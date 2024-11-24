@@ -75,13 +75,23 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   const renderNotification = ({ item }: { item: Notification }) => {
     const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || 'Unknown User';
     
+    let notificationText = '';
+    if (item.action_type === 'like') {
+      notificationText = 'liked your post';
+    } else if (item.action_type === 'comment') {
+        console.log("item: ", item.comment.body)
+      // Get comment text from the notification
+      const commentText = item.comment.body || '';
+      notificationText = `commented: "${commentText}"`;
+    }
+    
     return (
       <TouchableOpacity style={styles.notificationItem}>
         <View style={styles.notificationContent}>
           <Text style={styles.notificationText}>
             <Text style={styles.userName}>{triggerUserName}</Text>
             {' '}
-            {item.action_type === 'like' ? 'liked your post' : 'commented on your post'}
+            {notificationText}
           </Text>
           <Text style={styles.timeText}>
             {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
@@ -205,6 +215,10 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontWeight: 'bold',
+  },
+  commentText: {
+    fontStyle: 'italic',
+    color: '#666',
   },
 });
 

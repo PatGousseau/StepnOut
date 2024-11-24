@@ -41,17 +41,12 @@ export interface Challenge {
     notification_id: number;
     user_id: string;
     trigger_user_id: string;
-    post_id: number;
     action_type: 'like' | 'comment';
-    is_read: boolean;
     created_at: string;
-    updated_at: string;
-    trigger_profile: {
+    is_read: boolean;
+    trigger_profile?: {
       username: string;
       name: string;
     };
-    trigger_user: {
-      username: string;
-      display_name: string;
-    };
+    comment_text?: string;
   }
