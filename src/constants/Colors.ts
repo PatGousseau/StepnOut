@@ -6,9 +6,12 @@ export const colors = {
     accent: '#4D5382',      // e.g. submit button -> orange '#E78945'
     text: '#333',        // dark text 
     lightText: '#7F8C8D',   // Light
-    cardBg: '#FFFFFF',      // White
+    cardBg: '#EBDACC',      // White
     success: '#66BB6A',     // Success 
     alertRed: "#e64e54",
+    easyGreen: '#b2dbb9', 
+    mediumYellow: '#FFE5B4', 
+    hardRed: '#FFB3B3',   
   },
   dark: {
     text: '#fff',  // light text
@@ -18,5 +21,7 @@ export const colors = {
     grey1: '#BEBEBE',
     grey2: '#E5E5E5',
     darkGrey: '#7F8C8D',
+    white: '#FFFFFF',
+    black: '#000000',
   },
 };

@@ -15,7 +15,6 @@ interface UserMap {
 }
 
 export const useFetchHomeData = () => {
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
   const POSTS_PER_PAGE = 10;
@@ -27,7 +26,7 @@ export const useFetchHomeData = () => {
     setLoading(true);
     try {
 
-      const [postResponse, likesResponse, challengeResponse] = await Promise.all([
+      const [postResponse, likesResponse] = await Promise.all([
         supabase
           .from('post')
           .select(`
@@ -54,21 +53,13 @@ export const useFetchHomeData = () => {
           .select('post_id')
           .eq('user_id', "4e723784-b86d-44a2-9ff3-912115398421"),
 
-        supabase
-          .from('challenges_status')
-          .select('challenge_id, challenges(*)')
-          .eq('is_active', true)
-          .single()
       ]);
 
       const [postData, postError] = [postResponse.data, postResponse.error];
       const [userLikes, likesError] = [likesResponse.data, likesResponse.error];
-      const [challengeData, challengeError] = [challengeResponse.data, challengeResponse.error];
 
       if (postError) throw postError;
       if (likesError) throw likesError;
-      if (challengeError) console.error('Error fetching active challenge:', challengeError);
-      else if (challengeData && challengeData.challenges) setActiveChallenge(challengeData.challenges);
 
       // Process all data before updating state
       const likedPostIds = new Set(userLikes?.map(like => like.post_id));
@@ -288,7 +279,6 @@ export const useFetchHomeData = () => {
   }, []);
 
   return {
-    activeChallenge,
     posts,
     userMap,
     loading,

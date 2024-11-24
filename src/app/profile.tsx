@@ -3,7 +3,6 @@ import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator, Touchable
 import UserProgress from '../components/UserProgress';
 import Post from '../components/Post';
 import ProfilePic from '../assets/images/profile-pic.png';
-import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import useUserProgress from '../hooks/useUserProgress';
 import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -11,6 +10,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
+import { Loader } from '../components/Loader';
 
 type UserProfile = {
   username: string;
@@ -207,7 +207,7 @@ const ProfileScreen: React.FC = () => {
   };
 
   if (progressLoading || postsLoading || !userProfile) {
-    return <ActivityIndicator size="large" color={colors.light.primary} />;
+    return <Loader />;
   }
 
   if (error) {
@@ -373,8 +373,8 @@ const ProfileScreen: React.FC = () => {
           />
         ))}
         {postsLoading && (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color={colors.light.primary} />
+          <View style={{ padding: 20 }}>
+            <Loader size="small" />
           </View>
         )}
       </ScrollView>

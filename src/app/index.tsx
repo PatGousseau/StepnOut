@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import Post from '../components/Post';
-import TakeChallenge from '../components/TakeChallenge';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { colors } from '../constants/Colors';
-import { Post as PostType, Challenge } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import CreatePost from '../components/CreatePost';
 
 const Home = () => {
   const { user } = useAuth();
-  const { activeChallenge, posts, userMap, loading, fetchAllData, loadMorePosts, hasMore  } = useFetchHomeData();
+  const { posts, userMap, loading, fetchAllData, loadMorePosts, hasMore  } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
   const [refreshing, setRefreshing] = useState(false);
 
@@ -60,13 +58,6 @@ const Home = () => {
         scrollEventThrottle={400}
       >
         <View style={{ padding: 16 }}>
-          {activeChallenge && (
-            <TakeChallenge 
-              title={activeChallenge.title} 
-              description={activeChallenge.description} 
-              challengeId={activeChallenge.id}
-            />
-          )}
           {posts.map(post => {
             const userData = userMap[post.user_id];
             const userMetadata = userData || { username: 'Unknown', name: 'Unknown' };
