@@ -61,6 +61,9 @@ function RootLayoutNav() {
               case 'index':
                 iconName = 'home';
                 break;
+              case 'challenge':
+                iconName = 'trophy';
+                break;
               case 'profile':
                 iconName = 'person';
                 break;
@@ -85,6 +88,15 @@ function RootLayoutNav() {
           name="index"
           options={{
             title: 'Home',
+            headerStyle: { backgroundColor: colors.light.primary },
+            headerTintColor: '#fff',
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="challenge"
+          options={{
+            title: 'Challenge',
             headerStyle: { backgroundColor: colors.light.primary },
             headerTintColor: '#fff',
             headerShown: false,

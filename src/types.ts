@@ -7,6 +7,7 @@ export interface Challenge {
     created_at: Date;
     updated_at: Date;
     duration: number;
+    media_file_path: string;
   }
 
   export interface Post {
