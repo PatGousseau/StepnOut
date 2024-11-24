@@ -108,42 +108,42 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
       animationType="none"
       onRequestClose={handleClose}
     >
-      <Animated.View style={[styles.overlay, { opacity }]}>
-        <TouchableWithoutFeedback onPress={handleClose}>
-          <View />
-        </TouchableWithoutFeedback>
-      </Animated.View>
-      
-      <Animated.View 
-        style={[
-          styles.sidebar,
-          {
-            transform: [{ translateX }]
-          }
-        ]}
-      >
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Notifications</Text>
-            <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={24} color={colors.light.primary} />
-            </TouchableOpacity>
-          </View>
+      <TouchableWithoutFeedback onPress={handleClose}>
+        <Animated.View style={[styles.overlay, { opacity }]}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+            <Animated.View 
+              style={[
+                styles.sidebar,
+                {
+                  transform: [{ translateX }]
+                }
+              ]}
+            >
+              <SafeAreaView style={styles.safeArea}>
+                <View style={styles.header}>
+                  <View style={styles.headerContent}>
+                    <Text style={styles.title}>Notifications</Text>
+                  </View>
+                  <View style={styles.divider} />
+                </View>
 
-          {notifications.length > 0 ? (
-            <FlatList
-              data={notifications}
-              renderItem={renderNotification}
-              keyExtractor={item => item.notification_id.toString()}
-              contentContainerStyle={styles.listContainer}
-            />
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No notifications yet</Text>
-            </View>
-          )}
-        </SafeAreaView>
-      </Animated.View>
+                {notifications.length > 0 ? (
+                  <FlatList
+                    data={notifications}
+                    renderItem={renderNotification}
+                    keyExtractor={item => item.notification_id.toString()}
+                    contentContainerStyle={styles.listContainer}
+                  />
+                ) : (
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No notifications yet</Text>
+                  </View>
+                )}
+              </SafeAreaView>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </Animated.View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -165,23 +165,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 5,
+    borderTopLeftRadius: 16,
+    borderBottomLeftRadius: 16,
+    paddingLeft:8,
   },
   safeArea: {
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 16,
     paddingTop: Platform.OS === 'android' ? 16 : 0,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginBottom: 16,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.light.primary,
+    textAlign: 'center',
   },
   listContainer: {
     flexGrow: 1,
@@ -219,6 +225,11 @@ const styles = StyleSheet.create({
   commentText: {
     fontStyle: 'italic',
     color: '#666',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#cfcbca',
+    width: '100%',
   },
 });
 
