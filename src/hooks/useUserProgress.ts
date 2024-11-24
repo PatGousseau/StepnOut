@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChallengeProgress, UserProgress, WeekData } from '../types';
+import { ChallengeProgress, UserProgress, WeekData, Post } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 const useUserProgress = () => {
@@ -8,6 +8,52 @@ const useUserProgress = () => {
   const [data, setData] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const POSTS_PER_PAGE = 10;
+
+  const fetchUserPosts = async (page = 1, isLoadMore = false) => {
+    if (!user?.id) return;
+    
+    setPostsLoading(true);
+    try {
+      const { data: posts, error } = await supabase
+        .from('post')
+        .select(`
+          id, 
+          user_id, 
+          created_at, 
+          featured, 
+          body, 
+          media_id, 
+          media (file_path),
+          likes:likes(count),
+          comments:comments(count)
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE - 1);
+
+      if (error) throw error;
+
+      const formattedPosts = posts.map(post => ({
+        ...post,
+        media_file_path: post.media?.file_path 
+          ? `${supabase.storageUrl}/object/public/challenge-uploads/${post.media.file_path}`
+          : null,
+        likes_count: post.likes?.[0]?.count ?? 0,
+        comments_count: post.comments?.[0]?.count ?? 0
+      }));
+
+      setUserPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);
+      setHasMorePosts(posts.length === POSTS_PER_PAGE);
+    } catch (err) {
+      console.error('Error fetching user posts:', err);
+    } finally {
+      setPostsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) {
@@ -127,7 +173,21 @@ const useUserProgress = () => {
     fetchData();
   }, [user?.id]);
 
-  return { data, loading, error };
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserPosts(1);
+    }
+  }, [user?.id]);
+
+  return {
+    data,
+    loading,
+    error,
+    userPosts,
+    postsLoading,
+    hasMorePosts,
+    fetchUserPosts
+  };
 };
 
 export default useUserProgress;
