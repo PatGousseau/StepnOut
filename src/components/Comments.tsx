@@ -32,7 +32,7 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, user
     setComments(initialComments);
   }, [initialComments]);
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (newComment.trim() && user) {
       const newCommentObj = {
         id: Date.now(),
@@ -40,8 +40,14 @@ const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, user
         userId: user.id
       };
       setComments(prevComments => [...prevComments, newCommentObj]);
-      onAddComment(newCommentObj);
-      setNewComment('');
+      
+      // Add comment and create notification
+      const result = await onAddComment(newCommentObj);
+      
+      // Clear input only if comment was successfully added
+      if (result) {
+        setNewComment('');
+      }
     }
   };
 

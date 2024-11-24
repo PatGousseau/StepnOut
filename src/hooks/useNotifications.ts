@@ -2,21 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import React from 'react';
-
-interface Notification {
-  notification_id: number;
-  user_id: string;
-  trigger_user_id: string;
-  post_id: number;
-  action_type: 'like' | 'comment';
-  is_read: boolean;
-  created_at: string;
-  updated_at: string;
-  trigger_profile: {
-    username: string;
-    name: string;
-  };
-}
+import { Notification } from '../types';
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -35,6 +21,9 @@ export const useNotifications = () => {
           trigger_profile:profiles!notifications_trigger_user_id_fkey (
             username,
             name
+          ),
+          comment:comments (
+            body
           )
         `)
         .eq('user_id', user.id)
@@ -44,7 +33,8 @@ export const useNotifications = () => {
 
       const notifications = (data || []).map(notification => ({
         ...notification,
-        trigger_user: notification.trigger_profile
+        trigger_user: notification.trigger_profile,
+        comment_text: notification.comment?.[0]?.body || ''
       }));
       
       setNotifications(notifications);
@@ -101,46 +91,87 @@ export const useNotifications = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchNotifications();
+    if (!user) return;
 
-      const channel = supabase
-        .channel('notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications'
-          },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              setNotifications(prev => [payload.new as Notification, ...prev]);
+    // Initial fetch
+    fetchNotifications();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        async (payload) => {
+          if (payload.eventType === 'INSERT') {
+            console.log("got a new notification");
+            
+            const { data: fullNotification, error } = await supabase
+              .from('notifications')
+              .select(`
+                *,
+                trigger_profile:profiles!notifications_trigger_user_id_fkey (
+                  username,
+                  name
+                ),
+                comment:comments (
+                  body
+                )
+              `)
+              .eq('notification_id', payload.new.notification_id)
+              .single();
+
+            if (!error && fullNotification) {
+              setNotifications(prev => {
+                const exists = prev.some(n => n.notification_id === fullNotification.notification_id);
+                if (exists) return prev;
+                
+                return [{
+                  ...fullNotification,
+                  trigger_user: fullNotification.trigger_profile,
+                  comment_text: fullNotification.comment?.[0]?.body || ''
+                }, ...prev];
+              });
+
               setUnreadCount(prev => prev + 1);
             }
           }
-        )
-        .subscribe((status) => {
-          console.log("Subscription status:", status);
-        });
+        }
+      )
+      .subscribe();
 
-      return () => {
-        channel.unsubscribe();
-      };
-    }
+    return () => {
+      channel.unsubscribe();
+    };
   }, [user]);
 
-  // Add memoization to ensure stable reference
-  const value = React.useMemo(() => {
-    return {
-      notifications,
-      unreadCount,
-      loading,
-      markAsRead,
-      markAllAsRead,
-      fetchNotifications,
-    };
-  }, [notifications, unreadCount, loading]);
+//   const value = React.useMemo(() => {
 
-  return value;
+//     return {
+//       notifications,
+//       unreadCount,
+//       loading,
+//       markAsRead,
+//       markAllAsRead,
+//       fetchNotifications,
+//     };
+//   }, [notifications, unreadCount, loading]);
+
+  console.log("notifications: ", notifications.length)
+
+//   return value; 
+   return {
+    notifications,
+    unreadCount,
+    loading,
+    markAsRead,
+    markAllAsRead,
+    fetchNotifications,
+  };
 }; 
+

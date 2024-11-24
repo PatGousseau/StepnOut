@@ -7,7 +7,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import NotificationSidebar from './NotificationSidebar';
 
 const Header = () => {
-  const { unreadCount, markAllAsRead } = useNotifications();
+  const { unreadCount, markAllAsRead, notifications } = useNotifications();
   
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -47,6 +47,7 @@ const Header = () => {
       <NotificationSidebar 
         visible={showNotifications}
         onClose={handleSidebarClose}
+        notifications={notifications}
       />
     </SafeAreaView>
   );

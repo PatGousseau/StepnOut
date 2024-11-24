@@ -141,8 +141,11 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
             comments: (prevCounts[postId]?.comments || 0) + 1,
           },
         }));
+
+        return true;
       }
     }
+    return false;
   };
 
   const isVideo = (source: any) => {
