@@ -21,19 +21,18 @@ type UserProfile = {
 
 const ProfileScreen: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { data, loading: progressLoading, error } = useUserProgress();
   const { 
-    posts, 
-    userMap, 
-    loading: postsLoading, 
-    hasMore, 
-    loadMorePosts,
-    fetchAllData 
-  } = useFetchHomeData();
-  const [userPosts, setUserPosts] = useState([]);
+    data, 
+    loading: progressLoading, 
+    error,
+    userPosts,
+    postsLoading,
+    hasMorePosts,
+    fetchUserPosts
+  } = useUserProgress();
+  const [page, setPage] = useState(1);
   const [showMenu, setShowMenu] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -78,31 +77,12 @@ const ProfileScreen: React.FC = () => {
     fetchUserProfile();
   }, [user?.id]);
 
-  useEffect(() => {
-    if (posts && user?.id) {
-      const filteredPosts = posts.filter(post => post.user_id === user.id);
-      setUserPosts(prev => page === 1 ? filteredPosts : [...prev, ...filteredPosts]);
-    }
-  }, [posts, user?.id, page]);
-
-  useEffect(() => {
-    fetchAllData(1);
-  }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      Alert.alert('Error signing out', (error as Error).message);
-    }
-  };
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setPage(1);
-    await fetchAllData(1);
+    await fetchUserPosts(1);
     setRefreshing(false);
-  }, [fetchAllData]);
+  }, [fetchUserPosts]);
 
   const handleUpdateProfilePicture = async () => {
     try {
@@ -218,6 +198,14 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const handleLoadMore = () => {
+    if (!postsLoading && hasMorePosts) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchUserPosts(nextPage, true);
+    }
+  };
+
   if (progressLoading || postsLoading || !userProfile) {
     return <ActivityIndicator size="large" color={colors.light.primary} />;
   }
@@ -247,9 +235,8 @@ const ProfileScreen: React.FC = () => {
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
           
-          if (isCloseToBottom && !postsLoading && hasMore) {
-            setPage(prev => prev + 1);
-            loadMorePosts();
+          if (isCloseToBottom) {
+            handleLoadMore();
           }
         }}
         scrollEventThrottle={400}
@@ -378,12 +365,11 @@ const ProfileScreen: React.FC = () => {
             username={userProfile.username}
             text={post.body}
             media={post.media_file_path ? { uri: post.media_file_path } : undefined}
-            likes={post.likes || 0}
-            comments={post.comments || 0}
+            likes={post.likes_count}
+            comments={post.comments_count}
             postId={post.id}
             userId={user?.id}
             setPostCounts={() => {}}
-            userMap={userMap}
           />
         ))}
         {postsLoading && (
