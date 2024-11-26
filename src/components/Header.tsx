@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 0,
-    paddingBottom: 10,
+    paddingBottom: Platform.OS === 'android' ? 10 : 0,
   },
   logo: {
     width: 28,
