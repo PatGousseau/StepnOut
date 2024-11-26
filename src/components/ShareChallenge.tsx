@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Share, Platform, Modal, Image } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -18,14 +19,25 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   challengeId,
   onClose,
   mediaPreview,
-  streakCount = 1
+  streakCount = 1,
+  isVisible
 }) => {
-  const isVisible = true;
+  const confettiRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (isVisible) {
+      setTimeout(() => {
+        if (confettiRef.current) {
+          confettiRef.current.start();
+        }
+      }, 100);
+    }
+  }, [isVisible]);
 
   const handleShare = async () => {
     try {
       const streakEmoji = streakCount >= 3 ? '🔥' : '💪';
-      const defaultMessage = `${streakEmoji} Join me as the 138th person to step out of their comfort zone!\n\nI just completed Patrizio's "${title}" challenge.\n\nThis is week ${streakCount} of me pushing my limits.\n\nLet's grow together on StepN Out! 🚀`;
+      const defaultMessage = `${streakEmoji} Join me as the 138th person to complete this week's comfort zone challenge on Stepn Out! 🚀\n\n[TODO: Link to challenge/app]`;
       
       await Share.share({
         message: Platform.select({
@@ -49,6 +61,17 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
+        <ConfettiCannon
+          ref={confettiRef}
+          count={200}
+          origin={{x: -10, y: 0}}
+          fallSpeed={3000}
+          explosionSpeed={1000}
+          fadeOut={true}
+          colors={['#FFD700', '#FFA500', '#FF69B4', '#87CEEB', '#98FB98']}
+          autoStartDelay={0}
+        />
+        
         <View style={styles.modalContent}>
           <View style={styles.celebrationContainer}>
             <Text style={styles.emoji}>🎯</Text>
@@ -69,7 +92,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
           <View style={styles.socialProofContainer}>
             <Text style={styles.socialProofText}>
               <Text style={styles.highlight}>137 people</Text>
-              {' have stepped out this week.\n'}
+              {' have stepped out of their comfort zone this week.\n'}
               <Text style={styles.socialProofSubtext}>
                 Inspire your friend to be the 138th!
               </Text>

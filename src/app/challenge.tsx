@@ -13,6 +13,7 @@ import { KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
 import { Challenge } from '../types';
 import { Loader } from '../components/Loader';
+import ShareChallenge from '../components/ShareChallenge';
 
 
 interface ChallengeCardProps {
@@ -135,74 +136,62 @@ interface PatrizioExampleProps {
     const [isVideo, setIsVideo] = useState(false);
     const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
     const [fullScreenPreview, setFullScreenPreview] = useState(false);
-
-    const fadeIn = () => {
-      setModalVisible(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    };
-
-    const fadeOut = () => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }).start(() => {
-        setModalVisible(false);
-      });
-    };
+    const [showShareModal, setShowShareModal] = useState(false);
 
     const handleSubmit = async () => {
-        if (!user) {
-          alert('You must be logged in to submit a challenge.');
-          return;
-        }
-    
-        try {
-          const { data: postData, error: postError } = await supabase
-            .from('post')
-            .insert([
-              {
-                user_id: user.id,
-                media_id: uploadedMediaId,
-                body: postText,
-                featured: false
-              }
-            ])
-            .select()
-            .single();
-    
-          if (postError) throw postError;
-    
-          const { error: submissionError } = await supabase
-            .from('submission')
-            .insert([
-              {
-                user_id: user.id,
-                challenge_id: challenge.id,
-                post_id: postData.id,
-                media_id: uploadedMediaId,
-                body: postText
-              }
-            ]);
-    
-          if (submissionError) throw submissionError;
-    
-          setPostText('');
-          setUploadedMediaId(null);
-          setMediaPreview(null);
-          fadeOut();
-    
-          showNotificationWithAnimation();
-    
-        } catch (error) {
-          console.error('Error creating submission:', error);
-          alert('Error submitting challenge.');
-        }
-      };
+      if (!user) {
+        alert('You must be logged in to submit a challenge.');
+        return;
+      }
+
+      try {
+        const { data: postData, error: postError } = await supabase
+          .from('post')
+          .insert([
+            {
+              user_id: user.id,
+              media_id: uploadedMediaId,
+              body: postText,
+              featured: false
+            }
+          ])
+          .select()
+          .single();
+
+        if (postError) throw postError;
+
+        const { error: submissionError } = await supabase
+          .from('submission')
+          .insert([
+            {
+              user_id: user.id,
+              challenge_id: challenge.id,
+              post_id: postData.id,
+              media_id: uploadedMediaId,
+              body: postText
+            }
+          ]);
+
+        if (submissionError) throw submissionError;
+
+        // Important: First close the submission modal
+        setModalVisible(false);
+        
+        // Clear the form
+        setPostText('');
+        setUploadedMediaId(null);
+        setMediaPreview(null);
+        
+        // Then show the share modal with a small delay
+        setTimeout(() => {
+          setShowShareModal(true);
+        }, 100);
+
+      } catch (error) {
+        console.error('Error creating submission:', error);
+        alert('Error submitting challenge.');
+      }
+    };
 
     const handleMediaUpload = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -297,6 +286,26 @@ interface PatrizioExampleProps {
       setUploadedMediaId(null);
       setVideoThumbnail(null);
       setIsVideo(false);
+    };
+
+    // Add fadeIn/fadeOut functions
+    const fadeIn = () => {
+      setModalVisible(true);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const fadeOut = () => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setModalVisible(false);
+      });
     };
 
     return (
@@ -439,6 +448,15 @@ interface PatrizioExampleProps {
             />
           </TouchableOpacity>
         </Modal>
+
+        <ShareChallenge
+          isVisible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          title={challenge.title}
+          challengeId={challenge.id}
+          mediaPreview={mediaPreview}
+          streakCount={1}
+        />
       </>
     );
   };
