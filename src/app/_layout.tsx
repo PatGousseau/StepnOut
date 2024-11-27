@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { View, ImageBackground, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
 
 function RootLayoutNav() {
   const { session, loading, isAdmin } = useAuth();
@@ -21,6 +22,19 @@ function RootLayoutNav() {
       }
     }
   }, [session, loading]);
+
+  useEffect(() => {
+    const setupPushNotifications = async () => {
+        // Get the current logged-in user's ID from Supabase Auth
+        const userId = session?.user.id;
+
+        if (userId) {
+            await registerForPushNotificationsAsync(userId);
+        }
+    };
+
+    setupPushNotifications();
+}, [session]);
 
   // Show splash screen while loading auth state
   if (loading) {

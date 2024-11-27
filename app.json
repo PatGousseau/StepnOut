@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "StepnOut",
-    "slug": "StepnOut",
+    "slug": "stepnout",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myapp",
@@ -63,6 +63,15 @@
     "fonts": {
       "ABeeZee": "./assets/fonts/ABeeZee-Regular.ttf"
     },
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "6ac120ac-1dca-4d86-9088-4dbe426901fc"
+      }
+    },
+    "owner": "patrickgousseau"
   }
 }
