@@ -11,6 +11,7 @@ import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 import { Loader } from '../components/Loader';
+import FeedbackButton from '../components/FeedbackButton';
 
 type UserProfile = {
   username: string;
@@ -398,6 +399,7 @@ const ProfileScreen: React.FC = () => {
           />
         </View>
       </Modal>
+      <FeedbackButton />
     </View>
   );
 };
