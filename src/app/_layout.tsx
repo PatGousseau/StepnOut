@@ -8,6 +8,16 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { View, ImageBackground, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
+import * as Notifications from 'expo-notifications';
+
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true, // Show notifications in foreground
+    shouldPlaySound: true, // Play sound
+    shouldSetBadge: false, // Update badge count
+  }),
+});
 
 function RootLayoutNav() {
   const { session, loading, isAdmin } = useAuth();
@@ -35,6 +45,23 @@ function RootLayoutNav() {
 
     setupPushNotifications();
 }, [session]);
+
+useEffect(() => {
+  // Listener for foreground notifications
+  const subscription = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+  });
+
+  // Listener for notifications when the app is opened from a tap
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification tapped:', response);
+  });
+
+  return () => {
+      subscription.remove();
+      responseSubscription.remove();
+  };
+}, []);
 
   // Show splash screen while loading auth state
   if (loading) {

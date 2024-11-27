@@ -19,6 +19,7 @@ import { colors } from '../constants/Colors';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
 import { Image } from 'expo-image';
+import { sendLikeNotification } from '../lib/notificationsService';
 
 interface UserMap {
   [key: string]: {
@@ -103,14 +104,23 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
       return;
     }
 
-    setLiked(prevLiked => !prevLiked);
-    setLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+    const isLiking = !liked;
+    setLiked(isLiking);
+    setLikeCount(prevCount => isLiking ? prevCount + 1 : prevCount - 1);
 
     const result = await toggleLike(postId, userId);
 
+    if (result && isLiking) {
+      try {
+        await sendLikeNotification(userId, userId, postId.toString());
+      } catch (error) {
+        console.error('Failed to send like notification:', error);
+      }
+    }
+
     if (!result) {
-      setLiked(prevLiked => !prevLiked);
-      setLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
+      setLiked(!isLiking);
+      setLikeCount(prevCount => isLiking ? prevCount - 1 : prevCount + 1);
     }
   };
 
