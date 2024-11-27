@@ -11,11 +11,16 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../constants/Colors';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const FeedbackButton: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
+  const { user } = useAuth();
+  
 
   const animateContent = (toValue: number) => {
     Animated.spring(slideAnim, {
@@ -25,10 +30,28 @@ const FeedbackButton: React.FC = () => {
     }).start();
   };
 
-  const handleSubmit = () => {
-    // TODO: Implement feedback submission
-    setFeedback('');
-    setIsModalVisible(false);
+  const handleSubmit = async () => {
+    try {
+      if (!feedback.trim()) return;
+
+      const { error } = await supabase
+        .from('feedback')
+        .insert({
+          user_id: user?.id,
+          message: feedback.trim()
+        });
+
+      if (error) throw error;
+
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setFeedback('');
+        setIsModalVisible(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
   };
 
   return (
@@ -71,28 +94,37 @@ const FeedbackButton: React.FC = () => {
             onTouchStart={e => e.stopPropagation()}
           >
             <Text style={styles.modalTitle}>Send Feedback</Text>
-            <TextInput
-              style={styles.input}
-              multiline
-              placeholder="What's on your mind?"
-              value={feedback}
-              onChangeText={setFeedback}
-              maxLength={500}
-            />
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.submitButton}
-                onPress={handleSubmit}
-              >
-                <Text style={styles.submitButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
+            {showSuccess ? (
+              <View style={styles.successMessage}>
+                <Icon name="checkmark-circle" size={24} color={colors.light.primary} />
+                <Text style={styles.successText}>Thank you for your feedback!</Text>
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.input}
+                  multiline
+                  placeholder="What's on your mind?"
+                  value={feedback}
+                  onChangeText={setFeedback}
+                  maxLength={500}
+                />
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => setIsModalVisible(false)}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.submitButton}
+                    onPress={handleSubmit}
+                  >
+                    <Text style={styles.submitButtonText}>Submit</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </Animated.View>
         </TouchableOpacity>
       </Modal>
@@ -163,6 +195,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   cancelButtonText: {
+    color: colors.light.primary,
+    fontWeight: '600',
+  },
+  successMessage: {
+    alignItems: 'center',
+    padding: 20,
+    gap: 12,
+  },
+  successText: {
+    fontSize: 16,
     color: colors.light.primary,
     fontWeight: '600',
   },
