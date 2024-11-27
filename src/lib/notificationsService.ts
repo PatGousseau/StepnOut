@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 
+
 // Fetch a user's push token from Supabase
 async function getPushToken(userId: string): Promise<string | null> {
     const { data, error } = await supabase
@@ -43,12 +44,12 @@ async function sendPushNotification(token: string, title: string, body: string, 
 }
 
 // Handle sending notifications for likes
-export async function sendLikeNotification(senderId: string, recipientId: string, postId: string) {
+export async function sendLikeNotification(senderId: string | undefined, senderUsername: string,recipientId: string, postId: string) {
+    console.log(recipientId);
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const senderName = 'User'; // Replace with logic to fetch the sender's name
-    const title = `${senderName} liked your post!`;
+    const title = `${senderUsername} liked your post!`;
     const body = 'Check it out now.';
     const data = { postId, senderId };
 
@@ -56,12 +57,11 @@ export async function sendLikeNotification(senderId: string, recipientId: string
 }
 
 // Handle sending notifications for comments
-export async function sendCommentNotification(senderId: string, recipientId: string, postId: string, commentText: string) {
+export async function sendCommentNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string, commentText: string) {
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const senderName = 'User'; // Replace with logic to fetch the sender's name
-    const title = `${senderName} commented on your post!`;
+    const title = `${senderUsername} commented on your post!`;
     const body = `"${commentText}"`;
     const data = { postId, senderId };
 

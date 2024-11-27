@@ -73,7 +73,7 @@ const Home = () => {
                 likes={postCounts[post.id]?.likes ?? 0}
                 comments={postCounts[post.id]?.comments ?? 0}
                 postId={post.id}
-                userId={user?.id}
+                userId={post.user_id}
                 setPostCounts={setPostCounts}
                 media={post.media_file_path ? { uri: post.media_file_path } : undefined}
                 userMap={userMap} 
