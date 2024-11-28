@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Challenge } from '../types';
+import { sendNewChallengeNotification } from '../lib/notificationsService';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useActiveChallenge = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth()
 
   const fetchActiveChallenge = async () => {
     setLoading(true);
@@ -40,7 +43,33 @@ export const useActiveChallenge = () => {
 
   useEffect(() => {
     fetchActiveChallenge();
-  }, []);
+
+    const subscription = supabase
+      .channel('challenges_status_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'challenges_status',
+          filter: 'is_active=eq.true'
+        },
+        async (payload) => {
+          console.log("prints")
+          await fetchActiveChallenge();
+          
+          if (user?.id) {
+            const challengeId = payload.new.challenge_id;
+            await sendNewChallengeNotification(user.id, challengeId);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [user?.id]);
 
   return {
     activeChallenge,

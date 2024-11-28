@@ -162,7 +162,6 @@ export const useNotifications = () => {
 //     };
 //   }, [notifications, unreadCount, loading]);
 
-  console.log("notifications: ", notifications.length)
 
 //   return value; 
    return {
