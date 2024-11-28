@@ -19,6 +19,8 @@ import { colors } from '../constants/Colors';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
 import { Image } from 'expo-image';
+import { sendLikeNotification, sendCommentNotification } from '../lib/notificationsService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserMap {
   [key: string]: {
@@ -55,6 +57,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     translateY: Animated.Value;
     opacity: Animated.Value;
   } | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -103,14 +106,24 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
       return;
     }
 
-    setLiked(prevLiked => !prevLiked);
-    setLikeCount(prevCount => liked ? prevCount - 1 : prevCount + 1);
+    const isLiking = !liked;
+    setLiked(isLiking);
+    setLikeCount(prevCount => isLiking ? prevCount + 1 : prevCount - 1);
 
     const result = await toggleLike(postId, userId);
 
+    if (result && isLiking) {
+      try {
+
+        await sendLikeNotification(user?.id, user?.user_metadata?.username, userId, postId.toString());
+      } catch (error) {
+        console.error('Failed to send like notification:', error);
+      }
+    }
+
     if (!result) {
-      setLiked(prevLiked => !prevLiked);
-      setLikeCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
+      setLiked(!isLiking);
+      setLikeCount(prevCount => isLiking ? prevCount - 1 : prevCount + 1);
     }
   };
 
@@ -141,6 +154,12 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
             comments: (prevCounts[postId]?.comments || 0) + 1,
           },
         }));
+
+        try {
+          await sendCommentNotification(user?.id, user?.user_metadata?.username, userId, postId.toString(), comment.text);
+        } catch (error) {
+          console.error('Failed to send comment notification:', error);
+        }
 
         return true;
       }
