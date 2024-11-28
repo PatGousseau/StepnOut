@@ -245,13 +245,16 @@ export const useFetchHomeData = () => {
   const addComment = async (postId: number, userId: string, body: string) => {
     const { data, error } = await supabase
       .from('comments')
-      .insert([{ post_id: postId, user_id: userId, body }]);
+      .insert([{ post_id: postId, user_id: userId, body }])
+      .select()
+      .single();
 
     if (error) {
       console.error('Error adding comment:', error);
       return null;
     }
-    return data ? data[0] : null;
+    
+    return data;
   };
 
   const loadMorePosts = useCallback(() => {
