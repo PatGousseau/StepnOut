@@ -1,19 +1,19 @@
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../components/StyledText';
-import { colors } from '../constants/Colors';
+import { Text } from '../../components/StyledText';
+import { colors } from '../../constants/Colors';
 import { TouchableOpacity, Image, Animated, TextInput } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase, supabaseStorageUrl } from '../lib/supabase';
+import { supabase, supabaseStorageUrl } from '../../lib/supabase';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { KeyboardAvoidingView, Platform, Modal } from 'react-native';
-import { useActiveChallenge } from '../hooks/useActiveChallenge';
-import { Challenge } from '../types';
-import { Loader } from '../components/Loader';
-import ShareChallenge from '../components/ShareChallenge';
+import { useActiveChallenge } from '../../hooks/useActiveChallenge';
+import { Challenge } from '../../types';
+import { Loader } from '../../components/Loader';
+import ShareChallenge from '../../components/ShareChallenge';
 
 
 interface ChallengeCardProps {

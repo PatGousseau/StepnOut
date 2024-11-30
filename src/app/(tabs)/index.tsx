@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
-import Post from '../components/Post';
-import { useFetchHomeData } from '../hooks/useFetchHomeData';
-import { colors } from '../constants/Colors';
-import { useAuth } from '../contexts/AuthContext';
-import CreatePost from '../components/CreatePost';
-import { User } from '../models/User';
+import Post from '../../components/Post';
+import { useFetchHomeData } from '../../hooks/useFetchHomeData';
+import { colors } from '../../constants/Colors';
+import { useAuth } from '../../contexts/AuthContext';
+import CreatePost from '../../components/CreatePost';
+import { User } from '../../models/User';
 
 const Home = () => {
   const { user } = useAuth();

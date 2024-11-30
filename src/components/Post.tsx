@@ -1,5 +1,5 @@
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   View, 
   StyleSheet,
@@ -11,10 +11,11 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
   PanResponder,
-  Animated
+  Animated,
+  GestureResponderEvent
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
-import { Comments, Comment } from './Comments'; 
+import { CommentsModal, Comment } from './Comments'; 
 import { colors } from '../constants/Colors';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
@@ -23,6 +24,7 @@ import { sendLikeNotification, sendCommentNotification } from '../lib/notificati
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
 import { useFetchComments } from '../hooks/useFetchComments';
+import { router } from 'expo-router';
 
 interface PostProps {
   postUser: User;
@@ -32,7 +34,8 @@ interface PostProps {
   comments_count: number;
   postId: number;
   userId: string;
-  setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
+  setPostCounts?: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
+  isPostPage?: boolean;
 }
 
 const Post: React.FC<PostProps> = ({ 
@@ -43,7 +46,8 @@ const Post: React.FC<PostProps> = ({
   comments_count,
   postId, 
   userId, 
-  setPostCounts, 
+  setPostCounts,
+  isPostPage = false,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -87,6 +91,18 @@ const Post: React.FC<PostProps> = ({
     setCommentCount(comments_count);
   }, [comments_count]);
 
+  const updateParentCounts = useCallback((newLikeCount: number, newCommentCount: number) => {
+    if (setPostCounts) {
+      setPostCounts(prevCounts => ({
+        ...prevCounts,
+        [postId]: {
+          likes: newLikeCount,
+          comments: newCommentCount,
+        },
+      }));
+    }
+  }, [postId, setPostCounts]);
+
   const handleLikeToggle = async () => {
     if (!postId || !userId) {
       console.error("postId or userId is undefined", { postId, userId });
@@ -95,7 +111,9 @@ const Post: React.FC<PostProps> = ({
 
     const isLiking = !liked;
     setLiked(isLiking);
-    setLikeCount(prevCount => isLiking ? prevCount + 1 : prevCount - 1);
+    const newLikeCount = isLiking ? likeCount + 1 : likeCount - 1;
+    setLikeCount(newLikeCount);
+    updateParentCounts(newLikeCount, commentCount);
 
     const result = await toggleLike(postId, userId);
 
@@ -124,14 +142,9 @@ const Post: React.FC<PostProps> = ({
       const newComment = await addComment(user.id, comment.text);
 
       if (newComment) {
-        setCommentCount(prevCount => prevCount + 1);
-        setPostCounts(prevCounts => ({
-          ...prevCounts,
-          [postId]: {
-            ...prevCounts[postId],
-            comments: (prevCounts[postId]?.comments || 0) + 1,
-          },
-        }));
+        const newCommentCount = commentCount + 1;
+        setCommentCount(newCommentCount);
+        updateParentCounts(likeCount, newCommentCount);
 
         try {
           await sendCommentNotification(user?.id, user?.user_metadata?.username, userId, postId.toString(), comment.text);
@@ -149,33 +162,49 @@ const Post: React.FC<PostProps> = ({
     return source?.uri?.match(/\.(mp4|mov|avi|wmv)$/i);
   };
 
+  const handleMediaPress = () => {
+    if (media && isVideo(media)) {
+      return;
+    }
+
+    if (isPostPage) {
+      setShowFullScreenImage(true);
+    } else {
+      handlePostPress();
+    }
+  };
+
   const renderMedia = () => {
     if (!media) return null;
     
-
     if (isVideo(media)) {
       const player = useVideoPlayer(media.uri);
       
       return (
-        <VideoView
-          player={player}
-          style={styles.mediaContent}
-          contentFit="cover"
-          nativeControls
-        />
+        <TouchableOpacity 
+          onPress={handleMediaPress}
+          activeOpacity={1}
+        >
+          <VideoView
+            player={player}
+            style={styles.mediaContent}
+            contentFit="cover"
+            nativeControls
+          />
+        </TouchableOpacity>
       );
     }
 
     return (
       <TouchableOpacity 
-        onPress={() => setShowFullScreenImage(true)}
+        onPress={handleMediaPress}
         activeOpacity={1}
       >
         <Image
           source={{ uri: media.uri }}
           style={styles.mediaContent}
           cachePolicy="memory-disk" 
-          contentFit="contain"
+          contentFit="cover"
           transition={200}
         />
       </TouchableOpacity>
@@ -226,21 +255,32 @@ const Post: React.FC<PostProps> = ({
     fetchComments();
   };
 
+  const handlePostPress = () => {
+    router.push(`/post/${postId}`);
+  };
+
+  const handleProfilePress = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    router.push(`/profile/${postUser.id}`);
+  };
+
   return (
-    <View style={styles.container}>
+    <Pressable onPress={handlePostPress} style={styles.container}>
       <View style={styles.header}>
-        <Image 
-          source={
-            postUser?.profileImageUrl?.startsWith('http')
-              ? { uri: postUser?.profileImageUrl }
-              : require('../assets/images/default-pfp.png')
-          }
-          style={styles.profilePicture} 
-        />
-        <View style={styles.nameContainer}>
+        <TouchableOpacity onPress={handleProfilePress}>
+          <Image 
+            source={
+              postUser?.profileImageUrl?.startsWith('http')
+                ? { uri: postUser?.profileImageUrl }
+                : require('../assets/images/default-pfp.png')
+            }
+            style={styles.profilePicture} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleProfilePress} style={styles.nameContainer}>
           <Text style={styles.name}>{postUser?.name || 'Unknown'}</Text>
           <Text style={styles.username}>@{postUser?.username || 'unknown'}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
       {text && <Text style={styles.text}>{text}</Text>}
       {renderMedia()}
@@ -275,7 +315,7 @@ const Post: React.FC<PostProps> = ({
             style={styles.modalContainer}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
           >
-            <Comments
+            <CommentsModal
               initialComments={commentList}
               onAddComment={handleAddComment}
               onClose={() => setShowComments(false)}
@@ -316,7 +356,7 @@ const Post: React.FC<PostProps> = ({
           )}
         </View>
       </Modal>
-    </View>
+    </Pressable>
   );
 };
 
@@ -359,6 +399,7 @@ const styles = StyleSheet.create({
   },
   mediaContent: {
     width: '100%',
+    height: undefined,
     aspectRatio: 1,
     borderRadius: 8,
     marginTop: 8,

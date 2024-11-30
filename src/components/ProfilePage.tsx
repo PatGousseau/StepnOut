@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert, Modal, RefreshControl, TextInput } from 'react-native';
-import UserProgress from '../components/UserProgress';
-import Post from '../components/Post';
+import UserProgress from './UserProgress';
+import Post from './Post';
 import ProfilePic from '../assets/images/profile-pic.png';
 import useUserProgress from '../hooks/useUserProgress';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,8 +10,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
-import { Loader } from '../components/Loader';
-import FeedbackButton from '../components/FeedbackButton';
+import { Loader } from './Loader';
+import FeedbackButton from './FeedbackButton';
 import { User } from '../models/User';
 
 type UserProfile = {
@@ -20,7 +20,11 @@ type UserProfile = {
   profileImageUrl: string | null;
 };
 
-const ProfileScreen: React.FC = () => {
+type ProfilePageProps = {
+  userId: string;
+};
+
+export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { 
     data, 
@@ -30,7 +34,7 @@ const ProfileScreen: React.FC = () => {
     postsLoading,
     hasMorePosts,
     fetchUserPosts
-  } = useUserProgress();
+  } = useUserProgress(userId);
   const [page, setPage] = useState(1);
   const [showMenu, setShowMenu] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -42,11 +46,15 @@ const ProfileScreen: React.FC = () => {
   const [editedUsername, setEditedUsername] = useState('');
   const [userObj, setUserObj] = useState<User | null>(null);
 
+  // for features that are only available to the user themselves
+  const isOwnProfile = userId ? userId === user?.id : true;
+
   useEffect(() => {
     const loadUser = async () => {
-      if (!user?.id) return;
+      const targetUserId = userId || user?.id;
+      if (!targetUserId) return;
       
-      const userInstance = await User.getUser(user.id);
+      const userInstance = await User.getUser(targetUserId);
       setUserObj(userInstance);
       
       if (userInstance.profile) {
@@ -59,7 +67,7 @@ const ProfileScreen: React.FC = () => {
     };
 
     loadUser();
-  }, [user?.id]);
+  }, [userId, user?.id]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -145,14 +153,12 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  // Add this to handle pressing outside the menu
   const handlePressOutside = () => {
     if (showMenu) {
       setShowMenu(false);
     }
   };
 
-  // Add this function to handle profile updates
   const handleSaveProfile = async () => {
     try {
       // Check if username is already taken (only if username changed)
@@ -316,52 +322,53 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
           <View style={styles.headerButtons}>
-            <View>
-              <TouchableOpacity 
-                style={styles.settingsButton}
-                onPress={(e) => {
-                  e.stopPropagation(); // Prevent the click from bubbling up
-                  setShowMenu(!showMenu);
-                }}
-              >
-                <Icon name="settings-outline" size={24} color="#333" />
-              </TouchableOpacity>
-              
-              {showMenu && (
-                <View style={styles.menuContainer}>
-                  <TouchableOpacity 
-                    style={styles.menuItem}
-                    onPress={() => {
-                      setShowMenu(false);
-                      setIsEditing(true);
-                      setEditedName(userProfile?.name || '');
-                      setEditedUsername(userProfile?.username || '');
-                    }}
-                  >
-                    <View style={styles.menuItemContent}>
-                      <Icon name="pencil-outline" size={16} color={colors.light.primary} />
-                      <Text style={styles.menuOptionText}>Edit Profile</Text>
-                    </View>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.menuItem}
-                    onPress={() => {
-                      setShowMenu(false);
-                      handleSignOut();
-                    }}
-                  >
-                    <View style={styles.menuItemContent}>
-                      <Icon name="log-out-outline" size={16} color={colors.light.primary} />
-                      <Text style={styles.menuOptionText}>Sign Out</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+            {isOwnProfile && (  // Only show settings for own profile
+              <View>
+                <TouchableOpacity 
+                  style={styles.settingsButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(!showMenu);
+                  }}
+                >
+                  <Icon name="settings-outline" size={24} color="#333" />
+                </TouchableOpacity>
+                {showMenu && (
+                  <View style={styles.menuContainer}>
+                    <TouchableOpacity 
+                      style={styles.menuItem}
+                      onPress={() => {
+                        setShowMenu(false);
+                        setIsEditing(true);
+                        setEditedName(userProfile?.name || '');
+                        setEditedUsername(userProfile?.username || '');
+                      }}
+                    >
+                      <View style={styles.menuItemContent}>
+                        <Icon name="pencil-outline" size={16} color={colors.light.primary} />
+                        <Text style={styles.menuOptionText}>Edit Profile</Text>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.menuItem}
+                      onPress={() => {
+                        setShowMenu(false);
+                        handleSignOut();
+                      }}
+                    >
+                      <View style={styles.menuItemContent}>
+                        <Icon name="log-out-outline" size={16} color={colors.light.primary} />
+                        <Text style={styles.menuOptionText}>Sign Out</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         </View>
-        {data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
-        <Text style={styles.pastChallengesTitle}>Your Posts</Text>
+        {isOwnProfile && data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
+        <Text style={styles.pastChallengesTitle}>{isOwnProfile ? 'Your' : ''} Posts</Text>
         {userPosts.map((post) => (
           <Post
             key={post.id}
@@ -401,7 +408,7 @@ const ProfileScreen: React.FC = () => {
           />
         </View>
       </Modal>
-      <FeedbackButton />
+      {isOwnProfile && <FeedbackButton />}
     </View>
   );
 };
@@ -589,5 +596,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-
-export default ProfileScreen;

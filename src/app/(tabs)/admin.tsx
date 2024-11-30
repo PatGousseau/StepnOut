@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { supabase } from '../lib/supabase';
-import { colors } from '../constants/Colors';
+import { supabase } from '../../lib/supabase';
+import { colors } from '../../constants/Colors';
 import * as ImagePicker from 'expo-image-picker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 
 const ChallengeCreation: React.FC = () => {

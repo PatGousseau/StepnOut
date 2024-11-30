@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator, SafeAreaView } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface Comment {
   id: number;
@@ -20,15 +19,99 @@ interface CommentsProps {
   loading?: boolean;
 }
 
-export const Comments: React.FC<CommentsProps> = ({ initialComments, onAddComment, onClose, loading = false }) => {
+interface CommentsListProps {
+  comments: Comment[];
+  onAddComment: (comment: { text: string; userId: string }) => void;
+  loading?: boolean;
+  flatListRef?: React.RefObject<FlatList>;
+  onClose?: () => void;
+}
+
+export const CommentsList: React.FC<CommentsListProps> = ({ 
+  comments, 
+  onAddComment, 
+  loading = false, 
+  flatListRef, 
+  onClose 
+}) => {
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
+
+  const handleAddComment = async () => {
+    if (newComment.trim() && user) {
+      const newCommentObj = {
+        id: Date.now(),
+        text: newComment,
+        userId: user.id
+      };
+      
+      const result = await onAddComment(newCommentObj);
+      
+      if (result) {
+        setNewComment('');
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.light.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.commentsWrapper]}>
+      <FlatList
+        ref={flatListRef}
+        style={styles.commentsList}
+        data={comments}
+        keyExtractor={item => item.id.toString()}
+        renderItem={({ item }) => (
+          <Comment userId={item.userId} text={item.text} created_at={item.created_at} />
+        )}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No comments yet!</Text>
+          </View>
+        )}
+      />
+      
+      <View style={styles.inputContainer}>
+        <TextInput
+          value={newComment}
+          onChangeText={setNewComment}
+          placeholder="Add a comment..."
+          placeholderTextColor="#888"
+          style={styles.input}
+        />
+        <Pressable 
+          onPress={handleAddComment} 
+          style={[
+            styles.postButton,
+            !user && styles.postButtonDisabled
+          ]}
+          disabled={!user}
+        >
+          <Text style={styles.postButtonText}>Post</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+};
+
+// Rename the main component to CommentsModal
+export const CommentsModal: React.FC<CommentsProps> = ({ 
+  initialComments, 
+  onAddComment, 
+  onClose, 
+  loading = false 
+}) => {
   const [comments, setComments] = useState(initialComments);
   const flatListRef = useRef<FlatList>(null);
-
   const translateY = new Animated.Value(0);
-  const insets = useSafeAreaInsets();  // this is used for bottom padding on devices with curved corners
-  
+
   // responder for dragging the comments up and down
   // closes the modal if dragged down far enough or if its dragged fast enough
   const panResponder = PanResponder.create({
@@ -63,88 +146,34 @@ export const Comments: React.FC<CommentsProps> = ({ initialComments, onAddCommen
 
   useEffect(() => {
     setComments(initialComments);
-    // Scroll to end with a slight delay to ensure the list has rendered
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: false });
     }, 100);
   }, [initialComments]);
 
-  const handleAddComment = async () => {
-    if (newComment.trim() && user) {
-      const newCommentObj = {
-        id: Date.now(),
-        text: newComment,
-        userId: user.id
-      };
-      setComments(prevComments => [...prevComments, newCommentObj]);
-      
-      const result = await onAddComment(newCommentObj);
-      
-      if (result) {
-        setNewComment('');
-      }
-    }
+  const handleAddComment = async (newCommentObj: { text: string; userId: string }) => {
+    setComments(prevComments => [...prevComments, newCommentObj]);
+    return onAddComment(newCommentObj);
   };
 
   return (
     <Animated.View 
-      style={[
-        styles.container,
-        { 
-          transform: [{ translateY }],
-          paddingBottom: Math.max(insets.bottom, 16),
-        }
-      ]}
+      style={[styles.container, { 
+        transform: [{ translateY }],
+      }]}
     >
-      <View 
-        {...panResponder.panHandlers}
-        style={styles.dragHandle}
-      >
-        <View style={styles.dragIndicator} />
-      </View>
-      
-      <View style={styles.commentsWrapper}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.light.primary} />
-          </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            style={styles.commentsList}
-            data={comments}
-            keyExtractor={item => item.id.toString()}
-            renderItem={({ item }) => (
-              <Comment userId={item.userId} text={item.text} created_at={item.created_at} />
-            )}
-            ListEmptyComponent={() => (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No comments yet!</Text>
-              </View>
-            )}
-          />
-        )}
-      </View>
-      
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={newComment}
-          onChangeText={setNewComment}
-          placeholder="Add a comment..."
-          placeholderTextColor="#888"
-          style={styles.input}
+      <SafeAreaView style={styles.safeArea}>
+        <View {...panResponder.panHandlers} style={styles.dragHandle}>
+          <View style={styles.dragIndicator} />
+        </View>
+        
+        <CommentsList
+          comments={comments}
+          loading={loading}
+          flatListRef={flatListRef}
+          onAddComment={handleAddComment}
         />
-        <Pressable 
-          onPress={handleAddComment} 
-          style={[
-            styles.postButton,
-            !user && styles.postButtonDisabled
-          ]}
-          disabled={!user}
-        >
-          <Text style={styles.postButtonText}>Post</Text>
-        </Pressable>
-      </View>
+      </SafeAreaView>
     </Animated.View>
   );
 };
@@ -214,7 +243,7 @@ const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.light.background,
     padding: 10,
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
@@ -317,5 +346,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  safeArea: {
+    flex: 1,
   },
 });

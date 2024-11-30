@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 0,
-    paddingBottom: Platform.OS === 'android' ? 10 : 0,
+    paddingBottom: Platform.OS === 'android' ? 10 : 16,
   },
   logo: {
     width: 28,
