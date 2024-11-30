@@ -55,7 +55,6 @@ export const useActiveChallenge = () => {
           filter: 'is_active=eq.true'
         },
         async (payload) => {
-          console.log("prints")
           await fetchActiveChallenge();
           
           if (user?.id) {

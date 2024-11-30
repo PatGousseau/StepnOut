@@ -5,6 +5,7 @@ import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
 import CreatePost from '../components/CreatePost';
+import { User } from '../models/User';
 
 const Home = () => {
   const { user } = useAuth();
@@ -16,8 +17,8 @@ const Home = () => {
     const counts = posts.reduce((acc, post) => ({
       ...acc,
       [post.id]: {
-        likes: post.likes_count,
-        comments: post.comments_count,
+        likes: post.likes_count || 0,
+        comments: post.comments_count || 0,
       }
     }), {});
     setPostCounts(counts);
@@ -59,24 +60,18 @@ const Home = () => {
       >
         <View style={{ padding: 16 }}>
           {posts.map(post => {
-            const userData = userMap[post.user_id];
-            const userMetadata = userData || { username: 'Unknown', name: 'Unknown' };
-            const profileImageUrl = userData?.profileImageUrl || require('../assets/images/profile-pic.png');
-
+            const postUser = userMap[post.user_id] as User;
             return (
               <Post
                 key={post.id}
-                profilePicture={profileImageUrl}
-                name={userMetadata.name}
-                username={userMetadata.username}
+                postUser={postUser}
                 text={post.body}
                 likes={postCounts[post.id]?.likes ?? 0}
-                comments={postCounts[post.id]?.comments ?? 0}
+                comments_count={postCounts[post.id]?.comments ?? 0}
                 postId={post.id}
                 userId={post.user_id}
                 setPostCounts={setPostCounts}
                 media={post.media_file_path ? { uri: post.media_file_path } : undefined}
-                userMap={userMap} 
               />
             );
           })}

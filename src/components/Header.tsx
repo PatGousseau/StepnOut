@@ -20,10 +20,6 @@ const Header = () => {
     setShowNotifications(false);
   };
 
-  useEffect(()=> {
-    console.log('unreadCount: ', unreadCount)
-  }, [unreadCount])
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -72,7 +68,8 @@ const styles = StyleSheet.create({
   },
   stepnOut: {
     fontSize: 18,
-    fontFamily: 'PingFangSC-Medium',
+    fontFamily: 'PingFangSC-Bold',
+    fontWeight: 'bold',
     color: colors.light.primary,
   },
   notificationIcon: {

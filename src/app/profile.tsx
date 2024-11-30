@@ -12,12 +12,12 @@ import { supabase } from '../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 import { Loader } from '../components/Loader';
 import FeedbackButton from '../components/FeedbackButton';
+import { User } from '../models/User';
 
 type UserProfile = {
   username: string;
   name: string;
-  profile_media_id: string;
-  profile_image_url?: string;
+  profileImageUrl: string | null;
 };
 
 const ProfileScreen: React.FC = () => {
@@ -40,42 +40,25 @@ const ProfileScreen: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedUsername, setEditedUsername] = useState('');
+  const [userObj, setUserObj] = useState<User | null>(null);
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const loadUser = async () => {
       if (!user?.id) return;
       
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select(`
-          username, 
-          name,
-          profile_media_id,
-          media!profiles_profile_media_id_fkey (
-            file_path
-          )
-        `)
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
+      const userInstance = await User.getUser(user.id);
+      setUserObj(userInstance);
+      
+      if (userInstance.profile) {
+        setUserProfile({
+          username: userInstance.username,
+          name: userInstance.name,
+          profileImageUrl: userInstance.profileImageUrl
+        });
       }
-
-      const profileImageUrl = profile.media?.file_path 
-        ? `${supabase.storageUrl}/object/public/challenge-uploads/${profile.media.file_path}`
-        : undefined;
-
-      setUserProfile({
-        username: profile.username,
-        name: profile.name,
-        profile_media_id: profile.profile_media_id,
-        profile_image_url: profileImageUrl
-      });
     };
 
-    fetchUserProfile();
+    loadUser();
   }, [user?.id]);
 
   const onRefresh = useCallback(async () => {
@@ -140,6 +123,19 @@ const ProfileScreen: React.FC = () => {
           profile_image_url: `${supabase.storageUrl}/object/public/challenge-uploads/${fileName}`
         }));
 
+        // After successful upload and media insertion, reload the user
+        if (user?.id) {
+          const updatedUser = await User.getUser(user.id);
+          setUserObj(updatedUser);
+          
+          if (updatedUser.profile) {
+            setUserProfile({
+              username: updatedUser.username,
+              name: updatedUser.name,
+              profileImageUrl: updatedUser.profileImageUrl
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Error updating profile picture:', error);
@@ -207,6 +203,14 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   if (progressLoading || postsLoading || !userProfile) {
     return <Loader />;
   }
@@ -255,7 +259,7 @@ const ProfileScreen: React.FC = () => {
                 </View>
               ) : (
                 <Image 
-                  source={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic} 
+                  source={userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic} 
                   style={styles.avatar} 
                 />
               )}
@@ -306,7 +310,7 @@ const ProfileScreen: React.FC = () => {
               ) : (
                 <View style={styles.userInfoStacked}>
                   <Text style={styles.username}>{userProfile.name}</Text>
-                  <Text style={styles.userTitle}>{userProfile.username}</Text>
+                  <Text style={styles.userTitle}>@{userProfile.username}</Text>
                 </View>
               )}
             </View>
@@ -361,15 +365,13 @@ const ProfileScreen: React.FC = () => {
         {userPosts.map((post) => (
           <Post
             key={post.id}
-            profilePicture={userProfile.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic}
-            name={userProfile.name}
-            username={userProfile.username}
+            postUser={userObj}
             text={post.body}
             media={post.media_file_path ? { uri: post.media_file_path } : undefined}
             likes={post.likes_count}
-            comments={post.comments_count}
+            comments_count={post.comments_count}
             postId={post.id}
-            userId={user?.id}
+            userId={user.id}
             setPostCounts={() => {}}
           />
         ))}
