@@ -171,7 +171,6 @@ export const useFetchHomeData = () => {
       console.error('Error adding comment:', error);
       return null;
     }
-
     return data?.[0] ? {
       id: data[0].id,
       text: data[0].body,
