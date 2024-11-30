@@ -12,7 +12,8 @@ import {
   Dimensions,
   PanResponder,
   Animated,
-  GestureResponderEvent
+  GestureResponderEvent,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import { CommentsModal, Comment } from './Comments'; 
@@ -25,6 +26,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
 import { useFetchComments } from '../hooks/useFetchComments';
 import { router } from 'expo-router';
+import { supabase } from '../lib/supabase';
 
 interface PostProps {
   postUser: User;
@@ -63,6 +65,7 @@ const Post: React.FC<PostProps> = ({
   } | null>(null);
   const { user } = useAuth();
   const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -262,6 +265,50 @@ const Post: React.FC<PostProps> = ({
   const handleProfilePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
     router.push(`/profile/${postUser.id}`);
+  }
+  
+  const handleReport = async () => {
+    Alert.alert(
+      "Report Post",
+      "Are you sure you want to report this post?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Report",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('reports')
+                .insert([
+                  {
+                    post_id: postId,
+                    reporter_id: user?.id,
+                    reported_user_id: userId,
+                    status: 'pending'
+                  }
+                ]);
+
+              if (error) throw error;
+
+              Alert.alert(
+                "Thank you",
+                "Your report has been submitted and will be reviewed by our team."
+              );
+            } catch (error) {
+              console.error('Error submitting report:', error);
+              Alert.alert(
+                "Error",
+                "Failed to submit report. Please try again later."
+              );
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -295,6 +342,11 @@ const Post: React.FC<PostProps> = ({
           <View style={styles.iconContainer}>
             <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
             <Text style={styles.iconText}>{commentCount.toString()}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleReport}>
+          <View style={styles.iconContainer}>
+            <Icon name="flag-o" size={16} color={colors.neutral.grey1} />
           </View>
         </TouchableOpacity>
       </View>
