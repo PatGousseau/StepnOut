@@ -45,7 +45,7 @@ async function sendPushNotification(token: string, title: string, body: string, 
 
 // Handle sending notifications for likes
 export async function sendLikeNotification(senderId: string | undefined, senderUsername: string,recipientId: string, postId: string) {
-    console.log(recipientId);
+
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 

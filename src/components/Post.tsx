@@ -14,42 +14,42 @@ import {
   Animated
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
-import Comments from './Comments'; 
+import { Comments, Comment } from './Comments'; 
 import { colors } from '../constants/Colors';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
 import { Image } from 'expo-image';
 import { sendLikeNotification, sendCommentNotification } from '../lib/notificationsService';
 import { useAuth } from '../contexts/AuthContext';
-
-interface UserMap {
-  [key: string]: {
-    username: string;
-    name: string;
-  }
-}
+import { User } from '../models/User';
+import { useFetchComments } from '../hooks/useFetchComments';
 
 interface PostProps {
-  profilePicture: any;
-  username: string;
-  name: string;
+  postUser: User;
   text?: string;
   media?: { uri: string } | undefined;
   likes: number;
-  comments: number;
+  comments_count: number;
   postId: number;
-  userId: string | undefined;
+  userId: string;
   setPostCounts: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
-  userMap: UserMap;
 }
 
-const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media, likes, comments, postId, userId, setPostCounts, userMap }) => {
+const Post: React.FC<PostProps> = ({ 
+  postUser, 
+  text, 
+  media, 
+  likes, 
+  comments_count,
+  postId, 
+  userId, 
+  setPostCounts, 
+}) => {
   const [showComments, setShowComments] = useState(false);
-  const [commentList, setCommentList] = useState<{ id: number; text: string; userId: string }[]>([]);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
-  const [commentCount, setCommentCount] = useState(comments); 
-  const { toggleLike, fetchLikes, fetchComments, addComment } = useFetchHomeData();
+  const [commentCount, setCommentCount] = useState(comments_count || 0);
+  const { toggleLike, fetchLikes } = useFetchHomeData();
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
@@ -58,6 +58,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     opacity: Animated.Value;
   } | null>(null);
   const { user } = useAuth();
+  const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -72,24 +73,6 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
   }, [postId]);
 
   useEffect(() => {
-    const fetchCommentData = async () => {
-      const commentsData = await fetchComments(postId);
-      setCommentList(
-        commentsData.map(comment => ({
-          id: comment.id,
-          text: comment.body,
-          userId: comment.user_id,
-        }))
-      );
-      setCommentCount(commentsData.length);
-    };
-
-    if (postId) {
-      fetchCommentData();
-    }
-  }, [postId, userMap]);
-
-  useEffect(() => {
     if (showFullScreenImage) {
       setAnimationState({
         translateY: new Animated.Value(0),
@@ -99,6 +82,10 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
       setAnimationState(null);
     }
   }, [showFullScreenImage]);
+
+  useEffect(() => {
+    setCommentCount(comments_count);
+  }, [comments_count]);
 
   const handleLikeToggle = async () => {
     if (!postId || !userId) {
@@ -128,25 +115,16 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
   };
 
   const handleAddComment = async (comment: { text: string; userId: string }) => {
-    if (!userId) {
+    if (!user) {
       console.error("User not authenticated");
       return;
     }
 
     if (comment.text.trim()) {
-      setCommentList(prevComments => [
-        ...prevComments,
-        { id: Date.now(), text: comment.text, userId },
-      ]);
-      setCommentCount(prevCount => prevCount + 1);
-
-      const newComment = await addComment(postId, userId, comment.text);
+      const newComment = await addComment(user.id, comment.text);
 
       if (newComment) {
-        setCommentList(prevComments =>
-          prevComments.map(c => (c.id === Date.now() ? { ...c, id: newComment.id } : c))
-        );
-
+        setCommentCount(prevCount => prevCount + 1);
         setPostCounts(prevCounts => ({
           ...prevCounts,
           [postId]: {
@@ -243,13 +221,25 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
     });
   }, [animationState]);
 
+  const handleOpenComments = () => {
+    setShowComments(true);
+    fetchComments();
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image source={profilePicture} style={styles.profilePicture} />
+        <Image 
+          source={
+            postUser?.profileImageUrl?.startsWith('http')
+              ? { uri: postUser?.profileImageUrl }
+              : require('../assets/images/default-pfp.png')
+          }
+          style={styles.profilePicture} 
+        />
         <View style={styles.nameContainer}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.username}>@{username}</Text>
+          <Text style={styles.name}>{postUser?.name || 'Unknown'}</Text>
+          <Text style={styles.username}>@{postUser?.username || 'unknown'}</Text>
         </View>
       </View>
       {text && <Text style={styles.text}>{text}</Text>}
@@ -261,7 +251,7 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
             <Text style={styles.iconText}>{likeCount.toString()}</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setShowComments(true)}>
+        <TouchableOpacity onPress={handleOpenComments}>
           <View style={styles.iconContainer}>
             <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
             <Text style={styles.iconText}>{commentCount.toString()}</Text>
@@ -275,25 +265,24 @@ const Post: React.FC<PostProps> = ({ profilePicture, username, name, text, media
         visible={showComments}
         onRequestClose={() => setShowComments(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
-          <View style={styles.modalBackground} />
-        </TouchableWithoutFeedback>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
+            <View style={styles.modalBackground} />
+          </TouchableWithoutFeedback>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
-        >
-          <View style={styles.modalContent}>
-            <Pressable onPress={() => setShowComments(false)} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </Pressable>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalContainer}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
+          >
             <Comments
               initialComments={commentList}
               onAddComment={handleAddComment}
-              userMap={userMap}
+              onClose={() => setShowComments(false)}
+              loading={commentsLoading}
             />
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       <Modal
@@ -390,31 +379,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#5A5A5A',
   },
-  modalBackground: {
+  modalOverlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+    height: '100%',
+  },
+  modalBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContainer: {
-    justifyContent: 'flex-end',
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    backgroundColor: 'black',
-  },
-  modalContent: {
     width: '100%',
-    backgroundColor: 'white',
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    padding: 20,
-    elevation: 5,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 10,
-  },
-  closeButtonText: {
-    fontSize: 14,
-    color: colors.light.primary,
+    maxHeight: '75%',
+    height: '100%',
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   fullScreenContainer: {
     flex: 1,
