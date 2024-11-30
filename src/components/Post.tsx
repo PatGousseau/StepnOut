@@ -98,10 +98,8 @@ const Post: React.FC<PostProps> = ({
     setLikeCount(prevCount => isLiking ? prevCount + 1 : prevCount - 1);
 
     const result = await toggleLike(postId, userId);
-
-    if (result && isLiking) {
+    if (result && isLiking && user?.id !== userId) {
       try {
-
         await sendLikeNotification(user?.id, user?.user_metadata?.username, userId, postId.toString());
       } catch (error) {
         console.error('Failed to send like notification:', error);
@@ -133,10 +131,12 @@ const Post: React.FC<PostProps> = ({
           },
         }));
 
-        try {
-          await sendCommentNotification(user?.id, user?.user_metadata?.username, userId, postId.toString(), comment.text);
-        } catch (error) {
-          console.error('Failed to send comment notification:', error);
+        if (user.id !== userId) {
+          try {
+            await sendCommentNotification(user?.id, user?.user_metadata?.username, userId, postId.toString(), comment.text);
+          } catch (error) {
+            console.error('Failed to send comment notification:', error);
+          }
         }
 
         return true;

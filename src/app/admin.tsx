@@ -57,9 +57,8 @@ const ChallengeCreation: React.FC = () => {
 
   const handleMediaUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to upload media!');
+      Alert.alert('Sorry, we need camera roll permissions to upload media!');
       return;
     }
 
@@ -76,20 +75,28 @@ const ChallengeCreation: React.FC = () => {
 
         const fileName = `image/${Date.now()}.jpg`;
         
-        const response = await fetch(file.uri);
-        const blob = await response.blob();
+        const formData = new FormData();
+        formData.append('file', {
+          uri: file.uri,
+          name: fileName,
+          type: 'image/jpeg',
+        } as any);
 
+        // Upload file to storage
         const { error: uploadError } = await supabase.storage
           .from('challenge-uploads')
-          .upload(fileName, blob, {
-            contentType: 'image/jpeg',
+          .upload(fileName, formData, {
+            contentType: 'multipart/form-data',
           });
 
         if (uploadError) throw uploadError;
 
+        // Insert into media table and get the ID
         const { data: mediaData, error: dbError } = await supabase
           .from('media')
-          .insert([{ file_path: fileName }])
+          .insert([{ 
+            file_path: fileName,
+          }])
           .select('id')
           .single();
 
@@ -187,129 +194,144 @@ const ChallengeCreation: React.FC = () => {
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Text style={styles.sectionTitle}>Create New Challenge</Text>
-      
-      <Text style={styles.label}>Title</Text>
-      <TextInput 
-        style={styles.input} 
-        value={title} 
-        onChangeText={setTitle} 
-        placeholder="Enter title" 
-      />
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <Text style={styles.sectionTitle}>Create New Challenge</Text>
+        
+        <Text style={styles.label}>Title</Text>
+        <TextInput 
+          style={styles.input} 
+          value={title} 
+          onChangeText={setTitle} 
+          placeholder="Enter title" 
+        />
 
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={styles.input}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Enter description"
-        multiline
-      />
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          style={styles.input}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Enter description"
+          multiline
+        />
 
-      <Text style={styles.label}>Difficulty</Text>
-      <DropDownPicker
-        open={openDifficulty}
-        value={difficulty}
-        items={[
-          { label: 'Easy', value: 'easy' },
-          { label: 'Medium', value: 'medium' },
-          { label: 'Hard', value: 'hard' },
-        ]}
-        setOpen={setOpenDifficulty}
-        setValue={setDifficulty}
-        placeholder="Select difficulty"
-        style={styles.dropdown}
-      />
+        <View style={styles.dropdownContainer}>
+          <Text style={styles.label}>Difficulty</Text>
+          <DropDownPicker
+            open={openDifficulty}
+            value={difficulty}
+            items={[
+              { label: 'Easy', value: 'easy' },
+              { label: 'Medium', value: 'medium' },
+              { label: 'Hard', value: 'hard' },
+            ]}
+            setOpen={setOpenDifficulty}
+            setValue={setDifficulty}
+            placeholder="Select difficulty"
+            style={styles.dropdown}
+            zIndex={1000}
+          />
+        </View>
 
-      <Text style={styles.label}>Challenge Image</Text>
-      <TouchableOpacity style={styles.mediaUploadButton} onPress={handleMediaUpload}>
-        {mediaPreview ? (
-          <View style={styles.mediaPreviewContainer}>
-            <Image source={{ uri: mediaPreview }} style={styles.mediaPreview} />
-            <TouchableOpacity 
-              style={styles.removeButton}
-              onPress={() => {
-                setMediaPreview(null);
-                setImageMediaId(null);
-              }}
-            >
-              <MaterialIcons name="close" size={12} color="white" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-            <MaterialIcons name="image" size={24} color="#666" />
-            <Text style={styles.uploadButtonText}>Tap to upload image</Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.createChallengeButton} onPress={handleCreateChallenge}>
-        <Text style={styles.buttonText}>Create Challenge</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.sectionTitle}>Existing Challenges</Text>
-      {challenges.map((challenge) => (
-        <View key={challenge.id} style={styles.challengeCard}>
-          {challenge.image_media_id && (
-            <Image
-              source={{
-                uri: `${supabase.storage.from('challenge-uploads').getPublicUrl(
-                  `image/${challenge.image_media_id}.jpg`
-                ).data.publicUrl}`
-              }}
-              style={styles.challengeImage}
-            />
-          )}
-          <View style={styles.challengeInfo}>
-            <Text style={styles.challengeTitle}>{challenge.title}</Text>
-            <Text style={styles.challengeDifficulty}>
-              Difficulty: {challenge.difficulty}
-            </Text>
-            <Text numberOfLines={2} style={styles.challengeDescription}>
-              {challenge.description}
-            </Text>
-            <Text style={styles.challengeDate}>
-              Created: {new Date(challenge.created_at).toLocaleDateString()}
-            </Text>
-            <View style={styles.challengeActions}>
-              <TouchableOpacity
-                style={[
-                  styles.activateButton,
-                  challenge.is_active && styles.activeButton
-                ]}
-                onPress={() => handleActivateChallenge(challenge.id)}
-                disabled={challenge.is_active}
+        <Text style={styles.label}>Challenge Image</Text>
+        <TouchableOpacity style={styles.mediaUploadButton} onPress={handleMediaUpload}>
+          {mediaPreview ? (
+            <View style={styles.mediaPreviewContainer}>
+              <Image source={{ uri: mediaPreview }} style={styles.mediaPreview} />
+              <TouchableOpacity 
+                style={styles.removeButton}
+                onPress={() => {
+                  setMediaPreview(null);
+                  setImageMediaId(null);
+                }}
               >
-                <Text style={styles.buttonText}>
-                  {challenge.is_active ? 'Active' : 'Activate'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.notifyButton}
-                onPress={() => handleSendNotifications(challenge.id, challenge.title)}
-              >
-                <Text style={styles.buttonText}>Notify All</Text>
+                <MaterialIcons name="close" size={12} color="white" />
               </TouchableOpacity>
             </View>
+          ) : (
+            <>
+              <MaterialIcons name="image" size={24} color="#666" />
+              <Text style={styles.uploadButtonText}>Tap to upload image</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.createChallengeButton} onPress={handleCreateChallenge}>
+          <Text style={styles.buttonText}>Create Challenge</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Existing Challenges</Text>
+        {challenges.map((challenge) => (
+          <View key={challenge.id} style={styles.challengeCard}>
+            {challenge.image_media_id && (
+              <Image
+                source={{
+                  uri: `${supabase.storage.from('challenge-uploads').getPublicUrl(
+                    `image/${challenge.image_media_id}.jpg`
+                  ).data.publicUrl}`
+                }}
+                style={styles.challengeImage}
+              />
+            )}
+            <View style={styles.challengeInfo}>
+              <Text style={styles.challengeTitle}>{challenge.title}</Text>
+              <Text style={styles.challengeDifficulty}>
+                Difficulty: {challenge.difficulty}
+              </Text>
+              <Text numberOfLines={2} style={styles.challengeDescription}>
+                {challenge.description}
+              </Text>
+              <Text style={styles.challengeDate}>
+                Created: {new Date(challenge.created_at).toLocaleDateString()}
+              </Text>
+              <View style={styles.challengeActions}>
+                <TouchableOpacity
+                  style={[
+                    styles.activateButton,
+                    challenge.is_active && styles.activeButton
+                  ]}
+                  onPress={() => handleActivateChallenge(challenge.id)}
+                  disabled={challenge.is_active}
+                >
+                  <Text style={styles.buttonText}>
+                    {challenge.is_active ? 'Active' : 'Activate'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.notifyButton}
+                  onPress={() => handleSendNotifications(challenge.id, challenge.title)}
+                >
+                  <Text style={styles.buttonText}>Notify All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: colors.light.background,
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+  dropdownContainer: {
+    zIndex: 1000, // Ensure dropdown appears above other elements
+    marginBottom: 60, // Add space for the dropdown options
+  },
+  dropdown: {
+    marginTop: 8,
   },
   label: {
     fontSize: 16,
@@ -322,10 +344,6 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 4,
     marginTop: 8,
-  },
-  dropdown: {
-    marginTop: 8,
-    zIndex: 1,
   },
   createChallengeButton: {
     backgroundColor: colors.light.secondary,
