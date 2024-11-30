@@ -1,23 +1,59 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Image, ScrollView, RefreshControl } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { supabase } from '../lib/supabase';
 import { colors } from '../constants/Colors';
 import * as ImagePicker from 'expo-image-picker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../contexts/AuthContext';
+import { sendNewChallengeNotificationToAll } from '../lib/notificationsService';
 
+type Challenge = {
+  id: number;
+  title: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  created_at: string;
+  image_media_id: number | null;
+  is_active: boolean | null;
+};
 
 const ChallengeCreation: React.FC = () => {
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
-  const [duration, setDuration] = useState<number>(1);
   const [openDifficulty, setOpenDifficulty] = useState<boolean>(false);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [imageMediaId, setImageMediaId] = useState<number | null>(null);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { user } = useAuth();
+
+  const fetchChallenges = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('challenges')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setChallenges(data || []);
+    } catch (error) {
+      console.error('Error fetching challenges:', error);
+      Alert.alert('Error', 'Failed to load challenges');
+    }
+  };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await fetchChallenges();
+    setRefreshing(false);
+  }, []);
+
+  useEffect(() => {
+    fetchChallenges();
+  }, []);
 
   const handleMediaUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -76,7 +112,6 @@ const ChallengeCreation: React.FC = () => {
         created_by: user?.id,
         created_at: new Date().toISOString().split('T')[0], 
         updated_at: new Date().toISOString().split('T')[0], 
-        duration, 
         image_media_id: imageMediaId,
       };
   
@@ -90,8 +125,9 @@ const ChallengeCreation: React.FC = () => {
         setTitle('');
         setDescription('');
         setDifficulty('easy');
-        setDuration(1);
-        setOpenDifficulty(false);
+        setMediaPreview(null);
+        setImageMediaId(null);
+        fetchChallenges();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -100,15 +136,65 @@ const ChallengeCreation: React.FC = () => {
   };
 
   const handleCreateChallenge = () => {
-    if (!title || !description || !difficulty || !duration) {
+    if (!title || !description || !difficulty) {
       Alert.alert('Error', 'All fields must be filled out.');
       return;
     }
     createChallengeInDatabase();
   };
 
+  const handleActivateChallenge = async (challengeId: number) => {
+    try {
+      // First, deactivate all challenges
+      const { error: deactivateError } = await supabase
+        .from('challenges')
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString().split('T')[0]
+        })
+        .neq('id', 0);
+
+      if (deactivateError) throw deactivateError;
+
+      // Then, activate the selected challenge
+      const { error: activateError } = await supabase
+        .from('challenges')
+        .update({ 
+          is_active: true,
+          updated_at: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', challengeId);
+
+      if (activateError) throw activateError;
+
+      // Refresh the challenges list
+      await fetchChallenges();
+      Alert.alert('Success', 'Challenge activated!');
+    } catch (error) {
+      console.error('Error activating challenge:', error);
+      Alert.alert('Error', 'Failed to activate challenge');
+    }
+  };
+
+  const handleSendNotifications = async (challengeId: number, challengeTitle: string) => {
+    try {
+      await sendNewChallengeNotificationToAll(challengeId.toString(), challengeTitle);
+      Alert.alert('Success', 'Notifications sent to all users!');
+    } catch (error) {
+      console.error('Error sending notifications:', error);
+      Alert.alert('Error', 'Failed to send notifications');
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      <Text style={styles.sectionTitle}>Create New Challenge</Text>
+      
       <Text style={styles.label}>Title</Text>
       <TextInput 
         style={styles.input} 
@@ -141,15 +227,6 @@ const ChallengeCreation: React.FC = () => {
         style={styles.dropdown}
       />
 
-      <Text style={styles.label}>Duration (in days)</Text>
-      <TextInput
-        style={styles.input}
-        value={duration.toString()}
-        onChangeText={(text) => setDuration(Number(text))}
-        placeholder="Enter duration in days"
-        keyboardType="numeric"
-      />
-
       <Text style={styles.label}>Challenge Image</Text>
       <TouchableOpacity style={styles.mediaUploadButton} onPress={handleMediaUpload}>
         {mediaPreview ? (
@@ -176,7 +253,55 @@ const ChallengeCreation: React.FC = () => {
       <TouchableOpacity style={styles.createChallengeButton} onPress={handleCreateChallenge}>
         <Text style={styles.buttonText}>Create Challenge</Text>
       </TouchableOpacity>
-    </View>
+
+      <Text style={styles.sectionTitle}>Existing Challenges</Text>
+      {challenges.map((challenge) => (
+        <View key={challenge.id} style={styles.challengeCard}>
+          {challenge.image_media_id && (
+            <Image
+              source={{
+                uri: `${supabase.storage.from('challenge-uploads').getPublicUrl(
+                  `image/${challenge.image_media_id}.jpg`
+                ).data.publicUrl}`
+              }}
+              style={styles.challengeImage}
+            />
+          )}
+          <View style={styles.challengeInfo}>
+            <Text style={styles.challengeTitle}>{challenge.title}</Text>
+            <Text style={styles.challengeDifficulty}>
+              Difficulty: {challenge.difficulty}
+            </Text>
+            <Text numberOfLines={2} style={styles.challengeDescription}>
+              {challenge.description}
+            </Text>
+            <Text style={styles.challengeDate}>
+              Created: {new Date(challenge.created_at).toLocaleDateString()}
+            </Text>
+            <View style={styles.challengeActions}>
+              <TouchableOpacity
+                style={[
+                  styles.activateButton,
+                  challenge.is_active && styles.activeButton
+                ]}
+                onPress={() => handleActivateChallenge(challenge.id)}
+                disabled={challenge.is_active}
+              >
+                <Text style={styles.buttonText}>
+                  {challenge.is_active ? 'Active' : 'Activate'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.notifyButton}
+                onPress={() => handleSendNotifications(challenge.id, challenge.title)}
+              >
+                <Text style={styles.buttonText}>Notify All</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      ))}
+    </ScrollView>
   );
 };
 
@@ -246,6 +371,79 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 12,
     padding: 4,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 16,
+    color: colors.light.text,
+  },
+  challengeCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  challengeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  challengeInfo: {
+    flex: 1,
+  },
+  challengeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  challengeDifficulty: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  challengeDescription: {
+    fontSize: 14,
+    color: '#444',
+    marginBottom: 4,
+  },
+  challengeDate: {
+    fontSize: 12,
+    color: '#888',
+  },
+  challengeActions: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  activateButton: {
+    backgroundColor: colors.light.secondary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  activeButton: {
+    backgroundColor: colors.light.primary,
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  notifyButton: {
+    backgroundColor: colors.light.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    marginRight: 8,
   },
 });
 

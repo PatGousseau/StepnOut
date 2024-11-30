@@ -471,7 +471,9 @@ interface PatrizioExampleProps {
     return (
       <View style={screenStyles.container}>
         <Text style={screenStyles.title}>Current Challenge</Text>
-        <Text style={screenStyles.endsIn}>Ends in {activeChallenge.duration} days</Text>
+        <Text style={screenStyles.endsIn}>
+          Ends in {activeChallenge.daysRemaining} day{activeChallenge.daysRemaining !== 1 ? 's' : ''}
+        </Text>
         <ChallengeCard challenge={activeChallenge} />
         <PatrizioExample challenge={activeChallenge} />
         <ShareExperience challenge={activeChallenge} />
