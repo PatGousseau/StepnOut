@@ -68,6 +68,29 @@ const useUserProgress = () => {
       setLoading(true);
       setError(null);
       try {
+        // First, get the active challenge
+        const { data: activeChallenge, error: activeChallengeError } = await supabase
+          .from('challenges')
+          .select('*')
+          .eq('is_active', true)
+          .single();
+
+        if (activeChallengeError) throw activeChallengeError;
+        if (!activeChallenge) throw new Error('No active challenge found');
+
+        // Then get 8 previous challenges before the active one
+        const { data: previousChallenges, error: previousChallengesError } = await supabase
+          .from('challenges')
+          .select('*')
+          .lt('created_at', activeChallenge.created_at)
+          .order('created_at', { ascending: false })
+          .limit(8);
+
+        if (previousChallengesError) throw previousChallengesError;
+
+        // Combine active challenge with previous challenges
+        const challenges = [activeChallenge, ...(previousChallenges || [])];
+
         // Fetch submissions for the user
         const { data: submissionData, error: submissionError } = await supabase
           .from('submission')
@@ -76,67 +99,20 @@ const useUserProgress = () => {
 
         if (submissionError) throw submissionError;
 
-        // Fetch the active challenge first
-        const { data: activeChallenge, error: activeError } = await supabase
-          .from('challenges_status')
-          .select('*')
-          .eq('is_active', true)
-          .single();
-
-        if (activeError) {
-          // If no active challenge is found, set empty data instead of throwing
-          if (activeError.code === 'PGRST116') {
-            setData({ 
-              challengeData: { easy: 0, medium: 0, hard: 0 }, 
-              weekData: [] 
-            });
-            return;
-          }
-          throw activeError;
-        }
-
-        // Fetch 8 challenges before the active one
-        const { data: previousChallenges, error: challengesError } = await supabase
-          .from('challenges_status')
-          .select(`
-            id,
-            challenge_id,
-            start_date,
-            end_date,
-            is_active
-          `)
-          .lt('start_date', activeChallenge.start_date)
-          .order('start_date', { ascending: false })
-          .limit(8);
-
-        if (challengesError) throw challengesError;
-
-        // Use only previous challenges (exclude active challenge)
-        const challengesData = previousChallenges || [];
-
-        if (!submissionData || !challengesData) {
-          // on error set empty data
-          setData({ 
-            challengeData: { easy: 0, medium: 0, hard: 0 }, 
-            weekData: [] 
-          });
-          return;
-        }
-
-        const completedChallengeIds = submissionData.map(s => s.challenge_id);
+        const completedChallengeIds = submissionData?.map(s => s.challenge_id) || [];
 
         // Create week data array from challenges
-        const weekData: WeekData[] = challengesData.map((challenge, index) => ({
+        const weekData: WeekData[] = challenges.slice(1).map((challenge, index) => ({
           week: index + 1,
-          hasStreak: completedChallengeIds.includes(challenge.challenge_id),
-          challengeId: challenge.challenge_id,
-          startDate: challenge.start_date,
-          endDate: challenge.end_date,
+          hasStreak: completedChallengeIds.includes(challenge.id),
+          challengeId: challenge.id,
+          startDate: challenge.created_at,
+          endDate: challenge.updated_at,
           isActive: challenge.is_active,
-          isCompleted: completedChallengeIds.includes(challenge.challenge_id)
+          isCompleted: completedChallengeIds.includes(challenge.id)
         }));
 
-        // For difficulty counts, we need to join with challenges table
+        // For difficulty counts
         const { data: submissionsWithDifficulty, error: difficultyError } = await supabase
           .from('submission')
           .select(`
@@ -160,7 +136,6 @@ const useUserProgress = () => {
       } catch (err) {
         console.error('Error fetching progress data:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch progress data');
-        // Set empty data on error
         setData({ 
           challengeData: { easy: 0, medium: 0, hard: 0 }, 
           weekData: [] 

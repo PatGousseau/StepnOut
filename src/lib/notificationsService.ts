@@ -69,13 +69,39 @@ export async function sendCommentNotification(senderId: string | undefined, send
 }
 
 // Handle sending notifications for new challenges
-export async function sendNewChallengeNotification(recipientId: string, challengeId: string) {
+export async function sendNewChallengeNotification(recipientId: string, challengeId: string, challengeTitle: string) {
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
     const title = 'A new challenge is available!';
-    const body = 'Step out of your comfort zone and try it now.';
+    const body = challengeTitle
     const data = { challengeId };
 
     await sendPushNotification(pushToken, title, body, data);
+}
+
+// Fetch all user IDs
+async function getAllUserIds(): Promise<string[]> {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('id');
+
+    if (error) {
+        console.error('Error fetching user IDs:', error);
+        return [];
+    }
+
+    return data.map(profile => profile.id);
+}
+
+// Handle sending notifications to all users about a new challenge
+export async function sendNewChallengeNotificationToAll(challengeId: string, challengeTitle: string) {
+    const userIds = await getAllUserIds();
+    
+    // Send notification to each user
+    const notifications = userIds.map(userId => 
+        sendNewChallengeNotification(userId, challengeId, challengeTitle)
+    );
+    
+    await Promise.all(notifications);
 }

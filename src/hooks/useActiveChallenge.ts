@@ -7,19 +7,26 @@ import { useAuth } from '../contexts/AuthContext';
 export const useActiveChallenge = () => {
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth()
+  const { user } = useAuth();
+
+  const getDaysUntilSunday = (): number => {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+    
+    // If it's Sunday, return 7 (days until next Sunday)
+    // Otherwise, calculate days remaining until Sunday
+    return dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
+  };
 
   const fetchActiveChallenge = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('challenges_status')
+        .from('challenges')
         .select(`
-          challenges(
-            *,
-            media:image_media_id(
-              file_path
-            )
+          *,
+          media:image_media_id(
+            file_path
           )
         `)
         .eq('is_active', true)
@@ -27,10 +34,11 @@ export const useActiveChallenge = () => {
 
       if (error) {
         console.error('Error fetching active challenge:', error);
-      } else if (data && data.challenges) {
+      } else if (data) {
         const challenge = {
-          ...data.challenges,
-          media_file_path: data.challenges.media?.file_path || null
+          ...data,
+          media_file_path: data.media?.file_path || null,
+          daysRemaining: getDaysUntilSunday()
         };
         setActiveChallenge(challenge as Challenge);
       }
@@ -45,29 +53,38 @@ export const useActiveChallenge = () => {
     fetchActiveChallenge();
 
     const subscription = supabase
-      .channel('challenges_status_changes')
+      .channel('challenges_changes')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
-          table: 'challenges_status',
+          table: 'challenges',
           filter: 'is_active=eq.true'
         },
         async (payload) => {
-          console.log("prints")
           await fetchActiveChallenge();
           
-          if (user?.id) {
-            const challengeId = payload.new.challenge_id;
-            await sendNewChallengeNotification(user.id, challengeId);
+          if (user?.id && payload.eventType === 'UPDATE' && payload.new.is_active) {
+            await sendNewChallengeNotification(user.id, payload.new.id);
           }
         }
       )
       .subscribe();
 
+    // Update days remaining at midnight
+    const midnightUpdate = setInterval(() => {
+      if (activeChallenge) {
+        setActiveChallenge({
+          ...activeChallenge,
+          daysRemaining: getDaysUntilSunday()
+        });
+      }
+    }, 60 * 60 * 1000); // Check every hour
+
     return () => {
       subscription.unsubscribe();
+      clearInterval(midnightUpdate);
     };
   }, [user?.id]);
 
