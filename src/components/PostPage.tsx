@@ -41,7 +41,7 @@ const PostPage = () => {
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.light.primary} />
       </View>
     );
   }

@@ -79,7 +79,7 @@ const Home = () => {
         
         {loading && (
           <View style={{ padding: 20, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color="#0000ff" />
+            <ActivityIndicator size="small" color={colors.light.primary} />
           </View>
         )}
       </ScrollView>
