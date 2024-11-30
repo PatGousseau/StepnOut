@@ -14,6 +14,7 @@ import { useActiveChallenge } from '../../hooks/useActiveChallenge';
 import { Challenge } from '../../types';
 import { Loader } from '../../components/Loader';
 import ShareChallenge from '../../components/ShareChallenge';
+import { ScrollView, RefreshControl } from 'react-native';
 
 
 interface ChallengeCardProps {
