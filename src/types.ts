@@ -6,8 +6,9 @@ export interface Challenge {
     created_by: string;
     created_at: Date;
     updated_at: Date;
-    duration: number;
     media_file_path: string;
+    is_active: boolean;
+    daysRemaining: number;
   }
 
   export interface Post {
