@@ -1,9 +1,9 @@
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text } from '../components/StyledText';
 import { colors } from '../constants/Colors';
 import { TouchableOpacity, Image, Animated, TextInput } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
@@ -462,14 +462,26 @@ interface PatrizioExampleProps {
   };
   
   const ChallengeScreen: React.FC = () => {
-    const { activeChallenge } = useActiveChallenge();
+    const { activeChallenge, fetchActiveChallenge } = useActiveChallenge();
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(async () => {
+      setRefreshing(true);
+      await fetchActiveChallenge();
+      setRefreshing(false);
+    }, [fetchActiveChallenge]);
 
     if (!activeChallenge) {
-      return <Text>Loading...</Text>;
+      return <Loader />;
     }
 
     return (
-      <View style={screenStyles.container}>
+      <ScrollView
+        contentContainerStyle={screenStyles.container}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <Text style={screenStyles.title}>Current Challenge</Text>
         <Text style={screenStyles.endsIn}>
           Ends in {activeChallenge.daysRemaining} day{activeChallenge.daysRemaining !== 1 ? 's' : ''}
@@ -477,7 +489,7 @@ interface PatrizioExampleProps {
         <ChallengeCard challenge={activeChallenge} />
         <PatrizioExample challenge={activeChallenge} />
         <ShareExperience challenge={activeChallenge} />
-      </View>
+      </ScrollView>
     );
   }
 
@@ -731,8 +743,6 @@ const screenStyles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
     fontSize: 28,
