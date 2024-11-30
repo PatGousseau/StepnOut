@@ -1,69 +1,60 @@
-import React, { useEffect } from 'react';
-import { Slot, Tabs, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/Colors';
-import Header from '../components/Header';
-import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import { View, ImageBackground, StyleSheet, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { registerForPushNotificationsAsync } from '../lib/notifications';
+import { Stack, router } from 'expo-router';
+import { useEffect } from 'react';
+import { View, ImageBackground, StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from '../lib/notifications';
+import { StatusBar } from 'expo-status-bar';
+import { colors } from '../constants/Colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Header from '../components/Header';
 
-
+// Set up notifications handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true, // Show notifications in foreground
-    shouldPlaySound: true, // Play sound
-    shouldSetBadge: false, // Update badge count
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
   }),
 });
 
 function RootLayoutNav() {
-  const { session, loading, isAdmin } = useAuth();
+  const { session, loading } = useAuth();
 
+  // Auth check effect
   useEffect(() => {
-    if (!loading) {
-      // Only handle navigation after auth state is determined
-      if (!session) {
-        router.replace('/(auth)/login');
-      } else {
-        router.replace('/');
-      }
+    if (!loading && !session) {
+      router.replace('/(auth)/login');
     }
   }, [session, loading]);
 
+  // Notification setup effects
   useEffect(() => {
     const setupPushNotifications = async () => {
-        // Get the current logged-in user's ID from Supabase Auth
-        const userId = session?.user.id;
-
-        if (userId) {
-            await registerForPushNotificationsAsync(userId);
-        }
+      const userId = session?.user.id;
+      if (userId) {
+        await registerForPushNotificationsAsync(userId);
+      }
     };
-
     setupPushNotifications();
-}, [session]);
+  }, [session]);
 
-useEffect(() => {
-  // Listener for foreground notifications
-  const subscription = Notifications.addNotificationReceivedListener(notification => {
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
-  });
+    });
 
-  // Listener for notifications when the app is opened from a tap
-  const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
       console.log('Notification tapped:', response);
-  });
+    });
 
-  return () => {
+    return () => {
       subscription.remove();
       responseSubscription.remove();
-  };
-}, []);
+    };
+  }, []);
 
-  // Show splash screen while loading auth state
+  // Loading screen
   if (loading) {
     return (
       <View style={[styles.container, StyleSheet.absoluteFill]}>
@@ -78,97 +69,32 @@ useEffect(() => {
     );
   }
 
-  // If not authenticated, show auth screens
-  if (!session) {
-    return <Slot />;
-  }
-
-  // If authenticated, show main app tabs
   return (
-    <>
-      {/* Ensure StatusBar is translucent */}
-      <StatusBar  backgroundColor={colors.light.background} style="dark" />
-      <SafeAreaView style={{ backgroundColor: colors.light.background }}>
-        <Header />
-        </SafeAreaView>
-        <Tabs
-          screenOptions={({ route }) => ({
-            tabBarActiveTintColor: colors.light.primary,
-            tabBarStyle: { 
-              paddingTop: 10,
-              paddingBottom: Platform.OS === 'ios' ? 0 : 48,
-            },
-            tabBarShowLabel: false,
-            tabBarIcon: ({ color, size }) => {
-              let iconName: keyof typeof Ionicons.glyphMap;
-
-              switch (route.name) {
-                case 'index':
-                  iconName = 'home';
-                  break;
-                case 'challenge':
-                  iconName = 'trophy';
-                  break;
-                case 'profile':
-                  iconName = 'person';
-                  break;
-                case 'admin':
-                  iconName = 'settings';
-                  break;
-                default:
-                  iconName = 'home';
-              }
-
-              return <Ionicons name={iconName} size={size} color={color} />;
-            },
-          })}
-        >
-          <Tabs.Screen
-            name="(auth)"
-            options={{
-              href: null, // This hides the tab
-            }}
-          />
-          <Tabs.Screen
-            name="index"
-            options={{
-              title: 'Home',
-              headerStyle: { backgroundColor: colors.light.primary },
-              headerTintColor: '#fff',
-              headerShown: false,
-            }}
-          />
-          <Tabs.Screen
-            name="challenge"
-            options={{
-              title: 'Challenge',
-              headerStyle: { backgroundColor: colors.light.primary },
-              headerTintColor: '#fff',
-              headerShown: false,
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: 'Profile',
-              headerStyle: { backgroundColor: colors.light.primary },
-              headerTintColor: '#fff',
-              headerShown: false,
-            }}
-          />
-          <Tabs.Screen
-            name="admin"
-            options={{
-              href: !isAdmin ? null : undefined, // This will hide the tab when not admin
-              title: 'Admin',
-              headerStyle: { backgroundColor: colors.light.primary },
-              headerTintColor: '#fff',
-              headerShown: false,
-            }}
-          />
-        </Tabs>
-
-    </>
+    <SafeAreaView 
+      style={{ flex: 1, backgroundColor: colors.light.background }}
+      edges={['top', 'left', 'right']}
+    >
+      <StatusBar backgroundColor={colors.light.background} style="dark" />
+      <Header />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen 
+          name="(tabs)" 
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="post/[id]" 
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="profile/[id]" 
+          options={{ headerShown: false }}
+        />
+      </Stack>
+    </SafeAreaView>
   );
 }
 

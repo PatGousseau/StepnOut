@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { ChallengeProgress, UserProgress, WeekData, Post } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-const useUserProgress = () => {
+const useUserProgress = (targetUserId: string) => {
   const { user } = useAuth();
   const [data, setData] = useState<UserProgress | null>(null);
   const [loading, setLoading] = useState(false);
@@ -14,7 +14,6 @@ const useUserProgress = () => {
   const POSTS_PER_PAGE = 10;
 
   const fetchUserPosts = async (page = 1, isLoadMore = false) => {
-    if (!user?.id) return;
     
     setPostsLoading(true);
     try {
@@ -31,7 +30,7 @@ const useUserProgress = () => {
           likes:likes(count),
           comments:comments(count)
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', targetUserId)
         .order('created_at', { ascending: false })
         .range((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE - 1);
 

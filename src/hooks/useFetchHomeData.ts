@@ -7,6 +7,10 @@ interface UserMap {
   [key: string]: User;
 }
 
+interface PostLikes {
+  [postId: number]: boolean;
+}
+
 export const useFetchHomeData = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -14,6 +18,25 @@ export const useFetchHomeData = () => {
   const [hasMore, setHasMore] = useState(true);
   const [userMap, setUserMap] = useState<UserMap>({});
   const [loading, setLoading] = useState(true);
+  const [likedPosts, setLikedPosts] = useState<PostLikes>({});
+
+  const formatPost = async (post: any, commentCountMap?: Map<number, number>) => {
+    // If we don't have a pre-fetched comment count, fetch it individually
+    let commentCount = commentCountMap?.get(post.id);
+    if (commentCount === undefined) {
+      const commentCountResponse = await supabase
+        .rpc('get_comment_counts', { post_ids: [post.id.toString()] });
+      commentCount = commentCountResponse.data?.[0]?.count ?? 0;
+    }
+
+    return {
+      ...post,
+      media_file_path: post.media ? `${supabaseStorageUrl}/${post.media.file_path}` : null,
+      likes_count: post.likes?.[0]?.count ?? 0,
+      comments_count: commentCount,
+      liked: likedPosts[post.id] ?? false
+    };
+  };
 
   const fetchAllData = useCallback(async (pageNumber = 1, isLoadMore = false) => {
     setLoading(true);
@@ -57,13 +80,9 @@ export const useFetchHomeData = () => {
         return acc;
       }, {} as UserMap);
 
-      const formattedPosts = postData.map(post => ({
-        ...post,
-        media_file_path: post.media ? `${supabaseStorageUrl}/${post.media.file_path}` : null,
-        likes_count: post.likes?.[0]?.count ?? 0,
-        comments_count: commentCountMap.get(post.id) ?? 0,
-        liked: false
-      }));
+      const formattedPosts = await Promise.all(
+        postData.map(post => formatPost(post, commentCountMap))
+      );
 
       setHasMore(postData.length === POSTS_PER_PAGE);
       setPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);
@@ -76,12 +95,7 @@ export const useFetchHomeData = () => {
     }
   }, [POSTS_PER_PAGE]);
 
-  const fetchLikes = async (postId: number) => {
-    const post = posts.find(p => p.id === postId);
-    if (post?.likes) {
-      return post.likes;
-    }
-
+  const fetchLikes = async (postId: number, userId?: string) => {
     const { data, error } = await supabase
       .from('likes')
       .select('user_id')
@@ -91,6 +105,12 @@ export const useFetchHomeData = () => {
       console.error('Error fetching likes:', error);
       return [];
     }
+
+    if (userId) {
+      const isLiked = data?.some(like => like.user_id === userId) ?? false;
+      setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
+    }
+
     return data || [];
   };
 
@@ -127,7 +147,10 @@ export const useFetchHomeData = () => {
           .eq('id', data[0].id);
 
         if (deleteError) console.error('Error removing like:', deleteError);
-        else return { liked: false };
+        else {
+          setLikedPosts(prev => ({ ...prev, [postId]: false }));
+          return { liked: false };
+        }
       } else {
         const { error: insertError } = await supabase
           .from('likes')
@@ -136,6 +159,7 @@ export const useFetchHomeData = () => {
         if (insertError) {
           console.error('Error adding like:', insertError);
         } else {
+          setLikedPosts(prev => ({ ...prev, [postId]: true }));
           // Don't create notification if user likes their own post
           if (postData.user_id !== userId) {
             // Create notification for post owner
@@ -187,6 +211,40 @@ export const useFetchHomeData = () => {
     }
   }, [loading, hasMore, page]);
 
+  const fetchPost = async (postId: number) => {
+    try {
+      const { data: post, error } = await supabase
+        .from('post')
+        .select(`
+          *,
+          media (file_path),
+          likes:likes(count)
+        `)
+        .eq('id', postId)
+        .single();
+
+      if (error) throw error;
+
+      const formattedPost = await formatPost(post);
+      
+      // Fetch the user data if not already in userMap
+      if (post && !userMap[post.user_id]) {
+        const user = await User.getUser(post.user_id);
+        if (user) {
+          setUserMap(prev => ({
+            ...prev,
+            [user.id]: user
+          }));
+        }
+      }
+
+      return formattedPost;
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      return null;
+    }
+  };
+
   return {
     posts,
     userMap,
@@ -197,5 +255,7 @@ export const useFetchHomeData = () => {
     addComment,
     loadMorePosts,
     hasMore,
+    fetchPost,
+    likedPosts,
   };
 };
