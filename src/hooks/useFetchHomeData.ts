@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, supabaseStorageUrl } from '../lib/supabase';
 import { Challenge, Post } from '../types';
 import { User } from '../models/User';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserMap {
   [key: string]: User;
@@ -19,6 +20,7 @@ export const useFetchHomeData = () => {
   const [userMap, setUserMap] = useState<UserMap>({});
   const [loading, setLoading] = useState(true);
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
+  const { user } = useAuth();
 
   const formatPost = async (post: any, commentCountMap?: Map<number, number>) => {
     // If we don't have a pre-fetched comment count, fetch it individually
@@ -41,8 +43,18 @@ export const useFetchHomeData = () => {
   const fetchAllData = useCallback(async (pageNumber = 1, isLoadMore = false) => {
     setLoading(true);
     try {
+      // First, get the list of blocked user IDs
+      const { data: blockedUsers, error: blockError } = await supabase
+        .from('blocks')
+        .select('blocked_id')
+        .eq('blocker_id', user?.id);
 
-      const postResponse = await supabase
+      if (blockError) throw blockError;
+
+      // Create array of blocked user IDs
+      const blockedUserIds = blockedUsers?.map(block => block.blocked_id) || [];
+
+      let query = supabase
         .from('post')
         .select(`
           id, 
@@ -54,7 +66,15 @@ export const useFetchHomeData = () => {
           media (file_path),
           likes:likes(count)
         `)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      // Add the blocked users filter only if there are blocked users
+      if (blockedUserIds.length > 0) {
+        query = query.not('user_id', 'in', `(${blockedUserIds.join(',')})`);
+      }
+
+      // Add the range filter
+      const postResponse = await query
         .range((pageNumber - 1) * POSTS_PER_PAGE, pageNumber * POSTS_PER_PAGE - 1);
 
       if (postResponse.error) throw postResponse.error;
@@ -93,7 +113,7 @@ export const useFetchHomeData = () => {
     } finally {
       setLoading(false);
     }
-  }, [POSTS_PER_PAGE]);
+  }, [POSTS_PER_PAGE, user?.id]);
 
   const fetchLikes = async (postId: number, userId?: string) => {
     const { data, error } = await supabase
