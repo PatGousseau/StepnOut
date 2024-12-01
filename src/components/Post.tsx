@@ -12,7 +12,8 @@ import {
   Dimensions,
   PanResponder,
   Animated,
-  GestureResponderEvent
+  GestureResponderEvent,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import { CommentsModal, Comment } from './Comments'; 
@@ -25,6 +26,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
 import { useFetchComments } from '../hooks/useFetchComments';
 import { router } from 'expo-router';
+import { supabase } from '../lib/supabase';
+import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
 
 interface PostProps {
   postUser: User;
@@ -63,6 +66,7 @@ const Post: React.FC<PostProps> = ({
   } | null>(null);
   const { user } = useAuth();
   const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -262,6 +266,92 @@ const Post: React.FC<PostProps> = ({
   const handleProfilePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
     router.push(`/profile/${postUser.id}`);
+  }
+  
+  const handleReport = async () => {
+    Alert.alert(
+      "Report Post",
+      "Are you sure you want to report this post?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Report",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('reports')
+                .insert([
+                  {
+                    post_id: postId,
+                    reporter_id: user?.id,
+                    reported_user_id: userId,
+                    status: 'pending'
+                  }
+                ]);
+
+              if (error) throw error;
+
+              Alert.alert(
+                "Thank you",
+                "Your report has been submitted and will be reviewed by our team."
+              );
+            } catch (error) {
+              console.error('Error submitting report:', error);
+              Alert.alert(
+                "Error",
+                "Failed to submit report. Please try again later."
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleBlock = async () => {
+    Alert.alert(
+      "Block User",
+      "Are you sure you want to block this user?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('blocks')
+                .insert([
+                  {
+                    blocker_id: user?.id,
+                    blocked_id: postUser.id
+                  }
+                ]);
+
+              if (error) throw error;
+
+              Alert.alert(
+                "Success",
+                "User has been blocked successfully."
+              );
+            } catch (error) {
+              console.error('Error blocking user:', error);
+              Alert.alert(
+                "Error",
+                "Failed to block user. Please try again later."
+              );
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -281,9 +371,23 @@ const Post: React.FC<PostProps> = ({
           <Text style={styles.name}>{postUser?.name || 'Unknown'}</Text>
           <Text style={styles.username}>@{postUser?.username || 'unknown'}</Text>
         </TouchableOpacity>
+        <Menu style={styles.menuContainer}>
+          <MenuTrigger>
+            <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
+          </MenuTrigger>
+          <MenuOptions customStyles={optionsStyles}>
+            <MenuOption onSelect={handleReport}>
+              <Text style={styles.menuOptionText}>Report Post</Text>
+            </MenuOption>
+            <MenuOption onSelect={handleBlock}>
+              <Text style={styles.menuOptionText}>Block User</Text>
+            </MenuOption>
+          </MenuOptions>
+        </Menu>
       </View>
       {text && <Text style={styles.text}>{text}</Text>}
       {renderMedia()}
+      <View>
       <View style={styles.footer}>
         <TouchableOpacity onPress={handleLikeToggle}>
           <View style={styles.iconContainer}>
@@ -356,6 +460,7 @@ const Post: React.FC<PostProps> = ({
           )}
         </View>
       </Modal>
+      </View>
     </Pressable>
   );
 };
@@ -452,6 +557,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  menuContainer: {
+    marginLeft: 'auto',
+    padding: 8,
+  },
+  menuOptionText: {
+    fontSize: 16,
+    padding: 10,
+  },
 });
+
+const optionsStyles = {
+  optionsContainer: {
+    borderRadius: 10,
+    padding: 5,
+    width: 150,
+  },
+};
 
 export default Post;
