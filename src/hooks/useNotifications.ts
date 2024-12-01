@@ -18,6 +18,7 @@ export const useNotifications = () => {
         .from('notifications')
         .select(`
           *,
+          post_id,
           trigger_profile:profiles!notifications_trigger_user_id_fkey (
             username,
             name
@@ -115,6 +116,7 @@ export const useNotifications = () => {
               .from('notifications')
               .select(`
                 *,
+                post_id,
                 trigger_profile:profiles!notifications_trigger_user_id_fkey (
                   username,
                   name

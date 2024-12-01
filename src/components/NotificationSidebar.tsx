@@ -17,6 +17,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 import { Ionicons } from '@expo/vector-icons';
 import { Notification } from '../types';
+import { router } from 'expo-router';
 
 interface NotificationSidebarProps {
   visible: boolean;
@@ -82,8 +83,16 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
       notificationText = `commented: "${commentText}"`;
     }
     
+    const handleNotificationPress = () => {
+      handleClose(); // Close the sidebar
+      router.push(`/post/${item.post_id}`); // Navigate to the post
+    };
+    
     return (
-      <TouchableOpacity style={styles.notificationItem}>
+      <TouchableOpacity 
+        style={styles.notificationItem} 
+        onPress={handleNotificationPress}
+      >
         <View style={styles.notificationContent}>
           <Text style={styles.notificationText}>
             <Text style={styles.userName}>{triggerUserName}</Text>

@@ -46,6 +46,7 @@ export interface Challenge {
     action_type: 'like' | 'comment';
     created_at: string;
     is_read: boolean;
+    post_id: string;
     trigger_profile?: {
       username: string;
       name: string;
