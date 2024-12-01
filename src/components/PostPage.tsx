@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  ScrollView, 
+  StyleSheet, 
+  ActivityIndicator, 
+  KeyboardAvoidingView, 
+  Platform 
+} from 'react-native';
 import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
@@ -55,27 +62,41 @@ const PostPage = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <Post
-        postUser={userMap[post.user_id]}
-        text={post.body}
-        likes={post.likes_count || 0}
-        comments_count={post.comments_count || 0}
-        postId={post.id}
-        userId={post.user_id}
-        setPostCounts={() => {}}
-        media={post.media_file_path ? { uri: post.media_file_path } : undefined}
-        isPostPage={true}
-      />
-      <View style={styles.commentsSection}>
-        <CommentsList
-          comments={comments}
-          onAddComment={({ text, userId }) => addComment(userId, text)}
-          onClose={() => {}}
-          loading={commentsLoading}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Post
+          postUser={userMap[post.user_id]}
+          text={post.body}
+          likes={post.likes_count || 0}
+          comments_count={post.comments_count || 0}
+          postId={post.id}
+          userId={post.user_id}
+          setPostCounts={() => {}}
+          media={post.media_file_path ? { uri: post.media_file_path } : undefined}
+          isPostPage={true}
         />
-      </View>
-    </View>
+        <View style={styles.commentsSection}>
+          <CommentsList
+            comments={comments}
+            loading={commentsLoading}
+            onClose={() => {}}
+            postId={post.id}
+            postUserId={post.user_id}
+            onCommentAdded={(count) => {
+              // Optionally handle comment count updates
+            }}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -83,6 +104,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.light.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
   },
   centered: {
     justifyContent: 'center',
@@ -93,7 +120,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.background,
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    paddingHorizontal: 16,  },
+    paddingHorizontal: 16,
+  },
 });
 
 export default PostPage;
