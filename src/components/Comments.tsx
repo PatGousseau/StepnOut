@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,7 @@ import { User } from '../models/User';
 import { sendCommentNotification } from '../lib/notificationsService';
 import { supabase } from '../lib/supabase';
 import { Database } from '../lib/database.types';
+import { router } from 'expo-router';
 
 export interface Comment {
   id: number;
@@ -33,6 +34,8 @@ interface CommentsListProps {
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
 }
+
+const CommentsContext = React.createContext<{ onClose?: () => void }>({});
 
 export const CommentsList: React.FC<CommentsListProps> = ({ 
   comments: initialComments, 
@@ -109,42 +112,44 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   }
 
   return (
-    <View style={[styles.commentsWrapper]}>
-      <FlatList
-        ref={flatListRef}
-        style={styles.commentsList}
-        data={comments}
-        keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => (
-          <Comment userId={item.userId} text={item.text} created_at={item.created_at} />
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No comments yet!</Text>
-          </View>
-        )}
-      />
-      
-      <View style={styles.inputContainer}>
-        <TextInput
-          value={newComment}
-          onChangeText={setNewComment}
-          placeholder="Add a comment..."
-          placeholderTextColor="#888"
-          style={styles.input}
+    <CommentsContext.Provider value={{ onClose }}>
+      <View style={[styles.commentsWrapper]}>
+        <FlatList
+          ref={flatListRef}
+          style={styles.commentsList}
+          data={comments}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({ item }) => (
+            <Comment userId={item.userId} text={item.text} created_at={item.created_at} />
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No comments yet!</Text>
+            </View>
+          )}
         />
-        <Pressable 
-          onPress={handleAddComment} 
-          style={[
-            styles.postButton,
-            !user && styles.postButtonDisabled
-          ]}
-          disabled={!user}
-        >
-          <Text style={styles.postButtonText}>Post</Text>
-        </Pressable>
+        
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={newComment}
+            onChangeText={setNewComment}
+            placeholder="Add a comment..."
+            placeholderTextColor="#888"
+            style={styles.input}
+          />
+          <Pressable 
+            onPress={handleAddComment} 
+            style={[
+              styles.postButton,
+              !user && styles.postButtonDisabled
+            ]}
+            disabled={!user}
+          >
+            <Text style={styles.postButtonText}>Post</Text>
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </CommentsContext.Provider>
   );
 };
 
@@ -241,6 +246,7 @@ interface CommentProps {
 
 const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
   const [user, setUser] = useState<User | null>(null);
+  const { onClose } = useContext(CommentsContext);
 
   useEffect(() => {
     User.getUser(userId).then(setUser);
@@ -251,6 +257,11 @@ const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
   const imageSource = user.profileImageUrl.startsWith('http') 
     ? { uri: user.profileImageUrl }
     : require('../assets/images/default-pfp.png');
+
+  const handleProfilePress = () => {
+    onClose?.();
+    router.push(`/profile/${userId}`);
+  };
 
   // relative time (e.g., "2 hours ago")
   const formatRelativeTime = (dateString: string) => {
@@ -283,13 +294,17 @@ const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
 
   return (
     <View style={styles.commentContainer}>
-      <Image source={imageSource} style={styles.commentAvatar} />
+      <TouchableOpacity onPress={handleProfilePress}>
+        <Image source={imageSource} style={styles.commentAvatar} />
+      </TouchableOpacity>
       <View style={styles.commentContent}>
-        <View style={styles.nameContainer}>
-          <Text style={styles.displayName}>{user.name}</Text>
-          <Text style={styles.username}>@{user.username}</Text>
-          <Text style={styles.timestamp}>{formatRelativeTime(created_at)}</Text>
-        </View>
+        <TouchableOpacity onPress={handleProfilePress}>
+          <View style={styles.nameContainer}>
+            <Text style={styles.displayName}>{user.name}</Text>
+            <Text style={styles.username}>@{user.username}</Text>
+            <Text style={styles.timestamp}>{formatRelativeTime(created_at)}</Text>
+          </View>
+        </TouchableOpacity>
         <Text style={styles.commentText}>{text}</Text>
       </View>
     </View>

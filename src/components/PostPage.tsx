@@ -66,7 +66,7 @@ const PostPage = () => {
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
     >
       <ScrollView 
         style={styles.scrollView}
@@ -86,9 +86,7 @@ const PostPage = () => {
             onClose={() => {}}
             postId={post.id}
             postUserId={post.user_id}
-            onCommentAdded={(count) => {
-              // Optionally handle comment count updates
-            }}
+            onCommentAdded={(count) => {}}
           />
         </View>
       </ScrollView>
