@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
+import { MenuProvider } from 'react-native-popup-menu';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -70,6 +71,7 @@ function RootLayoutNav() {
   }
 
   return (
+    <MenuProvider>
     <SafeAreaView 
       style={{ flex: 1, backgroundColor: colors.light.background }}
       edges={['top', 'left', 'right']}
@@ -95,6 +97,7 @@ function RootLayoutNav() {
         />
       </Stack>
     </SafeAreaView>
+    </MenuProvider>
   );
 }
 
