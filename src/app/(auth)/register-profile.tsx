@@ -89,9 +89,14 @@ export default function RegisterProfileScreen() {
       await signUp(email, password, username, displayName, profileMediaId);
       Alert.alert(
         'Registration Successful',
-        'Please check your email to verify your account.'
+        'Please check your email to verify your account. After verification, you can log in to continue.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/(auth)/login')
+          }
+        ]
       );
-      router.replace('/login');
     } catch (error) {
       Alert.alert('Error', (error as Error).message);
     } finally {
