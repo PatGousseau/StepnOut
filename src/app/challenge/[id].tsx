@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import ChallengePage from '../../components/Challenge';
+import { ChallengePage } from '../../components/ChallengePage';
 import { StyleSheet, SafeAreaView } from 'react-native';
 
 export default function ChallengePageWrapper() {

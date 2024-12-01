@@ -373,7 +373,12 @@ const Post: React.FC<PostProps> = ({
     );
   };
 
-  console.log(post.challenge_id);
+  const handleChallengePress = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    if (post.challenge_id) {
+      router.push(`/challenge/${post.challenge_id}`);
+    }
+  };
 
   return (
     <Pressable 
@@ -423,11 +428,13 @@ const Post: React.FC<PostProps> = ({
         </Menu>
       </View>
       {post.challenge_id && (
-        <View style={styles.challengeBox}>
-          <Text style={styles.challengeTitle} numberOfLines={1} ellipsizeMode="tail">
-            <Text style={{ fontWeight: 'bold' }}>Challenge:</Text> {post.challenge_title}
-          </Text>
-        </View>
+        <TouchableOpacity onPress={handleChallengePress}>
+          <View style={styles.challengeBox}>
+            <Text style={styles.challengeTitle} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={{ fontWeight: 'bold' }}>Challenge:</Text> {post.challenge_title}
+            </Text>
+          </View>
+        </TouchableOpacity>
       )}
       {post.body && <Text style={styles.text}>{post.body}</Text>}
       {renderMedia()}

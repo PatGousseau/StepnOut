@@ -15,6 +15,7 @@ import { Loader } from '../components/Loader';
 import ShareChallenge from '../components/ShareChallenge';
 import { ScrollView, RefreshControl, View, StyleSheet } from 'react-native';
 import { PATRIZIO_ID } from '../constants/Patrizio';
+import { uploadMedia } from '../utils/handleMediaUpload';
 
 interface ChallengeCardProps {
     challenge: Challenge;
@@ -191,88 +192,20 @@ interface PatrizioExampleProps {
     };
 
     const handleMediaUpload = async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to upload media!');
-          return;
-        }
-    
-        try {
-          setIsUploading(true);  // Add loading state when upload starts
-
-          const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.All,
-            allowsEditing: false,
-            quality: 0.8,
-            videoMaxDuration: 60,
-          });
-    
-          if (!result.canceled) {
-            const file = result.assets[0];
-            const isVideoFile = file.type === 'video';
-            setIsVideo(isVideoFile);
-    
-            if (isVideoFile) {
-              // Generate video thumbnail
-              try {
-                const { uri } = await VideoThumbnails.getThumbnailAsync(file.uri, {
-                  time: 0,
-                  quality: 0.5,
-                });
-                setVideoThumbnail(uri);
-                setMediaPreview(uri); // Use thumbnail as preview
-              } catch (e) {
-                console.warn("Couldn't generate thumbnail", e);
-                setMediaPreview(file.uri); // Fallback to video uri
-              }
-            } else {
-              setMediaPreview(file.uri);
-            }
-    
-            const mediaType = file.type || 'image';
-            const fileExtension = mediaType === 'video' ? '.mp4' : '.jpg';
-            const fileName = `${mediaType}/${Date.now()}${fileExtension}`;
-            
-            const formData = new FormData();
-            formData.append('file', {
-              uri: file.uri,
-              name: fileName,
-              type: mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
-            } as any);
-    
-            // Upload file to storage
-            const { error: uploadError } = await supabase.storage
-              .from('challenge-uploads')
-              .upload(fileName, formData, {
-                contentType: 'multipart/form-data',
-              });
-    
-            if (uploadError) throw uploadError;
-    
-            // Insert into media table and get the ID
-            const { data: mediaData, error: dbError } = await supabase
-              .from('media')
-              .insert([
-                { 
-                  file_path: fileName,
-                }
-              ])
-              .select('id')
-              .single();
-    
-            if (dbError) throw dbError;
-    
-            setUploadedMediaId(mediaData.id);
-            console.log('mediaData', mediaData);
-          }
-        } catch (error) {
-          console.error('Error uploading file:', error);
-          alert('Error uploading file');
-        } finally {
-          setIsUploading(false);  // Clear loading state when done
-        }
-      };
+      try {
+        setIsUploading(true);
+        const result = await uploadMedia({ allowVideo: true });
+        setUploadedMediaId(result.mediaId);
+        setMediaPreview(result.mediaPreview);
+        setIsVideo(result.isVideo);
+        setVideoThumbnail(result.videoThumbnail);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        alert('Error uploading file');
+      } finally {
+        setIsUploading(false);
+      }
+    };
 
     const showNotificationWithAnimation = () => {
       setShowNotification(true);
@@ -478,38 +411,6 @@ interface PatrizioExampleProps {
       </>
     );
   };
-  
-  const ChallengeScreen: React.FC = () => {
-    const { activeChallenge, fetchActiveChallenge } = useActiveChallenge();
-    const [refreshing, setRefreshing] = useState(false);
-
-    const onRefresh = useCallback(async () => {
-      setRefreshing(true);
-      await fetchActiveChallenge();
-      setRefreshing(false);
-    }, [fetchActiveChallenge]);
-
-    if (!activeChallenge) {
-      return <Loader />;
-    }
-
-    return (
-      <ScrollView
-        contentContainerStyle={screenStyles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <Text style={screenStyles.title}>Current Challenge</Text>
-        <Text style={screenStyles.endsIn}>
-          Ends in {activeChallenge.daysRemaining} day{activeChallenge.daysRemaining !== 1 ? 's' : ''}
-        </Text>
-        <ChallengeCard challenge={activeChallenge} />
-        <PatrizioExample challenge={activeChallenge} />
-        <ShareExperience challenge={activeChallenge} />
-      </ScrollView>
-    );
-  }
 
 const challengeStyles = StyleSheet.create({
   challengeImage: {
@@ -590,7 +491,7 @@ const shareStyles = StyleSheet.create({
   button: {
     backgroundColor: colors.light.accent,
     borderRadius: 8,
-    padding: 28,
+    padding: 14,
     alignItems: 'center',
     width: '100%',
   },
@@ -792,5 +693,3 @@ const screenStyles = StyleSheet.create({
     marginBottom: 20,
   },
 });
-
-export default ChallengeScreen;
