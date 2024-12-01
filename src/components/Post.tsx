@@ -45,6 +45,9 @@ const Post: React.FC<PostProps> = ({
   isPostPage = false,
   onPostDeleted,
 }) => {
+
+  if (!post) return null;
+  
   const [showComments, setShowComments] = useState(false);
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likes_count);
@@ -63,7 +66,7 @@ const Post: React.FC<PostProps> = ({
   useEffect(() => {
     const initializeLikes = async () => {
       const likes = await fetchLikes(post.id);
-      setLiked(likes.some((like) => like.user_id === post.userId));
+      setLiked(likes.some((like) => like.user_id === post.user_id));
       setLikeCount(likes.length);
     };
 
@@ -100,8 +103,8 @@ const Post: React.FC<PostProps> = ({
   }, [post.id, setPostCounts]);
 
   const handleLikeToggle = async () => {
-    if (!post.id || !post.userId) {
-      console.error("postId or userId is undefined", { postId: post.id, userId: post.userId });
+    if (!post.id || !post.user_id) {
+      console.error("postId or userId is undefined", { postId: post.id, userId: post.user_id });
       return;
     }
 
@@ -111,10 +114,10 @@ const Post: React.FC<PostProps> = ({
     setLikeCount(newLikeCount);
     updateParentCounts(newLikeCount, commentCount);
 
-    const result = await toggleLike(post.id, post.userId);
-    if (result && isLiking && user?.id !== post.userId) {
+    const result = await toggleLike(post.id, post.user_id);
+    if (result && isLiking && user?.id !== post.user_id) {
       try {
-        await sendLikeNotification(user?.id, user?.user_metadata?.username, post.userId, post.id.toString());
+        await sendLikeNotification(user?.id, user?.user_metadata?.username, post.user_id, post.id.toString());
       } catch (error) {
         console.error('Failed to send like notification:', error);
       }
@@ -268,7 +271,7 @@ const Post: React.FC<PostProps> = ({
                   {
                     post_id: post.id,
                     reporter_id: user?.id,
-                    reported_user_id: post.userId,
+                    reported_user_id: post.user_id,
                     status: 'pending'
                   }
                 ]);
@@ -402,7 +405,7 @@ const Post: React.FC<PostProps> = ({
             <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>
-            {user?.id === postUser.id ? (
+            {user?.id === post.user_id ? (
               <MenuOption onSelect={handleDelete}>
                 <Text style={[styles.menuOptionText, { color: 'red' }]}>Delete Post</Text>
               </MenuOption>
@@ -426,7 +429,7 @@ const Post: React.FC<PostProps> = ({
           </Text>
         </View>
       )}
-      {post.text && <Text style={styles.text}>{post.text}</Text>}
+      {post.body && <Text style={styles.text}>{post.body}</Text>}
       {renderMedia()}
       <View>
       <View style={styles.footer}>
@@ -464,8 +467,8 @@ const Post: React.FC<PostProps> = ({
               initialComments={commentList}
               onClose={() => setShowComments(false)}
               loading={commentsLoading}
-              postId={postId}
-              postUserId={userId}
+              postId={post.id}
+              postUserId={postUser.id}
               onCommentAdded={handleCommentAdded}
             />
           </KeyboardAvoidingView>

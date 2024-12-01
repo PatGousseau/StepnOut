@@ -26,24 +26,32 @@ const useUserProgress = (targetUserId: string) => {
           featured, 
           body, 
           media_id, 
+          challenge_id,
+          challenges (title),
           media (file_path),
           likes:likes(count),
-          comments:comments(count)
+          comments:comments(count),
+          liked:likes!inner (user_id)
         `)
         .eq('user_id', targetUserId)
+        .eq('likes.user_id', user?.id)
         .order('created_at', { ascending: false })
         .range((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE - 1);
 
       if (error) throw error;
 
-      const formattedPosts = posts.map(post => ({
+      const formattedPosts: Post[] = posts.map(post => ({
         ...post,
         media_file_path: post.media?.file_path 
           ? `${supabase.storageUrl}/object/public/challenge-uploads/${post.media.file_path}`
           : null,
         likes_count: post.likes?.[0]?.count ?? 0,
-        comments_count: post.comments?.[0]?.count ?? 0
+        comments_count: post.comments?.[0]?.count ?? 0,
+        challenge_title: post.challenges?.title,
+        liked: Boolean(post.liked)
       }));
+
+      console.log('formattedPosts', formattedPosts);
 
       setUserPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);
       setHasMorePosts(posts.length === POSTS_PER_PAGE);
@@ -153,6 +161,8 @@ const useUserProgress = (targetUserId: string) => {
       fetchUserPosts(1);
     }
   }, [user?.id]);
+
+  console.log('userPosts', userPosts);
 
   return {
     data,

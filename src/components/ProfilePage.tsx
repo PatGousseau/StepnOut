@@ -372,15 +372,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {userPosts.map((post) => (
           <Post
             key={post.id}
+            post={post}  // Pass the entire post object
             postUser={userObj}
-            text={post.body}
-            media={post.media_file_path ? { uri: post.media_file_path } : undefined}
-            likes={post.likes_count}
-            comments_count={post.comments_count}
-            postId={post.id}
-            userId={user.id}
             setPostCounts={() => {}}
-          />
+            onPostDeleted={() => {}}
+        />
         ))}
         {postsLoading && (
           <View style={{ padding: 20 }}>
