@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../contexts/AuthContext';
 import { sendNewChallengeNotificationToAll } from '../../lib/notificationsService';
+import { uploadMedia } from '../../utils/handleMediaUpload';
 
 type Challenge = {
   id: number;
@@ -56,54 +57,13 @@ const ChallengeCreation: React.FC = () => {
   }, []);
 
   const handleMediaUpload = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Sorry, we need camera roll permissions to upload media!');
-      return;
-    }
-
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
+      const result = await uploadMedia({ 
+        allowVideo: false,
+        allowsEditing: true 
       });
-
-      if (!result.canceled) {
-        const file = result.assets[0];
-        setMediaPreview(file.uri);
-
-        const fileName = `image/${Date.now()}.jpg`;
-        
-        const formData = new FormData();
-        formData.append('file', {
-          uri: file.uri,
-          name: fileName,
-          type: 'image/jpeg',
-        } as any);
-
-        // Upload file to storage
-        const { error: uploadError } = await supabase.storage
-          .from('challenge-uploads')
-          .upload(fileName, formData, {
-            contentType: 'multipart/form-data',
-          });
-
-        if (uploadError) throw uploadError;
-
-        // Insert into media table and get the ID
-        const { data: mediaData, error: dbError } = await supabase
-          .from('media')
-          .insert([{ 
-            file_path: fileName,
-          }])
-          .select('id')
-          .single();
-
-        if (dbError) throw dbError;
-
-        setImageMediaId(mediaData.id);
-      }
+      setMediaPreview(result.mediaPreview);
+      setImageMediaId(result.mediaId);
     } catch (error) {
       console.error('Error uploading file:', error);
       Alert.alert('Error', 'Failed to upload image');

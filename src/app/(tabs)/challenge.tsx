@@ -13,7 +13,6 @@ const ChallengeScreen: React.FC = () => {
   if (!activeChallenge) {
     return <Text>No active challenge found</Text>;
   }
-  console.log('activeChallenge', activeChallenge);
   return <ChallengePage id={activeChallenge.id} />;
 };
 

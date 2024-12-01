@@ -8,6 +8,7 @@ import { Text } from './StyledText';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useAuth } from '../contexts/AuthContext';
 import { Keyboard } from 'react-native';
+import { uploadMedia } from '../utils/handleMediaUpload';
 
 const CreatePost = () => {
   const { user } = useAuth();
@@ -46,71 +47,12 @@ const CreatePost = () => {
   };
 
   const handleMediaUpload = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Sorry, we need camera roll permissions to upload media!');
-      return;
-    }
-
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsEditing: true,
-        quality: 0.8,
-        videoMaxDuration: 60,
-      });
-
-      if (!result.canceled) {
-        const file = result.assets[0];
-        const isVideoFile = file.type === 'video';
-        setIsVideo(isVideoFile);
-
-        if (isVideoFile) {
-          const { uri } = await VideoThumbnails.getThumbnailAsync(file.uri, {
-            time: 0,
-            quality: 0.5,
-          });
-          setVideoThumbnail(uri);
-          setMediaPreview(uri);
-        } else {
-          setMediaPreview(file.uri);
-        }
-
-        const mediaType = file.type || 'image';
-        const fileExtension = mediaType === 'video' ? '.mp4' : '.jpg';
-        const fileName = `${mediaType}/${Date.now()}${fileExtension}`;
-        
-        const formData = new FormData();
-        formData.append('file', {
-          uri: file.uri,
-          name: fileName,
-          type: mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
-        } as any);
-
-        // Upload file to storage
-        const { error: uploadError } = await supabase.storage
-          .from('challenge-uploads')
-          .upload(fileName, formData, {
-            contentType: 'multipart/form-data',
-          });
-
-        if (uploadError) throw uploadError;
-
-        // Insert into media table and get the ID
-        const { data: mediaData, error: dbError } = await supabase
-          .from('media')
-          .insert([
-            { 
-              file_path: fileName,
-            }
-          ])
-          .select('id')
-          .single();
-
-        if (dbError) throw dbError;
-
-        setUploadedMediaId(mediaData.id);
-      }
+      const result = await uploadMedia({ allowVideo: true });
+      setUploadedMediaId(result.mediaId);
+      setMediaPreview(result.mediaPreview);
+      setIsVideo(result.isVideo);
+      setVideoThumbnail(result.videoThumbnail);
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error uploading file');
@@ -143,6 +85,33 @@ const CreatePost = () => {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.modalContent}>
+                {mediaPreview ? (
+                  <Image 
+                    source={{ uri: isVideo ? videoThumbnail || mediaPreview : mediaPreview }} 
+                    style={styles.mediaPreview} 
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.mediaUploadIcon} 
+                    onPress={handleMediaUpload}
+                  >
+                    <MaterialIcons name="add-photo-alternate" size={24} color={colors.light.primary} />
+                  </TouchableOpacity>
+                )}
+
+                <TextInput
+                  style={styles.textInput}
+                  multiline
+                  scrollEnabled={true}
+                  textAlignVertical="top"
+                  placeholder="Share your thoughts, start a discussion, or share an achievement..."
+                  placeholderTextColor="#999"
+                  value={postText}
+                  onChangeText={setPostText}
+                  inputAccessoryViewID={inputAccessoryViewID}
+                />
+
                 <View style={styles.modalHeader}>
                   <TouchableOpacity 
                     style={styles.headerButton} 
@@ -158,33 +127,6 @@ const CreatePost = () => {
                     <Text style={styles.buttonText}>Submit</Text>
                   </TouchableOpacity>
                 </View>
-
-                <TextInput
-                  style={styles.textInput}
-                  multiline
-                  scrollEnabled={true}
-                  textAlignVertical="top"
-                  placeholder="Share your thoughts, start a discussion, or share an achievement..."
-                  placeholderTextColor="#999"
-                  value={postText}
-                  onChangeText={setPostText}
-                  inputAccessoryViewID={inputAccessoryViewID}
-                />
-
-                {mediaPreview ? (
-                  <Image 
-                    source={{ uri: isVideo ? videoThumbnail || mediaPreview : mediaPreview }} 
-                    style={styles.mediaPreview} 
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <TouchableOpacity 
-                    style={styles.mediaUploadIcon} 
-                    onPress={handleMediaUpload}
-                  >
-                    <MaterialIcons name="add-photo-alternate" size={24} color={colors.light.primary} />
-                  </TouchableOpacity>
-                )}
               </View>
             </ScrollView>
           </View>
@@ -261,7 +203,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginTop: 15,
   },
   headerButton: {
     padding: 8,

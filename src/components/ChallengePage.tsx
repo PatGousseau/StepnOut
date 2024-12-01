@@ -17,6 +17,8 @@ interface ChallengePageProps {
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const params = useLocalSearchParams();
   const challengeId = id || (typeof params.id === 'string' ? parseInt(params.id) : params.id);
+
+  console.log('challengeId', challengeId);
   
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,8 +42,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
         `)
         .eq('id', challengeId)
         .single();
-
-        console.log('data', data);
 
         if (error) throw error;
         

@@ -14,9 +14,9 @@ const useUserProgress = (targetUserId: string) => {
   const POSTS_PER_PAGE = 10;
 
   const fetchUserPosts = async (page = 1, isLoadMore = false) => {
-    
     setPostsLoading(true);
     try {
+      // First fetch all posts
       const { data: posts, error } = await supabase
         .from('post')
         .select(`
@@ -30,15 +30,22 @@ const useUserProgress = (targetUserId: string) => {
           challenges (title),
           media (file_path),
           likes:likes(count),
-          comments:comments(count),
-          liked:likes!inner (user_id)
+          comments:comments(count)
         `)
         .eq('user_id', targetUserId)
-        .eq('likes.user_id', user?.id)
         .order('created_at', { ascending: false })
         .range((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE - 1);
 
       if (error) throw error;
+
+      // Then fetch like status separately
+      const { data: likedPosts } = await supabase
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', user?.id)
+        .in('post_id', posts.map(post => post.id));
+
+      const likedPostIds = new Set(likedPosts?.map(like => like.post_id));
 
       const formattedPosts: Post[] = posts.map(post => ({
         ...post,
@@ -48,10 +55,8 @@ const useUserProgress = (targetUserId: string) => {
         likes_count: post.likes?.[0]?.count ?? 0,
         comments_count: post.comments?.[0]?.count ?? 0,
         challenge_title: post.challenges?.title,
-        liked: Boolean(post.liked)
+        liked: likedPostIds.has(post.id)
       }));
-
-      console.log('formattedPosts', formattedPosts);
 
       setUserPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);
       setHasMorePosts(posts.length === POSTS_PER_PAGE);
@@ -161,8 +166,6 @@ const useUserProgress = (targetUserId: string) => {
       fetchUserPosts(1);
     }
   }, [user?.id]);
-
-  console.log('userPosts', userPosts);
 
   return {
     data,

@@ -95,6 +95,10 @@ function RootLayoutNav() {
           name="profile/[id]" 
           options={{ headerShown: false }}
         />
+        <Stack.Screen 
+          name="challenge/[id]" 
+          options={{ headerShown: false }}
+        />
       </Stack>
     </SafeAreaView>
     </MenuProvider>
