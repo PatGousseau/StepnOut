@@ -35,6 +35,11 @@ const Home = () => {
     setRefreshing(false);
   }, [fetchAllData]);
 
+  const handlePostDeleted = useCallback(() => {
+    // Refresh the posts list
+    fetchAllData();
+  }, [fetchAllData]);
+
   return (
     <View style={{ flex: 1 }}>
       <ScrollView 
@@ -72,6 +77,7 @@ const Home = () => {
                 userId={post.user_id}
                 setPostCounts={setPostCounts}
                 media={post.media_file_path ? { uri: post.media_file_path } : undefined}
+                onPostDeleted={handlePostDeleted}
               />
             );
           })}

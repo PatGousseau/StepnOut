@@ -39,6 +39,7 @@ interface PostProps {
   userId: string;
   setPostCounts?: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
   isPostPage?: boolean;
+  onPostDeleted?: () => void;
 }
 
 const Post: React.FC<PostProps> = ({ 
@@ -51,6 +52,7 @@ const Post: React.FC<PostProps> = ({
   userId, 
   setPostCounts,
   isPostPage = false,
+  onPostDeleted,
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -66,7 +68,6 @@ const Post: React.FC<PostProps> = ({
   } | null>(null);
   const { user } = useAuth();
   const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
-  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -354,6 +355,42 @@ const Post: React.FC<PostProps> = ({
     );
   };
 
+  const handleDelete = async () => {
+    Alert.alert(
+      "Delete Post",
+      "Are you sure you want to delete this post? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from('post')
+                .delete()
+                .eq('id', postId);
+
+              if (error) throw error;
+
+              Alert.alert("Success", "Post deleted successfully");
+              onPostDeleted?.();
+            } catch (error) {
+              console.error('Error deleting post:', error);
+              Alert.alert(
+                "Error",
+                "Failed to delete post. Please try again later."
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <Pressable onPress={handlePostPress} style={styles.container}>
       <View style={styles.header}>
@@ -376,12 +413,20 @@ const Post: React.FC<PostProps> = ({
             <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>
-            <MenuOption onSelect={handleReport}>
-              <Text style={styles.menuOptionText}>Report Post</Text>
-            </MenuOption>
-            <MenuOption onSelect={handleBlock}>
-              <Text style={styles.menuOptionText}>Block User</Text>
-            </MenuOption>
+            {user?.id === postUser.id ? (
+              <MenuOption onSelect={handleDelete}>
+                <Text style={[styles.menuOptionText, { color: 'red' }]}>Delete Post</Text>
+              </MenuOption>
+            ) : (
+              <>
+                <MenuOption onSelect={handleReport}>
+                  <Text style={styles.menuOptionText}>Report Post</Text>
+                </MenuOption>
+                <MenuOption onSelect={handleBlock}>
+                  <Text style={styles.menuOptionText}>Block User</Text>
+                </MenuOption>
+              </>
+            )}
           </MenuOptions>
         </Menu>
       </View>
