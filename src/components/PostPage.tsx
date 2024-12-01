@@ -70,9 +70,13 @@ const PostPage = () => {
       <View style={styles.commentsSection}>
         <CommentsList
           comments={comments}
-          onAddComment={({ text, userId }) => addComment(userId, text)}
-          onClose={() => {}}
           loading={commentsLoading}
+          onClose={() => {}}
+          postId={post.id}
+          postUserId={post.user_id}
+          onCommentAdded={(count) => {
+            // Optionally handle comment count updates
+          }}
         />
       </View>
     </View>

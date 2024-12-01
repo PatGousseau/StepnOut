@@ -51,5 +51,5 @@ export interface Challenge {
       username: string;
       name: string;
     };
-    comment_text?: string;
+    body?: string;
   }

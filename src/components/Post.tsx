@@ -138,29 +138,17 @@ const Post: React.FC<PostProps> = ({
   const handleAddComment = async (comment: { text: string; userId: string }) => {
     if (!user) {
       console.error("User not authenticated");
-      return;
+      return false;
     }
 
-    if (comment.text.trim()) {
-      const newComment = await addComment(user.id, comment.text);
+    const newComment = await addComment(user.id, comment.text);
+    return !!newComment;
+  };
 
-      if (newComment) {
-        const newCommentCount = commentCount + 1;
-        setCommentCount(newCommentCount);
-        updateParentCounts(likeCount, newCommentCount);
-
-        if (user.id !== userId) {
-          try {
-            await sendCommentNotification(user?.id, user?.user_metadata?.username, userId, postId.toString(), comment.text);
-          } catch (error) {
-            console.error('Failed to send comment notification:', error);
-          }
-        }
-
-        return true;
-      }
-    }
-    return false;
+  const handleCommentAdded = (increment: number) => {
+    const newCommentCount = commentCount + increment;
+    setCommentCount(newCommentCount);
+    updateParentCounts(likeCount, newCommentCount);
   };
 
   const isVideo = (source: any) => {
@@ -466,9 +454,11 @@ const Post: React.FC<PostProps> = ({
           >
             <CommentsModal
               initialComments={commentList}
-              onAddComment={handleAddComment}
               onClose={() => setShowComments(false)}
               loading={commentsLoading}
+              postId={postId}
+              postUserId={userId}
+              onCommentAdded={handleCommentAdded}
             />
           </KeyboardAvoidingView>
         </View>
