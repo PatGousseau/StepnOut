@@ -11,7 +11,8 @@ export const colors = {
     alertRed: "#e64e54",
     easyGreen: '#b2dbb9', 
     mediumYellow: '#FFE5B4', 
-    hardRed: '#FFB3B3',   
+    hardRed: '#FFB3B3', 
+    accent2: '#E5E7F5',
   },
   dark: {
     text: '#fff',  // light text

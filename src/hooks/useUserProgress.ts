@@ -92,9 +92,10 @@ const useUserProgress = (targetUserId: string) => {
 
         // Fetch submissions for the user
         const { data: submissionData, error: submissionError } = await supabase
-          .from('submission')
+          .from('post')
           .select(`challenge_id`)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .not('challenge_id', 'is', null);
 
         if (submissionError) throw submissionError;
 
@@ -113,7 +114,7 @@ const useUserProgress = (targetUserId: string) => {
 
         // For difficulty counts
         const { data: submissionsWithDifficulty, error: difficultyError } = await supabase
-          .from('submission')
+          .from('post')
           .select(`
             challenge_id,
             challenges!inner (

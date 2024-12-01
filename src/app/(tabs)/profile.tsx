@@ -1,6 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { ProfilePage } from '../../components/ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
+import { Text } from '../../components/StyledText';
 
 const ProfileScreen: React.FC = () => {
   const { user } = useAuth();

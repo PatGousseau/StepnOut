@@ -171,19 +171,6 @@ const CreatePost = () => {
                   inputAccessoryViewID={inputAccessoryViewID}
                 />
 
-                {Platform.OS === 'ios' && (
-                  <InputAccessoryView nativeID={inputAccessoryViewID}>
-                    <View style={styles.inputAccessory}>
-                      <TouchableOpacity 
-                        style={styles.keyboardButton}
-                        onPress={() => Keyboard.dismiss()}
-                      >
-                        <Text style={styles.keyboardButtonText}>Done</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </InputAccessoryView>
-                )}
-
                 {mediaPreview ? (
                   <Image 
                     source={{ uri: isVideo ? videoThumbnail || mediaPreview : mediaPreview }} 
@@ -249,7 +236,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginVertical: 0,
-    height: 260,
+    height: 130,
     textAlignVertical: 'top',
   },
   submitButton: {

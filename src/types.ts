@@ -6,7 +6,9 @@ export interface Challenge {
     created_by: string;
     created_at: Date;
     updated_at: Date;
-    media_file_path: string;
+    media: {
+      file_path: string;
+    };
     is_active: boolean;
     daysRemaining: number;
   }
@@ -18,9 +20,12 @@ export interface Challenge {
     created_at: string;
     featured: boolean;
     body: string;
-    media_file_path?: string;
+    media_file_path?: string | null;
     likes_count: number;
     comments_count: number;
+    challenge_id?: number;
+    challenge_title?: string;
+    liked: boolean;
   }
 
   export interface ChallengeProgress {

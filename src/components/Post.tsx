@@ -28,36 +28,27 @@ import { useFetchComments } from '../hooks/useFetchComments';
 import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
+import { Post as PostType } from '../types';
 
 interface PostProps {
+  post: PostType;
   postUser: User;
-  text?: string;
-  media?: { uri: string } | undefined;
-  likes: number;
-  comments_count: number;
-  postId: number;
-  userId: string;
   setPostCounts?: React.Dispatch<React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>>;
   isPostPage?: boolean;
   onPostDeleted?: () => void;
 }
 
 const Post: React.FC<PostProps> = ({ 
+  post,
   postUser, 
-  text, 
-  media, 
-  likes, 
-  comments_count,
-  postId, 
-  userId, 
   setPostCounts,
   isPostPage = false,
   onPostDeleted,
 }) => {
   const [showComments, setShowComments] = useState(false);
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(likes);
-  const [commentCount, setCommentCount] = useState(comments_count || 0);
+  const [liked, setLiked] = useState(post.liked);
+  const [likeCount, setLikeCount] = useState(post.likes_count);
+  const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const { toggleLike, fetchLikes } = useFetchHomeData();
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
   const screenWidth = Dimensions.get('window').width;
@@ -67,19 +58,19 @@ const Post: React.FC<PostProps> = ({
     opacity: Animated.Value;
   } | null>(null);
   const { user } = useAuth();
-  const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
+  const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(post.id);
 
   useEffect(() => {
     const initializeLikes = async () => {
-      const likes = await fetchLikes(postId);
-      setLiked(likes.some((like) => like.user_id === userId));
+      const likes = await fetchLikes(post.id);
+      setLiked(likes.some((like) => like.user_id === post.userId));
       setLikeCount(likes.length);
     };
 
-    if (postId) {
+    if (post.id) {
       initializeLikes();
     }
-  }, [postId]);
+  }, [post.id]);
 
   useEffect(() => {
     if (showFullScreenImage) {
@@ -93,24 +84,24 @@ const Post: React.FC<PostProps> = ({
   }, [showFullScreenImage]);
 
   useEffect(() => {
-    setCommentCount(comments_count);
-  }, [comments_count]);
+    setCommentCount(post.comments_count);
+  }, [post.comments_count]);
 
   const updateParentCounts = useCallback((newLikeCount: number, newCommentCount: number) => {
     if (setPostCounts) {
       setPostCounts(prevCounts => ({
         ...prevCounts,
-        [postId]: {
+        [post.id]: {
           likes: newLikeCount,
           comments: newCommentCount,
         },
       }));
     }
-  }, [postId, setPostCounts]);
+  }, [post.id, setPostCounts]);
 
   const handleLikeToggle = async () => {
-    if (!postId || !userId) {
-      console.error("postId or userId is undefined", { postId, userId });
+    if (!post.id || !post.userId) {
+      console.error("postId or userId is undefined", { postId: post.id, userId: post.userId });
       return;
     }
 
@@ -120,10 +111,10 @@ const Post: React.FC<PostProps> = ({
     setLikeCount(newLikeCount);
     updateParentCounts(newLikeCount, commentCount);
 
-    const result = await toggleLike(postId, userId);
-    if (result && isLiking && user?.id !== userId) {
+    const result = await toggleLike(post.id, post.userId);
+    if (result && isLiking && user?.id !== post.userId) {
       try {
-        await sendLikeNotification(user?.id, user?.user_metadata?.username, userId, postId.toString());
+        await sendLikeNotification(user?.id, user?.user_metadata?.username, post.userId, post.id.toString());
       } catch (error) {
         console.error('Failed to send like notification:', error);
       }
@@ -151,12 +142,12 @@ const Post: React.FC<PostProps> = ({
     updateParentCounts(likeCount, newCommentCount);
   };
 
-  const isVideo = (source: any) => {
-    return source?.uri?.match(/\.(mp4|mov|avi|wmv)$/i);
+  const isVideo = (source: string) => {
+    return source.match(/\.(mp4|mov|avi|wmv)$/i);
   };
 
   const handleMediaPress = () => {
-    if (media && isVideo(media)) {
+    if (post.media_file_path && isVideo(post.media_file_path)) {
       return;
     }
 
@@ -168,10 +159,10 @@ const Post: React.FC<PostProps> = ({
   };
 
   const renderMedia = () => {
-    if (!media) return null;
+    if (!post.media_file_path) return null;
     
-    if (isVideo(media)) {
-      const player = useVideoPlayer(media.uri);
+    if (isVideo(post.media_file_path)) {
+      const player = useVideoPlayer(post.media_file_path);
       
       return (
         <TouchableOpacity 
@@ -194,7 +185,7 @@ const Post: React.FC<PostProps> = ({
         activeOpacity={1}
       >
         <Image
-          source={{ uri: media.uri }}
+          source={{ uri: post.media_file_path }}
           style={styles.mediaContent}
           cachePolicy="memory-disk" 
           contentFit="cover"
@@ -249,7 +240,7 @@ const Post: React.FC<PostProps> = ({
   };
 
   const handlePostPress = () => {
-    router.push(`/post/${postId}`);
+    router.push(`/post/${post.id}`);
   };
 
   const handleProfilePress = (e: GestureResponderEvent) => {
@@ -275,9 +266,9 @@ const Post: React.FC<PostProps> = ({
                 .from('reports')
                 .insert([
                   {
-                    post_id: postId,
+                    post_id: post.id,
                     reporter_id: user?.id,
-                    reported_user_id: userId,
+                    reported_user_id: post.userId,
                     status: 'pending'
                   }
                 ]);
@@ -360,7 +351,7 @@ const Post: React.FC<PostProps> = ({
               const { error } = await supabase
                 .from('post')
                 .delete()
-                .eq('id', postId);
+                .eq('id', post.id);
 
               if (error) throw error;
 
@@ -379,8 +370,16 @@ const Post: React.FC<PostProps> = ({
     );
   };
 
+  console.log(post.challenge_id);
+
   return (
-    <Pressable onPress={handlePostPress} style={styles.container}>
+    <Pressable 
+      onPress={handlePostPress} 
+      style={[
+        styles.container,
+        post.challenge_id ? styles.challengeContainer : null
+      ]}
+    >
       <View style={styles.header}>
         <TouchableOpacity onPress={handleProfilePress}>
           <Image 
@@ -393,8 +392,10 @@ const Post: React.FC<PostProps> = ({
           />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleProfilePress} style={styles.nameContainer}>
-          <Text style={styles.name}>{postUser?.name || 'Unknown'}</Text>
-          <Text style={styles.username}>@{postUser?.username || 'unknown'}</Text>
+          <View style={styles.userInfoContainer}>
+            <Text style={styles.name}>{postUser?.name || 'Unknown'}</Text>
+            <Text style={styles.username}>@{postUser?.username || 'unknown'}</Text>
+          </View>
         </TouchableOpacity>
         <Menu style={styles.menuContainer}>
           <MenuTrigger>
@@ -418,7 +419,14 @@ const Post: React.FC<PostProps> = ({
           </MenuOptions>
         </Menu>
       </View>
-      {text && <Text style={styles.text}>{text}</Text>}
+      {post.challenge_id && (
+        <View style={styles.challengeBox}>
+          <Text style={styles.challengeTitle} numberOfLines={1} ellipsizeMode="tail">
+            <Text style={{ fontWeight: 'bold' }}>Challenge:</Text> {post.challenge_title}
+          </Text>
+        </View>
+      )}
+      {post.text && <Text style={styles.text}>{post.text}</Text>}
       {renderMedia()}
       <View>
       <View style={styles.footer}>
@@ -483,7 +491,7 @@ const Post: React.FC<PostProps> = ({
               {...panResponder.panHandlers}
             >
               <Image
-                source={{ uri: media?.uri }}
+                source={{ uri: post.media_file_path }}
                 style={{
                   width: screenWidth,
                   height: screenHeight,
@@ -505,11 +513,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     padding: 10,
     paddingBottom: 16,
-    // backgroundColor: '#fff',
     borderRadius: 8,
     borderColor: '#ccc',
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+  },
+  challengeContainer: {
+    // backgroundColor: '#ffeecc',
+    // borderWidth: 1,
   },
   header: {
     flexDirection: 'row',
@@ -523,6 +534,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   nameContainer: {
+    flex: 1,
+  },
+  userInfoContainer: {
     flexDirection: 'column',
   },
   name: {
@@ -599,6 +613,22 @@ const styles = StyleSheet.create({
   menuOptionText: {
     fontSize: 16,
     padding: 10,
+  },
+  challengeBox: {
+    backgroundColor: colors.light.accent2,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1.25,
+    borderColor: colors.light.primary,
+    marginBottom: 4,
+    marginTop: 4,
+    alignSelf: 'flex-start',
+    width: '100%',
+  },
+  challengeTitle: {
+    color: colors.light.primary,
+    fontSize: 13,
   },
 });
 
