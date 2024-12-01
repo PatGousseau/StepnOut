@@ -17,8 +17,6 @@ interface ChallengePageProps {
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const params = useLocalSearchParams();
   const challengeId = id || (typeof params.id === 'string' ? parseInt(params.id) : params.id);
-
-  console.log('challengeId', challengeId);
   
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,7 +85,9 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
       <View style={styles.content}>
         <Text style={styles.title}>Challenge</Text>
         <Text style={styles.endsIn}>
-          Ends in {challenge.daysRemaining} day{challenge.daysRemaining !== 1 ? 's' : ''}
+          {challenge.daysRemaining > 0 
+            ? `Ends in ${challenge.daysRemaining} day${challenge.daysRemaining !== 1 ? 's' : ''}`
+            : 'Past challenge'}
         </Text>
         <ChallengeCard challenge={challenge} />
         <PatrizioExample challenge={challenge} />
