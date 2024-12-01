@@ -44,8 +44,24 @@ async function sendPushNotification(token: string, title: string, body: string, 
 }
 
 // Handle sending notifications for likes
-export async function sendLikeNotification(senderId: string | undefined, senderUsername: string,recipientId: string, postId: string) {
+export async function sendLikeNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string) {
+    // Save notification to database
+    const { error: dbError } = await supabase
+        .from('notifications')
+        .insert([{
+            user_id: recipientId,
+            trigger_user_id: senderId,
+            post_id: postId,
+            action_type: 'like',
+            is_read: false
+        }]);
 
+    if (dbError) {
+        console.error('Error saving notification to database:', dbError);
+        return;
+    }
+
+    // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
@@ -58,6 +74,23 @@ export async function sendLikeNotification(senderId: string | undefined, senderU
 
 // Handle sending notifications for comments
 export async function sendCommentNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string, commentText: string) {
+    // Save notification to database
+    const { error: dbError } = await supabase
+        .from('notifications')
+        .insert([{
+            user_id: recipientId,
+            trigger_user_id: senderId,
+            post_id: postId,
+            action_type: 'comment',
+            is_read: false
+        }]);
+
+    if (dbError) {
+        console.error('Error saving notification to database:', dbError);
+        return;
+    }
+
+    // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
