@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase, supabaseStorageUrl } from '../lib/supabase';
-import { Challenge, Post } from '../types';
+import { Post } from '../types';
 import { User } from '../models/User';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,7 +22,7 @@ export const useFetchHomeData = () => {
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
 
-  const formatPost = async (post: any, commentCountMap?: Map<number, number>) => {
+  const formatPost = async (post: Partial<Post>, commentCountMap?: Map<number, number>): Promise<Post> => {
     // If we don't have a pre-fetched comment count, fetch it individually
     let commentCount = commentCountMap?.get(post.id);
     if (commentCount === undefined) {
@@ -35,8 +35,10 @@ export const useFetchHomeData = () => {
       ...post,
       media_file_path: post.media ? `${supabaseStorageUrl}/${post.media.file_path}` : null,
       likes_count: post.likes?.[0]?.count ?? 0,
-      comments_count: commentCount,
-      liked: likedPosts[post.id] ?? false
+      comments_count: commentCount ?? 0,
+      liked: likedPosts[post.id] ?? false,
+      challenge_id: post.challenge_id,
+      challenge_title: post.challenges?.title
     };
   };
 
@@ -63,8 +65,10 @@ export const useFetchHomeData = () => {
           featured, 
           body, 
           media_id, 
+          challenge_id,
           media (file_path),
-          likes:likes(count)
+          likes:likes(count),
+          challenges:challenge_id (title)
         `)
         .order('created_at', { ascending: false });
 
@@ -231,7 +235,7 @@ export const useFetchHomeData = () => {
     }
   }, [loading, hasMore, page]);
 
-  const fetchPost = async (postId: number) => {
+  const fetchPost = async (postId: number): Promise<Post | null> => {
     try {
       const { data: post, error } = await supabase
         .from('post')

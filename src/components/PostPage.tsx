@@ -7,13 +7,14 @@ import { Text } from './StyledText';
 import { CommentsList } from './Comments';
 import { useFetchComments } from '../hooks/useFetchComments';
 import { colors } from '../constants/Colors';
+import { Post as PostType } from '../types';  // todo: rename one of the Post types
 
 const PostPage = () => {
   const params = useLocalSearchParams();
   const postId = typeof params.id === 'string' ? parseInt(params.id) : params.id;
   
   const { userMap, fetchPost } = useFetchHomeData();
-  const [post, setPost] = useState(null);
+  const [post, setPost] = useState<PostType | null>(null);
   const [loading, setLoading] = useState(false);
   const { comments, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
 
@@ -57,14 +58,9 @@ const PostPage = () => {
   return (
     <View style={styles.container}>
       <Post
+        post={post}
         postUser={userMap[post.user_id]}
-        text={post.body}
-        likes={post.likes_count || 0}
-        comments_count={post.comments_count || 0}
-        postId={post.id}
-        userId={post.user_id}
         setPostCounts={() => {}}
-        media={post.media_file_path ? { uri: post.media_file_path } : undefined}
         isPostPage={true}
       />
       <View style={styles.commentsSection}>

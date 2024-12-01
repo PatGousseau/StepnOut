@@ -69,14 +69,9 @@ const Home = () => {
             return (
               <Post
                 key={post.id}
+                post={post}  // Pass the entire post object
                 postUser={postUser}
-                text={post.body}
-                likes={postCounts[post.id]?.likes ?? 0}
-                comments_count={postCounts[post.id]?.comments ?? 0}
-                postId={post.id}
-                userId={post.user_id}
                 setPostCounts={setPostCounts}
-                media={post.media_file_path ? { uri: post.media_file_path } : undefined}
                 onPostDeleted={handlePostDeleted}
               />
             );

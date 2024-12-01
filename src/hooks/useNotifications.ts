@@ -35,7 +35,7 @@ export const useNotifications = () => {
       const notifications = (data || []).map(notification => ({
         ...notification,
         trigger_user: notification.trigger_profile,
-        comment_text: notification.comment?.[0]?.body || ''
+        body: notification.comment?.[0]?.body || ''
       }));
       
       setNotifications(notifications);
@@ -136,7 +136,7 @@ export const useNotifications = () => {
                 return [{
                   ...fullNotification,
                   trigger_user: fullNotification.trigger_profile,
-                  comment_text: fullNotification.comment?.[0]?.body || ''
+                  body: fullNotification.comment?.[0]?.body || ''
                 }, ...prev];
               });
 
