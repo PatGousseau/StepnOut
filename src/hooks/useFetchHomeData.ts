@@ -241,6 +241,7 @@ export const useFetchHomeData = () => {
         .from('post')
         .select(`
           *,
+          challenges:challenge_id (title),
           media (file_path),
           likes:likes(count)
         `)
