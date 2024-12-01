@@ -4,6 +4,9 @@ import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
+import { sendCommentNotification } from '../lib/notificationsService';
+import { supabase } from '../lib/supabase';
+import { Database } from '../lib/database.types';
 
 export interface Comment {
   id: number;
@@ -14,41 +17,85 @@ export interface Comment {
 
 interface CommentsProps {
   initialComments: Comment[];
-  onAddComment: (comment: { text: string; userId: string }) => void;
   onClose: () => void;
   loading?: boolean;
+  postId: number;
+  postUserId: string;
+  onCommentAdded?: (newCount: number) => void;
 }
 
 interface CommentsListProps {
   comments: Comment[];
-  onAddComment: (comment: { text: string; userId: string }) => void;
   loading?: boolean;
   flatListRef?: React.RefObject<FlatList>;
   onClose?: () => void;
+  postId: number;
+  postUserId: string;
+  onCommentAdded?: (newCount: number) => void;
 }
 
 export const CommentsList: React.FC<CommentsListProps> = ({ 
-  comments, 
-  onAddComment, 
+  comments: initialComments, 
   loading = false, 
   flatListRef, 
-  onClose 
+  onClose, 
+  postId, 
+  postUserId, 
+  onCommentAdded 
 }) => {
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
+  const [comments, setComments] = useState(initialComments);
+
+  useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
 
   const handleAddComment = async () => {
     if (newComment.trim() && user) {
-      const newCommentObj = {
-        id: Date.now(),
-        text: newComment,
-        userId: user.id
-      };
+      const commentText = newComment.trim();
       
-      const result = await onAddComment(newCommentObj);
-      
-      if (result) {
-        setNewComment('');
+      try {
+        const { data: savedComment, error } = await supabase
+          .from('comments')
+          .insert({
+            user_id: user.id,
+            post_id: postId,
+            body: commentText,
+          })
+          .select('*')
+          .single();
+
+        if (error) throw error;
+
+        if (savedComment) {
+          setComments(prevComments => [...prevComments, {
+            id: savedComment.id,
+            text: savedComment.body,
+            userId: savedComment.user_id,
+            created_at: savedComment.created_at
+          }]);
+          
+          setNewComment('');
+          
+          if (user.id !== postUserId) {
+            try {
+              await sendCommentNotification(
+                user.id,
+                user.user_metadata?.username,
+                postUserId,
+                postId.toString(),
+                commentText
+              );
+            } catch (error) {
+              console.error('Failed to send comment notification:', error);
+            }
+          }
+
+          onCommentAdded?.(1);
+        }
+      } catch (error) {
+        console.error('Error adding comment:', error);
       }
     }
   };
@@ -104,9 +151,11 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 // Rename the main component to CommentsModal
 export const CommentsModal: React.FC<CommentsProps> = ({ 
   initialComments, 
-  onAddComment, 
   onClose, 
-  loading = false 
+  loading = false,
+  postId,
+  postUserId,
+  onCommentAdded,
 }) => {
   const [comments, setComments] = useState(initialComments);
   const flatListRef = useRef<FlatList>(null);
@@ -152,8 +201,11 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   const handleAddComment = async (newCommentObj: { text: string; userId: string }) => {
-    setComments(prevComments => [...prevComments, newCommentObj]);
-    return onAddComment(newCommentObj);
+    setComments(prevComments => [...prevComments, { 
+      ...newCommentObj, 
+      id: Date.now(), // temporary ID
+      created_at: new Date().toISOString()
+    }]);
   };
 
   return (
@@ -171,7 +223,10 @@ export const CommentsModal: React.FC<CommentsProps> = ({
           comments={comments}
           loading={loading}
           flatListRef={flatListRef}
-          onAddComment={handleAddComment}
+          onClose={onClose}
+          postId={postId}
+          postUserId={postUserId}
+          onCommentAdded={onCommentAdded}
         />
       </SafeAreaView>
     </Animated.View>
