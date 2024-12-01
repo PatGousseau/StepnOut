@@ -13,6 +13,7 @@ import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { Text } from '../../components/StyledText';
+import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -29,7 +30,31 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       await signIn(email, password);
-      router.replace('/');
+
+      // Get the current session to get user info
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('Login failed');
+
+      // Check if this is their first login after verification
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_login')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profile?.first_login) {
+        // Update first_login to false
+        await supabase
+          .from('profiles')
+          .update({ first_login: false })
+          .eq('id', session.user.id);
+        
+        // Redirect to onboarding
+        router.replace('/(auth)/onboarding');
+      } else {
+        // Regular login flow
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       Alert.alert('Error', (error as Error).message);
     } finally {

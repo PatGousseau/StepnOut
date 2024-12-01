@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
-import { useEffect } from 'react';
-import { View, ImageBackground, StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, ImageBackground, StyleSheet, Image } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -116,5 +116,15 @@ const styles = StyleSheet.create({
   },
   bgStyle: {
     flex: 1,
+  },
+  imageContainer: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  onboardingImage: {
+    width: '100%',
+    height: '100%',
   },
 });
