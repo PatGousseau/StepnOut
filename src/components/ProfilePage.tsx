@@ -161,6 +161,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleSaveProfile = async () => {
     try {
+      // Check if username contains spaces
+      if (editedUsername.includes(' ')) {
+        throw new Error('Username cannot contain spaces');
+      }
+
       // Check if username is already taken (only if username changed)
       if (editedUsername !== userProfile?.username) {
         const { data: existingUser, error: checkError } = await supabase
@@ -398,7 +403,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <Icon name="close" size={24} color="#fff" />
           </TouchableOpacity>
           <Image
-            source={userProfile?.profile_image_url ? { uri: userProfile.profile_image_url } : ProfilePic}
+            source={userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic}
             style={styles.fullScreenImage}
             resizeMode="contain"
           />
