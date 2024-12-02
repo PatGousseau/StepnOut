@@ -117,10 +117,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: colors.light.primary,
+    textAlign: 'center',
   },
   endsIn: {
     fontSize: 14,
     color: colors.light.lightText,
     marginBottom: 20,
+    textAlign: 'center',
   },
 });

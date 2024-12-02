@@ -406,7 +406,7 @@ const Post: React.FC<PostProps> = ({
           </View>
         </TouchableOpacity>
         <Menu style={styles.menuContainer}>
-          <MenuTrigger>
+          <MenuTrigger style={{ padding: 8 }}>
             <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>

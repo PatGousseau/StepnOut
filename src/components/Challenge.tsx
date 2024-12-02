@@ -548,7 +548,7 @@ const shareStyles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 200,
+    aspectRatio: 2,
     width: '100%',
     overflow: 'hidden',
   },
