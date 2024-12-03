@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView, InputAccessoryView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
 import { colors } from '../constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { supabase } from '../lib/supabase';

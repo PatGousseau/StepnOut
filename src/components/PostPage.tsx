@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { 
   View, 
-  ScrollView, 
   StyleSheet, 
   ActivityIndicator, 
   KeyboardAvoidingView, 
@@ -12,8 +11,6 @@ import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { Text } from './StyledText';
-import { CommentsList } from './Comments';
-import { useFetchComments } from '../hooks/useFetchComments';
 import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
 
@@ -24,7 +21,6 @@ const PostPage = () => {
   const { userMap, fetchPost } = useFetchHomeData();
   const [post, setPost] = useState<PostType | null>(null);
   const [loading, setLoading] = useState(false);
-  const { comments, loading: commentsLoading, fetchComments, addComment } = useFetchComments(postId);
 
   useEffect(() => {
     const loadPost = async () => {
@@ -36,7 +32,6 @@ const PostPage = () => {
         }
         const fetchedPost = await fetchPost(postId);
         setPost(fetchedPost);
-        fetchComments();
       } catch (error) {
         console.error('Error loading post:', error);
       } finally {
@@ -78,19 +73,7 @@ const PostPage = () => {
             isPostPage={true}
           />
         )}
-        data={[{ key: 'comments' }]}
-        renderItem={() => (
-          <View style={styles.commentsSection}>
-            <CommentsList
-              comments={comments}
-              loading={commentsLoading}
-              onClose={() => {}}
-              postId={post.id}
-              postUserId={post.user_id}
-              onCommentAdded={(count) => {}}
-            />
-          </View>
-        )}
+        data={[]}
         keyboardShouldPersistTaps="handled"
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}

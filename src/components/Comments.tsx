@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator, SafeAreaView, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, ActivityIndicator, SafeAreaView, TouchableOpacity } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
 import { sendCommentNotification } from '../lib/notificationsService';
 import { supabase } from '../lib/supabase';
-import { Database } from '../lib/database.types';
 import { router } from 'expo-router';
 
 export interface Comment {
@@ -113,7 +112,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
   return (
     <CommentsContext.Provider value={{ onClose }}>
-      <View style={[styles.commentsWrapper]}>
+      <View style={styles.commentsWrapper}>
         <FlatList
           ref={flatListRef}
           style={styles.commentsList}
@@ -128,32 +127,24 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             </View>
           )}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
         />
         
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <View style={styles.inputContainer}>
-            <TextInput
-              value={newComment}
-              onChangeText={setNewComment}
-              placeholder="Add a comment..."
-              placeholderTextColor="#888"
-              style={styles.input}
-            />
-            <Pressable 
-              onPress={handleAddComment} 
-              style={[
-                styles.postButton,
-                !user && styles.postButtonDisabled
-              ]}
-              disabled={!user}
-            >
-              <Text style={styles.postButtonText}>Post</Text>
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={newComment}
+            onChangeText={setNewComment}
+            placeholder="Add a comment..."
+            placeholderTextColor="#888"
+            style={styles.input}
+          />
+          <Pressable 
+            onPress={handleAddComment} 
+            style={[styles.postButton, !user && styles.postButtonDisabled]}
+            disabled={!user}
+          >
+            <Text style={styles.postButtonText}>Post</Text>
+          </Pressable>
+        </View>
       </View>
     </CommentsContext.Provider>
   );
@@ -210,14 +201,6 @@ export const CommentsModal: React.FC<CommentsProps> = ({
       flatListRef.current?.scrollToEnd({ animated: false });
     }, 100);
   }, [initialComments]);
-
-  const handleAddComment = async (newCommentObj: { text: string; userId: string }) => {
-    setComments(prevComments => [...prevComments, { 
-      ...newCommentObj, 
-      id: Date.now(), // temporary ID
-      created_at: new Date().toISOString()
-    }]);
-  };
 
   return (
     <Animated.View 
