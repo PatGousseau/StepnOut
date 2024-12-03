@@ -78,4 +78,23 @@ export class User {
   get profileImageUrl(): string {
     return this._profile?.profileImageUrl || '/assets/images/default-pfp.png';
   }
+
+  // Setters
+  set profileImageUrl(url: string) {
+    if (this._profile) {
+      this._profile.profileImageUrl = url;
+    }
+  }
+
+  set username(value: string) {
+    if (this._profile) {
+      this._profile.username = value;
+    }
+  }
+
+  set name(value: string) {
+    if (this._profile) {
+      this._profile.name = value;
+    }
+  }
 }

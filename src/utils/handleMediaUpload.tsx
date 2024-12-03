@@ -7,6 +7,7 @@ interface MediaUploadResult {
   mediaPreview: string | null;
   isVideo: boolean;
   videoThumbnail: string | null;
+  mediaUrl: string;
 }
 
 export const uploadMedia = async (
@@ -74,6 +75,11 @@ export const uploadMedia = async (
 
     if (uploadError) throw uploadError;
 
+    // Get the public URL immediately after upload
+    const { data: { publicUrl } } = supabase.storage
+      .from('challenge-uploads')
+      .getPublicUrl(fileName);
+
     // Insert into media table and get the ID
     const { data: mediaData, error: dbError } = await supabase
       .from('media')
@@ -90,6 +96,7 @@ export const uploadMedia = async (
       mediaPreview: isVideoFile ? thumbnailUri || file.uri : file.uri,
       isVideo: isVideoFile,
       videoThumbnail: thumbnailUri,
+      mediaUrl: publicUrl,
     };
   } catch (error) {
     console.error('Error uploading file:', error);

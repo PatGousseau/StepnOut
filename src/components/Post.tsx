@@ -313,18 +313,12 @@ const Post: React.FC<PostProps> = ({
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('post')
-                .delete()
-                .eq('id', post.id);
-
-              if (error) throw error;
-
+            const success = await postService.deletePost(post.id);
+            
+            if (success) {
               Alert.alert("Success", "Post deleted successfully");
               onPostDeleted?.();
-            } catch (error) {
-              console.error('Error deleting post:', error);
+            } else {
               Alert.alert(
                 "Error",
                 "Failed to delete post. Please try again later."

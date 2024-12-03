@@ -13,12 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Loader } from './Loader';
 import FeedbackButton from './FeedbackButton';
 import { User } from '../models/User';
-
-type UserProfile = {
-  username: string;
-  name: string;
-  profileImageUrl: string | null;
-};
+import { profileService } from '../services/profileService';
 
 type ProfilePageProps = {
   userId: string;
@@ -37,14 +32,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   } = useUserProgress(userId);
   const [page, setPage] = useState(1);
   const [showMenu, setShowMenu] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedUsername, setEditedUsername] = useState('');
-  const [userObj, setUserObj] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<User | null>(null);
 
   // for features that are only available to the user themselves
   const isOwnProfile = userId ? userId === user?.id : true;
@@ -54,15 +48,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       const targetUserId = userId || user?.id;
       if (!targetUserId) return;
       
-      const userInstance = await User.getUser(targetUserId);
-      setUserObj(userInstance);
-      
-      if (userInstance.profile) {
-        setUserProfile({
-          username: userInstance.username,
-          name: userInstance.name,
-          profileImageUrl: userInstance.profileImageUrl
-        });
+      const userProfile = await User.getUser(targetUserId);
+      if (userProfile) {
+        setUserProfile(userProfile);
       }
     };
 
@@ -79,75 +67,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const handleUpdateProfilePicture = async () => {
     try {
       setImageUploading(true);
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        const file = result.assets[0];
-        const fileName = `profile/${Date.now()}.jpg`;
-        
-        // Create form data for upload
-        const formData = new FormData();
-        formData.append('file', {
-          uri: file.uri,
-          name: fileName,
-          type: 'image/jpeg',
-        } as any);
-
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('challenge-uploads')
-          .upload(fileName, formData, {
-            contentType: 'multipart/form-data',
-          });
-
-        if (uploadError) throw uploadError;
-
-        // Insert into media table
-        const { data: mediaData, error: dbError } = await supabase
-          .from('media')
-          .insert([{ file_path: fileName }])
-          .select('id')
-          .single();
-
-        if (dbError) throw dbError;
-
-        // Update profile with new media id
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ profile_media_id: mediaData.id })
-          .eq('id', user?.id);
-
-        if (updateError) throw updateError;
-
-        // Update local state
-        setUserProfile(prev => ({
-          ...prev!,
-          profile_media_id: mediaData.id,
-          profile_image_url: `${supabase.storageUrl}/object/public/challenge-uploads/${fileName}`
-        }));
-
-        // After successful upload and media insertion, reload the user
+      const result = await profileService.updateProfilePicture(user?.id!);
+      
+      if (result.success) {
+        // Reload the user profile to get updated data
         if (user?.id) {
-          const updatedUser = await User.getUser(user.id);
-          setUserObj(updatedUser);
-          
-          if (updatedUser.profile) {
-            setUserProfile({
-              username: updatedUser.username,
-              name: updatedUser.name,
-              profileImageUrl: updatedUser.profileImageUrl
-            });
+          const userProfile = await User.getUser(user.id);
+          if (userProfile && result.profileImageUrl) {
+            userProfile.profileImageUrl = result.profileImageUrl;
           }
         }
+      } else if (result.error) {
+        Alert.alert('Error', result.error);
       }
-    } catch (error) {
-      console.error('Error updating profile picture:', error);
-      Alert.alert('Error', 'Failed to update profile picture');
     } finally {
       setImageUploading(false);
     }
@@ -161,46 +93,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleSaveProfile = async () => {
     try {
-      // Check if username contains spaces
-      if (editedUsername.includes(' ')) {
-        throw new Error('Username cannot contain spaces');
+      const result = await profileService.updateProfile(user?.id!, {
+        username: editedUsername !== userProfile?.username ? editedUsername : undefined,
+        name: editedName !== userProfile?.name ? editedName : undefined
+      });
+
+      if (result.success) {
+        userProfile!.username = editedUsername;
+        userProfile!.name = editedName;
+        setIsEditing(false);
+      } else if (result.error) {
+        Alert.alert('Error', result.error);
       }
-
-      // Check if username is already taken (only if username changed)
-      if (editedUsername !== userProfile?.username) {
-        const { data: existingUser, error: checkError } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', editedUsername)
-          .single();
-
-        if (checkError && checkError.code !== 'PGRST116') {
-          throw checkError;
-        }
-
-        if (existingUser) {
-          throw new Error('Username is already taken');
-        }
-      }
-
-      // Update profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ 
-          username: editedUsername,
-          name: editedName 
-        })
-        .eq('id', user?.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setUserProfile(prev => ({
-        ...prev!,
-        username: editedUsername,
-        name: editedName
-      }));
-      setIsEditing(false);
     } catch (error) {
       Alert.alert('Error', (error as Error).message);
     }
@@ -378,7 +282,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           <Post
             key={post.id}
             post={post}  // Pass the entire post object
-            postUser={userObj}
+            postUser={userProfile}
             setPostCounts={() => {}}
             onPostDeleted={() => {}}
         />
