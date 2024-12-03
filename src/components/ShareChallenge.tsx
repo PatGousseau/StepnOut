@@ -4,6 +4,7 @@ import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ConfettiCannon from 'react-native-confetti-cannon';
+import { useActiveChallenge } from '../hooks/useActiveChallenge';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -23,6 +24,8 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   isVisible
 }) => {
   const confettiRef = useRef<any>(null);
+  const { completionCount } = useActiveChallenge();
+
 
   useEffect(() => {
     if (isVisible) {
@@ -37,7 +40,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   const handleShare = async () => {
     try {
       const streakEmoji = streakCount >= 3 ? '🔥' : '💪';
-      const defaultMessage = `${streakEmoji} Join me as the 138th person to complete this week's comfort zone challenge on Stepn Out! 🚀\n\n[TODO: Link to challenge/app]`;
+      const defaultMessage = `${streakEmoji} Join me as the ${completionCount + 1}th person to complete this week's comfort zone challenge on Stepn Out! 🚀\n\n[TODO: Link to challenge/app]`;
       
       await Share.share({
         message: Platform.select({
@@ -91,10 +94,10 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 
           <View style={styles.socialProofContainer}>
             <Text style={styles.socialProofText}>
-              <Text style={styles.highlight}>137 people</Text>
+              <Text style={styles.highlight}>{completionCount} people</Text>
               {' have stepped out of their comfort zone this week.\n'}
               <Text style={styles.socialProofSubtext}>
-                Inspire your friend to be the 138th!
+                Inspire your friend to be the {completionCount + 1}th!
               </Text>
             </Text>
           </View>

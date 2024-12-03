@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Challenge } from '../types';
+import { Challenge, ChallengeWithCount } from '../types';
 import { sendNewChallengeNotification } from '../lib/notificationsService';
 import { useAuth } from '../contexts/AuthContext';
 
 export const useActiveChallenge = () => {
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
+  const [activeChallenge, setActiveChallenge] = useState<ChallengeWithCount | null>(null);
+  const [completionCount, setCompletionCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -21,7 +22,7 @@ export const useActiveChallenge = () => {
   const fetchActiveChallenge = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: challengeData, error: challengeError } = await supabase
         .from('challenges')
         .select(`
           *,
@@ -32,16 +33,31 @@ export const useActiveChallenge = () => {
         .eq('is_active', true)
         .single();
 
-      if (error) {
-        console.error('Error fetching active challenge:', error);
-      } else if (data) {
-        const challenge = {
-          ...data,
-          media_file_path: data.media?.file_path || null,
-          daysRemaining: getDaysUntilSunday()
-        };
-        setActiveChallenge(challenge as Challenge);
+      if (challengeError) {
+        console.error('Error fetching active challenge:', challengeError);
+        return;
       }
+
+      const { count, error: countError } = await supabase
+        .from('post')
+        .select('id', { count: 'exact' })
+        .eq('challenge_id', challengeData.id);
+
+      if (countError) {
+        console.error('Error fetching completion count:', countError);
+      }
+
+      const currentCount = count || 0;
+      setCompletionCount(currentCount);
+      
+      const challenge = {
+        ...challengeData,
+        media_file_path: challengeData.media?.file_path || null,
+        daysRemaining: getDaysUntilSunday(),
+        completion_count: currentCount
+      };
+      
+      setActiveChallenge(challenge as ChallengeWithCount);
     } catch (error) {
       console.error('Error fetching active challenge:', error);
     } finally {
@@ -52,25 +68,6 @@ export const useActiveChallenge = () => {
   useEffect(() => {
     fetchActiveChallenge();
 
-    const subscription = supabase
-      .channel('challenges_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'challenges',
-          filter: 'is_active=eq.true'
-        },
-        async (payload) => {
-          await fetchActiveChallenge();
-          
-          if (user?.id && payload.eventType === 'UPDATE' && payload.new.is_active) {
-            await sendNewChallengeNotification(user.id, payload.new.id);
-          }
-        }
-      )
-      .subscribe();
 
     // Update days remaining at midnight
     const midnightUpdate = setInterval(() => {
@@ -83,7 +80,6 @@ export const useActiveChallenge = () => {
     }, 60 * 60 * 1000); // Check every hour
 
     return () => {
-      subscription.unsubscribe();
       clearInterval(midnightUpdate);
     };
   }, [user?.id]);
@@ -91,6 +87,7 @@ export const useActiveChallenge = () => {
   return {
     activeChallenge,
     loading,
-    fetchActiveChallenge
+    fetchActiveChallenge,
+    completionCount
   };
 };
