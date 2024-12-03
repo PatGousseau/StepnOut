@@ -5,6 +5,7 @@ import { colors } from '../constants/Colors';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -23,9 +24,9 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   streakCount = 1,
   isVisible
 }) => {
+  const { t } = useLanguage();
   const confettiRef = useRef<any>(null);
   const { completionCount } = useActiveChallenge();
-
 
   useEffect(() => {
     if (isVisible) {
@@ -40,19 +41,22 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   const handleShare = async () => {
     try {
       const streakEmoji = streakCount >= 3 ? '🔥' : '💪';
-      const defaultMessage = `${streakEmoji} Join me as the ${completionCount + 1}th person to complete this week's comfort zone challenge on Stepn Out! 🚀\n\n[TODO: Link to challenge/app]`;
+      const defaultMessage = t('Share challenge message', {
+        emoji: streakEmoji,
+        count: completionCount + 1
+      });
       
       await Share.share({
         message: Platform.select({
           ios: defaultMessage,
           android: defaultMessage,
         }) ?? defaultMessage,
-        title: "Join Me on StepN Out!",
+        title: t('Join Me on StepN Out!'),
       });
       
       onClose();
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error(t('Error sharing:'), error);
     }
   };
 
@@ -78,7 +82,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
         <View style={styles.modalContent}>
           <View style={styles.celebrationContainer}>
             <Text style={styles.emoji}>🎯</Text>
-            <Text style={styles.title}>Challenge Complete!</Text>
+            <Text style={styles.title}>{t('Challenge Complete!')}</Text>
           </View>
 
           <View style={styles.recapContainer}>
@@ -94,10 +98,14 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 
           <View style={styles.socialProofContainer}>
             <Text style={styles.socialProofText}>
-              <Text style={styles.highlight}>{completionCount} people</Text>
-              {' have stepped out of their comfort zone this week.\n'}
+              <Text style={styles.highlight}>
+                {t('(count) people', { count: completionCount })}
+              </Text>
+              {' '}
+              {t('have stepped out of their comfort zone this week.')}
+              {'\n'}
               <Text style={styles.socialProofSubtext}>
-                Inspire your friend to be the {completionCount + 1}th!
+                {t('Inspire your friend to be the (count)th!', { count: completionCount + 1 })}
               </Text>
             </Text>
           </View>
@@ -107,14 +115,14 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
               style={styles.laterButton} 
               onPress={onClose}
             >
-              <Text style={styles.laterButtonText}>Skip</Text>
+              <Text style={styles.laterButtonText}>{t('Skip')}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.shareButton} 
               onPress={handleShare}
             >
               <MaterialCommunityIcons name="shimmer" size={20} color="white" />
-              <Text style={styles.shareButtonText}>Inspire someone!</Text>
+              <Text style={styles.shareButtonText}>{t('Inspire someone!')}</Text>
             </TouchableOpacity>
           </View>
         </View>

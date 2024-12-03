@@ -9,6 +9,7 @@ import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
+import { LanguageProvider } from '../contexts/LanguageContext';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -72,6 +73,7 @@ function RootLayoutNav() {
 
   return (
     <MenuProvider>
+    <LanguageProvider>
     <SafeAreaView 
       style={{ flex: 1, backgroundColor: colors.light.background }}
       edges={['top', 'left', 'right']}
@@ -101,6 +103,7 @@ function RootLayoutNav() {
         />
       </Stack>
     </SafeAreaView>
+    </LanguageProvider>
     </MenuProvider>
   );
 }

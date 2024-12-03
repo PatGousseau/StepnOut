@@ -3,9 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/Colors';
 import { Platform } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function TabsLayout() {
   const { isAdmin } = useAuth();
+  const { t } = useLanguage();
   
   return (
     <Tabs
@@ -51,26 +53,26 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: t('Home'),
         }}
       />
       <Tabs.Screen
         name="challenge"
         options={{
-          title: 'Challenge',
+          title: t('Challenge'),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('Profile'),
         }}
       />
       <Tabs.Screen
         name="admin"
         options={{
           href: !isAdmin ? null : undefined,
-          title: 'Admin',
+          title: t('Admin'),
         }}
       />
     </Tabs>

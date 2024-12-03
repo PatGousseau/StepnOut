@@ -14,6 +14,7 @@ import { Loader } from './Loader';
 import FeedbackButton from './FeedbackButton';
 import { User } from '../models/User';
 import { profileService } from '../services/profileService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 type ProfilePageProps = {
   userId: string;
@@ -21,6 +22,7 @@ type ProfilePageProps = {
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const { 
     data, 
     loading: progressLoading, 
@@ -131,7 +133,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   }
 
   if (error) {
-    return <Text>Error: {error}</Text>;
+    return <Text>{t('Error')}: {error}</Text>;
   }
 
   return (
@@ -200,14 +202,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                       style={[styles.username, styles.editableText]}
                       value={editedName}
                       onChangeText={setEditedName}
-                      placeholder="Name"
+                      placeholder={t('Name')}
                       maxLength={16}
                     />
                     <TextInput
                       style={[styles.userTitle, styles.editableText]}
                       value={editedUsername}
                       onChangeText={setEditedUsername}
-                      placeholder="Username"
+                      placeholder={t('Username')}
                       maxLength={16}
                     />
                   </View>
@@ -216,13 +218,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                       style={styles.saveButton}
                       onPress={handleSaveProfile}
                     >
-                      <Text style={styles.saveButtonText}>Save</Text>
+                      <Text style={styles.saveButtonText}>{t('Save')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={styles.cancelButton}
                       onPress={() => setIsEditing(false)}
                     >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                      <Text style={styles.cancelButtonText}>{t('Cancel')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -259,7 +261,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                     >
                       <View style={styles.menuItemContent}>
                         <Icon name="pencil-outline" size={16} color={colors.light.primary} />
-                        <Text style={styles.menuOptionText}>Edit Profile</Text>
+                        <Text style={styles.menuOptionText}>{t('Edit Profile')}</Text>
                       </View>
                     </TouchableOpacity>
                     <TouchableOpacity 
@@ -271,7 +273,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                     >
                       <View style={styles.menuItemContent}>
                         <Icon name="log-out-outline" size={16} color={colors.light.primary} />
-                        <Text style={styles.menuOptionText}>Sign Out</Text>
+                        <Text style={styles.menuOptionText}>{t('Sign Out')}</Text>
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -281,7 +283,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </View>
         </View>
         {isOwnProfile && data && <UserProgress challengeData={data.challengeData} weekData={data.weekData} />}
-        <Text style={styles.pastChallengesTitle}>{isOwnProfile ? 'Your' : ''} Posts</Text>
+        <Text style={styles.pastChallengesTitle}>
+          {isOwnProfile ? t('Your Posts') : t('Posts')}
+        </Text>
         {userPosts.map((post) => (
           <Post
             key={post.id}

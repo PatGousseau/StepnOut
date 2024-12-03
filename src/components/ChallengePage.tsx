@@ -8,13 +8,14 @@ import { supabase } from '../lib/supabase';
 import { ChallengeCard } from './Challenge';
 import { PatrizioExample } from './Challenge';
 import { ShareExperience } from './Challenge';
-import { useActiveChallenge } from '../hooks/useActiveChallenge';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ChallengePageProps {
   id?: number;
 }
 
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
+  const { t } = useLanguage();
   const params = useLocalSearchParams();
   const challengeId = id || (typeof params.id === 'string' ? parseInt(params.id) : params.id);
   
@@ -79,7 +80,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   if (!challenge) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text>Challenge not found</Text>
+        <Text>{t('Challenge not found')}</Text>
       </View>
     );
   }
@@ -95,11 +96,11 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
       }
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Challenge</Text>
+        <Text style={styles.title}>{t('Challenge')}</Text>
         <Text style={styles.endsIn}>
           {challenge.daysRemaining > 0 
-            ? `Ends in ${challenge.daysRemaining} day${challenge.daysRemaining !== 1 ? 's' : ''}`
-            : 'Past challenge'}
+            ? t(challenge.daysRemaining === 1 ? 'Ends in 1 day' : 'Ends in (days) days', { days: challenge.daysRemaining })
+            : t('Past challenge')}
         </Text>
         <ChallengeCard challenge={challenge} />
         <PatrizioExample challenge={challenge} />

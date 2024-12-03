@@ -5,9 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationSidebar from './NotificationSidebar';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Header = () => {
   const { unreadCount, markAllAsRead, notifications } = useNotifications();
+  const { language, toggleLanguage } = useLanguage();
   
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -27,17 +29,29 @@ const Header = () => {
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
         <Text style={styles.stepnOut}>Stepn Out</Text>
-        <TouchableOpacity 
-          style={styles.notificationIcon}
-          onPress={handleNotificationPress}
-        >
-          <Ionicons name="notifications" size={28} color={colors.light.primary} />
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.languageToggle}
+            onPress={toggleLanguage}
+          >
+            <Text style={styles.languageText}>
+              {language === 'it' ? '🇮🇹' : '🇬🇧'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.notificationIcon}
+            onPress={handleNotificationPress}
+          >
+            <Ionicons name="notifications" size={28} color={colors.light.primary} />
+            {unreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{unreadCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <NotificationSidebar 
@@ -72,9 +86,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.light.primary,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  languageToggle: {
+    marginRight: 15,
+    padding: 5,
+  },
+  languageText: {
+    fontSize: 20,
+  },
   notificationIcon: {
-    marginLeft: 15, 
-    position: 'relative', 
+    position: 'relative',
   },
   badge: {
     position: 'absolute',

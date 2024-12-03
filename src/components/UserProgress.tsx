@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from './StyledText';
 import { FontAwesome } from '@expo/vector-icons'; 
 import { colors } from '../constants/Colors';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface UserProgressProps {
   challengeData: {
@@ -24,6 +25,8 @@ interface WeekData {
 }
 
 const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
+  const { t } = useLanguage();
+  
   const getBoxStyle = (week: WeekData) => {
     if (week.isCompleted) {
       return {
@@ -49,7 +52,7 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
       <View style={styles.streakHeader}>
         <View style={styles.streakTitle}>
           <FontAwesome name="calendar" size={14} color={colors.light.primary} />
-          <Text style={styles.streakTitleText}>Latest Challenges</Text>
+          <Text style={styles.streakTitleText}>{t('Latest Challenges')}</Text>
         </View>
       </View>
       <View style={styles.calendarGrid}>
@@ -69,17 +72,18 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
 };
 
 const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) => {
+  const { t } = useLanguage();
   const total = challengeData.easy + challengeData.medium + challengeData.hard;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.yourProgressText}>Your Progress</Text>
+      <Text style={styles.yourProgressText}>{t('Your Progress')}</Text>
       <View style={styles.rowContainer}>
         <View style={styles.totalContainer}>
           <FontAwesome name="trophy" size={32} color="#7798AB" />
           <View style={styles.totalTextContainer}>
             <Text style={styles.totalText}>{total}</Text>
-            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalLabel}>{t('Total')}</Text>
           </View>
         </View>
 
@@ -90,9 +94,9 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
 
       <View style={styles.breakdownContainer}>
         {[
-          { label: 'Easy', count: challengeData.easy, color: '#E8F5E9', textColor: '#66BB6A' },
-          { label: 'Medium', count: challengeData.medium, color: '#FFF3E0', textColor: '#FFA726' },
-          { label: 'Hard', count: challengeData.hard, color: '#FFEBEE', textColor: '#EF5350' },
+          { label: t('Easy'), count: challengeData.easy, color: '#E8F5E9', textColor: '#66BB6A' },
+          { label: t('Medium'), count: challengeData.medium, color: '#FFF3E0', textColor: '#FFA726' },
+          { label: t('Hard'), count: challengeData.hard, color: '#FFEBEE', textColor: '#EF5350' },
         ].map((level) => (
           <View key={level.label} style={[styles.challengeBox, { backgroundColor: level.color }]}>
             <Text style={[styles.challengeCount, { color: level.textColor }]}>{level.count}</Text>

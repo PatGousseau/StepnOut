@@ -16,6 +16,7 @@ import { colors } from '../constants/Colors';
 import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '../types';
 import { router } from 'expo-router';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface NotificationSidebarProps {
   visible: boolean;
@@ -26,11 +27,10 @@ interface NotificationSidebarProps {
 const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.8;
 
 const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onClose, notifications }) => {
+  const { t } = useLanguage();
   const [modalVisible, setModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(SIDEBAR_WIDTH)).current;
   const opacity = useRef(new Animated.Value(0)).current;
-
-
 
   useEffect(() => {
     if (visible) {
@@ -71,19 +71,19 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   };
 
   const renderNotification = ({ item }: { item: Notification }) => {
-    const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || 'Unknown User';
+    const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || t('Unknown User');
     
     let notificationText = '';
     if (item.action_type === 'like') {
-      notificationText = 'liked your post';
+      notificationText = t('liked your post');
     } else if (item.action_type === 'comment') {
       const commentText = item.comment?.body || '';
-      notificationText = `commented: "${commentText}"`;
+      notificationText = t('commented: "(comment)"', { comment: commentText });
     }
     
     const handleNotificationPress = () => {
-      handleClose(); // Close the sidebar
-      router.push(`/post/${item.post_id}`); // Navigate to the post
+      handleClose();
+      router.push(`/post/${item.post_id}`);
     };
     
     return (
@@ -126,7 +126,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
               <SafeAreaView style={styles.safeArea}>
                 <View style={styles.header}>
                   <View style={styles.headerContent}>
-                    <Text style={styles.title}>Notifications</Text>
+                    <Text style={styles.title}>{t('Notifications')}</Text>
                   </View>
                   <View style={styles.divider} />
                 </View>
@@ -140,7 +140,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
                   />
                 ) : (
                   <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No notifications yet</Text>
+                    <Text style={styles.emptyText}>{t('No notifications yet')}</Text>
                   </View>
                 )}
               </SafeAreaView>

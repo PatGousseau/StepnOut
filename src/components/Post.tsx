@@ -30,6 +30,7 @@ import { supabase } from '../lib/supabase';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
 import { Post as PostType } from '../types';
 import { postService } from '../services/postService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PostProps {
   post: PostType;
@@ -46,6 +47,7 @@ const Post: React.FC<PostProps> = ({
   isPostPage = false,
   onPostDeleted,
 }) => {
+  const { t } = useLanguage();
 
   if (!post) return null;
   
@@ -105,7 +107,7 @@ const Post: React.FC<PostProps> = ({
 
   const handleLikeToggle = async () => {
     if (!post.id || !post.user_id || !user?.id) {
-      console.error("Missing required data for like toggle");
+      console.error(t('Missing required data for like toggle'));
       return;
     }
 
@@ -126,7 +128,7 @@ const Post: React.FC<PostProps> = ({
 
   const handleAddComment = async (comment: { text: string; userId: string }) => {
     if (!user) {
-      console.error("User not authenticated");
+      console.error(t('User not authenticated'));
       return false;
     }
 
@@ -246,15 +248,18 @@ const Post: React.FC<PostProps> = ({
     router.push(`/profile/${postUser.id}`);
   }
   
-  const handleReport = async () => {
+  const handleReportPost = () => {
     Alert.alert(
-      "Report Post",
-      "Are you sure you want to report this post?",
+      t('Report Post'),
+      t('Are you sure you want to report this post?'),
       [
-        { text: "Cancel", style: "cancel" },
         {
-          text: "Report",
-          style: "destructive",
+          text: t('Cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('Report'),
+          style: 'destructive',
           onPress: async () => {
             if (!user?.id) return;
             
@@ -265,15 +270,18 @@ const Post: React.FC<PostProps> = ({
     );
   };
 
-  const handleBlock = async () => {
+  const handleBlockUser = () => {
     Alert.alert(
-      "Block User",
-      "Are you sure you want to block this user?",
+      t('Block User'),
+      t('Are you sure you want to block this user?'),
       [
-        { text: "Cancel", style: "cancel" },
         {
-          text: "Block",
-          style: "destructive",
+          text: t('Cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('Block'),
+          style: 'destructive',
           onPress: async () => {
             if (!user?.id) return;
             
@@ -284,18 +292,18 @@ const Post: React.FC<PostProps> = ({
     );
   };
 
-  const handleDelete = async () => {
+  const handleDeletePost = async () => {
     Alert.alert(
-      "Delete Post",
-      "Are you sure you want to delete this post? This action cannot be undone.",
+      t('Delete Post'),
+      t('Are you sure you want to delete this post?'),
       [
         {
-          text: "Cancel",
-          style: "cancel"
+          text: t('Cancel'),
+          style: 'cancel'
         },
         {
-          text: "Delete",
-          style: "destructive",
+          text: t('Delete'),
+          style: 'destructive',
           onPress: async () => {
             await postService.deletePost(post.id);
           }
@@ -332,8 +340,8 @@ const Post: React.FC<PostProps> = ({
         </TouchableOpacity>
         <TouchableOpacity onPress={handleProfilePress} style={styles.nameContainer}>
           <View style={styles.userInfoContainer}>
-            <Text style={styles.name}>{postUser?.name || 'Unknown'}</Text>
-            <Text style={styles.username}>@{postUser?.username || 'unknown'}</Text>
+            <Text style={styles.name}>{postUser?.name || t('Unknown')}</Text>
+            <Text style={styles.username}>@{postUser?.username || t('unknown')}</Text>
           </View>
         </TouchableOpacity>
         <Menu style={styles.menuContainer}>
@@ -342,16 +350,16 @@ const Post: React.FC<PostProps> = ({
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>
             {user?.id === post.user_id ? (
-              <MenuOption onSelect={handleDelete}>
-                <Text style={[styles.menuOptionText, { color: 'red' }]}>Delete Post</Text>
+              <MenuOption onSelect={handleDeletePost}>
+                <Text style={[styles.menuOptionText, { color: 'red' }]}>{t('Delete Post')}</Text>
               </MenuOption>
             ) : (
               <>
-                <MenuOption onSelect={handleReport}>
-                  <Text style={styles.menuOptionText}>Report Post</Text>
+                <MenuOption onSelect={handleReportPost}>
+                  <Text style={styles.menuOptionText}>{t('Report Post')}</Text>
                 </MenuOption>
-                <MenuOption onSelect={handleBlock}>
-                  <Text style={styles.menuOptionText}>Block User</Text>
+                <MenuOption onSelect={handleBlockUser}>
+                  <Text style={styles.menuOptionText}>{t('Block User')}</Text>
                 </MenuOption>
               </>
             )}
@@ -362,7 +370,7 @@ const Post: React.FC<PostProps> = ({
         <TouchableOpacity onPress={handleChallengePress}>
           <View style={styles.challengeBox}>
             <Text style={styles.challengeTitle} numberOfLines={1} ellipsizeMode="tail">
-              <Text style={{ fontWeight: 'bold' }}>Challenge:</Text> {post.challenge_title}
+              <Text style={{ fontWeight: 'bold' }}>{t('Challenge:')}</Text> {post.challenge_title}
             </Text>
           </View>
         </TouchableOpacity>

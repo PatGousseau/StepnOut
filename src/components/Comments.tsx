@@ -7,6 +7,7 @@ import { User } from '../models/User';
 import { sendCommentNotification } from '../lib/notificationsService';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export interface Comment {
   id: number;
@@ -45,6 +46,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   postUserId, 
   onCommentAdded 
 }) => {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState(initialComments);
@@ -123,7 +125,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           )}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No comments yet!</Text>
+              <Text style={styles.emptyText}>{t('No comments yet!')}</Text>
             </View>
           )}
           keyboardShouldPersistTaps="handled"
@@ -133,7 +135,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           <TextInput
             value={newComment}
             onChangeText={setNewComment}
-            placeholder="Add a comment..."
+            placeholder={t('Add a comment...')}
             placeholderTextColor="#888"
             style={styles.input}
           />
@@ -142,7 +144,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             style={[styles.postButton, !user && styles.postButtonDisabled]}
             disabled={!user}
           >
-            <Text style={styles.postButtonText}>Post</Text>
+            <Text style={styles.postButtonText}>{t('Post')}</Text>
           </Pressable>
         </View>
       </View>
@@ -234,6 +236,7 @@ interface CommentProps {
 }
 
 const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
+  const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const { onClose } = useContext(CommentsContext);
 
@@ -267,10 +270,10 @@ const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
     
     const diffInSeconds = Math.floor((nowUTC - date.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    if (diffInSeconds < 60) return t('just now');
+    if (diffInSeconds < 3600) return t('(count)m', { count: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('(count)h', { count: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 604800) return t('(count)d', { count: Math.floor(diffInSeconds / 86400) });
     
     // Format date in UTC
     return date.toLocaleDateString(undefined, {

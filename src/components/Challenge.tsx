@@ -13,19 +13,21 @@ import ShareChallenge from '../components/ShareChallenge';
 import { View, StyleSheet } from 'react-native';
 import { PATRIZIO_ID } from '../constants/Patrizio';
 import { uploadMedia } from '../utils/handleMediaUpload';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ChallengeCardProps {
     challenge: Challenge;
   }
   
   export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
+    const { t } = useLanguage();
     const getDifficultyColor = (difficulty: string) => {
       switch (difficulty.toLowerCase()) {
-        case 'easy':
+        case t('easy').toLowerCase():
           return colors.light.easyGreen;
-        case 'medium':
+        case t('medium').toLowerCase():
           return colors.light.mediumYellow;
-        case 'hard':
+        case t('hard').toLowerCase():
           return colors.light.hardRed;
         default:
           return colors.light.easyGreen;
@@ -49,7 +51,7 @@ interface ChallengeCardProps {
                 { backgroundColor: getDifficultyColor(challenge.difficulty) }
               ]}>
                 <Text style={challengeStyles.difficultyBadgeText}>
-                  {challenge.difficulty}
+                  {t(challenge.difficulty)}
                 </Text>
               </View>
             </Text>
@@ -68,6 +70,7 @@ interface PatrizioExampleProps {
   }
   
   export const PatrizioExample: React.FC<PatrizioExampleProps> = ({ challenge }) => {
+    const { t } = useLanguage();
     const [patrizioSubmission, setPatrizioSubmission] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -109,9 +112,9 @@ interface PatrizioExampleProps {
           style={patrizioStyles.mediaPreview} 
         />
         <View style={patrizioStyles.textContainer}>
-          <Text style={patrizioStyles.title}>Patrizio's submission</Text>
+          <Text style={patrizioStyles.title}>{t("Patrizio's submission")}</Text>
           <Text style={patrizioStyles.subtitle}>
-            Check out how Patrizio tackled this challenge!
+            {t('Check out how Patrizio tackled this challenge!')}
           </Text>
         </View>
         <Text style={patrizioStyles.chevron}>›</Text>
@@ -124,6 +127,7 @@ interface PatrizioExampleProps {
   }
   
   export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) => {
+    const { t } = useLanguage();
     const { user } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
     const [uploadedMediaId, setUploadedMediaId] = useState<number | null>(null);
@@ -254,12 +258,12 @@ interface PatrizioExampleProps {
               }
             ]}
           >
-            <Text style={shareStyles.notificationText}>Your post has been submitted!</Text>
+            <Text style={shareStyles.notificationText}>{t('Your post has been submitted!')}</Text>
           </Animated.View>
         )}
 
         <TouchableOpacity style={shareStyles.button} onPress={fadeIn}>
-          <Text style={shareStyles.buttonText}>Share my experience</Text>
+          <Text style={shareStyles.buttonText}>{t('Share my experience')}</Text>
         </TouchableOpacity>
 
         <Modal
@@ -290,8 +294,10 @@ interface PatrizioExampleProps {
                   onTouchEnd={(e) => e.stopPropagation()}
                 >
                   <View style={shareStyles.modalHeader}>
-                    <Text style={shareStyles.modalTitle}>How did it go?</Text>
-                    <Text style={shareStyles.modalSubtitle}>Share your experience with the community</Text>
+                    <Text style={shareStyles.modalTitle}>{t('How did it go?')}</Text>
+                    <Text style={shareStyles.modalSubtitle}>
+                      {t('Share your experience with the community')}
+                    </Text>
                     <TouchableOpacity onPress={fadeOut} style={shareStyles.closeButton}>
                       <MaterialIcons name="close" size={20} color={colors.light.text} />
                     </TouchableOpacity>
@@ -342,7 +348,7 @@ interface PatrizioExampleProps {
                           <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
                           <MaterialCommunityIcons name="video" size={24} color={colors.neutral.darkGrey} />
                         </View>
-                        <Text style={shareStyles.uploadButtonText}>Tap to upload photo or video</Text>
+                        <Text style={shareStyles.uploadButtonText}>{t('Tap to upload photo or video')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -350,7 +356,7 @@ interface PatrizioExampleProps {
                   <TextInput
                     style={shareStyles.textInput}
                     multiline
-                    placeholder="Write about your experience..."
+                    placeholder={t('Write about your experience...')}
                     placeholderTextColor="#999"
                     value={postText}
                     onChangeText={setPostText}
@@ -369,7 +375,7 @@ interface PatrizioExampleProps {
                       shareStyles.buttonText,
                       isUploading && shareStyles.disabledButtonText
                     ]}>
-                      {isUploading ? 'Uploading...' : 'Submit'}
+                      {t(isUploading ? 'Uploading...' : 'Submit')}
                     </Text>
                   </TouchableOpacity>
                 </View>
