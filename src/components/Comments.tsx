@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, Platform, ActivityIndicator, SafeAreaView, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
@@ -127,27 +127,33 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               <Text style={styles.emptyText}>No comments yet!</Text>
             </View>
           )}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         />
         
-        <View style={styles.inputContainer}>
-          <TextInput
-            value={newComment}
-            onChangeText={setNewComment}
-            placeholder="Add a comment..."
-            placeholderTextColor="#888"
-            style={styles.input}
-          />
-          <Pressable 
-            onPress={handleAddComment} 
-            style={[
-              styles.postButton,
-              !user && styles.postButtonDisabled
-            ]}
-            disabled={!user}
-          >
-            <Text style={styles.postButtonText}>Post</Text>
-          </Pressable>
-        </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.inputContainer}>
+            <TextInput
+              value={newComment}
+              onChangeText={setNewComment}
+              placeholder="Add a comment..."
+              placeholderTextColor="#888"
+              style={styles.input}
+            />
+            <Pressable 
+              onPress={handleAddComment} 
+              style={[
+                styles.postButton,
+                !user && styles.postButtonDisabled
+              ]}
+              disabled={!user}
+            >
+              <Text style={styles.postButtonText}>Post</Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </CommentsContext.Provider>
   );

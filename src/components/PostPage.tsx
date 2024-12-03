@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   ActivityIndicator, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform, 
+  FlatList 
 } from 'react-native';
 import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
@@ -68,28 +69,32 @@ const PostPage = () => {
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
     >
-      <ScrollView 
+      <FlatList
+        ListHeaderComponent={() => (
+          <Post
+            post={post}
+            postUser={userMap[post.user_id]}
+            setPostCounts={() => {}}
+            isPostPage={true}
+          />
+        )}
+        data={[{ key: 'comments' }]}
+        renderItem={() => (
+          <View style={styles.commentsSection}>
+            <CommentsList
+              comments={comments}
+              loading={commentsLoading}
+              onClose={() => {}}
+              postId={post.id}
+              postUserId={post.user_id}
+              onCommentAdded={(count) => {}}
+            />
+          </View>
+        )}
+        keyboardShouldPersistTaps="handled"
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
-        keyboardShouldPersistTaps="handled"
-      >
-      <Post
-        post={post}
-        postUser={userMap[post.user_id]}
-        setPostCounts={() => {}}
-        isPostPage={true}
       />
-        <View style={styles.commentsSection}>
-          <CommentsList
-            comments={comments}
-            loading={commentsLoading}
-            onClose={() => {}}
-            postId={post.id}
-            postUserId={post.user_id}
-            onCommentAdded={(count) => {}}
-          />
-        </View>
-      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
