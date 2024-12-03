@@ -29,6 +29,7 @@ import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
 import { Post as PostType } from '../types';
+import { postService } from '../services/postService';
 
 interface PostProps {
   post: PostType;
@@ -65,8 +66,8 @@ const Post: React.FC<PostProps> = ({
 
   useEffect(() => {
     const initializeLikes = async () => {
-      const likes = await fetchLikes(post.id);
-      setLiked(likes.some((like) => like.user_id === post.user_id));
+      const likes = await postService.fetchLikes(post.id);
+      setLiked(likes.some((like) => like.user_id === user?.id));
       setLikeCount(likes.length);
     };
 
@@ -103,8 +104,8 @@ const Post: React.FC<PostProps> = ({
   }, [post.id, setPostCounts]);
 
   const handleLikeToggle = async () => {
-    if (!post.id || !post.user_id) {
-      console.error("postId or userId is undefined", { postId: post.id, userId: post.user_id });
+    if (!post.id || !post.user_id || !user?.id) {
+      console.error("Missing required data for like toggle");
       return;
     }
 
@@ -114,16 +115,10 @@ const Post: React.FC<PostProps> = ({
     setLikeCount(newLikeCount);
     updateParentCounts(newLikeCount, commentCount);
 
-    const result = await toggleLike(post.id, post.user_id);
-    if (result && isLiking && user?.id !== post.user_id) {
-      try {
-        await sendLikeNotification(user?.id, user?.user_metadata?.username, post.user_id, post.id.toString());
-      } catch (error) {
-        console.error('Failed to send like notification:', error);
-      }
-    }
-
-    if (!result) {
+    const result = await postService.toggleLike(post.id, user.id, post.user_id);
+    
+    if (result === null) {
+      // Reset UI if operation failed
       setLiked(!isLiking);
       setLikeCount(prevCount => isLiking ? prevCount - 1 : prevCount + 1);
     }
@@ -256,34 +251,20 @@ const Post: React.FC<PostProps> = ({
       "Report Post",
       "Are you sure you want to report this post?",
       [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Report",
           style: "destructive",
           onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('reports')
-                .insert([
-                  {
-                    post_id: post.id,
-                    reporter_id: user?.id,
-                    reported_user_id: post.user_id,
-                    status: 'pending'
-                  }
-                ]);
-
-              if (error) throw error;
-
+            if (!user?.id) return;
+            
+            const success = await postService.reportPost(post.id, user.id, post.user_id);
+            if (success) {
               Alert.alert(
                 "Thank you",
                 "Your report has been submitted and will be reviewed by our team."
               );
-            } catch (error) {
-              console.error('Error submitting report:', error);
+            } else {
               Alert.alert(
                 "Error",
                 "Failed to submit report. Please try again later."
@@ -300,36 +281,18 @@ const Post: React.FC<PostProps> = ({
       "Block User",
       "Are you sure you want to block this user?",
       [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Block",
           style: "destructive",
           onPress: async () => {
-            try {
-              const { error } = await supabase
-                .from('blocks')
-                .insert([
-                  {
-                    blocker_id: user?.id,
-                    blocked_id: postUser.id
-                  }
-                ]);
-
-              if (error) throw error;
-
-              Alert.alert(
-                "Success",
-                "User has been blocked successfully."
-              );
-            } catch (error) {
-              console.error('Error blocking user:', error);
-              Alert.alert(
-                "Error",
-                "Failed to block user. Please try again later."
-              );
+            if (!user?.id) return;
+            
+            const success = await postService.blockUser(user.id, post.user_id);
+            if (success) {
+              Alert.alert("Success", "User has been blocked successfully.");
+            } else {
+              Alert.alert("Error", "Failed to block user. Please try again later.");
             }
           }
         }
