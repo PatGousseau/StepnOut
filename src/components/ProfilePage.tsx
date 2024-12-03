@@ -126,7 +126,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   };
 
-  if (progressLoading || postsLoading || !userProfile) {
+  if (progressLoading || !userProfile) {
     return <Loader />;
   }
 
@@ -288,8 +288,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         />
         ))}
         {postsLoading && (
-          <View style={{ padding: 20 }}>
-            <Loader size="small" />
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={colors.light.primary} />
           </View>
         )}
       </ScrollView>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -20,17 +20,16 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const loadChallenge = async () => {
-      setLoading(true);
-      try {
-        if (!challengeId) {
-          console.error('No id available:', params);
-          return;
-        }
+  const loadChallenge = async () => {
+    if (!challengeId) {
+      console.error('No id available:', params);
+      return;
+    }
 
-        const { data, error } = await supabase
+    try {
+      const { data, error } = await supabase
         .from('challenges')
         .select(`
           *,
@@ -41,27 +40,32 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
         .eq('id', challengeId)
         .single();
 
-        if (error) throw error;
-        
-        // Calculate days remaining
-        const now = new Date();
-        const createdAt = new Date(data.created_at);
-        const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-        const daysRemaining = 7 - daysSinceCreation;
+      if (error) throw error;
+      
+      // Calculate days remaining
+      const now = new Date();
+      const createdAt = new Date(data.created_at);
+      const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const daysRemaining = 7 - daysSinceCreation;
 
-        setChallenge({
-          ...data,
-          daysRemaining,
-        });
+      setChallenge({
+        ...data,
+        daysRemaining,
+      });
+    } catch (error) {
+      console.error('Error loading challenge:', error);
+    }
+  };
 
-      } catch (error) {
-        console.error('Error loading challenge:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    await loadChallenge();
+    setRefreshing(false);
+  }, [challengeId]);
 
-    loadChallenge();
+  useEffect(() => {
+    setLoading(true);
+    loadChallenge().finally(() => setLoading(false));
   }, [challengeId]);
 
   if (loading) {
@@ -81,7 +85,15 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      }
+    >
       <View style={styles.content}>
         <Text style={styles.title}>Challenge</Text>
         <Text style={styles.endsIn}>

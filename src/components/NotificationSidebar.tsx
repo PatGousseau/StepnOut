@@ -13,9 +13,7 @@ import {
 } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
-import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
-import { Ionicons } from '@expo/vector-icons';
 import { Notification } from '../types';
 import { router } from 'expo-router';
 

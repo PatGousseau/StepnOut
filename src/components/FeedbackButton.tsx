@@ -7,7 +7,8 @@ import {
   StyleSheet, 
   Text,
   Animated,
-  Keyboard
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../constants/Colors';
@@ -70,63 +71,68 @@ const FeedbackButton: React.FC = () => {
         onRequestClose={() => setIsModalVisible(false)}
         onShow={() => animateContent(1)}
       >
-        <TouchableOpacity 
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => {
-            animateContent(0);
-            setTimeout(() => setIsModalVisible(false), 200);
-          }}
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
         >
-          <Animated.View 
-            style={[
-              styles.modalContent,
-              {
-                transform: [{
-                  translateY: slideAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [300, 0],
-                  })
-                }]
-              }
-            ]}
-            onStartShouldSetResponder={() => true}
-            onTouchStart={e => e.stopPropagation()}
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              animateContent(0);
+              setTimeout(() => setIsModalVisible(false), 200);
+            }}
           >
-            <Text style={styles.modalTitle}>Send Feedback</Text>
-            {showSuccess ? (
-              <View style={styles.successMessage}>
-                <Icon name="checkmark-circle" size={24} color={colors.light.primary} />
-                <Text style={styles.successText}>Thank you for your feedback!</Text>
-              </View>
-            ) : (
-              <>
-                <TextInput
-                  style={styles.input}
-                  multiline
-                  placeholder="What's on your mind?"
-                  value={feedback}
-                  onChangeText={setFeedback}
-                  maxLength={500}
-                />
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity 
-                    style={styles.cancelButton}
-                    onPress={() => setIsModalVisible(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.submitButton}
-                    onPress={handleSubmit}
-                  >
-                    <Text style={styles.submitButtonText}>Submit</Text>
-                  </TouchableOpacity>
+            <Animated.View 
+              style={[
+                styles.modalContent,
+                {
+                  transform: [{
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [300, 0],
+                    })
+                  }]
+                }
+              ]}
+              onStartShouldSetResponder={() => true}
+              onTouchStart={e => e.stopPropagation()}
+            >
+              <Text style={styles.modalTitle}>Send Feedback</Text>
+              {showSuccess ? (
+                <View style={styles.successMessage}>
+                  <Icon name="checkmark-circle" size={24} color={colors.light.primary} />
+                  <Text style={styles.successText}>Thank you for your feedback!</Text>
                 </View>
-              </>
-            )}
-          </Animated.View>
-        </TouchableOpacity>
+              ) : (
+                <>
+                  <TextInput
+                    style={styles.input}
+                    multiline
+                    placeholder="What's on your mind?"
+                    value={feedback}
+                    onChangeText={setFeedback}
+                    maxLength={500}
+                  />
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity 
+                      style={styles.cancelButton}
+                      onPress={() => setIsModalVisible(false)}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.submitButton}
+                      onPress={handleSubmit}
+                    >
+                      <Text style={styles.submitButtonText}>Submit</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </Animated.View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

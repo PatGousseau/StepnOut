@@ -3,12 +3,11 @@ import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-nativ
 import Post from '../../components/Post';
 import { useFetchHomeData } from '../../hooks/useFetchHomeData';
 import { colors } from '../../constants/Colors';
-import { useAuth } from '../../contexts/AuthContext';
 import CreatePost from '../../components/CreatePost';
 import { User } from '../../models/User';
+import { Loader } from '@/src/components/Loader';
 
 const Home = () => {
-  const { user } = useAuth();
   const { posts, userMap, loading, fetchAllData, loadMorePosts, hasMore  } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
   const [refreshing, setRefreshing] = useState(false);
@@ -79,9 +78,7 @@ const Home = () => {
         </View>
         
         {loading && (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color={colors.light.primary} />
-          </View>
+            <Loader />
         )}
       </ScrollView>
 

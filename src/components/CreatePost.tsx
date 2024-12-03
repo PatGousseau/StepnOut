@@ -1,13 +1,10 @@
-import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Animated, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView, InputAccessoryView } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView, InputAccessoryView } from 'react-native';
 import { colors } from '../constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { Text } from './StyledText';
-import * as VideoThumbnails from 'expo-video-thumbnails';
 import { useAuth } from '../contexts/AuthContext';
-import { Keyboard } from 'react-native';
 import { uploadMedia } from '../utils/handleMediaUpload';
 
 const CreatePost = () => {
@@ -163,7 +160,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   mediaUploadIcon: {
-    paddingTop: 12,
+    paddingBottom: 4,
     alignItems: 'flex-start',
   },
   mediaPreview: {

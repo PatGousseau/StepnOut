@@ -258,18 +258,7 @@ const Post: React.FC<PostProps> = ({
           onPress: async () => {
             if (!user?.id) return;
             
-            const success = await postService.reportPost(post.id, user.id, post.user_id);
-            if (success) {
-              Alert.alert(
-                "Thank you",
-                "Your report has been submitted and will be reviewed by our team."
-              );
-            } else {
-              Alert.alert(
-                "Error",
-                "Failed to submit report. Please try again later."
-              );
-            }
+            await postService.reportPost(post.id, user.id, post.user_id);
           }
         }
       ]
@@ -288,12 +277,7 @@ const Post: React.FC<PostProps> = ({
           onPress: async () => {
             if (!user?.id) return;
             
-            const success = await postService.blockUser(user.id, post.user_id);
-            if (success) {
-              Alert.alert("Success", "User has been blocked successfully.");
-            } else {
-              Alert.alert("Error", "Failed to block user. Please try again later.");
-            }
+            await postService.blockUser(user.id, post.user_id);
           }
         }
       ]
@@ -313,17 +297,7 @@ const Post: React.FC<PostProps> = ({
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            const success = await postService.deletePost(post.id);
-            
-            if (success) {
-              Alert.alert("Success", "Post deleted successfully");
-              onPostDeleted?.();
-            } else {
-              Alert.alert(
-                "Error",
-                "Failed to delete post. Please try again later."
-              );
-            }
+            await postService.deletePost(post.id);
           }
         }
       ]
