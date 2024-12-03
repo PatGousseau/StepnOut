@@ -151,6 +151,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             onRefresh={onRefresh}
           />
         }
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 0
+        }}
         onScroll={({ nativeEvent }) => {
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
