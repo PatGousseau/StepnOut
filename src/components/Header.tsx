@@ -6,12 +6,14 @@ import { colors } from '../constants/Colors';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationSidebar from './NotificationSidebar';
 import MenuSidebar from './MenuSidebar';
+import FeedbackModal from './FeedbackModal';
 
 const Header = () => {
   const { unreadCount, markAllAsRead, notifications } = useNotifications();
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const handleNotificationPress = () => {
     markAllAsRead();
@@ -40,6 +42,12 @@ const Header = () => {
         
         <View style={styles.headerRight}>
           <TouchableOpacity 
+            style={styles.feedbackIcon}
+            onPress={() => setShowFeedback(true)}
+          >
+            <Ionicons name="chatbox-ellipses-outline" size={26} color={colors.light.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity 
             style={styles.notificationIcon}
             onPress={handleNotificationPress}
           >
@@ -62,6 +70,10 @@ const Header = () => {
         visible={showMenu}
         onClose={handleMenuClose}
       />
+      <FeedbackModal 
+        isVisible={showFeedback}
+        onClose={() => setShowFeedback(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -82,6 +94,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 28,
     height: 28,
+    marginRight: 32,
   },
   stepnOut: {
     fontSize: 18,
@@ -111,6 +124,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  feedbackIcon: {
+    position: 'relative',
+    marginRight: 16,
   },
 });
 

@@ -321,7 +321,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           />
         </View>
       </Modal>
-      {isOwnProfile && <FeedbackButton />}
+      {/* {isOwnProfile && <FeedbackButton />} */}
     </View>
   );
 };
