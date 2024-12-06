@@ -10,6 +10,7 @@ import {
   Animated,
   TouchableOpacity,
   Switch,
+  Linking,
 } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -73,9 +74,13 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ visible, onClose }) => {
     router.push('/privacy-policy');
   };
 
-  const handleFeedbackPress = () => {
+  const handleFeedbackPress = async () => {
     handleClose();
-    router.push('/feedback');
+    try {
+      await Linking.openURL('mailto:pcgousseau@gmail.com');
+    } catch (error) {
+      console.error('Failed to open email client:', error);
+    }
   };
 
   return (
