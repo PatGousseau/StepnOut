@@ -5,13 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationSidebar from './NotificationSidebar';
-import { useLanguage } from '../contexts/LanguageContext';
+import MenuSidebar from './MenuSidebar';
 
 const Header = () => {
   const { unreadCount, markAllAsRead, notifications } = useNotifications();
-  const { language, toggleLanguage } = useLanguage();
   
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handleNotificationPress = () => {
     markAllAsRead();
@@ -22,24 +22,23 @@ const Header = () => {
     setShowNotifications(false);
   };
 
+  const handleMenuPress = () => {
+    setShowMenu(true);
+  };
+
+  const handleMenuClose = () => {
+    setShowMenu(false);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleMenuPress}>
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
         <Text style={styles.stepnOut}>Stepn Out</Text>
         
         <View style={styles.headerRight}>
-          <TouchableOpacity 
-            style={styles.languageToggle}
-            onPress={toggleLanguage}
-          >
-            <Text style={styles.languageText}>
-              {language === 'it' ? '🇮🇹' : '🇬🇧'}
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity 
             style={styles.notificationIcon}
             onPress={handleNotificationPress}
@@ -58,6 +57,10 @@ const Header = () => {
         visible={showNotifications}
         onClose={handleSidebarClose}
         notifications={notifications}
+      />
+      <MenuSidebar 
+        visible={showMenu}
+        onClose={handleMenuClose}
       />
     </SafeAreaView>
   );
@@ -89,13 +92,6 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  languageToggle: {
-    marginRight: 15,
-    padding: 5,
-  },
-  languageText: {
-    fontSize: 20,
   },
   notificationIcon: {
     position: 'relative',

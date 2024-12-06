@@ -77,6 +77,10 @@ export const translations = {
     'Easy': 'Facile',
     'Medium': 'Media',
     'Hard': 'Difficile',
+    'Menu': 'Menu',
+    'Language': 'Lingua',
+    'Privacy Policy': 'Privacy',
+    'Contact Us': 'Contattaci',
   },
   en: {
     'Home': 'Home',
@@ -155,5 +159,9 @@ export const translations = {
     'Past challenge': 'Past challenge',
     'Ends in 1 day': 'Ends in 1 day',
     'Ends in (days) days': 'Ends in (days) days',
+    'Menu': 'Menu',
+    'Language': 'Language',
+    'Privacy Policy': 'Privacy Policy',
+    'Contact Us': 'Contact Us',
   }
 }; 
