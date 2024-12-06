@@ -69,9 +69,13 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ visible, onClose }) => {
     });
   };
 
-  const handlePrivacyPress = () => {
+  const handlePrivacyPress = async () => {
     handleClose();
-    router.push('/privacy-policy');
+    try {
+      await Linking.openURL('https://stepnout.framer.website/privacy-policy');
+    } catch (error) {
+      console.error('Failed to open privacy policy:', error);
+    }
   };
 
   const handleFeedbackPress = async () => {
