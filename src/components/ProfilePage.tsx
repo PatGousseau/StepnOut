@@ -15,6 +15,7 @@ import FeedbackButton from './FeedbackButton';
 import { User } from '../models/User';
 import { profileService } from '../services/profileService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { Menu, MenuOptions, MenuOption, MenuTrigger } from 'react-native-popup-menu';
 
 type ProfilePageProps = {
   userId: string;
@@ -33,7 +34,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     fetchUserPosts
   } = useUserProgress(userId);
   const [page, setPage] = useState(1);
-  const [showMenu, setShowMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -87,12 +87,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   };
 
-  const handlePressOutside = () => {
-    if (showMenu) {
-      setShowMenu(false);
-    }
-  };
-
   const handleSaveProfile = async () => {
     try {
       const result = await profileService.updateProfile(user?.id!, {
@@ -136,15 +130,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     return <Text>{t('Error')}: {error}</Text>;
   }
 
+  const menuStyles = {
+    optionsContainer: {
+      backgroundColor: 'white',
+      borderRadius: 8,
+      padding: 4,
+      width: 140,
+      borderWidth: 2,
+      borderColor: colors.light.primary,
+    },
+    optionWrapper: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+  };
+
   return (
     <View style={{ flex: 1 }}>
-      {showMenu && (
-        <TouchableOpacity 
-          activeOpacity={1} 
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'transparent' }]} 
-          onPress={handlePressOutside}
-        />
-      )}
       <ScrollView 
         style={styles.container}
         refreshControl={
@@ -237,48 +239,32 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             </View>
           </View>
           <View style={styles.headerButtons}>
-            {isOwnProfile && (  // Only show settings for own profile
-              <View>
-                <TouchableOpacity 
-                  style={styles.settingsButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    setShowMenu(!showMenu);
-                  }}
-                >
+            {isOwnProfile && (
+              <Menu>
+                <MenuTrigger>
                   <Icon name="settings-outline" size={24} color="#333" />
-                </TouchableOpacity>
-                {showMenu && (
-                  <View style={styles.menuContainer}>
-                    <TouchableOpacity 
-                      style={styles.menuItem}
-                      onPress={() => {
-                        setShowMenu(false);
-                        setIsEditing(true);
-                        setEditedName(userProfile?.name || '');
-                        setEditedUsername(userProfile?.username || '');
-                      }}
-                    >
-                      <View style={styles.menuItemContent}>
-                        <Icon name="pencil-outline" size={16} color={colors.light.primary} />
-                        <Text style={styles.menuOptionText}>{t('Edit Profile')}</Text>
-                      </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.menuItem}
-                      onPress={() => {
-                        setShowMenu(false);
-                        handleSignOut();
-                      }}
-                    >
-                      <View style={styles.menuItemContent}>
-                        <Icon name="log-out-outline" size={16} color={colors.light.primary} />
-                        <Text style={styles.menuOptionText}>{t('Sign Out')}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
+                </MenuTrigger>
+                <MenuOptions customStyles={menuStyles}>
+                  <MenuOption 
+                    onSelect={() => {
+                      setIsEditing(true);
+                      setEditedName(userProfile?.name || '');
+                      setEditedUsername(userProfile?.username || '');
+                    }}
+                  >
+                    <View style={styles.menuItemContent}>
+                      <Icon name="pencil-outline" size={16} color={colors.light.primary} />
+                      <Text style={styles.menuOptionText}>{t('Edit Profile')}</Text>
+                    </View>
+                  </MenuOption>
+                  <MenuOption onSelect={handleSignOut}>
+                    <View style={styles.menuItemContent}>
+                      <Icon name="log-out-outline" size={16} color={colors.light.primary} />
+                      <Text style={styles.menuOptionText}>{t('Sign Out')}</Text>
+                    </View>
+                  </MenuOption>
+                </MenuOptions>
+              </Menu>
             )}
           </View>
         </View>
@@ -380,47 +366,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.light.primary,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  menuContainer: {
-    position: 'absolute',
-    top: 40,
-    right: 0,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 4,
-    minWidth: 100,
-    borderWidth: 2,
-    borderColor: colors.light.primary,
-    zIndex: 1000,
-  },
-  menuItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  menuItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  settingsButton: {
-    padding: 8,
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  editAvatarButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: colors.light.background,
-    borderRadius: 8,
-    padding: 3,
-    borderWidth: 2,
-    borderColor: colors.light.primary,
-  },
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
@@ -507,5 +452,10 @@ const styles = StyleSheet.create({
   cancelButton: {
     paddingBottom: 12,
     alignItems: 'center',
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
