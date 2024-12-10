@@ -3,6 +3,7 @@ import { supabase, supabaseStorageUrl } from '../lib/supabase';
 import { Post } from '../types';
 import { User } from '../models/User';
 import { useAuth } from '../contexts/AuthContext';
+import { isVideo } from '../utils/utils';
 
 interface UserMap {
   [key: string]: User;
@@ -30,10 +31,23 @@ export const useFetchHomeData = () => {
         .rpc('get_comment_counts', { post_ids: [post.id.toString()] });
       commentCount = commentCountResponse.data?.[0]?.count ?? 0;
     }
+    
+    let mediaUrl = null;
+    if (post.media?.file_path) {
+      const transformMediaResponse = !isVideo(post.media.file_path)
+        ? await supabase.storage.from('challenge-uploads').getPublicUrl(post.media.file_path, {
+            transform: {
+              quality: 20,
+            },
+          })
+        : await supabase.storage.from('challenge-uploads').getPublicUrl(post.media.file_path);
+
+      mediaUrl = transformMediaResponse.data.publicUrl;
+    }
 
     return {
       ...post,
-      media_file_path: post.media ? `${supabaseStorageUrl}/${post.media.file_path}` : null,
+      media_file_path: mediaUrl,
       likes_count: post.likes?.[0]?.count ?? 0,
       comments_count: commentCount ?? 0,
       liked: likedPosts[post.id] ?? false,
