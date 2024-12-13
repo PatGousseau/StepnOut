@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.StepnOut'
+    namespace 'com.patrickgousseau.stepnout'
     defaultConfig {
-        applicationId 'com.anonymous.StepnOut'
+        applicationId 'com.patrickgousseau.stepnout'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

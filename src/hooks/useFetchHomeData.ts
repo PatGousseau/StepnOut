@@ -43,6 +43,11 @@ export const useFetchHomeData = () => {
   };
 
   const fetchAllData = useCallback(async (pageNumber = 1, isLoadMore = false) => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       // First, get the list of blocked user IDs

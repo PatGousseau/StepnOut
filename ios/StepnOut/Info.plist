@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>myapp</string>
-          <string>com.anonymous.StepnOut</string>
+          <string>com.patrickgousseau.stepnout</string>
         </array>
       </dict>
     </array>

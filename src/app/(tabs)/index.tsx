@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
 import Post from '../../components/Post';
 import { useFetchHomeData } from '../../hooks/useFetchHomeData';
 import { colors } from '../../constants/Colors';
@@ -40,7 +40,11 @@ const Home = () => {
   }, [fetchAllData]);
 
   return (
-    <View style={{ flex: 1 }}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
+    >
       <ScrollView 
         style={{ backgroundColor: colors.light.background }}
         refreshControl={
@@ -61,6 +65,7 @@ const Home = () => {
           }
         }}
         scrollEventThrottle={400}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={{ padding: 16 }}>
           {posts.map(post => {
@@ -94,7 +99,7 @@ const Home = () => {
       }}>
         <CreatePost />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
