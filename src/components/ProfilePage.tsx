@@ -135,7 +135,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       backgroundColor: 'white',
       borderRadius: 8,
       padding: 4,
-      width: 140,
+      width: 150,
       borderWidth: 2,
       borderColor: colors.light.primary,
     },
