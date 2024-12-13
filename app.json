@@ -6,40 +6,16 @@
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./src/assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "splash": {
-        "image": "./src/assets/images/splash.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
-      },
-      "bundleIdentifier": "com.anonymous.StepnOut"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#000000"
-      },
-      "splash": {
-        "image": "./src/assets/images/splash.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#ffffff"
-      },
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ],
-      "package": "com.anonymous.StepnOut"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/images/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF",
+          "imageWidth": 600
+        }
+      ],
       "expo-router",
       "expo-secure-store",
       [
@@ -72,6 +48,16 @@
         "projectId": "6ac120ac-1dca-4d86-9088-4dbe426901fc"
       }
     },
-    "owner": "patrickgousseau"
+    "owner": "patrickgousseau",
+    "icon": "./src/assets/images/appstore.png",
+    "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.patrickgousseau.stepnout"
+    },
+    "ios": {
+      "bundleIdentifier": "com.patrickgousseau.stepnout"
+    }
   }
 }

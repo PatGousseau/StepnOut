@@ -1,4 +1,4 @@
-package com.anonymous.StepnOut
+package com.patrickgousseau.stepnout
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

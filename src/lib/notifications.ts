@@ -5,7 +5,6 @@ import { supabase } from './supabase';
 export async function registerForPushNotificationsAsync(userId: string) {
     
     if (!Device.isDevice) {
-        alert('Push notifications are only supported on physical devices.');
         return null;
     }
     
