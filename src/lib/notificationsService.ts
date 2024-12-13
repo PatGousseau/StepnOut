@@ -73,7 +73,7 @@ export async function sendLikeNotification(senderId: string | undefined, senderU
 }
 
 // Handle sending notifications for comments
-export async function sendCommentNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string, commentText: string) {
+export async function sendCommentNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string, commentText: string, commentId: string) {
     // Save notification to database
     const { error: dbError } = await supabase
         .from('notifications')
@@ -82,7 +82,8 @@ export async function sendCommentNotification(senderId: string | undefined, send
             trigger_user_id: senderId,
             post_id: postId,
             action_type: 'comment',
-            is_read: false
+            is_read: false,
+            comment_id: commentId,
         }]);
 
     if (dbError) {

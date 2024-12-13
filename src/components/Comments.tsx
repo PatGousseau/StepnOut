@@ -70,6 +70,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           .select('*')
           .single();
 
+
         if (error) throw error;
 
         if (savedComment) {
@@ -89,7 +90,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 user.user_metadata?.username,
                 postUserId,
                 postId.toString(),
-                commentText
+                commentText,
+                savedComment.id.toString()
               );
             } catch (error) {
               console.error('Failed to send comment notification:', error);
