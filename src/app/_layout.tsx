@@ -31,7 +31,7 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
-  const { markAllAsRead, notifications } = useNotifications();
+  const { markAllAsRead, notifications, unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
@@ -97,6 +97,7 @@ function RootLayoutNav() {
             onNotificationPress={handleNotificationPress}
             onMenuPress={() => {}}
             onFeedbackPress={() => setShowFeedback(true)}
+            unreadCount={unreadCount}
           />
           <Stack
             screenOptions={{

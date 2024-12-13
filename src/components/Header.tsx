@@ -9,10 +9,10 @@ interface HeaderProps {
   onNotificationPress: () => void;
   onMenuPress: () => void;
   onFeedbackPress: () => void;
+  unreadCount: number;
 }
 
-const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress }: HeaderProps) => {
-  const { unreadCount } = useNotifications();
+const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount }: HeaderProps) => {
   
   return (
     <SafeAreaView style={styles.safeArea}>

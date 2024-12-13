@@ -110,7 +110,6 @@ export const useNotifications = () => {
         },
         async (payload) => {
           if (payload.eventType === 'INSERT') {
-            console.log("got a new notification");
             
             const { data: fullNotification, error } = await supabase
               .from('notifications')
