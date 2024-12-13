@@ -1,41 +1,23 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 import { useNotifications } from '../hooks/useNotifications';
-import NotificationSidebar from './NotificationSidebar';
-import MenuSidebar from './MenuSidebar';
-import FeedbackModal from './FeedbackModal';
 
-const Header = () => {
-  const { unreadCount, markAllAsRead, notifications } = useNotifications();
+interface HeaderProps {
+  onNotificationPress: () => void;
+  onMenuPress: () => void;
+  onFeedbackPress: () => void;
+}
+
+const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress }: HeaderProps) => {
+  const { unreadCount } = useNotifications();
   
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-
-  const handleNotificationPress = () => {
-    markAllAsRead();
-    setShowNotifications(true);
-  };
-
-  const handleSidebarClose = () => {
-    setShowNotifications(false);
-  };
-
-  const handleMenuPress = () => {
-    setShowMenu(true);
-  };
-
-  const handleMenuClose = () => {
-    setShowMenu(false);
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleMenuPress}>
+        <TouchableOpacity onPress={onMenuPress}>
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
         <Text style={styles.stepnOut}>Stepn Out</Text>
@@ -43,13 +25,13 @@ const Header = () => {
         <View style={styles.headerRight}>
           <TouchableOpacity 
             style={styles.feedbackIcon}
-            onPress={() => setShowFeedback(true)}
+            onPress={onFeedbackPress}
           >
             <Ionicons name="chatbox-ellipses-outline" size={26} color={colors.light.primary} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.notificationIcon}
-            onPress={handleNotificationPress}
+            onPress={onNotificationPress}
           >
             <Ionicons name="notifications" size={28} color={colors.light.primary} />
             {unreadCount > 0 && (
@@ -60,20 +42,6 @@ const Header = () => {
           </TouchableOpacity>
         </View>
       </View>
-
-      <NotificationSidebar 
-        visible={showNotifications}
-        onClose={handleSidebarClose}
-        notifications={notifications}
-      />
-      <MenuSidebar 
-        visible={showMenu}
-        onClose={handleMenuClose}
-      />
-      <FeedbackModal 
-        isVisible={showFeedback}
-        onClose={() => setShowFeedback(false)}
-      />
     </SafeAreaView>
   );
 };

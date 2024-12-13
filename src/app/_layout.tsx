@@ -11,6 +11,10 @@ import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import * as SplashScreen from 'expo-splash-screen';
+import NotificationSidebar from '../components/NotificationSidebar';
+import MenuSidebar from '../components/MenuSidebar';
+import FeedbackModal from '../components/FeedbackModal';
+import { useNotifications } from '../hooks/useNotifications';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -27,6 +31,10 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
+  const { markAllAsRead, notifications } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
@@ -68,6 +76,15 @@ function RootLayoutNav() {
     };
   }, []);
 
+  const handleNotificationPress = () => {
+    markAllAsRead();
+    setShowNotifications(true);
+  };
+
+  const handleMenuPress = () => {
+    setShowMenu(true);
+  };
+
   if (loading) {
     return null;
   }
@@ -81,7 +98,11 @@ function RootLayoutNav() {
           onLayout={onLayoutRootView}
         >
           <StatusBar backgroundColor={colors.light.background} style="dark" />
-          <Header />
+          <Header 
+            onNotificationPress={handleNotificationPress}
+            onMenuPress={handleMenuPress}
+            onFeedbackPress={() => setShowFeedback(true)}
+          />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -104,6 +125,20 @@ function RootLayoutNav() {
               options={{ headerShown: false }}
             />
           </Stack>
+
+          <NotificationSidebar 
+            visible={showNotifications}
+            onClose={() => setShowNotifications(false)}
+            notifications={notifications}
+          />
+          <MenuSidebar 
+            visible={showMenu}
+            onClose={() => setShowMenu(false)}
+          />
+          <FeedbackModal 
+            isVisible={showFeedback}
+            onClose={() => setShowFeedback(false)}
+          />
         </SafeAreaView>
       </LanguageProvider>
     </MenuProvider>
