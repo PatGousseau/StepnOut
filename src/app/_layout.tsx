@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { View, ImageBackground, StyleSheet, Image } from 'react-native';
+import { StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -11,6 +11,10 @@ import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
 import { LanguageProvider } from '../contexts/LanguageContext';
 import * as SplashScreen from 'expo-splash-screen';
+import NotificationSidebar from '../components/NotificationSidebar';
+import MenuSidebar from '../components/MenuSidebar';
+import FeedbackModal from '../components/FeedbackModal';
+import { useNotifications } from '../hooks/useNotifications';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -27,6 +31,9 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
+  const { markAllAsRead, notifications } = useNotifications();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
@@ -68,6 +75,11 @@ function RootLayoutNav() {
     };
   }, []);
 
+  const handleNotificationPress = () => {
+    markAllAsRead();
+    setShowNotifications(true);
+  };
+
   if (loading) {
     return null;
   }
@@ -81,10 +93,20 @@ function RootLayoutNav() {
           onLayout={onLayoutRootView}
         >
           <StatusBar backgroundColor={colors.light.background} style="dark" />
-          <Header />
+          <Header 
+            onNotificationPress={handleNotificationPress}
+            onMenuPress={() => {}}
+            onFeedbackPress={() => setShowFeedback(true)}
+          />
           <Stack
             screenOptions={{
               headerShown: false,
+              gestureEnabled: true,
+              gestureDirection: 'horizontal',
+              fullScreenGestureEnabled: true,
+              animation: 'slide_from_right',
+              animationDuration: 200,
+              presentation: 'card'
             }}
           >
             <Stack.Screen 
@@ -104,6 +126,17 @@ function RootLayoutNav() {
               options={{ headerShown: false }}
             />
           </Stack>
+
+          <NotificationSidebar 
+            visible={showNotifications}
+            onClose={() => setShowNotifications(false)}
+            notifications={notifications}
+          />
+          <MenuSidebar />
+          <FeedbackModal 
+            isVisible={showFeedback}
+            onClose={() => setShowFeedback(false)}
+          />
         </SafeAreaView>
       </LanguageProvider>
     </MenuProvider>

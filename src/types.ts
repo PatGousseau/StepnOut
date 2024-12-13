@@ -57,4 +57,7 @@ export interface Challenge {
       name: string;
     };
     body?: string;
+    comment?: {
+      body: string;
+    };
   }
