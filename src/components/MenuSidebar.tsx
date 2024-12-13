@@ -1,9 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
-  Modal,
   StyleSheet,
-  TouchableWithoutFeedback,
   Dimensions,
   SafeAreaView,
   Platform,
@@ -11,66 +9,68 @@ import {
   TouchableOpacity,
   Switch,
   Linking,
+  PanResponder,
 } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 
 interface MenuSidebarProps {
-  visible: boolean;
-  onClose: () => void;
 }
 
 const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.5;
+const HANDLE_WIDTH = 10;
 
-const MenuSidebar: React.FC<MenuSidebarProps> = ({ visible, onClose }) => {
+const MenuSidebar: React.FC<MenuSidebarProps> = () => {
   const { t, language, toggleLanguage } = useLanguage();
-  const [modalVisible, setModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      setModalVisible(true);
-      translateX.setValue(-SIDEBAR_WIDTH);
-      opacity.setValue(0);
-      Animated.parallel([
-        Animated.timing(translateX, {
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      return Math.abs(gestureState.dx) > 5;
+    },
+    onPanResponderMove: (_, gestureState) => {
+      
+      // calculate new position
+      const newX = isOpen 
+        ? Math.min(0, Math.max(-SIDEBAR_WIDTH, gestureState.dx))
+        : Math.min(0, Math.max(-SIDEBAR_WIDTH, -SIDEBAR_WIDTH + gestureState.dx));
+      translateX.setValue(newX);
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      const velocity = gestureState.vx;
+      const shouldClose = isOpen 
+        ? (gestureState.dx < -SIDEBAR_WIDTH / 2 || velocity < -0.5)
+        : (gestureState.dx < SIDEBAR_WIDTH / 2 && velocity <= 0);
+      
+      if (shouldClose) {
+
+        // animate closed or open
+        Animated.spring(translateX, {
+          toValue: -SIDEBAR_WIDTH,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 11,
+        }).start(() => {
+          setIsOpen(false);
+        });
+      } else {
+        Animated.spring(translateX, {
           toValue: 0,
-          duration: 300,
           useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const handleClose = () => {
-    Animated.parallel([
-      Animated.timing(translateX, {
-        toValue: -SIDEBAR_WIDTH,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setModalVisible(false);
-      onClose();
-    });
-  };
+          tension: 65,
+          friction: 11,
+        }).start(() => {
+          setIsOpen(true);
+        });
+      }
+    },
+  });
 
   const handlePrivacyPress = async () => {
-    handleClose();
     try {
       await Linking.openURL('https://stepnout.framer.website/privacy-policy');
     } catch (error) {
@@ -79,7 +79,6 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ visible, onClose }) => {
   };
 
   const handleFeedbackPress = async () => {
-    handleClose();
     try {
       await Linking.openURL('mailto:pcgousseau@gmail.com');
     } catch (error) {
@@ -87,19 +86,37 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ visible, onClose }) => {
     }
   };
 
+  const backgroundOpacity = translateX.interpolate({
+    inputRange: [-SIDEBAR_WIDTH, 0],
+    outputRange: [0, 0.5],
+    extrapolate: 'clamp',
+  });
+
   return (
-    <Modal
-      visible={modalVisible}
-      transparent
-      animationType="none"
-      onRequestClose={handleClose}
+    <View
+      style={[styles.container, { pointerEvents: isOpen ? 'auto' : 'box-none' }]}
     >
-      <TouchableWithoutFeedback onPress={handleClose}>
-        <Animated.View style={[styles.overlay, { opacity }]}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <Animated.View 
-              style={[styles.sidebar, { transform: [{ translateX }] }]}
-            >
+      <Animated.View 
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            backgroundColor: 'black',
+            opacity: backgroundOpacity,
+          }
+        ]}
+        pointerEvents={isOpen ? 'auto' : 'none'}
+      />
+      <View style={styles.overlay}>
+        <Animated.View 
+          {...panResponder.panHandlers}
+          style={[
+            styles.sidebar,
+            { transform: [{ translateX }] },
+          ]}
+        >
+          <View style={styles.handle} />
+          <View style={styles.sidebarContent}>
+            <View style={StyleSheet.absoluteFill}>
               <SafeAreaView style={styles.safeArea}>
                 <Text style={styles.title}>{t('Menu')}</Text>
                 <TouchableOpacity 
@@ -156,31 +173,38 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ visible, onClose }) => {
                   </View>
                 </TouchableOpacity>
               </SafeAreaView>
-            </Animated.View>
-          </TouchableWithoutFeedback>
+            </View>
+          </View>
         </Animated.View>
-      </TouchableWithoutFeedback>
-    </Modal>
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sidebar: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
+    width: SIDEBAR_WIDTH + HANDLE_WIDTH,
+    backgroundColor: 'transparent',
+  },
+  sidebarContent: {
     width: SIDEBAR_WIDTH,
+    height: '100%',
     backgroundColor: colors.light.background,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
     borderTopRightRadius: 16,
     borderBottomRightRadius: 16,
   },
@@ -222,6 +246,14 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     marginBottom: 16,
     marginTop: 16,
+  },
+  handle: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: HANDLE_WIDTH,
+    backgroundColor: 'transparent',
   },
 });
 

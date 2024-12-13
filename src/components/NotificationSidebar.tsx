@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Platform,
   Animated,
+  PanResponder,
 } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -28,13 +29,11 @@ const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.8;
 
 const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onClose, notifications }) => {
   const { t } = useLanguage();
-  const [modalVisible, setModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(SIDEBAR_WIDTH)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible) {
-      setModalVisible(true);
       translateX.setValue(SIDEBAR_WIDTH);
       opacity.setValue(0);
       Animated.parallel([
@@ -65,10 +64,41 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
         useNativeDriver: true,
       }),
     ]).start(() => {
-      setModalVisible(false);
       onClose();
     });
   };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => {
+        return true;
+      },
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 5;
+      },
+      onPanResponderGrant: () => {
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const newX = Math.max(0, gestureState.dx);
+        translateX.setValue(newX);
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const velocity = gestureState.vx;
+        const shouldClose = gestureState.dx > SIDEBAR_WIDTH / 2 || velocity > 0.5;
+        
+        if (shouldClose) {
+          handleClose();
+        } else {
+          Animated.spring(translateX, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 65,
+            friction: 11,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   const renderNotification = ({ item }: { item: Notification }) => {
     const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || t('Unknown User');
@@ -107,47 +137,45 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 
   return (
     <Modal
-      visible={modalVisible}
+      visible={visible}
       transparent
       animationType="none"
       onRequestClose={handleClose}
     >
-      <TouchableWithoutFeedback onPress={handleClose}>
-        <Animated.View style={[styles.overlay, { opacity }]}>
-          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <Animated.View 
-              style={[
-                styles.sidebar,
-                {
-                  transform: [{ translateX }]
-                }
-              ]}
-            >
-              <SafeAreaView style={styles.safeArea}>
-                <View style={styles.header}>
-                  <View style={styles.headerContent}>
-                    <Text style={styles.title}>{t('Notifications')}</Text>
-                  </View>
-                  <View style={styles.divider} />
-                </View>
+      <View style={styles.overlay}>
+        <Animated.View 
+          style={[
+            styles.sidebar,
+            {
+              transform: [{ translateX }],
+              opacity
+            }
+          ]}
+          {...panResponder.panHandlers}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.header}>
+              <View style={styles.headerContent}>
+                <Text style={styles.title}>{t('Notifications')}</Text>
+              </View>
+              <View style={styles.divider} />
+            </View>
 
-                {notifications.length > 0 ? (
-                  <FlatList
-                    data={notifications}
-                    renderItem={renderNotification}
-                    keyExtractor={item => item.notification_id.toString()}
-                    contentContainerStyle={styles.listContainer}
-                  />
-                ) : (
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>{t('No notifications yet')}</Text>
-                  </View>
-                )}
-              </SafeAreaView>
-            </Animated.View>
-          </TouchableWithoutFeedback>
+            {notifications.length > 0 ? (
+              <FlatList
+                data={notifications}
+                renderItem={renderNotification}
+                keyExtractor={item => item.notification_id.toString()}
+                contentContainerStyle={styles.listContainer}
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>{t('No notifications yet')}</Text>
+              </View>
+            )}
+          </SafeAreaView>
         </Animated.View>
-      </TouchableWithoutFeedback>
+      </View>
     </Modal>
   );
 };

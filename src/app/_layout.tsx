@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { View, ImageBackground, StyleSheet, Image } from 'react-native';
+import { StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -33,7 +33,6 @@ function RootLayoutNav() {
   const { session, loading } = useAuth();
   const { markAllAsRead, notifications } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
   // Simplified onLayoutRootView
@@ -81,10 +80,6 @@ function RootLayoutNav() {
     setShowNotifications(true);
   };
 
-  const handleMenuPress = () => {
-    setShowMenu(true);
-  };
-
   if (loading) {
     return null;
   }
@@ -100,12 +95,18 @@ function RootLayoutNav() {
           <StatusBar backgroundColor={colors.light.background} style="dark" />
           <Header 
             onNotificationPress={handleNotificationPress}
-            onMenuPress={handleMenuPress}
+            onMenuPress={() => {}}
             onFeedbackPress={() => setShowFeedback(true)}
           />
           <Stack
             screenOptions={{
               headerShown: false,
+              gestureEnabled: true,
+              gestureDirection: 'horizontal',
+              fullScreenGestureEnabled: true,
+              animation: 'slide_from_right',
+              animationDuration: 200,
+              presentation: 'card'
             }}
           >
             <Stack.Screen 
@@ -131,10 +132,7 @@ function RootLayoutNav() {
             onClose={() => setShowNotifications(false)}
             notifications={notifications}
           />
-          <MenuSidebar 
-            visible={showMenu}
-            onClose={() => setShowMenu(false)}
-          />
+          <MenuSidebar />
           <FeedbackModal 
             isVisible={showFeedback}
             onClose={() => setShowFeedback(false)}
