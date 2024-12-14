@@ -116,6 +116,18 @@ export const translations = {
     'Email': 'Email',
     'Password': 'Password',
     "Don't have an account? Register": "Non hai un account? Registrati",
+
+    'Welcome to Stepn Out!': 'Benvenuto su Stepn Out!',
+    'A community for people who want to step out of their comfort zone and challenge themselves.': 'Una community per le persone che vogliono uscire dalla propria zona di comfort e mettersi alla prova.',
+    'Create a discussion post': 'Crea un post di discussione',
+    'Share your thoughts, ask questions, and connect with others on Stepn Out': 'Condividi i tuoi pensieri, fai domande e connettiti con altri su Stepn Out',
+    'Complete a challenge': 'Completa una sfida',
+    'Every week a new challenge is posted. Complete it and share your progress with the community.': 'Ogni settimana viene pubblicata una nuova sfida. Completala e condividi con la community.',
+    'Share your experience': 'Condividi la tua esperienza',
+    'Complete challenge by sharing your experience with the community.': 'Completa la sfida condividendo la tua esperienza con la community.',
+    'Track your progress': 'Monitora i tuoi progressi',
+    'View your streaks and challenges completed.': 'Visualizza le tue serie e le sfide completate.',
+    'Done': 'Fatto',
   },
   en: {
     'Home': 'Home',
