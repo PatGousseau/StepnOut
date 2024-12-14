@@ -8,11 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
-  Dimensions,
-  PanResponder,
-  Animated,
   GestureResponderEvent,
   Alert,
+  Share,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
 import { CommentsModal } from './Comments'; 
@@ -28,6 +26,8 @@ import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-m
 import { Post as PostType } from '../types';
 import { postService } from '../services/postService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { supabase } from '../lib/supabase';
+import ImageViewer from 'react-native-image-zoom-viewer';
 
 interface PostProps {
   post: PostType;
@@ -52,14 +52,29 @@ const Post: React.FC<PostProps> = ({
   const [likeCount, setLikeCount] = useState(post.likes_count);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
-  const [animationState, setAnimationState] = useState<{
-    translateY: Animated.Value;
-    opacity: Animated.Value;
-  } | null>(null);
   const { user } = useAuth();
   const { comments: commentList, loading: commentsLoading, fetchComments } = useFetchComments(post.id);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadProfileImage = async () => {
+      if (postUser?.profileImageUrl?.startsWith('http')) {
+        const relativePath = postUser.profileImageUrl.split('challenge-uploads/')[1];
+        const { data } = await supabase.storage
+          .from('challenge-uploads')
+          .getPublicUrl(relativePath, {
+            transform: {
+              quality: 20,
+              width: 100,
+              height: 100,
+            },
+          });
+        setProfileImageUrl(data.publicUrl);
+      }
+    };
+
+    loadProfileImage();
+  }, [postUser?.profileImageUrl]);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -72,17 +87,6 @@ const Post: React.FC<PostProps> = ({
       initializeLikes();
     }
   }, [post.id]);
-
-  useEffect(() => {
-    if (showFullScreenImage) {
-      setAnimationState({
-        translateY: new Animated.Value(0),
-        opacity: new Animated.Value(1),
-      });
-    } else {
-      setAnimationState(null);
-    }
-  }, [showFullScreenImage]);
 
   useEffect(() => {
     setCommentCount(post.comments_count);
@@ -131,7 +135,7 @@ const Post: React.FC<PostProps> = ({
   };
 
   const handleMediaPress = () => {
-    if (post.media_file_path && isVideo(post.media_file_path)) {
+    if (post.media?.file_path && isVideo(post.media.file_path)) {
       return;
     }
 
@@ -143,10 +147,10 @@ const Post: React.FC<PostProps> = ({
   };
 
   const renderMedia = () => {
-    if (!post.media_file_path) return null;
+    if (!post.media?.file_path) return null;
     
-    if (isVideo(post.media_file_path)) {
-      const player = useVideoPlayer(post.media_file_path);
+    if (isVideo(post.media?.file_path)) {
+      const player = useVideoPlayer(post.media?.file_path);
       
       return (
         <TouchableOpacity 
@@ -162,14 +166,13 @@ const Post: React.FC<PostProps> = ({
         </TouchableOpacity>
       );
     }
-
     return (
       <TouchableOpacity 
         onPress={handleMediaPress}
         activeOpacity={1}
       >
         <Image
-          source={{ uri: post.media_file_path }}
+          source={{ uri: post.media?.file_path }}
           style={styles.mediaContent}
           cachePolicy="memory-disk" 
           contentFit="cover"
@@ -178,45 +181,6 @@ const Post: React.FC<PostProps> = ({
       </TouchableOpacity>
     );
   };
-
-  const panResponder = useMemo(() => {
-    if (!animationState) return PanResponder.create({ onStartShouldSetPanResponder: () => false });
-
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gestureState) => {
-        animationState.translateY.setValue(gestureState.dy);
-        animationState.opacity.setValue(1 - Math.abs(gestureState.dy) / (screenHeight / 2));
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (Math.abs(gestureState.dy) > 150) {
-          Animated.parallel([
-            Animated.timing(animationState.translateY, {
-              toValue: gestureState.dy > 0 ? screenHeight : -screenHeight,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(animationState.opacity, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-          ]).start(() => setShowFullScreenImage(false));
-        } else {
-          Animated.parallel([
-            Animated.spring(animationState.translateY, {
-              toValue: 0,
-              useNativeDriver: true,
-            }),
-            Animated.spring(animationState.opacity, {
-              toValue: 1,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }
-      },
-    });
-  }, [animationState]);
 
   const handleOpenComments = () => {
     setShowComments(true);
@@ -303,6 +267,48 @@ const Post: React.FC<PostProps> = ({
     }
   };
 
+  const getOriginalImageUrl = (filePath: string) => {
+    if (filePath.startsWith('http') && filePath.includes('challenge-uploads/')) {
+      const relativePath = filePath.split('challenge-uploads/')[1].split('?')[0];
+      const { data } = supabase.storage
+        .from('challenge-uploads')
+        .getPublicUrl(relativePath);
+      return data.publicUrl;
+    }
+    return filePath;
+  };
+
+  const handleImageLongPress = async () => {
+    try {
+      const imageUrl = getOriginalImageUrl(post.media?.file_path || '');
+      
+      // Download the image first
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const base64Data = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          const base64data = reader.result;
+          resolve(base64data);
+        };
+      });
+
+      if (Platform.OS === 'ios') {
+        await Share.share({
+          url: base64Data as string,
+        });
+      } else {
+        await Share.share({
+          message: imageUrl,  // il va falloir voir si ca marche sur android
+          url: imageUrl,
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing image:', error);
+    }
+  };
+
   return (
     <Pressable 
       onPress={handlePostPress} 
@@ -315,8 +321,8 @@ const Post: React.FC<PostProps> = ({
         <TouchableOpacity onPress={handleProfilePress}>
           <Image 
             source={
-              postUser?.profileImageUrl?.startsWith('http')
-                ? { uri: postUser?.profileImageUrl }
+              profileImageUrl
+                ? { uri: profileImageUrl }
                 : require('../assets/images/default-pfp.png')
             }
             style={styles.profilePicture} 
@@ -412,28 +418,30 @@ const Post: React.FC<PostProps> = ({
         onRequestClose={() => setShowFullScreenImage(false)}
       >
         <View style={styles.fullScreenContainer}>
-          {animationState && (
-            <Animated.View
-              style={[
-                styles.fullScreenImageWrapper,
-                {
-                  transform: [{ translateY: animationState.translateY }],
-                  opacity: animationState.opacity,
-                },
-              ]}
-              {...panResponder.panHandlers}
-            >
-              <Image
-                source={{ uri: post.media_file_path }}
-                style={{
-                  width: screenWidth,
-                  height: screenHeight,
-                }}
-                contentFit="contain"
-                transition={200}
-              />
-            </Animated.View>
-          )}
+          <View style={styles.fullScreenHeader}>
+            <Menu>
+              <MenuTrigger style={styles.fullScreenMenuTrigger}>
+                <Icon name="ellipsis-h" size={20} color="white" />
+              </MenuTrigger>
+              <MenuOptions customStyles={optionsStyles}>
+                <MenuOption onSelect={handleImageLongPress}>
+                  <Text style={styles.menuOptionText}>{t('Save Image')}</Text>
+                </MenuOption>
+              </MenuOptions>
+            </Menu>
+          </View>
+          <ImageViewer
+            imageUrls={[{ 
+              url: getOriginalImageUrl(post.media?.file_path || ''),
+            }]}
+            enableSwipeDown
+            onSwipeDown={() => setShowFullScreenImage(false)}
+            renderIndicator={() => null}
+            onLongPress={handleImageLongPress}
+            saveToLocalByLongPress={false}
+            enablePreload={true}
+            style={styles.fullScreenImage}
+          />
         </View>
       </Modal>
       </View>
@@ -563,6 +571,32 @@ const styles = StyleSheet.create({
     color: colors.light.primary,
     fontSize: 13,
   },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 5,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  fullScreenHeader: {
+    position: 'absolute',
+    top: 40,
+    right: 0,
+    zIndex: 9999,
+    padding: 16,
+  },
+  fullScreenMenuTrigger: {
+    padding: 8,
+  },
 });
 
 const optionsStyles = {
@@ -570,6 +604,9 @@ const optionsStyles = {
     borderRadius: 10,
     padding: 5,
     width: 150,
+    backgroundColor: 'white',
+    zIndex: 9999,
+    marginTop: 45,
   },
 };
 

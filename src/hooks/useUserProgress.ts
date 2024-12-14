@@ -38,23 +38,30 @@ const useUserProgress = (targetUserId: string) => {
 
       if (error) throw error;
 
+      const transformedPosts = posts.map(post => ({
+        ...post,
+        challenge_title: post.challenges?.title
+      }));
+
       // Then fetch like status separately
       const { data: likedPosts } = await supabase
         .from('likes')
         .select('post_id')
         .eq('user_id', user?.id)
-        .in('post_id', posts.map(post => post.id));
+        .in('post_id', transformedPosts.map(post => post.id));
 
       const likedPostIds = new Set(likedPosts?.map(like => like.post_id));
 
-      const formattedPosts: Post[] = posts.map(post => ({
+      const formattedPosts: Post[] = transformedPosts.map(post => ({
         ...post,
-        media_file_path: post.media?.file_path 
-          ? `${supabase.storageUrl}/object/public/challenge-uploads/${post.media.file_path}`
-          : null,
+        media: {
+          file_path: post.media?.file_path 
+            ? `${supabase.storageUrl}/object/public/challenge-uploads/${post.media.file_path}`
+            : null,
+        },
         likes_count: post.likes?.[0]?.count ?? 0,
         comments_count: post.comments?.[0]?.count ?? 0,
-        challenge_title: post.challenges?.title,
+        challenge_title: post.challenge_title,
         liked: likedPostIds.has(post.id)
       }));
 

@@ -20,12 +20,17 @@ export interface Challenge {
     created_at: string;
     featured: boolean;
     body: string;
-    media_file_path?: string | null;
     likes_count: number;
     comments_count: number;
     challenge_id?: number;
     challenge_title?: string;
     liked: boolean;
+    media?: {
+      file_path: string;
+    };
+    likes?: {
+      count: number;
+    };
   }
 
   export interface ChallengeProgress {
