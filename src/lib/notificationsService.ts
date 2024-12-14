@@ -1,4 +1,6 @@
+import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from './supabase';
+
 
 
 // Fetch a user's push token from Supabase
@@ -61,12 +63,15 @@ export async function sendLikeNotification(senderId: string | undefined, senderU
         return;
     }
 
+    const { t } = useLanguage();
+
+
     // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = `${senderUsername} liked your post!`;
-    const body = 'Check it out now.';
+    const title = t('(username) liked your post!', { username: senderUsername });
+    const body = t('Check it out now.');
     const data = { postId, senderId };
 
     await sendPushNotification(pushToken, title, body, data);
@@ -91,11 +96,14 @@ export async function sendCommentNotification(senderId: string | undefined, send
         return;
     }
 
+    const { t } = useLanguage();
+
+
     // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = `${senderUsername} commented on your post!`;
+    const title = t('(username) commented on your post!', { username: senderUsername });
     const body = `"${commentText}"`;
     const data = { postId, senderId };
 
@@ -107,8 +115,11 @@ export async function sendNewChallengeNotification(recipientId: string, challeng
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = 'A new challenge is available!';
-    const body = challengeTitle
+    const { t } = useLanguage();
+
+
+    const title = t('A new challenge is available!');
+    const body = challengeTitle;
     const data = { challengeId };
 
     await sendPushNotification(pushToken, title, body, data);

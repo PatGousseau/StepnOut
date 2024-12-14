@@ -10,15 +10,15 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
-import { useAuth } from '../../contexts/AuthContext';
 import { Alert } from 'react-native';
 import { Text } from '../../components/StyledText';
+import { useLanguage } from '@/src/contexts/LanguageContext';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(true);
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -69,7 +69,7 @@ export default function RegisterScreen() {
           keyboardType="email-address"
         />
         {!isEmailValid && email !== '' && (
-          <Text style={styles.errorText}>Please enter a valid email address</Text>
+          <Text style={styles.errorText}>{t('Please enter a valid email address')}</Text>
         )}
 
         <TextInput
@@ -85,14 +85,14 @@ export default function RegisterScreen() {
           style={styles.button}
           onPress={handleNextStep}
         >
-          <Text style={styles.buttonText}>Next</Text>
+          <Text style={styles.buttonText}>{t('Next')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.linkButton}
           onPress={() => router.push('/(auth)/login')}
         >
-          <Text style={styles.linkText}>Already have an account? Log in</Text>
+          <Text style={styles.linkText}>{t('Already have an account? Log in')}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
