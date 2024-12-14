@@ -32,6 +32,7 @@ const PostPage = () => {
         }
         const fetchedPost = await fetchPost(postId);
         setPost(fetchedPost);
+        console.log(fetchedPost);
       } catch (error) {
         console.error('Error loading post:', error);
       } finally {

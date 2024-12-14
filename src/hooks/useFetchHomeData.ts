@@ -34,7 +34,6 @@ export const useFetchHomeData = () => {
     
     let mediaUrl = null;
     if (post.media?.file_path) {
-      console.log('post.media.file_path', post.media.file_path);
       const transformMediaResponse = !isVideo(post.media.file_path)
         ? await supabase.storage.from('challenge-uploads').getPublicUrl(post.media.file_path, {
             transform: {
@@ -275,7 +274,12 @@ export const useFetchHomeData = () => {
 
       if (error) throw error;
 
-      const formattedPost = await formatPost(post);
+      const postWithChallenge = {
+        ...post,
+        challenge_title: post.challenges?.title
+      };
+
+      const formattedPost = await formatPost(postWithChallenge);
       
       // Fetch the user data if not already in userMap
       if (post && !userMap[post.user_id]) {

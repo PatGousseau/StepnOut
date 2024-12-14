@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { colors } from '../constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { supabase } from '../lib/supabase';
@@ -15,6 +15,7 @@ const CreatePost = () => {
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isVideo, setIsVideo] = useState(false);
   const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputAccessoryViewID = 'uniqueID';
 
   const handleSubmit = async () => {
@@ -45,6 +46,7 @@ const CreatePost = () => {
 
   const handleMediaUpload = async () => {
     try {
+      setIsUploading(true);
       const result = await uploadMedia({ allowVideo: true });
       setUploadedMediaId(result.mediaId);
       setMediaPreview(result.mediaPreview);
@@ -53,7 +55,16 @@ const CreatePost = () => {
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Error uploading file');
+    } finally {
+      setIsUploading(false);
     }
+  };
+
+  const handleRemoveMedia = () => {
+    setUploadedMediaId(null);
+    setMediaPreview(null);
+    setIsVideo(false);
+    setVideoThumbnail(null);
   };
 
   return (
@@ -82,12 +93,24 @@ const CreatePost = () => {
               showsVerticalScrollIndicator={false}
             >
               <View style={styles.modalContent}>
-                {mediaPreview ? (
-                  <Image 
-                    source={{ uri: isVideo ? videoThumbnail || mediaPreview : mediaPreview }} 
-                    style={styles.mediaPreview} 
-                    resizeMode="cover"
-                  />
+                {isUploading ? (
+                  <View style={styles.mediaPreview}>
+                    <ActivityIndicator size="large" color={colors.light.accent} />
+                  </View>
+                ) : mediaPreview ? (
+                  <View style={styles.mediaPreviewContainer}>
+                    <Image 
+                      source={{ uri: isVideo ? videoThumbnail || mediaPreview : mediaPreview }} 
+                      style={styles.mediaPreview} 
+                      resizeMode="cover"
+                    />
+                    <TouchableOpacity 
+                      style={styles.removeMediaButton}
+                      onPress={handleRemoveMedia}
+                    >
+                      <MaterialIcons name="close" size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
                 ) : (
                   <TouchableOpacity 
                     style={styles.mediaUploadIcon} 
@@ -117,11 +140,22 @@ const CreatePost = () => {
                     <Text style={styles.cancelText}>Cancel</Text>
                   </TouchableOpacity>
                   
+                  {isUploading && (
+                    <Text style={styles.uploadingText}>Uploading...</Text>
+                  )}
+                  
                   <TouchableOpacity 
-                    style={[styles.headerButton, styles.submitButton]} 
+                    style={[
+                      styles.headerButton, 
+                      styles.submitButton,
+                      isUploading && styles.disabledButton
+                    ]} 
                     onPress={handleSubmit}
+                    disabled={isUploading}
                   >
-                    <Text style={styles.buttonText}>Submit</Text>
+                    <Text style={[styles.buttonText, isUploading && styles.disabledButtonText]}>
+                      Submit
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -168,6 +202,8 @@ const styles = StyleSheet.create({
     aspectRatio: 1.5,
     borderRadius: 8,
     marginVertical: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   textInput: {
     borderWidth: 1,
@@ -205,12 +241,6 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
-  submitButton: {
-    backgroundColor: colors.light.accent,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
   cancelText: {
     color: colors.light.accent,
     fontWeight: 'bold',
@@ -231,6 +261,34 @@ const styles = StyleSheet.create({
     color: colors.light.primary,
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
+  disabledButtonText: {
+    color: '#666666',
+  },
+  uploadingText: {
+    color: colors.light.accent,
+    fontSize: 14,
+    marginRight: 10,
+  },
+  mediaPreviewContainer: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 1.5,
+    marginVertical: 10,
+  },
+  removeMediaButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
