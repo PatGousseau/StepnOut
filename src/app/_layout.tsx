@@ -105,8 +105,6 @@ function RootLayoutNav() {
               gestureEnabled: true,
               gestureDirection: 'horizontal',
               fullScreenGestureEnabled: true,
-              animation: 'slide_from_right',
-              animationDuration: 200,
               presentation: 'card'
             }}
           >

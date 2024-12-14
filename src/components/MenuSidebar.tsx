@@ -47,16 +47,13 @@ const MenuSidebar: React.FC<MenuSidebarProps> = () => {
         : (gestureState.dx < SIDEBAR_WIDTH / 2 && velocity <= 0);
       
       if (shouldClose) {
-
-        // animate closed or open
+        setIsOpen(false);
         Animated.spring(translateX, {
           toValue: -SIDEBAR_WIDTH,
           useNativeDriver: true,
           tension: 65,
           friction: 11,
-        }).start(() => {
-          setIsOpen(false);
-        });
+        }).start();
       } else {
         Animated.spring(translateX, {
           toValue: 0,

@@ -1,4 +1,3 @@
-import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   View, 
@@ -16,17 +15,15 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; 
-import { CommentsModal, Comment } from './Comments'; 
+import { CommentsModal } from './Comments'; 
 import { colors } from '../constants/Colors';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Text } from './StyledText';
 import { Image } from 'expo-image';
-import { sendLikeNotification, sendCommentNotification } from '../lib/notificationsService';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../models/User';
 import { useFetchComments } from '../hooks/useFetchComments';
 import { router } from 'expo-router';
-import { supabase } from '../lib/supabase';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from 'react-native-popup-menu';
 import { Post as PostType } from '../types';
 import { postService } from '../services/postService';
@@ -45,7 +42,6 @@ const Post: React.FC<PostProps> = ({
   postUser, 
   setPostCounts,
   isPostPage = false,
-  onPostDeleted,
 }) => {
   const { t } = useLanguage();
 
@@ -55,7 +51,6 @@ const Post: React.FC<PostProps> = ({
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likes_count);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
-  const { toggleLike, fetchLikes } = useFetchHomeData();
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
@@ -64,7 +59,7 @@ const Post: React.FC<PostProps> = ({
     opacity: Animated.Value;
   } | null>(null);
   const { user } = useAuth();
-  const { comments: commentList, loading: commentsLoading, fetchComments, addComment } = useFetchComments(post.id);
+  const { comments: commentList, loading: commentsLoading, fetchComments } = useFetchComments(post.id);
 
   useEffect(() => {
     const initializeLikes = async () => {
@@ -120,20 +115,9 @@ const Post: React.FC<PostProps> = ({
     const result = await postService.toggleLike(post.id, user.id, post.user_id);
     
     if (result === null) {
-      // Reset UI if operation failed
       setLiked(!isLiking);
       setLikeCount(prevCount => isLiking ? prevCount - 1 : prevCount + 1);
     }
-  };
-
-  const handleAddComment = async (comment: { text: string; userId: string }) => {
-    if (!user) {
-      console.error(t('User not authenticated'));
-      return false;
-    }
-
-    const newComment = await addComment(user.id, comment.text);
-    return !!newComment;
   };
 
   const handleCommentAdded = (increment: number) => {
