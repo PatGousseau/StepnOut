@@ -23,7 +23,7 @@ export const useFetchHomeData = () => {
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
 
-  const formatPost = async (post: Partial<Post>, commentCountMap?: Map<number, number>): Promise<Post> => {
+  const formatPost = async (post: Post, commentCountMap?: Map<number, number>): Promise<Post> => {
     // If we don't have a pre-fetched comment count, fetch it individually
     let commentCount = commentCountMap?.get(post.id);
     if (commentCount === undefined) {
@@ -34,10 +34,13 @@ export const useFetchHomeData = () => {
     
     let mediaUrl = null;
     if (post.media?.file_path) {
+      console.log('post.media.file_path', post.media.file_path);
       const transformMediaResponse = !isVideo(post.media.file_path)
         ? await supabase.storage.from('challenge-uploads').getPublicUrl(post.media.file_path, {
             transform: {
               quality: 20,
+              width: 1000,
+              height: 1000,
             },
           })
         : await supabase.storage.from('challenge-uploads').getPublicUrl(post.media.file_path);
@@ -47,12 +50,12 @@ export const useFetchHomeData = () => {
 
     return {
       ...post,
-      media_file_path: mediaUrl,
-      likes_count: post.likes?.[0]?.count ?? 0,
+      ...(mediaUrl ? { media: { file_path: mediaUrl } } : {}),
+      likes_count: post.likes?.count ?? 0,
       comments_count: commentCount ?? 0,
       liked: likedPosts[post.id] ?? false,
       challenge_id: post.challenge_id,
-      challenge_title: post.challenges?.title
+      challenge_title: post.challenge_title
     };
   };
 
@@ -101,7 +104,10 @@ export const useFetchHomeData = () => {
         .range((pageNumber - 1) * POSTS_PER_PAGE, pageNumber * POSTS_PER_PAGE - 1);
 
       if (postResponse.error) throw postResponse.error;
-      const postData = postResponse.data;
+      const postData = postResponse.data.map(post => ({
+        ...post,
+        challenge_title: post.challenges?.title
+      }));
 
       const postIds = postData.map(post => post.id.toString());
       const commentCountsResponse = await supabase

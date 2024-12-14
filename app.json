@@ -31,6 +31,16 @@
           "supportsBackgroundPlayback": false,
           "supportsPictureInPicture": true
         }
+      ],
+      [
+        "react-native-share",
+        {
+          "ios": {
+            "sharedMetadata": {
+              "NSPhotoLibraryAddUsageDescription": "This app needs access to share photos."
+            }
+          }
+        }
       ]
     ],
     "experiments": {
