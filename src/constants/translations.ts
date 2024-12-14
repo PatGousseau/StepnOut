@@ -83,6 +83,16 @@ export const translations = {
     'Language': 'Lingua',
     'Privacy Policy': 'Privacy',
     'Contact Us': 'Contattaci',
+    
+    // Notifications
+    '(username) liked your post!': '(username) ha messo mi piace al tuo post!',
+    'Check it out now.': 'Dai un\'occhiata ora.',
+    '(username) commented on your post!': '(username) ha commentato il tuo post!',
+    'A new challenge is available!': 'È disponibile una nuova sfida!',
+
+    'Send Feedback': 'Invia Feedback',
+"What's on your mind?": 'Cosa ne pensi?',
+'Thank you for your feedback!': 'Grazie per il tuo feedback!',
   },
   en: {
     'Home': 'Home',
@@ -160,12 +170,19 @@ export const translations = {
     'Easy': 'Easy',
     'Medium': 'Medium',
     'Hard': 'Hard',
-    'Past challenge': 'Past challenge',
-    'Ends in 1 day': 'Ends in 1 day',
-    'Ends in (days) days': 'Ends in (days) days',
     'Menu': 'Menu',
     'Language': 'Language',
     'Privacy Policy': 'Privacy Policy',
     'Contact Us': 'Contact Us',
+    
+    // Notifications
+    '(username) liked your post!': '(username) liked your post!',
+    'Check it out now.': 'Check it out now.',
+    '(username) commented on your post!': '(username) commented on your post!',
+    'A new challenge is available!': 'A new challenge is available!',
+
+    'Send Feedback': 'Send Feedback',
+    "What's on your mind?": "What's on your mind?",
+    'Thank you for your feedback!': 'Thank you for your feedback!',
   }
 }; 

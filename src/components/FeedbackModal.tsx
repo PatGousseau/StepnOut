@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface FeedbackModalProps {
   isVisible: boolean;
@@ -25,6 +26,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isVisible, onClose }) => 
   const [showSuccess, setShowSuccess] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const animateContent = (toValue: number) => {
     Animated.spring(slideAnim, {
@@ -93,18 +95,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isVisible, onClose }) => 
             onStartShouldSetResponder={() => true}
             onTouchStart={e => e.stopPropagation()}
           >
-            <Text style={styles.modalTitle}>Send Feedback</Text>
+            <Text style={styles.modalTitle}>{t('Send Feedback')}</Text>
             {showSuccess ? (
               <View style={styles.successMessage}>
                 <Icon name="checkmark-circle" size={24} color={colors.light.primary} />
-                <Text style={styles.successText}>Thank you for your feedback!</Text>
+                <Text style={styles.successText}>{t('Thank you for your feedback!')}</Text>
               </View>
             ) : (
               <>
                 <TextInput
                   style={styles.input}
                   multiline
-                  placeholder="What's on your mind?"
+                  placeholder={t("What's on your mind?")}
                   value={feedback}
                   onChangeText={setFeedback}
                   maxLength={500}
@@ -114,13 +116,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isVisible, onClose }) => 
                     style={styles.cancelButton}
                     onPress={onClose}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={styles.cancelButtonText}>{t('Cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.submitButton}
                     onPress={handleSubmit}
                   >
-                    <Text style={styles.submitButtonText}>Submit</Text>
+                    <Text style={styles.submitButtonText}>{t('Submit')}</Text>
                   </TouchableOpacity>
                 </View>
               </>
