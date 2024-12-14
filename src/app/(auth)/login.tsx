@@ -14,16 +14,18 @@ import { colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+  const { t } = useLanguage();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(t('Error'), t('Please fill in all fields'));
       return;
     }
 
@@ -33,7 +35,7 @@ export default function LoginScreen() {
 
       // Get the current session to get user info
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('Login failed');
+      if (!session?.user) throw new Error(t('Login failed'));
 
       // Check if this is their first login after verification
       const { data: profile } = await supabase
@@ -56,7 +58,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (error) {
-      Alert.alert('Error', (error as Error).message);
+      Alert.alert(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -70,11 +72,11 @@ export default function LoginScreen() {
       <View style={styles.form}>
         <View style={styles.logoContainer}>
           <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-          <Text style={styles.stepnOut}>Stepn Out</Text>
+          <Text style={styles.stepnOut}>{t('Stepn Out')}</Text>
         </View>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={t('Email')}
           placeholderTextColor="#666"
           value={email}
           onChangeText={setEmail}
@@ -83,7 +85,7 @@ export default function LoginScreen() {
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder={t('Password')}
           placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
@@ -95,7 +97,7 @@ export default function LoginScreen() {
           disabled={loading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Logging in...' : 'Log In'}
+            {loading ? t('Logging in...') : t('Log In')}
           </Text>
         </TouchableOpacity>
         
@@ -103,7 +105,7 @@ export default function LoginScreen() {
           style={styles.linkButton}
           onPress={() => router.push('/(auth)/register')}
         >
-          <Text style={styles.linkText}>Don't have an account? Register</Text>
+          <Text style={styles.linkText}>{t("Don't have an account? Register")}</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

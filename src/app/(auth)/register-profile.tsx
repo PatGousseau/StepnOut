@@ -16,6 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { Text } from '../../components/StyledText';
+import { useLanguage } from '@/src/contexts/LanguageContext';
 
 export default function RegisterProfileScreen() {
   const { email, password } = useLocalSearchParams<{ email: string; password: string }>();
@@ -26,6 +27,7 @@ export default function RegisterProfileScreen() {
   const { signUp } = useAuth();
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const { t } = useLanguage();
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -71,7 +73,7 @@ export default function RegisterProfileScreen() {
         setProfileImage(file.uri);
       } catch (error) {
         console.error('Error uploading profile image:', error);
-        Alert.alert('Error', 'Failed to upload profile image');
+        Alert.alert(t('Error'), t('Failed to upload profile image'));
       } finally {
         setImageUploading(false);
       }
@@ -80,7 +82,7 @@ export default function RegisterProfileScreen() {
 
   const handleRegister = async () => {
     if (!username || !displayName) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert(t('Error'), t('Please fill in all required fields'));
       return;
     }
 
@@ -88,17 +90,17 @@ export default function RegisterProfileScreen() {
       setLoading(true);
       await signUp(email, password, username, displayName, profileMediaId);
       Alert.alert(
-        'Registration Successful',
-        'Please check your email to verify your account. After verification, you can log in to continue.',
+        t('Registration Successful'),
+        t('Please check your email to verify your account. After verification, you can log in to continue.'),
         [
           {
-            text: 'OK',
+            text: t('OK'),
             onPress: () => router.replace('/(auth)/login')
           }
         ]
       );
     } catch (error) {
-      Alert.alert('Error', (error as Error).message);
+      Alert.alert(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ export default function RegisterProfileScreen() {
       <View style={styles.form}>
         <View style={styles.logoContainer}>
           <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
-          <Text style={styles.stepnOut}>Stepn Out</Text>
+          <Text style={styles.stepnOut}>{t('Stepn Out')}</Text>
         </View>
 
         <View style={styles.profileSection}>
@@ -129,7 +131,7 @@ export default function RegisterProfileScreen() {
               <Image source={{ uri: profileImage }} style={styles.profileImage} />
             ) : (
               <View style={styles.placeholderImage}>
-                <Text style={styles.placeholderText}>Add Photo</Text>
+                <Text style={styles.placeholderText}>{t('Add Photo')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -137,7 +139,7 @@ export default function RegisterProfileScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Username*"
+              placeholder={t('Username*')}
               placeholderTextColor="#666"
               value={username}
               onChangeText={setUsername}
@@ -145,7 +147,7 @@ export default function RegisterProfileScreen() {
             />
             <TextInput
               style={styles.input}
-              placeholder="Display Name*"
+              placeholder={t('Display Name*')}
               placeholderTextColor="#666"
               value={displayName}
               onChangeText={setDisplayName}
@@ -159,7 +161,7 @@ export default function RegisterProfileScreen() {
           disabled={loading || imageUploading}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Creating Account...' : 'Complete Registration'}
+            {loading ? t('Creating Account...') : t('Complete Registration')}
           </Text>
         </TouchableOpacity>
       </View>

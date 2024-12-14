@@ -91,8 +91,31 @@ export const translations = {
     'A new challenge is available!': 'È disponibile una nuova sfida!',
 
     'Send Feedback': 'Invia Feedback',
-"What's on your mind?": 'Cosa ne pensi?',
+    "What's on your mind?": 'Cosa ne pensi?',
 'Thank you for your feedback!': 'Grazie per il tuo feedback!',
+
+    'Next': 'Avanti',
+    'Already have an account? Log in': 'Hai già un account? Accedi',
+    'Please fill in all fields': 'Compila tutti i campi',
+    'Please enter a valid email address': 'Inserisci un indirizzo email valido',
+    'Add Photo': 'Aggiungi Foto',
+    'Username*': 'Nome Utente*',
+    'Display Name*': 'Nome Visualizzato*',
+    'Creating Account...': 'Creazione Account...',
+    'Complete Registration': 'Completa Registrazione',
+    'Registration Successful': 'Registrazione Completata',
+    'Please check your email to verify your account. After verification, you can log in to continue.': 
+      'Controlla la tua email per verificare il tuo account. Dopo la verifica, potrai accedere per continuare.',
+    'Failed to upload profile image': 'Impossibile caricare l\'immagine del profilo',
+    'Please fill in all required fields': 'Compila tutti i campi obbligatori',
+    'OK': 'OK',
+
+    'Login failed': 'Login fallito',
+    'Logging in...': 'Accesso in corso...',
+    'Log In': 'Accedi',
+    'Email': 'Email',
+    'Password': 'Password',
+    "Don't have an account? Register": "Non hai un account? Registrati",
   },
   en: {
     'Home': 'Home',
