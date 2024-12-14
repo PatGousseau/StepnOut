@@ -14,6 +14,8 @@ import { View, StyleSheet } from 'react-native';
 import { PATRIZIO_ID } from '../constants/Patrizio';
 import { uploadMedia } from '../utils/handleMediaUpload';
 import { useLanguage } from '../contexts/LanguageContext';
+import { isVideo } from '../utils/utils';
+import { router } from 'expo-router';
 
 interface ChallengeCardProps {
     challenge: Challenge;
@@ -73,6 +75,8 @@ interface PatrizioExampleProps {
     const { t } = useLanguage();
     const [patrizioSubmission, setPatrizioSubmission] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [imageUrl, setImageUrl] = useState<string>('');
+    const [isVideoSubmission, setIsVideoSubmission] = useState(false);
 
     useEffect(() => {
       const fetchPatrizioSubmission = async () => {
@@ -82,15 +86,30 @@ interface PatrizioExampleProps {
             .select(`
               *,
               media:media_id (
-                file_path
+                file_path,
+                thumbnail_path
               )
             `)
             .eq('challenge_id', challenge.id)
             .eq('user_id', PATRIZIO_ID)
             .single();
 
-          if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" error
+          if (error && error.code !== 'PGRST116') throw error;
           setPatrizioSubmission(data);
+
+          if (data) {
+            const isVideoFile = isVideo(data.media.file_path);
+            setIsVideoSubmission(isVideoFile);
+            
+            const filePath = isVideoFile && data.media.thumbnail_path
+              ? data.media.thumbnail_path
+              : data.media.file_path;
+
+            const { data: urlData } = await supabase.storage
+              .from('challenge-uploads')
+              .getPublicUrl(filePath);
+            setImageUrl(urlData.publicUrl);
+          }
         } catch (error) {
           console.error('Error fetching Patrizio\'s submission:', error);
         } finally {
@@ -101,16 +120,32 @@ interface PatrizioExampleProps {
       fetchPatrizioSubmission();
     }, [challenge.id]);
 
+    const handlePress = () => {
+      if (patrizioSubmission) {
+        router.push(`/post/${patrizioSubmission.id}`);
+      }
+    };
+
     if (loading || !patrizioSubmission) {
       return null;
     }
 
     return (
-      <TouchableOpacity style={patrizioStyles.card}>
-        <Image 
-          source={{ uri: `${supabaseStorageUrl}/${patrizioSubmission.media.file_path}` }}
-          style={patrizioStyles.mediaPreview} 
-        />
+      <TouchableOpacity 
+        style={patrizioStyles.card} 
+        onPress={handlePress}
+      >
+        <View style={patrizioStyles.mediaContainer}>
+          <Image 
+            source={{ uri: imageUrl }}
+            style={patrizioStyles.mediaPreview} 
+          />
+          {isVideoSubmission && (
+            <View style={patrizioStyles.playIconOverlay}>
+              <MaterialIcons name="play-circle-filled" size={24} color="white" />
+            </View>
+          )}
+        </View>
         <View style={patrizioStyles.textContainer}>
           <Text style={patrizioStyles.title}>{t("Patrizio's submission")}</Text>
           <Text style={patrizioStyles.subtitle}>
@@ -344,11 +379,17 @@ interface PatrizioExampleProps {
                       </View>
                     ) : (
                       <>
-                        <View style={shareStyles.mediaIconsContainer}>
-                          <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
-                          <MaterialCommunityIcons name="video" size={24} color={colors.neutral.darkGrey} />
-                        </View>
-                        <Text style={shareStyles.uploadButtonText}>{t('Tap to upload photo or video')}</Text>
+                        {isUploading ? (
+                          <Loader size="small" />
+                        ) : (
+                          <>
+                            <View style={shareStyles.mediaIconsContainer}>
+                              <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
+                              <MaterialCommunityIcons name="video" size={24} color={colors.neutral.darkGrey} />
+                            </View>
+                            <Text style={shareStyles.uploadButtonText}>{t('Tap to upload photo or video')}</Text>
+                          </>
+                        )}
                       </>
                     )}
                   </TouchableOpacity>
@@ -487,6 +528,23 @@ const patrizioStyles = StyleSheet.create({
   chevron: {
     fontSize: 24,
     color: colors.light.primary,
+  },
+  mediaContainer: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+    marginRight: 15,
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
