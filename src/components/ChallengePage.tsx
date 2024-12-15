@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -9,6 +9,10 @@ import { ChallengeCard } from './Challenge';
 import { PatrizioExample } from './Challenge';
 import { ShareExperience } from './Challenge';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useFetchHomeData } from '../hooks/useFetchHomeData';
+import Post from './Post';
+import { User } from '../models/User';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface ChallengePageProps {
   id?: number;
@@ -22,6 +26,12 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const { posts, userMap, loading: postsLoading, fetchAllData } = useFetchHomeData();
+  const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
+  const [isSubmissionsExpanded, setIsSubmissionsExpanded] = useState(false);
+
+  // Filter posts for this challenge
+  const challengePosts = posts.filter(post => post.challenge_id === challengeId);
 
   const loadChallenge = async () => {
     if (!challengeId) {
@@ -60,16 +70,20 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await loadChallenge();
+    await Promise.all([loadChallenge(), fetchAllData()]);
     setRefreshing(false);
-  }, [challengeId]);
+  }, [challengeId, fetchAllData]);
 
   useEffect(() => {
     setLoading(true);
-    loadChallenge().finally(() => setLoading(false));
+    Promise.all([loadChallenge(), fetchAllData()]).finally(() => setLoading(false));
   }, [challengeId]);
 
-  if (loading) {
+  const handlePostDeleted = () => {
+    fetchAllData();
+  };
+
+  if (loading || postsLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={colors.light.primary} />
@@ -104,7 +118,44 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
         </Text>
         <ChallengeCard challenge={challenge} />
         <PatrizioExample challenge={challenge} />
-        <ShareExperience challenge={challenge} />
+        {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
+      </View>
+
+      {/* Challenge Submissions Section */}
+      <View style={styles.submissionsContainer}>
+        <TouchableOpacity 
+          onPress={() => setIsSubmissionsExpanded(!isSubmissionsExpanded)}
+          style={styles.submissionsHeader}
+        >
+          <View style={styles.submissionsTitleContainer}>
+            <Text style={styles.submissionsTitle}>{t('Submissions')}</Text>
+            <MaterialIcons 
+              name={isSubmissionsExpanded ? "keyboard-arrow-down" : "keyboard-arrow-right"} 
+              size={24} 
+              color={colors.light.text} 
+            />
+          </View>
+        </TouchableOpacity>
+        
+        {isSubmissionsExpanded && (
+          <>
+            {challengePosts.map(post => {
+              const postUser = userMap[post.user_id] as User;
+              return (
+                <Post
+                  key={post.id}
+                  post={post}
+                  postUser={postUser}
+                  setPostCounts={setPostCounts}
+                  onPostDeleted={handlePostDeleted}
+                />
+              );
+            })}
+            {challengePosts.length === 0 && (
+              <Text style={styles.noSubmissions}>{t('No submissions yet')}</Text>
+            )}
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -137,5 +188,27 @@ const styles = StyleSheet.create({
     color: colors.light.lightText,
     marginBottom: 20,
     textAlign: 'center',
+  },
+  submissionsContainer: {
+    padding: 16,
+    marginTop: 20,
+  },
+  submissionsHeader: {
+    marginBottom: 16,
+  },
+  submissionsTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  submissionsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.light.text,
+    marginRight: 4,
+  },
+  noSubmissions: {
+    textAlign: 'center',
+    color: colors.light.lightText,
+    marginTop: 20,
   },
 });

@@ -243,15 +243,6 @@ interface PatrizioExampleProps {
       }
     };
 
-    const showNotificationWithAnimation = () => {
-      setShowNotification(true);
-      Animated.timing(notificationAnim, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    };
-
     const handleRemoveMedia = () => {
       setMediaPreview(null);
       setUploadedMediaId(null);
