@@ -88,5 +88,28 @@ export const profileService = {
         error: (error as Error).message 
       };
     }
+  },
+
+  async deleteAccount(userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Delete user profile first (this should cascade to related data)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (profileError) throw profileError;
+
+      // Call the RPC function to delete the auth user
+      const { error: deleteError } = await supabase.rpc('delete_user');
+      if (deleteError) throw deleteError;
+
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: (error as Error).message 
+      };
+    }
   }
 }; 
