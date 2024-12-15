@@ -128,6 +128,10 @@ export const translations = {
     'Track your progress': 'Monitora i tuoi progressi',
     'View your streaks and challenges completed.': 'Visualizza le tue serie e le sfide completate.',
     'Done': 'Fatto',
+    'Delete Account': 'Elimina Account',
+    'Are you sure you want to delete your account? This action cannot be undone.': 
+      'Sei sicuro di voler eliminare il tuo account? Questa azione non può essere annullata.',
+    'Failed to delete account': 'Impossibile eliminare l\'account',
   },
   en: {
     'Home': 'Home',
@@ -219,5 +223,9 @@ export const translations = {
     'Send Feedback': 'Send Feedback',
     "What's on your mind?": "What's on your mind?",
     'Thank you for your feedback!': 'Thank you for your feedback!',
+    'Delete Account': 'Delete Account',
+    'Are you sure you want to delete your account? This action cannot be undone.': 
+      'Are you sure you want to delete your account? This action cannot be undone.',
+    'Failed to delete account': 'Failed to delete account',
   }
 }; 

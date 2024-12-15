@@ -122,6 +122,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      t('Delete Account'),
+      t('Are you sure you want to delete your account? This action cannot be undone.'),
+      [
+        {
+          text: t('Cancel'),
+          style: 'cancel',
+        },
+        {
+          text: t('Delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await profileService.deleteAccount(user?.id!);
+              if (result.success) {
+                await signOut(); 
+              } else {
+                Alert.alert('Error', result.error || t('Failed to delete account'));
+              }
+            } catch (error) {
+              Alert.alert('Error', (error as Error).message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (progressLoading || !userProfile) {
     return <Loader />;
   }
@@ -261,6 +290,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                     <View style={styles.menuItemContent}>
                       <Icon name="log-out-outline" size={16} color={colors.light.primary} />
                       <Text style={styles.menuOptionText}>{t('Sign Out')}</Text>
+                    </View>
+                  </MenuOption>
+                  <MenuOption onSelect={handleDeleteAccount}>
+                    <View style={styles.menuItemContent}>
+                      <Icon name="trash-outline" size={16} color="#FF3B30" />
+                      <Text style={[styles.menuOptionText, { color: '#FF3B30' }]}>{t('Delete Account')}</Text>
                     </View>
                   </MenuOption>
                 </MenuOptions>
