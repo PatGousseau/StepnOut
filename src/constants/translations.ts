@@ -128,6 +128,8 @@ export const translations = {
     'Track your progress': 'Monitora i tuoi progressi',
     'View your streaks and challenges completed.': 'Visualizza le tue serie e le sfide completate.',
     'Done': 'Fatto',
+    'Share your thoughts, start a discussion, or share an achievement...': 
+      'Condividi i tuoi pensieri, inizia una discussione o condividi un traguardo...',
   },
   en: {
     'Home': 'Home',
@@ -219,5 +221,7 @@ export const translations = {
     'Send Feedback': 'Send Feedback',
     "What's on your mind?": "What's on your mind?",
     'Thank you for your feedback!': 'Thank you for your feedback!',
+    'Share your thoughts, start a discussion, or share an achievement...': 
+      'Share your thoughts, start a discussion, or share an achievement...',
   }
 }; 

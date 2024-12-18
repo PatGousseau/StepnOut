@@ -89,6 +89,18 @@ const MenuSidebar: React.FC<MenuSidebarProps> = () => {
     extrapolate: 'clamp',
   });
 
+  const handleOverlayPress = () => {
+    if (isOpen) {
+      setIsOpen(false);
+      Animated.spring(translateX, {
+        toValue: -SIDEBAR_WIDTH,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }).start();
+    }
+  };
+
   return (
     <View
       style={[styles.container, { pointerEvents: isOpen ? 'auto' : 'box-none' }]}
@@ -102,6 +114,7 @@ const MenuSidebar: React.FC<MenuSidebarProps> = () => {
           }
         ]}
         pointerEvents={isOpen ? 'auto' : 'none'}
+        onTouchEnd={handleOverlayPress}
       />
       <View style={styles.overlay}>
         <Animated.View 
@@ -127,17 +140,34 @@ const MenuSidebar: React.FC<MenuSidebarProps> = () => {
                       color={colors.light.primary} 
                     />
                     <View style={styles.languageToggle}>
-                      <Text style={styles.languageText} numberOfLines={1}>
-                        <Text >
-                          {language === 'it' ? 'Ita' : 'Eng'}
+                      <TouchableOpacity 
+                        style={[
+                          styles.languageButton, 
+                          language === 'en' && styles.activeLanguage
+                        ]}
+                        onPress={() => language === 'it' && toggleLanguage()}
+                      >
+                        <Text style={[
+                          styles.languageText,
+                          language === 'en' && styles.activeLanguageText
+                        ]}>
+                          ENG
                         </Text>
-                      </Text>
-                      <Switch
-                        value={language === 'it'}
-                        onValueChange={toggleLanguage}
-                        trackColor={{ false: colors.light.primary, true: colors.light.primary }}
-                        thumbColor={colors.light.background}
-                      />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[
+                          styles.languageButton, 
+                          language === 'it' && styles.activeLanguage
+                        ]}
+                        onPress={() => language === 'en' && toggleLanguage()}
+                      >
+                        <Text style={[
+                          styles.languageText,
+                          language === 'it' && styles.activeLanguageText
+                        ]}>
+                          ITA
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -228,12 +258,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    justifyContent: 'flex-start',
+  },
+  languageButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: colors.light.background,
+    borderWidth: 1,
+    borderColor: colors.light.primary,
+  },
+  activeLanguage: {
+    backgroundColor: colors.light.primary,
   },
   languageText: {
-    width: 40,
-    fontSize: 16,
+    fontSize: 14,
     color: colors.light.primary,
-    textAlign: 'left',
+    fontWeight: '500',
+  },
+  activeLanguageText: {
+    color: colors.light.background,
   },
   title: {
     fontSize: 24,

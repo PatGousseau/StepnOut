@@ -142,40 +142,46 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
       animationType="none"
       onRequestClose={handleClose}
     >
-      <View style={styles.overlay}>
+      <TouchableWithoutFeedback onPress={handleClose}>
         <Animated.View 
           style={[
-            styles.sidebar,
-            {
-              transform: [{ translateX }],
-              opacity
-            }
+            styles.overlay,
+            { opacity }
           ]}
-          {...panResponder.panHandlers}
         >
-          <SafeAreaView style={styles.safeArea}>
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <Text style={styles.title}>{t('Notifications')}</Text>
+          <Animated.View 
+            style={[
+              styles.sidebar,
+              {
+                transform: [{ translateX }],
+              }
+            ]}
+            {...panResponder.panHandlers}
+          >
+            <SafeAreaView style={styles.safeArea}>
+              <View style={styles.header}>
+                <View style={styles.headerContent}>
+                  <Text style={styles.title}>{t('Notifications')}</Text>
+                </View>
+                <View style={styles.divider} />
               </View>
-              <View style={styles.divider} />
-            </View>
 
-            {notifications.length > 0 ? (
-              <FlatList
-                data={notifications}
-                renderItem={renderNotification}
-                keyExtractor={item => item.notification_id.toString()}
-                contentContainerStyle={styles.listContainer}
-              />
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>{t('No notifications yet')}</Text>
-              </View>
-            )}
-          </SafeAreaView>
+              {notifications.length > 0 ? (
+                <FlatList
+                  data={notifications}
+                  renderItem={renderNotification}
+                  keyExtractor={item => item.notification_id.toString()}
+                  contentContainerStyle={styles.listContainer}
+                />
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>{t('No notifications yet')}</Text>
+                </View>
+              )}
+            </SafeAreaView>
+          </Animated.View>
         </Animated.View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };

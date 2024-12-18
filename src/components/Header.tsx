@@ -3,7 +3,6 @@ import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform } fro
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
-import { useNotifications } from '../hooks/useNotifications';
 
 interface HeaderProps {
   onNotificationPress: () => void;
