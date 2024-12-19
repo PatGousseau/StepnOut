@@ -34,6 +34,7 @@ function RootLayoutNav() {
   const { markAllAsRead, notifications, unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
@@ -95,7 +96,7 @@ function RootLayoutNav() {
           <StatusBar backgroundColor={colors.light.background} style="dark" />
           <Header 
             onNotificationPress={handleNotificationPress}
-            onMenuPress={() => {}}
+            onMenuPress={() => setShowMenu(true)}
             onFeedbackPress={() => setShowFeedback(true)}
             unreadCount={unreadCount}
           />
@@ -131,7 +132,10 @@ function RootLayoutNav() {
             onClose={() => setShowNotifications(false)}
             notifications={notifications}
           />
-          <MenuSidebar />
+          <MenuSidebar 
+            isOpen={showMenu}
+            onClose={() => setShowMenu(false)}
+          />
           <FeedbackModal 
             isVisible={showFeedback}
             onClose={() => setShowFeedback(false)}

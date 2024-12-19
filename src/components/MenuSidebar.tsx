@@ -17,15 +17,27 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 
 interface MenuSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.5;
 const HANDLE_WIDTH = 10;
 
-const MenuSidebar: React.FC<MenuSidebarProps> = () => {
+const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen: propIsOpen, onClose }) => {
   const { t, language, toggleLanguage } = useLanguage();
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(propIsOpen);
+
+  React.useEffect(() => {
+    setIsOpen(propIsOpen);
+    Animated.spring(translateX, {
+      toValue: propIsOpen ? 0 : -SIDEBAR_WIDTH,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
+  }, [propIsOpen]);
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -48,6 +60,7 @@ const MenuSidebar: React.FC<MenuSidebarProps> = () => {
       
       if (shouldClose) {
         setIsOpen(false);
+        onClose();
         Animated.spring(translateX, {
           toValue: -SIDEBAR_WIDTH,
           useNativeDriver: true,
@@ -90,15 +103,14 @@ const MenuSidebar: React.FC<MenuSidebarProps> = () => {
   });
 
   const handleOverlayPress = () => {
-    if (isOpen) {
-      setIsOpen(false);
-      Animated.spring(translateX, {
-        toValue: -SIDEBAR_WIDTH,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    }
+    setIsOpen(false);
+    onClose();
+    Animated.spring(translateX, {
+      toValue: -SIDEBAR_WIDTH,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start();
   };
 
   return (

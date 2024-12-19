@@ -16,7 +16,12 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onMenuPress}>
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('Logo clicked!');
+            onMenuPress();
+          }}
+        >
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
         <Text style={styles.stepnOut}>Stepn Out</Text>
