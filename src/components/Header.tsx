@@ -3,7 +3,6 @@ import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform } fro
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
-import { useNotifications } from '../hooks/useNotifications';
 
 interface HeaderProps {
   onNotificationPress: () => void;
@@ -17,7 +16,12 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onMenuPress}>
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('Logo clicked!');
+            onMenuPress();
+          }}
+        >
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
         <Text style={styles.stepnOut}>Stepn Out</Text>

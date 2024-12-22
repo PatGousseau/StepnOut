@@ -132,6 +132,8 @@ export const translations = {
     'Are you sure you want to delete your account? This action cannot be undone.': 
       'Sei sicuro di voler eliminare il tuo account? Questa azione non può essere annullata.',
     'Failed to delete account': 'Impossibile eliminare l\'account',
+    'Share your thoughts, start a discussion, or share an achievement...': 
+      'Condividi i tuoi pensieri, inizia una discussione o condividi un traguardo...',
   },
   en: {
     'Home': 'Home',
@@ -227,5 +229,7 @@ export const translations = {
     'Are you sure you want to delete your account? This action cannot be undone.': 
       'Are you sure you want to delete your account? This action cannot be undone.',
     'Failed to delete account': 'Failed to delete account',
+    'Share your thoughts, start a discussion, or share an achievement...': 
+      'Share your thoughts, start a discussion, or share an achievement...',
   }
 }; 

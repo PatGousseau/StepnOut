@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { Text } from './StyledText';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadMedia } from '../utils/handleMediaUpload';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const CreatePost = () => {
   const { user } = useAuth();
@@ -17,10 +18,11 @@ const CreatePost = () => {
   const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const inputAccessoryViewID = 'uniqueID';
+  const { t } = useLanguage();
 
   const handleSubmit = async () => {
     if (!user) {
-      alert('You must be logged in to submit a post.');
+      alert(t('You must be logged in to submit a post.'));
       return;
     }
 
@@ -40,7 +42,7 @@ const CreatePost = () => {
       setModalVisible(false);
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Error submitting post.');
+      alert(t('Error submitting post.'));
     }
   };
 
@@ -54,7 +56,7 @@ const CreatePost = () => {
       setVideoThumbnail(result.videoThumbnail);
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert('Error uploading file');
+      alert(t('Error uploading file'));
     } finally {
       setIsUploading(false);
     }
@@ -125,7 +127,7 @@ const CreatePost = () => {
                   multiline
                   scrollEnabled={true}
                   textAlignVertical="top"
-                  placeholder="Share your thoughts, start a discussion, or share an achievement..."
+                  placeholder={t('Share your thoughts, start a discussion, or share an achievement...')}
                   placeholderTextColor="#999"
                   value={postText}
                   onChangeText={setPostText}
@@ -137,11 +139,11 @@ const CreatePost = () => {
                     style={styles.headerButton} 
                     onPress={() => setModalVisible(false)}
                   >
-                    <Text style={styles.cancelText}>Cancel</Text>
+                    <Text style={styles.cancelText}>{t('Cancel')}</Text>
                   </TouchableOpacity>
                   
                   {isUploading && (
-                    <Text style={styles.uploadingText}>Uploading...</Text>
+                    <Text style={styles.uploadingText}>{t('Uploading...')}</Text>
                   )}
                   
                   <TouchableOpacity 
@@ -154,7 +156,7 @@ const CreatePost = () => {
                     disabled={isUploading}
                   >
                     <Text style={[styles.buttonText, isUploading && styles.disabledButtonText]}>
-                      Submit
+                      {t('Submit')}
                     </Text>
                   </TouchableOpacity>
                 </View>
