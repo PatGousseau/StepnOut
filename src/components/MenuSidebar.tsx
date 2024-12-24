@@ -19,12 +19,17 @@ import { Ionicons } from '@expo/vector-icons';
 interface MenuSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  enableSwiping?: boolean; // Add new prop
 }
 
 const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.5;
 const HANDLE_WIDTH = 10;
 
-const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen: propIsOpen, onClose }) => {
+const MenuSidebar: React.FC<MenuSidebarProps> = ({
+  isOpen: propIsOpen, 
+  onClose,
+  enableSwiping = true
+}) => {
   const { t, language, toggleLanguage } = useLanguage();
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const [isOpen, setIsOpen] = useState(propIsOpen);
@@ -40,8 +45,20 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen: propIsOpen, onClose }
   }, [propIsOpen]);
 
   const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: () => {
+      console.log('onStartShouldSetPanResponder', { isOpen, enableSwiping });
+      return isOpen || enableSwiping;
+    },
     onMoveShouldSetPanResponder: (_, gestureState) => {
+      console.log('onMoveShouldSetPanResponder', { 
+        isOpen, 
+        enableSwiping, 
+        dx: gestureState.dx 
+      });
+      
+      if (!isOpen) {
+        return enableSwiping && Math.abs(gestureState.dx) > 5;
+      }
       return Math.abs(gestureState.dx) > 5;
     },
     onPanResponderMove: (_, gestureState) => {

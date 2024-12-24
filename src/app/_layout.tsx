@@ -15,6 +15,7 @@ import NotificationSidebar from '../components/NotificationSidebar';
 import MenuSidebar from '../components/MenuSidebar';
 import FeedbackModal from '../components/FeedbackModal';
 import { useNotifications } from '../hooks/useNotifications';
+import { usePathname } from 'expo-router';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -35,6 +36,12 @@ function RootLayoutNav() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const pathname = usePathname();
+
+  // Check if we're on a detail page
+  const isDetailPage = pathname.includes('/post/') || 
+                      pathname.includes('/profile/') || 
+                      pathname.includes('/challenge/');
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
@@ -135,6 +142,7 @@ function RootLayoutNav() {
           <MenuSidebar 
             isOpen={showMenu}
             onClose={() => setShowMenu(false)}
+            enableSwiping={!isDetailPage}
           />
           <FeedbackModal 
             isVisible={showFeedback}

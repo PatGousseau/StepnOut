@@ -57,7 +57,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
       const now = new Date();
       const createdAt = new Date(data.created_at);
       const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-      const daysRemaining = 7 - daysSinceCreation;
+      const daysRemaining = 7 // - daysSinceCreation;
 
       setChallenge({
         ...data,
