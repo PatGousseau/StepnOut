@@ -106,6 +106,7 @@ function RootLayoutNav() {
             onMenuPress={() => setShowMenu(true)}
             onFeedbackPress={() => setShowFeedback(true)}
             unreadCount={unreadCount}
+            isDetailPage={isDetailPage}
           />
           <Stack
             screenOptions={{

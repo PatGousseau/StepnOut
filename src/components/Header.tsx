@@ -10,20 +10,29 @@ interface HeaderProps {
   onMenuPress: () => void;
   onFeedbackPress: () => void;
   unreadCount: number;
+  isDetailPage?: boolean;
 }
 
-const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount }: HeaderProps) => {
+const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount, isDetailPage = false }: HeaderProps) => {
   
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => {
-            console.log('Logo clicked!');
-            onMenuPress();
+            if (isDetailPage) {
+              router.back();
+            } else {
+              console.log('Logo clicked!');
+              onMenuPress();
+            }
           }}
         >
-          <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+          {isDetailPage ? (
+            <Ionicons name="arrow-back" size={28} color={colors.light.primary} />
+          ) : (
+            <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+          )}
         </TouchableOpacity>
         
         <TouchableOpacity onPress={() => router.push('/(tabs)')}>
