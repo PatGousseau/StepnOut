@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, initializeSupabase } from '../lib/supabase';
 
 type AuthContextType = {
   session: Session | null;
@@ -20,37 +20,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Listen for auth changes
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        // Fetch admin status
-        const { data } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-        setIsAdmin(data?.is_admin || false);
-      }
-      setLoading(false);
-    });
+    // Initialize Supabase first
+    initializeSupabase().then(() => {
+      // Get initial session
+      supabase.auth.getSession()
+        .then(async ({ data: { session } }) => {
+          setSession(session);
+          if (session?.user) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('is_admin')
+              .eq('id', session.user.id)
+              .single();
+            setIsAdmin(data?.is_admin || false);
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+        });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        // Fetch admin status
-        const { data } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-        setIsAdmin(data?.is_admin || false);
-      } else {
-        setIsAdmin(false);
-      }
-    });
+      // Handle subsequent auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        setSession(session);
+        if (session?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single();
+          setIsAdmin(data?.is_admin || false);
+        } else {
+          setIsAdmin(false);
+        }
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    });
   }, []);
 
   const signUp = async (
