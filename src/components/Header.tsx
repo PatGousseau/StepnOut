@@ -3,6 +3,7 @@ import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform } fro
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
+import { router } from 'expo-router';
 
 interface HeaderProps {
   onNotificationPress: () => void;
@@ -24,7 +25,10 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
         >
           <Image source={require('../assets/images/logo.png')} style={styles.logo} />
         </TouchableOpacity>
-        <Text style={styles.stepnOut}>Stepn Out</Text>
+        
+        <TouchableOpacity onPress={() => router.push('/(tabs)')}>
+          <Text style={styles.stepnOut}>Stepn Out</Text>
+        </TouchableOpacity>
         
         <View style={styles.headerRight}>
           <TouchableOpacity 
