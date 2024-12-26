@@ -10,16 +10,13 @@ import { PatrizioExample } from './Challenge';
 import { ShareExperience } from './Challenge';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
-import Post from './Post';
-import { User } from '../models/User';
-import { MaterialIcons } from '@expo/vector-icons';
 
 interface ChallengePageProps {
   id?: number;
 }
 
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const params = useLocalSearchParams();
   const challengeId = id || (typeof params.id === 'string' ? parseInt(params.id) : params.id);
   
@@ -116,13 +113,25 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
             ? t(challenge.daysRemaining === 1 ? 'Ends in 1 day' : 'Ends in (days) days', { days: challenge.daysRemaining })
             : t('Past challenge')}
         </Text>
-        <ChallengeCard challenge={challenge} />
-        <PatrizioExample challenge={challenge} />
+        <ChallengeCard 
+          challenge={{
+            ...challenge,
+            title: language === 'it' ? challenge.title_it : challenge.title,
+            description: language === 'it' ? challenge.description_it : challenge.description,
+          }} 
+        />
+        <PatrizioExample 
+          challenge={{
+            ...challenge,
+            title: language === 'it' ? challenge.title_it : challenge.title,
+            description: language === 'it' ? challenge.description_it : challenge.description,
+          }}
+        />
         {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
       </View>
 
       {/* Challenge Submissions Section */}
-      <View style={styles.submissionsContainer}>
+      {/* <View style={styles.submissionsContainer}>
         <TouchableOpacity 
           onPress={() => setIsSubmissionsExpanded(!isSubmissionsExpanded)}
           style={styles.submissionsHeader}
@@ -156,7 +165,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
             )}
           </>
         )}
-      </View>
+      </View> */}
     </ScrollView>
   );
 };

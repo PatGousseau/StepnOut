@@ -1,7 +1,9 @@
 export interface Challenge {
     id: number;
     title: string;
+    title_it: string;
     description: string;
+    description_it: string;
     difficulty: 'easy' | 'medium' | 'hard';
     created_by: string;
     created_at: Date;

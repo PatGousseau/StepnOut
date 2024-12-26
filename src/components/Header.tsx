@@ -29,7 +29,7 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
           }}
         >
           {isDetailPage ? (
-            <Ionicons name="arrow-back" size={28} color={colors.light.primary} />
+            <Ionicons name="chevron-back" size={24} color={colors.light.primary} />
           ) : (
             <Image source={require('../assets/images/logo.png')} style={styles.logo} />
           )}

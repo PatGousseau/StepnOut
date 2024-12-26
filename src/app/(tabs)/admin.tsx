@@ -3,7 +3,6 @@ import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Image, Scro
 import DropDownPicker from 'react-native-dropdown-picker';
 import { supabase } from '../../lib/supabase';
 import { colors } from '../../constants/Colors';
-import * as ImagePicker from 'expo-image-picker';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '../../contexts/AuthContext';
 import { sendNewChallengeNotificationToAll } from '../../lib/notificationsService';
@@ -12,7 +11,9 @@ import { uploadMedia } from '../../utils/handleMediaUpload';
 type Challenge = {
   id: number;
   title: string;
+  title_it: string;
   description: string;
+  description_it: string;
   difficulty: 'easy' | 'medium' | 'hard';
   created_at: string;
   image_media_id: number | null;
@@ -28,6 +29,8 @@ const ChallengeCreation: React.FC = () => {
   const [imageMediaId, setImageMediaId] = useState<number | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [titleIt, setTitleIt] = useState<string>('');
+  const [descriptionIt, setDescriptionIt] = useState<string>('');
 
   const { user } = useAuth();
 
@@ -73,12 +76,14 @@ const ChallengeCreation: React.FC = () => {
   const createChallengeInDatabase = async () => {
     try {
       const newChallenge = {
-        title, 
-        description, 
-        difficulty, 
+        title,
+        title_it: titleIt, 
+        description,
+        description_it: descriptionIt,
+        difficulty,
         created_by: user?.id,
-        created_at: new Date().toISOString().split('T')[0], 
-        updated_at: new Date().toISOString().split('T')[0], 
+        created_at: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString().split('T')[0],
         image_media_id: imageMediaId,
       };
   
@@ -177,6 +182,23 @@ const ChallengeCreation: React.FC = () => {
           value={description}
           onChangeText={setDescription}
           placeholder="Enter description"
+          multiline
+        />
+
+        <Text style={styles.label}>Italian Title</Text>
+        <TextInput 
+          style={styles.input} 
+          value={titleIt} 
+          onChangeText={setTitleIt} 
+          placeholder="Enter Italian title" 
+        />
+
+        <Text style={styles.label}>Italian Description</Text>
+        <TextInput
+          style={styles.input}
+          value={descriptionIt}
+          onChangeText={setDescriptionIt}
+          placeholder="Enter Italian description"
           multiline
         />
 

@@ -25,17 +25,16 @@ interface ChallengeCardProps {
     const { t } = useLanguage();
     const getDifficultyColor = (difficulty: string) => {
       switch (difficulty.toLowerCase()) {
-        case t('easy').toLowerCase():
+        case 'easy':
           return colors.light.easyGreen;
-        case t('medium').toLowerCase():
+        case 'medium':
           return colors.light.mediumYellow;
-        case t('hard').toLowerCase():
+        case 'hard':
           return colors.light.hardRed;
         default:
           return colors.light.easyGreen;
       }
     };
-
 
     return (
       <>
@@ -53,7 +52,7 @@ interface ChallengeCardProps {
                 { backgroundColor: getDifficultyColor(challenge.difficulty) }
               ]}>
                 <Text style={challengeStyles.difficultyBadgeText}>
-                  {t(challenge.difficulty)}
+                  {t(challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1))}
                 </Text>
               </View>
             </Text>

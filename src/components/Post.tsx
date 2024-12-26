@@ -139,11 +139,7 @@ const Post: React.FC<PostProps> = ({
       return;
     }
 
-    if (isPostPage) {
-      setShowFullScreenImage(true);
-    } else {
-      handlePostPress();
-    }
+    setShowFullScreenImage(true);
   };
 
   const renderMedia = () => {
@@ -187,8 +183,10 @@ const Post: React.FC<PostProps> = ({
     fetchComments();
   };
 
-  const handlePostPress = () => {
-    router.push(`/post/${post.id}`);
+  const handlePostPress = (e: GestureResponderEvent) => {
+    if (e.target === e.currentTarget) {
+      router.push(`/post/${post.id}`);
+    }
   };
 
   const handleProfilePress = (e: GestureResponderEvent) => {
