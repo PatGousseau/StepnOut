@@ -64,46 +64,16 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    // backgroundColor: colors.light.primary,
-    backgroundColor: colors.light.background
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 0,
-    paddingBottom: Platform.OS === 'android' ? 10 : 16,
-  },
-  logo: {
-    width: 28,
-    height: 28,
-    marginRight: 32,
-  },
-  stepnOut: {
-    fontSize: 18,
-    fontFamily: 'PingFangSC-Bold',
-    fontWeight: 'bold',
-    color: colors.light.primary,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  notificationIcon: {
-    position: 'relative',
-  },
   badge: {
+    alignItems: 'center',
+    backgroundColor: colors.light.alertRed,
+    borderRadius: 10,
+    height: 18, 
+    justifyContent: 'center',
     position: 'absolute',
     right: 0,
     top: -4,
-    backgroundColor: colors.light.alertRed, 
-    borderRadius: 10,
     width: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   badgeText: {
     color: '#fff',
@@ -111,8 +81,38 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   feedbackIcon: {
-    position: 'relative',
     marginRight: 16,
+    position: 'relative',
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: Platform.OS === 'android' ? 10 : 16,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+  },
+  headerRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  logo: {
+    height: 28,
+    marginRight: 32,
+    width: 28,
+  },
+  notificationIcon: {
+    position: 'relative',
+  },
+  safeArea: {
+    // backgroundColor: colors.light.primary,
+    backgroundColor: colors.light.background
+  },
+  stepnOut: {
+    color: colors.light.primary,
+    fontFamily: 'PingFangSC-Bold',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

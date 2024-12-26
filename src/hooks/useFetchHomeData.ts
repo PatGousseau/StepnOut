@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase, supabaseStorageUrl } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Post } from '../types';
 import { User } from '../models/User';
 import { useAuth } from '../contexts/AuthContext';

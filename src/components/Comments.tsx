@@ -306,112 +306,112 @@ const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.light.background,
-    padding: 10,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    flex: 1,
-  },
-  dragHandle: {
+  commentAvatar: {
+    borderRadius: 15,
     height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  dragIndicator: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#DDDDDD',
-    borderRadius: 3,
+    marginRight: 10,
+    width: 30,
   },
   commentContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginBottom: 10,
-  },
-  commentAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 10,
   },
   commentContent: {
     flex: 1,
   },
-  nameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  displayName: {
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  username: {
-    fontSize: 12,
-    color: '#666',
-  },
   commentText: {
-    fontSize: 14,
     color: '#333',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingHorizontal: 8,
-    marginBottom: 8,
-  },
-  input: {
-    flex: 1,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 5,
-    marginRight: 10,
-    backgroundColor: '#f0f0f0',
-  },
-  postButton: {
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  postButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-  },
-  postButtonDisabled: {
-    backgroundColor: colors.light.primary + '80',
-  },
-  commentsWrapper: {
-    flex: 1,
+    fontSize: 14,
   },
   commentsList: {
     flexGrow: 1,
   },
-  timestamp: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 5,
+  commentsWrapper: {
+    flex: 1,
+  },
+  container: {
+    backgroundColor: colors.light.background,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    flex: 1,
+    padding: 10,
+  },
+  displayName: {
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  dragHandle: {
+    alignItems: 'center',
+    height: 30,
+    justifyContent: 'center',
+    marginBottom: 5,
+  },
+  dragIndicator: {
+    backgroundColor: '#DDDDDD',
+    borderRadius: 3,
+    height: 5,
+    width: 40,
   },
   emptyContainer: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     paddingVertical: 20,
   },
   emptyText: {
     color: '#666',
     fontSize: 16,
   },
+  input: {
+    backgroundColor: '#f0f0f0',
+    borderColor: '#ccc',
+    borderRadius: 5,
+    borderWidth: 1,
+    flex: 1,
+    marginRight: 10,
+    padding: 10,
+  },
+  inputContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 8,
+    marginTop: 10,
+    paddingHorizontal: 8,
+  },
   loadingContainer: {
+    alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+  },
+  nameContainer: {
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  postButton: {
+    backgroundColor: colors.light.primary,
+    borderRadius: 5,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  postButtonDisabled: {
+    backgroundColor: colors.light.primary + '80',
+  },
+  postButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
   safeArea: {
     flex: 1,
+  },
+  timestamp: {
+    color: '#666',
+    fontSize: 12,
+    marginLeft: 5,
+  },
+  username: {
+    color: '#666',
+    fontSize: 12,
   },
 });

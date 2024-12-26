@@ -7,7 +7,6 @@ import {
   Platform,
   Animated,
   TouchableOpacity,
-  Switch,
   Linking,
   PanResponder,
 } from 'react-native';
@@ -238,93 +237,93 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({
 };
 
 const styles = StyleSheet.create({
+  activeLanguage: {
+    backgroundColor: colors.light.primary,
+  },
+  activeLanguageText: {
+    color: colors.light.background,
+  },
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
     zIndex: 1000,
   },
-  overlay: {
-    flex: 1,
-  },
-  sidebar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: SIDEBAR_WIDTH + HANDLE_WIDTH,
+  handle: {
     backgroundColor: 'transparent',
+    bottom: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: HANDLE_WIDTH,
   },
-  sidebarContent: {
-    width: SIDEBAR_WIDTH,
-    height: '100%',
+  languageButton: {
     backgroundColor: colors.light.background,
-    borderTopRightRadius: 16,
-    borderBottomRightRadius: 16,
+    borderColor: colors.light.primary,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  safeArea: {
-    flex: 1,
+  languageText: {
+    color: colors.light.primary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  languageToggle: {
     alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? 16 : 0,
+    flexDirection: 'row',
+    flex: 1,
+    gap: 8,
+    justifyContent: 'flex-start',
   },
   menuItem: {
     padding: 16,
     width: '100%',
   },
   menuItemContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     gap: 12,
   },
   menuText: {
+    color: colors.light.primary,
+    flex: 1,
     fontSize: 16,
-    color: colors.light.primary,
+  },
+  overlay: {
     flex: 1,
   },
-  languageToggle: {
-    flexDirection: 'row',
+  safeArea: {
     alignItems: 'center',
-    gap: 8,
     flex: 1,
-    justifyContent: 'flex-start',
+    paddingTop: Platform.OS === 'android' ? 16 : 0,
   },
-  languageButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  sidebar: {
+    backgroundColor: 'transparent',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    top: 0,
+    width: SIDEBAR_WIDTH + HANDLE_WIDTH,
+  },
+  sidebarContent: {
     backgroundColor: colors.light.background,
-    borderWidth: 1,
-    borderColor: colors.light.primary,
-  },
-  activeLanguage: {
-    backgroundColor: colors.light.primary,
-  },
-  languageText: {
-    fontSize: 14,
-    color: colors.light.primary,
-    fontWeight: '500',
-  },
-  activeLanguageText: {
-    color: colors.light.background,
+    borderBottomRightRadius: 16,
+    borderTopRightRadius: 16,
+    height: '100%',
+    width: SIDEBAR_WIDTH,
   },
   title: {
+    alignSelf: 'flex-start',
+    color: colors.light.primary,
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.light.primary,
-    alignSelf: 'flex-start',
-    marginLeft: 16,
     marginBottom: 16,
+    marginLeft: 16,
     marginTop: 16,
-  },
-  handle: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: HANDLE_WIDTH,
-    backgroundColor: 'transparent',
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -23,9 +23,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { posts, userMap, loading: postsLoading, fetchAllData } = useFetchHomeData();
-  const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
-  const [isSubmissionsExpanded, setIsSubmissionsExpanded] = useState(false);
+  const { posts, loading: postsLoading, fetchAllData } = useFetchHomeData();
 
   // Filter posts for this challenge
   const challengePosts = posts.filter(post => post.challenge_id === challengeId);
@@ -171,53 +169,53 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 };
 
 const styles = StyleSheet.create({
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
-    flex: 1,
     backgroundColor: colors.light.background,
+    flex: 1,
   },
   content: {
-    padding: 20,
     backgroundColor: colors.light.cardBg,
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 24,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.light.primary,
-    textAlign: 'center',
+    padding: 20,
   },
   endsIn: {
-    fontSize: 14,
     color: colors.light.lightText,
+    fontSize: 14,
     marginBottom: 20,
     textAlign: 'center',
   },
-  submissionsContainer: {
-    padding: 16,
+  noSubmissions: {
+    color: colors.light.lightText,
     marginTop: 20,
+    textAlign: 'center',
+  },
+  submissionsContainer: {
+    marginTop: 20,
+    padding: 16,
   },
   submissionsHeader: {
     marginBottom: 16,
   },
-  submissionsTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   submissionsTitle: {
+    color: colors.light.text,
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.light.text,
     marginRight: 4,
   },
-  noSubmissions: {
+  submissionsTitleContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  title: {
+    color: colors.light.primary,
+    fontSize: 28,
+    fontWeight: 'bold',
     textAlign: 'center',
-    color: colors.light.lightText,
-    marginTop: 20,
   },
 });

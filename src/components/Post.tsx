@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { 
   View, 
   StyleSheet,
@@ -448,102 +448,100 @@ const Post: React.FC<PostProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 8,
-    padding: 10,
-    paddingBottom: 16,
+  challengeBox: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.light.accent2,
+    borderColor: colors.light.primary,
     borderRadius: 8,
-    borderColor: '#ccc',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderWidth: 1.25,
+    marginBottom: 4,
+    marginTop: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    width: '100%',
   },
   challengeContainer: {
     // backgroundColor: '#ffeecc',
     // borderWidth: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+  challengeTitle: {
+    color: colors.light.primary,
+    fontSize: 13,
   },
-  profilePicture: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
+  closeButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 10,
+    padding: 5,
+    position: 'absolute',
+    right: 10,
+    top: 10,
   },
-  nameContainer: {
-    flex: 1,
-  },
-  userInfoContainer: {
-    flexDirection: 'column',
-  },
-  name: {
+  closeButtonText: {
+    fontSize: 20,
     fontWeight: 'bold',
-    fontSize: 14,
   },
-  username: {
-    fontSize: 12,
-    color: '#666',
-  },
-  text: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  mediaContent: {
-    width: '100%',
-    height: undefined,
-    aspectRatio: 1,
+  container: {
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 8,
-    marginTop: 8,
+    marginBottom: 8,
+    padding: 10,
+    paddingBottom: 16,
   },
   footer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    flexDirection: 'row',
     marginLeft: 5,
+    marginTop: 10,
+  },
+  fullScreenContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  fullScreenHeader: {
+    padding: 16,
+    position: 'absolute',
+    right: 0,
+    top: 40,
+    zIndex: 9999,
+  },
+  fullScreenImage: {
+    height: '100%',
+    width: '100%',
+  },
+  fullScreenImageWrapper: {
+    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  fullScreenMenuTrigger: {
+    padding: 8,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 8,
   },
   iconContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     marginRight: 32, 
   },
   iconText: {
-    marginLeft: 4,
-    fontSize: 14,
     color: '#5A5A5A',
+    fontSize: 14,
+    marginLeft: 4,
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    height: '100%',
-  },
-  modalBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  modalContainer: {
+  mediaContent: {
+    aspectRatio: 1,
+    borderRadius: 8,
+    height: undefined,
+    marginTop: 8,
     width: '100%',
-    maxHeight: '75%',
-    height: '100%',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullScreenImageWrapper: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   menuContainer: {
     marginLeft: 'auto',
@@ -553,47 +551,49 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 10,
   },
-  challengeBox: {
-    backgroundColor: colors.light.accent2,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1.25,
-    borderColor: colors.light.primary,
-    marginBottom: 4,
-    marginTop: 4,
-    alignSelf: 'flex-start',
+  modalBackground: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  modalContainer: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'flex-end',
+    maxHeight: '75%',
     width: '100%',
   },
-  challengeTitle: {
-    color: colors.light.primary,
-    fontSize: 13,
+  modalOverlay: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'flex-end',
   },
-  closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    padding: 5,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  closeButtonText: {
-    fontSize: 20,
+  name: {
+    fontSize: 14,
     fontWeight: 'bold',
   },
-  fullScreenImage: {
-    width: '100%',
-    height: '100%',
+  nameContainer: {
+    flex: 1,
   },
-  fullScreenHeader: {
-    position: 'absolute',
-    top: 40,
-    right: 0,
-    zIndex: 9999,
-    padding: 16,
+  profilePicture: {
+    borderRadius: 20,
+    height: 40,
+    marginRight: 10,
+    width: 40,
   },
-  fullScreenMenuTrigger: {
-    padding: 8,
+  text: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  userInfoContainer: {
+    flexDirection: 'column',
+  },
+  username: {
+    color: '#666',
+    fontSize: 12,
   },
 });
 

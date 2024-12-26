@@ -8,10 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { FontAwesome } from '@expo/vector-icons';
 import { colors } from '../constants/Colors';
-import { supabase } from '../lib/supabase';
-import * as ImagePicker from 'expo-image-picker';
 import { Loader } from './Loader';
-import FeedbackButton from './FeedbackButton';
 import { User } from '../models/User';
 import { profileService } from '../services/profileService';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -348,149 +345,149 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    backgroundColor: colors.light.background,
-    flex: 1,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   avatar: {
-    width: 80,
-    height: 80,
     borderRadius: 40,
-  },
-  userInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  userInfoStacked: {
-    marginLeft: 16,
-    gap: 4,
-  },
-  username: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#0D1B1E',
-  },
-  userTitle: {
-    fontSize: 16,
-    color: '#7F8C8D',
-  },
-  pastChallengesTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 16,
-    color: '#0D1B1E',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  menuOptionText: {
-    fontSize: 14,
-    color: colors.light.primary,
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullScreenImage: {
-    width: '100%',
-    height: '80%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-    zIndex: 1,
-    padding: 10,
+    height: 80,
+    width: 80,
   },
   avatarLoader: {
+    alignItems: 'center',
     backgroundColor: '#e1e1e1',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.light.primary,
+  cancelButton: {
+    alignItems: 'center',
+    paddingBottom: 12,
+  },
+  cancelButtonText: {
+    color: colors.light.primary,
+    fontSize: 14,
+    fontWeight: '500',
+    paddingBottom: 12,
+    textAlign: 'center',
+  },
+  closeButton: {
+    padding: 10,
+    position: 'absolute',
+    right: 20,
+    top: 40,
+    zIndex: 1,
+  },
+  container: {
+    backgroundColor: colors.light.background,
+    flex: 1,
+    padding: 16,
+  },
+  editButtonEditProfile: {
+    alignItems: 'center',
+    backgroundColor: colors.light.primary,
     borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginBottom: 8,
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  editButtonTextEditProfile: {
+    color: '#fff',
+    fontWeight: '600',
   },
   editButtons: {
     flexDirection: 'row',
     gap: 8,
   },
-  editButtonEditProfile: {
-    backgroundColor: colors.light.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    flex: 1,
-    alignItems: 'center',
-  },
-  editButtonTextEditProfile: {
-    color: '#fff',
-    fontWeight: '600',
+  editButtonsContainer: {
+    flexDirection: 'column',
+    gap: 4,
+    marginBottom: -24,
+    marginTop: 4,
   },
   editInputContainer: {
     gap: 2,
   },
   editableText: {
     backgroundColor: '#fff',
+    borderColor: colors.light.primary,
     borderRadius: 4,
+    borderWidth: 1,
+    marginLeft: 7,
     paddingHorizontal: 8,
     paddingVertical: 0,
-    borderWidth: 1,
-    borderColor: colors.light.primary,
-    marginLeft: 7,
   },
-  editButtonsContainer: {
-    flexDirection: 'column',
-    gap: 4,
-    marginTop: 4,
-    marginBottom: -24,
+  fullScreenImage: {
+    height: '80%',
+    width: '100%',
+  },
+  headerButtons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 16,
+  },
+  headerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  input: {
+    borderColor: colors.light.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  menuItemContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  menuOptionText: {
+    color: colors.light.primary,
+    fontSize: 14,
+  },
+  modalContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  pastChallengesTitle: {
+    color: '#0D1B1E',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 16,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
   },
   saveButton: {
+    alignItems: 'center',
     backgroundColor: colors.light.primary,
+    borderRadius: 8,
     paddingHorizontal: 24,
     paddingVertical: 8,
-    borderRadius: 8,
-    alignItems: 'center',
   },
   saveButtonText: {
     color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
-    fontSize: 14,
   },
-  cancelButtonText: {
-    color: colors.light.primary,
-    fontWeight: '500',
-    fontSize: 14,
-    textAlign: 'center',
-    paddingBottom: 12,
-  },
-  cancelButton: {
-    paddingBottom: 12,
+  userInfo: {
     alignItems: 'center',
-  },
-  menuItemContent: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    gap: 16,
+  },
+  userInfoStacked: {
+    gap: 4,
+    marginLeft: 16,
+  },
+  userTitle: {
+    color: '#7F8C8D',
+    fontSize: 16,
+  },
+  username: {
+    color: '#0D1B1E',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Challenge, ChallengeWithCount } from '../types';
-import { sendNewChallengeNotification } from '../lib/notificationsService';
+import {  ChallengeWithCount } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export const useActiveChallenge = () => {

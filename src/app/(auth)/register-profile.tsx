@@ -170,82 +170,82 @@ export default function RegisterProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.light.background,
-      },
-      form: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: 20,
-      },
-      input: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        padding: 12,
-        marginBottom: 12,
-        borderRadius: 5,
-      },
-      button: {
-        backgroundColor: colors.light.primary,
-        padding: 15,
-        borderRadius: 5,
+    button: {
         alignItems: 'center',
+        backgroundColor: colors.light.primary,
+        borderRadius: 5,
+        padding: 15,
+      },
+      buttonDisabled: {
+        opacity: 0.7,
       },
       buttonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
       },
-      buttonDisabled: {
-        opacity: 0.7,
+      container: {
+        backgroundColor: colors.light.background,
+        flex: 1,
       },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  placeholderImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e1e1e1',
+      form: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: 20,
+      },
+      imageContainer: {
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
+    marginBottom: 10,
+    marginRight: 5,
   },
-  placeholderText: {
-    color: '#666',
-    fontSize: 14,
+  input: {
+        borderColor: '#ddd',
+        borderRadius: 5,
+        borderWidth: 1,
+        marginBottom: 12,
+        padding: 12,
+      },
+  inputContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  logo: {
+    height: 60,
+    marginBottom: 10,
+    width: 60,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  logo: {
-    width: 60,
-    height: 60,
-    marginBottom: 10,
+  placeholderImage: {
+    alignItems: 'center',
+    backgroundColor: '#e1e1e1',
+    borderColor: '#ddd',
+    borderRadius: 60,
+    borderWidth: 1,
+    height: 120,
+    justifyContent: 'center',
+    width: 120,
   },
-  stepnOut: {
-    fontSize: 24,
-    fontFamily: 'PingFangSC-Medium',
-    color: colors.light.primary,
+  placeholderText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  profileImage: {
+    borderRadius: 60,
+    height: 120,
+    width: 120,
   },
   profileSection: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: 'row',
     gap: 15,
+    marginBottom: 20,
   },
-  imageContainer: {
-    marginBottom: 10,
-    marginRight: 5,
-    justifyContent: 'center',
-  },
-  inputContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  stepnOut: {
+    color: colors.light.primary,
+    fontFamily: 'PingFangSC-Medium',
+    fontSize: 24,
   },
 });

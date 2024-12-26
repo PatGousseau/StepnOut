@@ -300,101 +300,61 @@ const ChallengeCreation: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.light.background,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  dropdownContainer: {
-    zIndex: 1000, // Ensure dropdown appears above other elements
-    marginBottom: 60, // Add space for the dropdown options
-  },
-  dropdown: {
-    marginTop: 8,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 16,
-  },
-  input: {
-    borderColor: '#ccc',
-    borderWidth: 1,
-    padding: 8,
-    borderRadius: 4,
-    marginTop: 8,
-  },
-  createChallengeButton: {
+  activateButton: {
     backgroundColor: colors.light.secondary,
-    width: 160,
-    paddingVertical: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    elevation: 5,
-    marginTop: 20,
+    borderRadius: 4,
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  activeButton: {
+    backgroundColor: colors.light.primary,
+    opacity: 0.7,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  mediaUploadButton: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  challengeActions: {
+    flexDirection: 'row',
     marginTop: 8,
-    height: 120,
-  },
-  uploadButtonText: {
-    color: '#666',
-    marginTop: 8,
-  },
-  mediaPreviewContainer: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
-  },
-  mediaPreview: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 8,
-    resizeMode: 'cover',
-  },
-  removeButton: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 12,
-    padding: 4,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 16,
-    color: colors.light.text,
   },
   challengeCard: {
     backgroundColor: 'white',
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
+    elevation: 3,
     flexDirection: 'row',
+    marginBottom: 16,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+  },
+  challengeDate: {
+    color: '#888',
+    fontSize: 12,
+  },
+  challengeDescription: {
+    color: '#444',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  challengeDifficulty: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 4,
   },
   challengeImage: {
-    width: 80,
-    height: 80,
     borderRadius: 8,
+    height: 80,
     marginRight: 16,
+    width: 80,
   },
   challengeInfo: {
     flex: 1,
@@ -404,46 +364,86 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  challengeDifficulty: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+  container: {
+    backgroundColor: colors.light.background,
+    flex: 1,
   },
-  challengeDescription: {
-    fontSize: 14,
-    color: '#444',
-    marginBottom: 4,
+  createChallengeButton: {
+    alignItems: 'center',
+    backgroundColor: colors.light.secondary,
+    borderRadius: 8,
+    elevation: 5,
+    marginTop: 20,
+    paddingVertical: 16,
+    width: 160,
   },
-  challengeDate: {
-    fontSize: 12,
-    color: '#888',
-  },
-  challengeActions: {
-    flexDirection: 'row',
+  dropdown: {
     marginTop: 8,
   },
-  activateButton: {
-    backgroundColor: colors.light.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  dropdownContainer: {
+    zIndex: 1000, // Ensure dropdown appears above other elements
+    marginBottom: 60, // Add space for the dropdown options
+  },
+  input: {
+    borderColor: '#ccc',
     borderRadius: 4,
-    marginRight: 8,
+    borderWidth: 1,
+    marginTop: 8,
+    padding: 8,
   },
-  activeButton: {
-    backgroundColor: colors.light.primary,
-    opacity: 0.7,
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 16,
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
+  mediaPreview: {
+    borderRadius: 8,
+    height: '100%',
+    resizeMode: 'cover',
+    width: '100%',
+  },
+  mediaPreviewContainer: {
+    height: '100%',
+    position: 'relative',
+    width: '100%',
+  },
+  mediaUploadButton: {
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    height: 120,
+    justifyContent: 'center',
+    marginTop: 8,
+    padding: 16,
   },
   notifyButton: {
     backgroundColor: colors.light.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 4,
     marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  removeButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 12,
+    padding: 4,
+    position: 'absolute',
+    right: 4,
+    top: 4,
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+  sectionTitle: {
+    color: colors.light.text,
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 16,
+  },
+  uploadButtonText: {
+    color: '#666',
+    marginTop: 8,
   },
 });
 

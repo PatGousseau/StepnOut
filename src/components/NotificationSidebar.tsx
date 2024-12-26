@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Modal,
@@ -187,87 +187,87 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  commentText: {
+    color: '#666',
+    fontStyle: 'italic',
   },
-  sidebar: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: Dimensions.get('window').width * 0.8,
-    backgroundColor: colors.light.background,
-    shadowColor: '#000',
-    shadowOffset: { width: -2, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
-    borderTopLeftRadius: 16,
-    borderBottomLeftRadius: 16,
-    paddingLeft:8,
+  divider: {
+    backgroundColor: '#cfcbca',
+    height: 1,
+    width: '100%',
   },
-  safeArea: {
+  emptyContainer: {
+    alignItems: 'center',
     flex: 1,
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
   },
   header: {
     padding: 16,
     paddingTop: Platform.OS === 'android' ? 16 : 0,
   },
   headerContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
-    position: 'relative',
     marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.light.primary,
-    textAlign: 'center',
+    position: 'relative',
   },
   listContainer: {
     flexGrow: 1,
   },
-  notificationItem: {
-    flexDirection: 'row',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center',
-  },
   notificationContent: {
     flex: 1,
+  },
+  notificationItem: {
+    alignItems: 'center',
+    borderBottomColor: '#eee',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    padding: 16,
   },
   notificationText: {
     fontSize: 14,
     marginBottom: 4,
   },
-  timeText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  emptyContainer: {
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  emptyText: {
+  safeArea: {
+    flex: 1,
+  },
+  sidebar: {
+    backgroundColor: colors.light.background,
+    borderBottomLeftRadius: 16,
+    borderTopLeftRadius: 16,
+    bottom: 0,
+    elevation: 5,
+    paddingLeft:8,
+    position: 'absolute',
+    right: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    top: 0,
+    width: Dimensions.get('window').width * 0.8,
+  },
+  timeText: {
     color: '#666',
-    fontSize: 16,
+    fontSize: 12,
+  },
+  title: {
+    color: colors.light.primary,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   userName: {
     fontWeight: 'bold',
-  },
-  commentText: {
-    fontStyle: 'italic',
-    color: '#666',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#cfcbca',
-    width: '100%',
   },
 });
 

@@ -83,26 +83,26 @@ const PostPage = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  centered: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  commentsSection: {
     backgroundColor: colors.light.background,
+    borderTopColor: '#eee',
+    borderTopWidth: 1,
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  container: {
+    backgroundColor: colors.light.background,
+    flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   scrollViewContent: {
     flexGrow: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  commentsSection: {
-    flex: 1,
-    backgroundColor: colors.light.background,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingHorizontal: 16,
   },
 });
 

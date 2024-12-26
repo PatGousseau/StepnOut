@@ -110,43 +110,43 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     marginVertical: 16,
     padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
   },
   yourProgressText: {
-    marginBottom: 8,
+    color: '#0D1B1E',
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0D1B1E',
+    marginBottom: 8,
   },
   rowContainer: {
     flexDirection: 'row',
     marginBottom: 16,
   },
   totalContainer: {
+    alignItems: 'center',
+    backgroundColor: '#F3F3F3',
+    borderRadius: 12,
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
     marginRight: 12,
-    backgroundColor: '#F3F3F3',
-    borderRadius: 12
+    padding: 12
   },
   totalTextContainer: {
-    marginLeft: 12,
-    flexDirection: 'column',
     alignItems: 'flex-start',
+    flexDirection: 'column',
+    marginLeft: 12,
   },
   totalText: {
+    color: '#0D1B1E',
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#0D1B1E',
   },
   totalLabel: {
-    fontSize: 14,
     color: '#7F8C8D',
+    fontSize: 14,
   },
   streakContainer: {
     flex: 2,
@@ -157,47 +157,47 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   challengeBox: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
     alignItems: 'center',
+    borderRadius: 12,
+    flex: 1,
     marginHorizontal: 4,
+    padding: 16,
   },
   challengeCount: {
     fontSize: 24,
     fontWeight: 'bold',
   },
   challengeLabel: {
-    fontSize: 14,
     color: '#0D1B1E',
+    fontSize: 14,
   },
   
   // Streak Calendar Styles
   streakCalendarContainer: {
+    backgroundColor: '#F3F3F3',
     borderRadius: 12,
     padding: 12,
-    backgroundColor: '#F3F3F3',
   },
   streakHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 8,
   },
   streakTitle: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   streakTitleText: {
-    marginLeft: 6,
+    color: colors.light.text,
     fontSize: 14,
     fontWeight: 'bold',
-    color: colors.light.text,
+    marginLeft: 6,
   },
   streakCountText: {
+    color: colors.light.primary,
     fontSize: 14,
     fontWeight: 'bold',
-    color: colors.light.primary,
     marginLeft: 16,
   },
   calendarGrid: {
@@ -206,10 +206,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   calendarBox: {
-    width: '11%',
-    paddingBottom: '11%',
     borderRadius: 3,
     borderWidth: 1,
+    paddingBottom: '11%',
+    width: '11%',
   },
 });
 

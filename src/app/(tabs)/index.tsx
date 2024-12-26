@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView,  RefreshControl, KeyboardAvoidingView, Platform } from 'react-native';
 import Post from '../../components/Post';
 import { useFetchHomeData } from '../../hooks/useFetchHomeData';
 import { colors } from '../../constants/Colors';

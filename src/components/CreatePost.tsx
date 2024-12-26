@@ -170,98 +170,12 @@ const CreatePost = () => {
 };
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalScroll: {
-    width: '100%',
-    maxHeight: '100%',
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: '5%',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '100%',
-    marginVertical: 20,
-  },
-  mediaUploadIcon: {
-    paddingBottom: 4,
-    alignItems: 'flex-start',
-  },
-  mediaPreview: {
-    width: '100%',
-    aspectRatio: 1.5,
-    borderRadius: 8,
-    marginVertical: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginVertical: 0,
-    height: 130,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    backgroundColor: colors.light.accent,
-    borderRadius: 48,
-    padding: 12,
-    alignItems: 'center',
-  },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
   },
-  uploadButton: {
-    backgroundColor: colors.light.accent,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  headerButton: {
-    padding: 8,
-  },
   cancelText: {
     color: colors.light.accent,
-    fontWeight: 'bold',
-  },
-  inputAccessory: {
-    backgroundColor: '#f1f1f1',
-    padding: 8,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
-  keyboardButton: {
-    padding: 4,
-    marginRight: 8,
-  },
-  keyboardButtonText: {
-    color: colors.light.primary,
-    fontSize: 14,
     fontWeight: 'bold',
   },
   disabledButton: {
@@ -270,27 +184,113 @@ const styles = StyleSheet.create({
   disabledButtonText: {
     color: '#666666',
   },
+  headerButton: {
+    padding: 8,
+  },
+  inputAccessory: {
+    backgroundColor: '#f1f1f1',
+    borderTopColor: '#ccc',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 8,
+  },
+  keyboardButton: {
+    marginRight: 8,
+    padding: 4,
+  },
+  keyboardButtonText: {
+    color: colors.light.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  mediaPreview: {
+    alignItems: 'center',
+    aspectRatio: 1.5,
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginVertical: 10,
+    width: '100%',
+  },
+  mediaPreviewContainer: {
+    aspectRatio: 1.5,
+    marginVertical: 10,
+    position: 'relative',
+    width: '100%',
+  },
+  mediaUploadIcon: {
+    alignItems: 'flex-start',
+    paddingBottom: 4,
+  },
+  modalContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    marginVertical: 20,
+    padding: 20,
+    width: '100%',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  modalScroll: {
+    maxHeight: '100%',
+    width: '100%',
+  },
+  removeMediaButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 15,
+    height: 30,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    width: 30,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: '5%',
+  },
+  submitButton: {
+    alignItems: 'center',
+    backgroundColor: colors.light.accent,
+    borderRadius: 48,
+    padding: 12,
+  },
+  textInput: {
+    borderColor: '#ccc',
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 130,
+    marginVertical: 0,
+    padding: 10,
+    textAlignVertical: 'top',
+  },
+  uploadButton: {
+    alignItems: 'center',
+    backgroundColor: colors.light.accent,
+    borderRadius: 28,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
+  },
   uploadingText: {
     color: colors.light.accent,
     fontSize: 14,
     marginRight: 10,
-  },
-  mediaPreviewContainer: {
-    position: 'relative',
-    width: '100%',
-    aspectRatio: 1.5,
-    marginVertical: 10,
-  },
-  removeMediaButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
 

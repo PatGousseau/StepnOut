@@ -100,9 +100,30 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: colors.light.primary,
+    borderRadius: 5,
+    padding: 15,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   container: {
-    flex: 1,
     backgroundColor: colors.light.background,
+    flex: 1,
+  },
+  errorText: {
+    color: '#ff0000',
+    fontSize: 12,
+    marginBottom: 10,
+    marginLeft: 5,
+    marginTop: -10,
   },
   form: {
     flex: 1,
@@ -110,62 +131,41 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   input: {
-    borderWidth: 1,
     borderColor: '#ddd',
-    padding: 15,
-    marginBottom: 15,
     borderRadius: 5,
-  },
-  button: {
-    backgroundColor: colors.light.primary,
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  linkButton: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: colors.light.primary,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  requiredText: {
-    color: '#666',
+    borderWidth: 1,
     marginBottom: 15,
-    fontSize: 14,
-    textAlign: 'center',
+    padding: 15,
   },
   inputError: {
     borderColor: '#ff0000',
     borderWidth: 1,
   },
-  errorText: {
-    color: '#ff0000',
-    fontSize: 12,
-    marginTop: -10,
+  linkButton: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  linkText: {
+    color: colors.light.primary,
+  },
+  logo: {
+    height: 60,
     marginBottom: 10,
-    marginLeft: 5,
+    width: 60,
   },
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  logo: {
-    width: 60,
-    height: 60,
-    marginBottom: 10,
+  requiredText: {
+    color: '#666',
+    fontSize: 14,
+    marginBottom: 15,
+    textAlign: 'center',
   },
   stepnOut: {
-    fontSize: 24,
-    fontFamily: 'PingFangSC-Medium',
     color: colors.light.primary,
+    fontFamily: 'PingFangSC-Medium',
+    fontSize: 24,
   },
 });
