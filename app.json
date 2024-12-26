@@ -41,6 +41,13 @@
             }
           }
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./src/assets/images/appstore.png",
+          "color": "#ffffff"
+        }
       ]
     ],
     "experiments": {
@@ -72,7 +79,8 @@
         "image": "./src/assets/images/splash.png",
         "resizeMode": "contain",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "usesApnsToken": true
     }
   }
 }
