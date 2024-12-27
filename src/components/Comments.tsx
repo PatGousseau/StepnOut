@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, ActivityIndicator, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, ActivityIndicator, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +8,13 @@ import { sendCommentNotification } from '../lib/notificationsService';
 import { supabase } from '../lib/supabase';
 import { router } from 'expo-router';
 import { useLanguage } from '../contexts/LanguageContext';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { 
+  Menu,
+  MenuTrigger,
+  MenuOptions,
+  MenuOption 
+} from 'react-native-popup-menu';
 
 export interface Comment {
   id: number;
@@ -110,6 +117,14 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     }
   };
 
+  const handleCommentDeleted = (commentId: number) => {
+    setComments(prevComments => {
+      const newComments = prevComments.filter(comment => comment.id !== commentId);
+      onCommentAdded?.(-1);
+      return newComments;
+    });
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -127,7 +142,13 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           data={comments}
           keyExtractor={item => item.id.toString()}
           renderItem={({ item }) => (
-            <Comment userId={item.userId} text={item.text} created_at={item.created_at} />
+            <Comment 
+              id={item.id}
+              userId={item.userId}
+              text={item.text}
+              created_at={item.created_at}
+              onCommentDeleted={() => handleCommentDeleted(item.id)}
+            />
           )}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
@@ -243,15 +264,18 @@ export const CommentsModal: React.FC<CommentsProps> = ({
 };
 
 interface CommentProps {
+  id: number;
   userId: string;
   text: string;
   created_at: string;
+  onCommentDeleted?: () => void;
 }
 
-const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
+const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onCommentDeleted }) => {
   const { t } = useLanguage();
   const [user, setUser] = useState<User | null>(null);
   const { onClose } = useContext(CommentsContext);
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     User.getUser(userId).then(setUser);
@@ -297,19 +321,69 @@ const Comment: React.FC<CommentProps> = ({ userId, text, created_at }) => {
     });
   };
 
+  const handleDeleteComment = () => {
+    Alert.alert(
+      t('Delete Comment'),
+      t('Are you sure you want to delete this comment?'),
+      [
+        {
+          text: t('Cancel'),
+          style: 'cancel'
+        },
+        {
+          text: t('Delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // First delete associated notifications
+              const { error: notificationError } = await supabase
+                .from('notifications')
+                .delete()
+                .eq('comment_id', id);
+
+              if (notificationError) throw notificationError;
+
+              // Then delete the comment
+              const { error: commentError } = await supabase
+                .from('comments')
+                .delete()
+                .eq('id', id);
+
+              if (commentError) throw commentError;
+              
+              onCommentDeleted?.();
+            } catch (error) {
+              console.error('Error deleting comment:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <View style={styles.commentContainer}>
       <TouchableOpacity onPress={handleProfilePress}>
         <Image source={imageSource} style={styles.commentAvatar} />
       </TouchableOpacity>
       <View style={styles.commentContent}>
-        <TouchableOpacity onPress={handleProfilePress}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.displayName}>{user.name}</Text>
-            <Text style={styles.username}>@{user.username}</Text>
-            <Text style={styles.timestamp}>{formatRelativeTime(created_at)}</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.commentHeader}>
+          <TouchableOpacity onPress={handleProfilePress}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.displayName}>{user.name}</Text>
+              <Text style={styles.username}>@{user.username}</Text>
+              <Text style={styles.timestamp}>{formatRelativeTime(created_at)}</Text>
+            </View>
+          </TouchableOpacity>
+          {currentUser?.id === userId && (
+            <TouchableOpacity 
+              onPress={handleDeleteComment}
+              style={styles.deleteButton}
+            >
+              <Icon name="trash-o" size={14} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.commentText}>{text}</Text>
       </View>
     </View>
@@ -430,5 +504,14 @@ const styles = StyleSheet.create({
   },
   postButtonPressed: {
     opacity: 0.7,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  deleteButton: {
+    padding: 8,
   },
 });
