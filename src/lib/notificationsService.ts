@@ -1,7 +1,4 @@
-import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from './supabase';
-
-
 
 // Fetch a user's push token from Supabase
 async function getPushToken(userId: string): Promise<string | null> {
@@ -46,7 +43,13 @@ async function sendPushNotification(token: string, title: string, body: string, 
 }
 
 // Handle sending notifications for likes
-export async function sendLikeNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string) {
+export async function sendLikeNotification(
+    senderId: string | undefined, 
+    senderUsername: string, 
+    recipientId: string, 
+    postId: string,
+    translations: { title: string; body: string }
+) {
     // Save notification to database
     const { error: dbError } = await supabase
         .from('notifications')
@@ -63,22 +66,27 @@ export async function sendLikeNotification(senderId: string | undefined, senderU
         return;
     }
 
-    const { t } = useLanguage();
-
-
     // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = t('(username) liked your post!', { username: senderUsername });
-    const body = t('Check it out now.');
+    const title = translations.title.replace('(username)', senderUsername);
+    const body = translations.body;
     const data = { postId, senderId };
 
     await sendPushNotification(pushToken, title, body, data);
 }
 
 // Handle sending notifications for comments
-export async function sendCommentNotification(senderId: string | undefined, senderUsername: string, recipientId: string, postId: string, commentText: string, commentId: string) {
+export async function sendCommentNotification(
+    senderId: string | undefined, 
+    senderUsername: string, 
+    recipientId: string, 
+    postId: string, 
+    commentText: string, 
+    commentId: string,
+    translations: { title: string; body: string }
+) {
     // Save notification to database
     const { error: dbError } = await supabase
         .from('notifications')
@@ -96,14 +104,11 @@ export async function sendCommentNotification(senderId: string | undefined, send
         return;
     }
 
-    const { t } = useLanguage();
-
-
     // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = t('(username) commented on your post!', { username: senderUsername });
+    const title = translations.title.replace('(username)', senderUsername);
     const body = `"${commentText}"`;
     const data = { postId, senderId };
 
@@ -115,10 +120,7 @@ export async function sendNewChallengeNotification(recipientId: string, challeng
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const { t } = useLanguage();
-
-
-    const title = t('A new challenge is available!');
+    const title = 'A new challenge is available!';
     const body = challengeTitle;
     const data = { challengeId };
 

@@ -17,7 +17,12 @@ export const postService = {
     }
   },
 
-  async toggleLike(postId: number, userId: string, postUserId: string) {
+  async toggleLike(
+    postId: number, 
+    userId: string, 
+    postUserId: string,
+    translations: { title: string; body: string }
+  ) {
     try {
       const { data: existingLike } = await supabase
         .from('likes')
@@ -54,7 +59,8 @@ export const postService = {
             userId,
             userData?.username || 'Someone',
             postUserId,
-            postId.toString()
+            postId.toString(),
+            translations
           );
         }
         return true; // Liked

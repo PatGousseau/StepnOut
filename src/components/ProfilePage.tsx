@@ -160,7 +160,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     optionsContainer: {
       backgroundColor: 'white',
       borderRadius: 8,
-      padding: 4,
       width: 150,
       borderWidth: 2,
       borderColor: colors.light.primary,

@@ -178,17 +178,22 @@ interface PatrizioExampleProps {
 
     const handleSubmit = async () => {
       if (!user) {
-        alert('You must be logged in to submit a challenge.');
+        alert(t('You must be logged in to submit a challenge.'));
         return;
       }
 
       if (isUploading) {
-        alert('Please wait for media upload to complete.');
+        alert(t('Please wait for media upload to complete.'));
+        return;
+      }
+
+      if (!postText.trim() && !uploadedMediaId) {
+        alert(t('Please add either a description or media to complete the challenge.'));
         return;
       }
 
       if (mediaPreview && !uploadedMediaId) {
-        alert('Media is still uploading. Please wait.');
+        alert(t('Media is still uploading. Please wait.'));
         return;
       }
 
@@ -222,7 +227,7 @@ interface PatrizioExampleProps {
 
       } catch (error) {
         console.error('Error creating submission:', error);
-        alert('Error submitting challenge.');
+        alert(t('Error submitting challenge.'));
       }
     };
 
@@ -236,7 +241,7 @@ interface PatrizioExampleProps {
         setVideoThumbnail(result.videoThumbnail);
       } catch (error) {
         console.error('Error uploading file:', error);
-        alert('Error uploading file');
+        alert(t('Error uploading file'));
       } finally {
         setIsUploading(false);
       }

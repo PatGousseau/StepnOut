@@ -134,6 +134,8 @@ export const translations = {
     'Failed to delete account': 'Impossibile eliminare l\'account',
     'Share your thoughts, start a discussion, or share an achievement...': 
       'Condividi i tuoi pensieri, inizia una discussione o condividi un traguardo...',
+    'Please add either a description or media to complete the challenge.': 
+      'Aggiungi una descrizione o un media per completare la sfida.',
   },
   en: {
     'Home': 'Home',
@@ -231,5 +233,7 @@ export const translations = {
     'Failed to delete account': 'Failed to delete account',
     'Share your thoughts, start a discussion, or share an achievement...': 
       'Share your thoughts, start a discussion, or share an achievement...',
+    'Please add either a description or media to complete the challenge.': 
+      'Please add either a description or media to complete the challenge.',
   }
 }; 

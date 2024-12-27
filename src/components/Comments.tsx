@@ -91,7 +91,11 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 postUserId,
                 postId.toString(),
                 commentText,
-                savedComment.id.toString()
+                savedComment.id.toString(),
+                {
+                  title: t('(username) commented on your post!'),
+                  body: t('Check it out now.')
+                }
               );
             } catch (error) {
               console.error('Failed to send comment notification:', error);
@@ -140,10 +144,17 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             placeholder={t('Add a comment...')}
             placeholderTextColor="#888"
             style={styles.input}
+            multiline
+            textAlignVertical="top"
+            maxHeight={100}
           />
           <Pressable 
             onPress={handleAddComment} 
-            style={[styles.postButton, !user && styles.postButtonDisabled]}
+            style={({ pressed }) => [
+              styles.postButton,
+              !user && styles.postButtonDisabled,
+              pressed && styles.postButtonPressed
+            ]}
             disabled={!user}
           >
             <Text style={styles.postButtonText}>{t('Post')}</Text>
@@ -371,6 +382,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 10,
     padding: 10,
+    minHeight: 40,
+    maxHeight: 100,
   },
   inputContainer: {
     alignItems: 'center',
@@ -394,6 +407,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 15,
     paddingVertical: 10,
+    alignSelf: 'flex-start',
   },
   postButtonDisabled: {
     backgroundColor: colors.light.primary + '80',
@@ -413,5 +427,8 @@ const styles = StyleSheet.create({
   username: {
     color: '#666',
     fontSize: 12,
+  },
+  postButtonPressed: {
+    opacity: 0.7,
   },
 });
