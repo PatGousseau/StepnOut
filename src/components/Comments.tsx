@@ -286,7 +286,7 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
   const imageSource = user.profileImageUrl.startsWith('http') 
     ? { uri: user.profileImageUrl }
     : require('../assets/images/default-pfp.png');
-
+        
   const handleProfilePress = () => {
     onClose?.();
     router.push(`/profile/${userId}`);

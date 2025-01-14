@@ -28,6 +28,7 @@ import { postService } from '../services/postService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import ImageViewer from 'react-native-image-zoom-viewer';
+import { useEvent } from 'expo';
 
 interface PostProps {
   post: PostType;
@@ -147,19 +148,36 @@ const Post: React.FC<PostProps> = ({
     
     if (isVideo(post.media?.file_path)) {
       const player = useVideoPlayer(post.media?.file_path);
+      const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
       
       return (
-        <TouchableOpacity 
-          onPress={handleMediaPress}
-          activeOpacity={1}
-        >
+        <View style={styles.mediaContainer}>
           <VideoView
             player={player}
             style={styles.mediaContent}
             contentFit="cover"
-            nativeControls
+            allowsFullscreen
+            allowsPictureInPicture
           />
-        </TouchableOpacity>
+          <View style={styles.controlsContainer}>
+            <TouchableOpacity 
+              onPress={() => {
+                if (isPlaying) {
+                  player.pause();
+                } else {
+                  player.play();
+                }
+              }}
+              style={styles.playButton}
+            >
+              <Icon 
+                name={isPlaying ? "pause" : "play"} 
+                size={20} 
+                color={colors.neutral.grey1} 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
       );
     }
     return (
@@ -595,6 +613,34 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
   },
+  mediaContainer: {
+    position: 'relative',
+  },
+  playButtonOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
+  controlsContainer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 25, // Make container perfectly round
+    width: 50, // Fixed width
+    height: 50, // Fixed height to match width
+  },
+  playButton: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center', // Center the icon
+  }
 });
 
 const optionsStyles = {

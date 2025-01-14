@@ -326,7 +326,7 @@ interface PatrizioExampleProps {
                   <View style={shareStyles.modalHeader}>
                     <Text style={shareStyles.modalTitle}>{t('How did it go?')}</Text>
                     <Text style={shareStyles.modalSubtitle}>
-                      {t('Share your experience with the community')}
+                      {t('Share how you completed the challenge')}
                     </Text>
                     <TouchableOpacity onPress={fadeOut} style={shareStyles.closeButton}>
                       <MaterialIcons name="close" size={20} color={colors.light.text} />
@@ -390,9 +390,9 @@ interface PatrizioExampleProps {
                   </TouchableOpacity>
 
                   <TextInput
-                    style={shareStyles.textInput}
+                    style={[shareStyles.textInput, { fontSize: 13, fontStyle: 'italic' }]}
                     multiline
-                    placeholder={t('Write about your experience...')}
+                    placeholder={t('How did it make you feel?\nWhat did you find difficult?')}
                     placeholderTextColor="#999"
                     value={postText}
                     onChangeText={setPostText}

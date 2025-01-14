@@ -136,6 +136,9 @@ export const translations = {
       'Condividi i tuoi pensieri, inizia una discussione o condividi un traguardo...',
     'Please add either a description or media to complete the challenge.': 
       'Aggiungi una descrizione o un media per completare la sfida.',
+    'Delete Comment': 'Elimina Commento',
+    'Are you sure you want to delete this comment?': 'Sei sicuro di voler eliminare questo commento?',
+    'Error deleting comment:': 'Errore nell\'eliminazione del commento:',
   },
   en: {
     'Home': 'Home',
@@ -235,5 +238,8 @@ export const translations = {
       'Share your thoughts, start a discussion, or share an achievement...',
     'Please add either a description or media to complete the challenge.': 
       'Please add either a description or media to complete the challenge.',
+    'Delete Comment': 'Delete Comment',
+    'Are you sure you want to delete this comment?': 'Are you sure you want to delete this comment?',
+    'Error deleting comment:': 'Error deleting comment:',
   }
 }; 
