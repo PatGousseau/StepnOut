@@ -375,6 +375,7 @@ const Post: React.FC<PostProps> = ({
           <View style={styles.iconContainer}>
             <Icon 
               name={likedPosts[post.id] ? 'heart' : 'heart-o'} 
+              size={16}
               color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1} 
             />
             <Text style={styles.iconText}>{likeCounts[post.id] || 0}</Text>

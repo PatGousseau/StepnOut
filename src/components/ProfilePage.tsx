@@ -120,28 +120,46 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleDeleteAccount = async () => {
+    // First confirmation
     Alert.alert(
       t('Delete Account'),
-      t('Are you sure you want to delete your account? This action cannot be undone.'),
+      t('Are you sure you want to proceed? This will permanently delete your account.'),
       [
         {
           text: t('Cancel'),
           style: 'cancel',
         },
         {
-          text: t('Delete'),
+          text: t('Continue'),
           style: 'destructive',
-          onPress: async () => {
-            try {
-              const result = await profileService.deleteAccount(user?.id!);
-              if (result.success) {
-                await signOut(); 
-              } else {
-                Alert.alert('Error', result.error || t('Failed to delete account'));
-              }
-            } catch (error) {
-              Alert.alert('Error', (error as Error).message);
-            }
+          onPress: () => {
+            // Second confirmation
+            Alert.alert(
+              t('Final Warning'),
+              t('This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?'),
+              [
+                {
+                  text: t('Cancel'),
+                  style: 'cancel',
+                },
+                {
+                  text: t('Delete Account'),
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      const result = await profileService.deleteAccount(user?.id!);
+                      if (result.success) {
+                        await signOut(); 
+                      } else {
+                        Alert.alert('Error', result.error || t('Failed to delete account'));
+                      }
+                    } catch (error) {
+                      Alert.alert('Error', (error as Error).message);
+                    }
+                  },
+                },
+              ]
+            );
           },
         },
       ]

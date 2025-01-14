@@ -139,6 +139,12 @@ export const translations = {
     'Delete Comment': 'Elimina Commento',
     'Are you sure you want to delete this comment?': 'Sei sicuro di voler eliminare questo commento?',
     'Error deleting comment:': 'Errore nell\'eliminazione del commento:',
+    'Are you sure you want to proceed? This will permanently delete your account.': 
+      'Sei sicuro di voler procedere? Questo eliminerà permanentemente il tuo account.',
+    'Continue': 'Continua',
+    'Final Warning': 'Avviso Finale',
+    'This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?':
+      'Questa azione non può essere annullata. Tutti i tuoi dati verranno eliminati permanentemente. Sei assolutamente sicuro?',
   },
   en: {
     'Home': 'Home',
@@ -241,5 +247,11 @@ export const translations = {
     'Delete Comment': 'Delete Comment',
     'Are you sure you want to delete this comment?': 'Are you sure you want to delete this comment?',
     'Error deleting comment:': 'Error deleting comment:',
+    'Are you sure you want to proceed? This will permanently delete your account.': 
+      'Are you sure you want to proceed? This will permanently delete your account.',
+    'Continue': 'Continue',
+    'Final Warning': 'Final Warning',
+    'This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?':
+      'This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?',
   }
 }; 
