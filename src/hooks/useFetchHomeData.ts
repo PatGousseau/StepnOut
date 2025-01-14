@@ -4,6 +4,7 @@ import { Post } from '../types';
 import { User } from '../models/User';
 import { useAuth } from '../contexts/AuthContext';
 import { isVideo } from '../utils/utils';
+import { useLikes } from '../contexts/LikesContext';
 
 interface UserMap {
   [key: string]: User;
@@ -22,6 +23,7 @@ export const useFetchHomeData = () => {
   const [loading, setLoading] = useState(true);
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
+  const { initializeLikes } = useLikes();
 
   const formatPost = async (post: Post, commentCountMap?: Map<number, number>): Promise<Post> => {
     // If we don't have a pre-fetched comment count, fetch it individually
@@ -131,6 +133,11 @@ export const useFetchHomeData = () => {
       const formattedPosts = await Promise.all(
         postData.map(post => formatPost(post, commentCountMap))
       );
+
+      // Initialize likes state in context
+      if (!isLoadMore) {
+        initializeLikes(formattedPosts);
+      }
 
       setHasMore(postData.length === POSTS_PER_PAGE);
       setPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);

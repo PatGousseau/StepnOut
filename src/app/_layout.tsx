@@ -16,6 +16,7 @@ import MenuSidebar from '../components/MenuSidebar';
 import FeedbackModal from '../components/FeedbackModal';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
+import { LikesProvider } from '../contexts/LikesContext';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -158,7 +159,9 @@ function RootLayoutNav() {
 export default function Layout() {
   return (
     <AuthProvider>
+      <LikesProvider>
       <RootLayoutNav />
+      </LikesProvider>
     </AuthProvider>
   );
 }

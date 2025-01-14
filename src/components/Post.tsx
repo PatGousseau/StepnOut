@@ -29,6 +29,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { useEvent } from 'expo';
+import { useLikes } from '../contexts/LikesContext';
 
 interface PostProps {
   post: PostType;
@@ -45,6 +46,8 @@ const Post: React.FC<PostProps> = ({
   isPostPage = false,
 }) => {
   const { t } = useLanguage();
+  const { likedPosts, likeCounts, toggleLike } = useLikes();
+  const { user } = useAuth();
 
   if (!post) return null;
   
@@ -53,7 +56,6 @@ const Post: React.FC<PostProps> = ({
   const [likeCount, setLikeCount] = useState(post.likes_count);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
-  const { user } = useAuth();
   const { comments: commentList, loading: commentsLoading, fetchComments } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
@@ -105,24 +107,9 @@ const Post: React.FC<PostProps> = ({
     }
   }, [post.id, setPostCounts]);
 
-  const handleLikeToggle = async () => {
-    if (!post.id || !post.user_id || !user?.id) {
-      console.error(t('Missing required data for like toggle'));
-      return;
-    }
-
-    const isLiking = !liked;
-    setLiked(isLiking);
-    const newLikeCount = isLiking ? likeCount + 1 : likeCount - 1;
-    setLikeCount(newLikeCount);
-    updateParentCounts(newLikeCount, commentCount);
-
-    const result = await postService.toggleLike(post.id, user.id, post.user_id);
-    
-    if (result === null) {
-      setLiked(!isLiking);
-      setLikeCount(prevCount => isLiking ? prevCount - 1 : prevCount + 1);
-    }
+  const handleLikePress = async () => {
+    if (!user) return;
+    await toggleLike(post.id, user.id, post.user_id);
   };
 
   const handleCommentAdded = (increment: number) => {
@@ -384,10 +371,13 @@ const Post: React.FC<PostProps> = ({
       {renderMedia()}
       <View>
       <View style={styles.footer}>
-        <TouchableOpacity onPress={handleLikeToggle}>
+        <TouchableOpacity onPress={handleLikePress}>
           <View style={styles.iconContainer}>
-            <Icon name={liked ? "heart" : "heart-o"} size={16} color={liked ? "#eb656b" : colors.neutral.grey1} />
-            <Text style={styles.iconText}>{likeCount.toString()}</Text>
+            <Icon 
+              name={likedPosts[post.id] ? 'heart' : 'heart-o'} 
+              color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1} 
+            />
+            <Text style={styles.iconText}>{likeCounts[post.id] || 0}</Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleOpenComments}>

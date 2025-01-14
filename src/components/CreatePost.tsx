@@ -218,6 +218,7 @@ const styles = StyleSheet.create({
   mediaPreviewContainer: {
     aspectRatio: 1.5,
     marginVertical: 10,
+    marginBottom: 20,
     position: 'relative',
     width: '100%',
   },
