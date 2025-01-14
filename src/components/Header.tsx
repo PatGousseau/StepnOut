@@ -44,7 +44,7 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
             style={styles.feedbackIcon}
             onPress={onFeedbackPress}
           >
-            <Ionicons name="chatbox-ellipses-outline" size={26} color={colors.light.primary} />
+            <Ionicons name="help-circle-outline" size={26} color={colors.light.primary} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.notificationIcon}
