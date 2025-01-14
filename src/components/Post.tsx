@@ -156,8 +156,7 @@ const Post: React.FC<PostProps> = ({
             player={player}
             style={styles.mediaContent}
             contentFit="cover"
-            allowsFullscreen
-            allowsPictureInPicture
+            nativeControls={false}
           />
           <View style={styles.controlsContainer}>
             <TouchableOpacity 
