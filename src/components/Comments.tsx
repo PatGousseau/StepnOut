@@ -1,20 +1,28 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, TextInput, Pressable, StyleSheet, FlatList, Image, Animated, PanResponder, ActivityIndicator, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
-import { Text } from './StyledText';
-import { colors } from '../constants/Colors';
-import { useAuth } from '../contexts/AuthContext';
-import { User } from '../models/User';
-import { sendCommentNotification } from '../lib/notificationsService';
-import { supabase } from '../lib/supabase';
-import { router } from 'expo-router';
-import { useLanguage } from '../contexts/LanguageContext';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import { 
-  Menu,
-  MenuTrigger,
-  MenuOptions,
-  MenuOption 
-} from 'react-native-popup-menu';
+import React, { useState, useEffect, useRef, useContext } from "react";
+import {
+  View,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  FlatList,
+  Image,
+  Animated,
+  PanResponder,
+  ActivityIndicator,
+  SafeAreaView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Text } from "./StyledText";
+import { colors } from "../constants/Colors";
+import { useAuth } from "../contexts/AuthContext";
+import { User } from "../models/User";
+import { sendCommentNotification } from "../lib/notificationsService";
+import { supabase } from "../lib/supabase";
+import { router } from "expo-router";
+import { useLanguage } from "../contexts/LanguageContext";
+import Icon from "react-native-vector-icons/FontAwesome";
+import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 
 export interface Comment {
   id: number;
@@ -44,18 +52,18 @@ interface CommentsListProps {
 
 const CommentsContext = React.createContext<{ onClose?: () => void }>({});
 
-export const CommentsList: React.FC<CommentsListProps> = ({ 
-  comments: initialComments, 
-  loading = false, 
-  flatListRef, 
-  onClose, 
-  postId, 
-  postUserId, 
-  onCommentAdded 
+export const CommentsList: React.FC<CommentsListProps> = ({
+  comments: initialComments,
+  loading = false,
+  flatListRef,
+  onClose,
+  postId,
+  postUserId,
+  onCommentAdded,
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState(initialComments);
 
   useEffect(() => {
@@ -65,31 +73,33 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const handleAddComment = async () => {
     if (newComment.trim() && user) {
       const commentText = newComment.trim();
-      
+
       try {
         const { data: savedComment, error } = await supabase
-          .from('comments')
+          .from("comments")
           .insert({
             user_id: user.id,
             post_id: postId,
             body: commentText,
           })
-          .select('*')
+          .select("*")
           .single();
-
 
         if (error) throw error;
 
         if (savedComment) {
-          setComments(prevComments => [...prevComments, {
-            id: savedComment.id,
-            text: savedComment.body,
-            userId: savedComment.user_id,
-            created_at: savedComment.created_at
-          }]);
-          
-          setNewComment('');
-          
+          setComments((prevComments) => [
+            ...prevComments,
+            {
+              id: savedComment.id,
+              text: savedComment.body,
+              userId: savedComment.user_id,
+              created_at: savedComment.created_at,
+            },
+          ]);
+
+          setNewComment("");
+
           if (user.id !== postUserId) {
             try {
               await sendCommentNotification(
@@ -100,26 +110,26 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 commentText,
                 savedComment.id.toString(),
                 {
-                  title: t('(username) commented on your post!'),
-                  body: t('Check it out now.')
+                  title: t("(username) commented on your post!"),
+                  body: t("Check it out now."),
                 }
               );
             } catch (error) {
-              console.error('Failed to send comment notification:', error);
+              console.error("Failed to send comment notification:", error);
             }
           }
 
           onCommentAdded?.(1);
         }
       } catch (error) {
-        console.error('Error adding comment:', error);
+        console.error("Error adding comment:", error);
       }
     }
   };
 
   const handleCommentDeleted = (commentId: number) => {
-    setComments(prevComments => {
-      const newComments = prevComments.filter(comment => comment.id !== commentId);
+    setComments((prevComments) => {
+      const newComments = prevComments.filter((comment) => comment.id !== commentId);
       onCommentAdded?.(-1);
       return newComments;
     });
@@ -140,9 +150,9 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           ref={flatListRef}
           style={styles.commentsList}
           data={comments}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <Comment 
+            <Comment
               id={item.id}
               userId={item.userId}
               text={item.text}
@@ -152,33 +162,33 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           )}
           ListEmptyComponent={() => (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t('No comments yet!')}</Text>
+              <Text style={styles.emptyText}>{t("No comments yet!")}</Text>
             </View>
           )}
           keyboardShouldPersistTaps="handled"
         />
-        
+
         <View style={styles.inputContainer}>
           <TextInput
             value={newComment}
             onChangeText={setNewComment}
-            placeholder={t('Add a comment...')}
+            placeholder={t("Add a comment...")}
             placeholderTextColor="#888"
             style={styles.input}
             multiline
             textAlignVertical="top"
             maxHeight={100}
           />
-          <Pressable 
-            onPress={handleAddComment} 
+          <Pressable
+            onPress={handleAddComment}
             style={({ pressed }) => [
               styles.postButton,
               !user && styles.postButtonDisabled,
-              pressed && styles.postButtonPressed
+              pressed && styles.postButtonPressed,
             ]}
             disabled={!user}
           >
-            <Text style={styles.postButtonText}>{t('Post')}</Text>
+            <Text style={styles.postButtonText}>{t("Post")}</Text>
           </Pressable>
         </View>
       </View>
@@ -187,9 +197,9 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 };
 
 // Rename the main component to CommentsModal
-export const CommentsModal: React.FC<CommentsProps> = ({ 
-  initialComments, 
-  onClose, 
+export const CommentsModal: React.FC<CommentsProps> = ({
+  initialComments,
+  onClose,
   loading = false,
   postId,
   postUserId,
@@ -219,7 +229,6 @@ export const CommentsModal: React.FC<CommentsProps> = ({
           useNativeDriver: true,
         }).start(onClose);
       } else {
-
         // reset to fully open if not dragged enough
         Animated.spring(translateY, {
           toValue: 0,
@@ -239,16 +248,19 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   return (
-    <Animated.View 
-      style={[styles.container, { 
-        transform: [{ translateY }],
-      }]}
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          transform: [{ translateY }],
+        },
+      ]}
     >
       <SafeAreaView style={styles.safeArea}>
         <View {...panResponder.panHandlers} style={styles.dragHandle}>
           <View style={styles.dragIndicator} />
         </View>
-        
+
         <CommentsList
           comments={comments}
           loading={loading}
@@ -283,10 +295,20 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
 
   if (!user) return null;
 
-  const imageSource = user.profileImageUrl.startsWith('http') 
-    ? { uri: user.profileImageUrl }
-    : require('../assets/images/default-pfp.png');
-        
+  const imageSource = user.profileImageUrl.startsWith("http")
+    ? {
+        uri: supabase.storage
+          .from("challenge-uploads")
+          .getPublicUrl(user.profileImageUrl.split("challenge-uploads/")[1].split("?")[0], {
+            transform: {
+              quality: 100,
+              width: 60,
+              height: 60,
+            },
+          }).data.publicUrl,
+      }
+    : require("../assets/images/default-pfp.png");
+
   const handleProfilePress = () => {
     onClose?.();
     router.push(`/profile/${userId}`);
@@ -294,7 +316,7 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
 
   // relative time (e.g., "2 hours ago")
   const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString + 'Z'); // 'Z' to ensures UTC parsing
+    const date = new Date(dateString + "Z"); // 'Z' to ensures UTC parsing
     const now = new Date();
     const nowUTC = Date.UTC(
       now.getUTCFullYear(),
@@ -304,61 +326,54 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
       now.getUTCMinutes(),
       now.getUTCSeconds()
     );
-    
+
     const diffInSeconds = Math.floor((nowUTC - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return t('just now');
-    if (diffInSeconds < 3600) return t('(count)m', { count: Math.floor(diffInSeconds / 60) });
-    if (diffInSeconds < 86400) return t('(count)h', { count: Math.floor(diffInSeconds / 3600) });
-    if (diffInSeconds < 604800) return t('(count)d', { count: Math.floor(diffInSeconds / 86400) });
-    
+
+    if (diffInSeconds < 60) return t("just now");
+    if (diffInSeconds < 3600) return t("(count)m", { count: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t("(count)h", { count: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 604800) return t("(count)d", { count: Math.floor(diffInSeconds / 86400) });
+
     // Format date in UTC
     return date.toLocaleDateString(undefined, {
-      timeZone: 'UTC',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      timeZone: "UTC",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const handleDeleteComment = () => {
-    Alert.alert(
-      t('Delete Comment'),
-      t('Are you sure you want to delete this comment?'),
-      [
-        {
-          text: t('Cancel'),
-          style: 'cancel'
-        },
-        {
-          text: t('Delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // First delete associated notifications
-              const { error: notificationError } = await supabase
-                .from('notifications')
-                .delete()
-                .eq('comment_id', id);
+    Alert.alert(t("Delete Comment"), t("Are you sure you want to delete this comment?"), [
+      {
+        text: t("Cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("Delete"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            // First delete associated notifications
+            const { error: notificationError } = await supabase
+              .from("notifications")
+              .delete()
+              .eq("comment_id", id);
 
-              if (notificationError) throw notificationError;
+            if (notificationError) throw notificationError;
 
-              // Then delete the comment
-              const { error: commentError } = await supabase
-                .from('comments')
-                .delete()
-                .eq('id', id);
+            // Then delete the comment
+            const { error: commentError } = await supabase.from("comments").delete().eq("id", id);
 
-              if (commentError) throw commentError;
-              
-              onCommentDeleted?.();
-            } catch (error) {
-              console.error('Error deleting comment:', error);
-            }
+            if (commentError) throw commentError;
+
+            onCommentDeleted?.();
+          } catch (error) {
+            console.error("Error deleting comment:", error);
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   return (
@@ -376,10 +391,7 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
             </View>
           </TouchableOpacity>
           {currentUser?.id === userId && (
-            <TouchableOpacity 
-              onPress={handleDeleteComment}
-              style={styles.deleteButton}
-            >
+            <TouchableOpacity onPress={handleDeleteComment} style={styles.deleteButton}>
               <Icon name="trash-o" size={14} color="#999" />
             </TouchableOpacity>
           )}
@@ -398,15 +410,15 @@ const styles = StyleSheet.create({
     width: 30,
   },
   commentContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     marginBottom: 10,
   },
   commentContent: {
     flex: 1,
   },
   commentText: {
-    color: '#333',
+    color: "#333",
     fontSize: 14,
   },
   commentsList: {
@@ -423,34 +435,34 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   displayName: {
-    color: '#333',
-    fontWeight: 'bold',
+    color: "#333",
+    fontWeight: "bold",
   },
   dragHandle: {
-    alignItems: 'center',
+    alignItems: "center",
     height: 30,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginBottom: 5,
   },
   dragIndicator: {
-    backgroundColor: '#DDDDDD',
+    backgroundColor: "#DDDDDD",
     borderRadius: 3,
     height: 5,
     width: 40,
   },
   emptyContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingVertical: 20,
   },
   emptyText: {
-    color: '#666',
+    color: "#666",
     fontSize: 16,
   },
   input: {
-    backgroundColor: '#f0f0f0',
-    borderColor: '#ccc',
+    backgroundColor: "#f0f0f0",
+    borderColor: "#ccc",
     borderRadius: 5,
     borderWidth: 1,
     flex: 1,
@@ -460,20 +472,20 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   inputContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     marginBottom: 8,
     marginTop: 10,
     paddingHorizontal: 8,
   },
   loadingContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   nameContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
     gap: 4,
   },
   postButton: {
@@ -481,34 +493,34 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 15,
     paddingVertical: 10,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   postButtonDisabled: {
-    backgroundColor: colors.light.primary + '80',
+    backgroundColor: colors.light.primary + "80",
   },
   postButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+    color: "#ffffff",
+    fontWeight: "bold",
   },
   safeArea: {
     flex: 1,
   },
   timestamp: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
     marginLeft: 5,
   },
   username: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
   },
   postButtonPressed: {
     opacity: 0.7,
   },
   commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 4,
   },
   deleteButton: {
