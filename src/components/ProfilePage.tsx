@@ -216,7 +216,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           <View style={styles.headerLeft}>
             <TouchableOpacity 
               onPress={() => setShowFullImage(true)}
-              style={styles.avatarContainer}
               disabled={imageUploading}
             >
               {imageUploading ? (
@@ -363,14 +362,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
 const styles = StyleSheet.create({
   avatar: {
-    borderRadius: 40,
+    borderRadius: "50%",
     height: 80,
     width: 80,
+
   },
   avatarLoader: {
     alignItems: 'center',
     backgroundColor: '#e1e1e1',
     justifyContent: 'center',
+  },
+  editAvatarButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderRadius: '50%',
+    height: 24,
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.light.primary,
   },
   cancelButton: {
     alignItems: 'center',
@@ -430,7 +443,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   fullScreenImage: {
-    height: '80%',
+    height: '100%',
     width: '100%',
   },
   headerButtons: {
