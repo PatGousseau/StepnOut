@@ -37,7 +37,7 @@ interface CommentsProps {
   loading?: boolean;
   postId: number;
   postUserId: string;
-  onCommentAdded?: (newCount: number) => void;
+  onCommentAdded?: (count: number, comment?: any) => void;
 }
 
 interface CommentsListProps {
@@ -47,28 +47,21 @@ interface CommentsListProps {
   onClose?: () => void;
   postId: number;
   postUserId: string;
-  onCommentAdded?: (newCount: number) => void;
+  onCommentAdded?: (count: number, comment?: any) => void;
+}
+
+interface CommentInputProps {
+  onCommentAdded: (count: number, comment?: any) => void;
+  postId: number;
+  postUserId: string;
 }
 
 const CommentsContext = React.createContext<{ onClose?: () => void }>({});
 
-export const CommentsList: React.FC<CommentsListProps> = ({
-  comments: initialComments,
-  loading = false,
-  flatListRef,
-  onClose,
-  postId,
-  postUserId,
-  onCommentAdded,
-}) => {
+const CommentInput: React.FC<CommentInputProps> = ({ onCommentAdded, postId, postUserId }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState(initialComments);
-
-  useEffect(() => {
-    setComments(initialComments);
-  }, [initialComments]);
 
   const handleAddComment = async () => {
     if (newComment.trim() && user) {
@@ -88,16 +81,6 @@ export const CommentsList: React.FC<CommentsListProps> = ({
         if (error) throw error;
 
         if (savedComment) {
-          setComments((prevComments) => [
-            ...prevComments,
-            {
-              id: savedComment.id,
-              text: savedComment.body,
-              userId: savedComment.user_id,
-              created_at: savedComment.created_at,
-            },
-          ]);
-
           setNewComment("");
 
           if (user.id !== postUserId) {
@@ -119,7 +102,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             }
           }
 
-          onCommentAdded?.(1);
+          onCommentAdded?.(1, savedComment);
         }
       } catch (error) {
         console.error("Error adding comment:", error);
@@ -127,13 +110,46 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     }
   };
 
-  const handleCommentDeleted = (commentId: number) => {
-    setComments((prevComments) => {
-      const newComments = prevComments.filter((comment) => comment.id !== commentId);
-      onCommentAdded?.(-1);
-      return newComments;
-    });
-  };
+  return (
+    <View style={styles.inputContainer}>
+      <TextInput
+        value={newComment}
+        onChangeText={setNewComment}
+        placeholder={t("Add a comment...")}
+        placeholderTextColor="#888"
+        style={styles.input}
+        multiline
+        textAlignVertical="top"
+        maxHeight={100}
+      />
+      <Pressable
+        onPress={handleAddComment}
+        style={({ pressed }) => [
+          styles.postButton,
+          !user && styles.postButtonDisabled,
+          pressed && styles.postButtonPressed,
+        ]}
+        disabled={!user}
+      >
+        <Text style={styles.postButtonText}>{t("Post")}</Text>
+      </Pressable>
+    </View>
+  );
+};
+
+export const CommentsList: React.FC<CommentsListProps> = ({
+  comments: initialComments,
+  loading = false,
+  flatListRef,
+  onClose,
+  onCommentAdded,
+}) => {
+  const { t } = useLanguage();
+  const [comments, setComments] = useState(initialComments);
+
+  useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
 
   if (loading) {
     return (
@@ -157,7 +173,13 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               userId={item.userId}
               text={item.text}
               created_at={item.created_at}
-              onCommentDeleted={() => handleCommentDeleted(item.id)}
+              onCommentDeleted={() => {
+                setComments((prevComments) => {
+                  const newComments = prevComments.filter((comment) => comment.id !== item.id);
+                  onCommentAdded?.(-1, null);
+                  return newComments;
+                });
+              }}
             />
           )}
           ListEmptyComponent={() => (
@@ -167,36 +189,11 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           )}
           keyboardShouldPersistTaps="handled"
         />
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            value={newComment}
-            onChangeText={setNewComment}
-            placeholder={t("Add a comment...")}
-            placeholderTextColor="#888"
-            style={styles.input}
-            multiline
-            textAlignVertical="top"
-            maxHeight={100}
-          />
-          <Pressable
-            onPress={handleAddComment}
-            style={({ pressed }) => [
-              styles.postButton,
-              !user && styles.postButtonDisabled,
-              pressed && styles.postButtonPressed,
-            ]}
-            disabled={!user}
-          >
-            <Text style={styles.postButtonText}>{t("Post")}</Text>
-          </Pressable>
-        </View>
       </View>
     </CommentsContext.Provider>
   );
 };
 
-// Rename the main component to CommentsModal
 export const CommentsModal: React.FC<CommentsProps> = ({
   initialComments,
   onClose,
@@ -247,6 +244,32 @@ export const CommentsModal: React.FC<CommentsProps> = ({
     }, 100);
   }, [initialComments]);
 
+  const handleCommentAdded = async (count: number, savedComment: any) => {
+    // Transform the savedComment to match the Comment interface
+    const newComment = {
+      id: savedComment.id,
+      text: savedComment.body, // Note: changing from 'body' to 'text' to match interface
+      userId: savedComment.user_id, // Note: changing from 'user_id' to 'userId' to match interface
+      created_at: savedComment.created_at,
+    };
+
+    // Immediately add the new comment to the list
+    setComments((prevComments) => [...prevComments, newComment]);
+
+    onCommentAdded?.(count, savedComment);
+
+    // Optional background refresh
+    const { data: latestComments } = await supabase
+      .from("comments")
+      .select("*, user:users(id, name, username, profile_image_url)")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+
+    if (latestComments) {
+      setComments(latestComments);
+    }
+  };
+
   return (
     <Animated.View
       style={[
@@ -266,10 +289,10 @@ export const CommentsModal: React.FC<CommentsProps> = ({
           loading={loading}
           flatListRef={flatListRef}
           onClose={onClose}
-          postId={postId}
-          postUserId={postUserId}
           onCommentAdded={onCommentAdded}
         />
+
+        <CommentInput onCommentAdded={handleCommentAdded} postId={postId} postUserId={postUserId} />
       </SafeAreaView>
     </Animated.View>
   );

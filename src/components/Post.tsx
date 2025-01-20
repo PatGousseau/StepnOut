@@ -37,11 +37,10 @@ interface PostProps {
   setPostCounts?: React.Dispatch<
     React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>
   >;
-  isPostPage?: boolean;
   onPostDeleted?: () => void;
 }
 
-const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false }) => {
+const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, toggleLike } = useLikes();
   const { user } = useAuth();
