@@ -36,7 +36,7 @@ export const profileService = {
 
   async updateProfile(
     userId: string, 
-    updates: { username?: string; name?: string }
+    updates: { username?: string; name?: string; website?: string; instagram?: string }
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Check if username contains spaces
@@ -79,7 +79,15 @@ export const profileService = {
         .eq('id', userId);
 
         if (nameUpdateError) throw nameUpdateError;
-    }
+      }
+
+      if (updates.instagram) {
+        const { error: instaError } = await supabase
+          .from('profiles')
+          .update({ instagram: updates.instagram })
+          .eq('id', userId);
+        if (instaError) throw instaError;
+      }
 
       return { success: true };
     } catch (error) {

@@ -64,7 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string, 
     username: string, 
     displayName: string,
-    profileMediaId?: number | null
+    profileMediaId?: number | null,
+    instagram?: string
   ) => {
     // Check if username is already taken
     const { data: existingUser, error: checkError } = await supabase
@@ -96,11 +97,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
     if (!user) throw new Error('No user returned after signup');
 
-    // If a profile picture was uploaded, update the profile
-    if (profileMediaId) {
+    const updates: any = {};
+    if (profileMediaId) updates.profileMediaId = profileMediaId;
+    if (instagram) updates.instagram = instagram;
+
+    // If a profile picture or instgram link was uploaded, update the profile
+    if (profileMediaId || instagram) {
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ profile_media_id: profileMediaId })
+        .update({
+          ...updates,
+          instagram: instagram || null  // Explicitly set even if empty
+        })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
