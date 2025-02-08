@@ -335,7 +335,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                         size={16}
                         color={colors.light.primary}
                       />
-                      <Text style={styles.websiteText}>@{userProfile.instagram}</Text>
+                      <Text style={styles.websiteText}>{userProfile.instagram}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
