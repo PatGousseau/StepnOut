@@ -172,7 +172,8 @@ export default function RegisterProfileScreen() {
               onChangeText={setDisplayName}
             />
             <TextInput
-              placeholder="Instagram (Optional)"
+              placeholder={t("Instagram (Optional)")}
+              placeholderTextColor="#666"
               value={instagram}
               onChangeText={(text) => setInstagram(text.replace(/@/g, ''))}
               style={styles.input}

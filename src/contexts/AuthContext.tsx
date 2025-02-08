@@ -1,13 +1,20 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session } from '@supabase/supabase-js';
-import { supabase, initializeSupabase } from '../lib/supabase';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Session } from "@supabase/supabase-js";
+import { supabase, initializeSupabase } from "../lib/supabase";
 
 type AuthContextType = {
   session: Session | null;
-  user: Session['user'] | null;
+  user: Session["user"] | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, username: string, displayName: string, profileMediaId?: number | null) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    username: string,
+    displayName: string,
+    profileMediaId?: number | null,
+    instagram?: string
+  ) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -23,14 +30,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initialize Supabase first
     initializeSupabase().then(() => {
       // Get initial session
-      supabase.auth.getSession()
+      supabase.auth
+        .getSession()
         .then(async ({ data: { session } }) => {
           setSession(session);
           if (session?.user) {
             const { data } = await supabase
-              .from('profiles')
-              .select('is_admin')
-              .eq('id', session.user.id)
+              .from("profiles")
+              .select("is_admin")
+              .eq("id", session.user.id)
               .single();
             setIsAdmin(data?.is_admin || false);
           }
@@ -41,13 +49,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
       // Handle subsequent auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (_event, session) => {
         setSession(session);
         if (session?.user) {
           const { data } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', session.user.id)
+            .from("profiles")
+            .select("is_admin")
+            .eq("id", session.user.id)
             .single();
           setIsAdmin(data?.is_admin || false);
         } else {
@@ -60,30 +70,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (
-    email: string, 
-    password: string, 
-    username: string, 
+    email: string,
+    password: string,
+    username: string,
     displayName: string,
     profileMediaId?: number | null,
     instagram?: string
   ) => {
     // Check if username is already taken
     const { data: existingUser, error: checkError } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('username', username)
+      .from("profiles")
+      .select("username")
+      .eq("username", username)
       .single();
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError && checkError.code !== "PGRST116") {
       throw checkError;
     }
 
     if (existingUser) {
-      throw new Error('Username is already taken');
+      throw new Error("Username is already taken");
     }
 
     // Sign up the user
-    const { data: { user }, error } = await supabase.auth.signUp({
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -93,23 +106,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       },
     });
-    
+
     if (error) throw error;
-    if (!user) throw new Error('No user returned after signup');
+    if (!user) throw new Error("No user returned after signup");
 
     const updates: any = {};
-    if (profileMediaId) updates.profileMediaId = profileMediaId;
+    if (profileMediaId) updates.profile_media_id = profileMediaId;
     if (instagram) updates.instagram = instagram;
 
     // If a profile picture or instgram link was uploaded, update the profile
     if (profileMediaId || instagram) {
       const { error: updateError } = await supabase
-        .from('profiles')
+        .from("profiles")
         .update({
           ...updates,
-          instagram: instagram || null  // Explicitly set even if empty
+          instagram: instagram || null, // Explicitly set even if empty
         })
-        .eq('id', user.id);
+        .eq("id", user.id);
 
       if (updateError) throw updateError;
     }
@@ -129,15 +142,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user: session?.user || null, 
-      loading, 
-      isAdmin, 
-      signUp, 
-      signIn, 
-      signOut 
-    }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user: session?.user || null,
+        loading,
+        isAdmin,
+        signUp,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -146,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
