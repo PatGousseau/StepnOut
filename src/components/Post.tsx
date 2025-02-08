@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -30,6 +30,9 @@ import { supabase } from "../lib/supabase";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useEvent } from "expo";
 import { useLikes } from "../contexts/LikesContext";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import { Video } from "expo-av";
+import { AVPlaybackStatus } from "expo-av";
 
 interface PostProps {
   post: PostType;
@@ -150,31 +153,38 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     if (!post.media?.file_path) return null;
 
     if (isVideo(post.media?.file_path)) {
-      const player = useVideoPlayer(post.media?.file_path);
-      const { isPlaying } = useEvent(player, "playingChange", { isPlaying: player.playing });
+      const video = useRef<Video>(null);
+      const [status, setStatus] = useState<AVPlaybackStatus>({} as AVPlaybackStatus);
 
       return (
         <View style={styles.mediaContainer}>
-          <VideoView
-            player={player}
+          <Video
+            ref={video}
             style={styles.mediaContent}
-            contentFit="cover"
-            nativeControls={false}
+            source={{ uri: post.media.file_path }}
+            useNativeControls={false}
+            resizeMode="cover"
+            isLooping={false}
+            onPlaybackStatusUpdate={setStatus}
           />
-          <View style={styles.controlsContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                if (isPlaying) {
-                  player.pause();
-                } else {
-                  player.play();
-                }
-              }}
-              style={styles.playButton}
-            >
-              <Icon name={isPlaying ? "pause" : "play"} size={20} color={colors.neutral.grey1} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={styles.videoOverlay}
+            onPress={() => {
+              if (status.isLoaded) {
+                status.isPlaying 
+                  ? video.current?.pauseAsync()
+                  : video.current?.playAsync();
+              }
+            }}
+          >
+            {(!status.isPlaying || status.didJustFinish) && (
+              <MaterialIcons
+                name={status.didJustFinish ? "replay" : "play-arrow"}
+                size={48}
+                color="white"
+              />
+            )}
+          </TouchableOpacity>
         </View>
       );
     }
@@ -598,7 +608,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   mediaContainer: {
-    position: "relative",
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 1,
   },
   playButtonOverlay: {
     position: "absolute",
@@ -624,6 +636,26 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center", // Center the icon
+  },
+  playOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0)',
   },
 });
 
