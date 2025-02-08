@@ -102,7 +102,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleSaveProfile = async () => {
     try {
-
       const isValidUsername = /^[a-zA-Z0-9_-]+$/.test(editedUsername);
 
       if (!isValidUsername) {
@@ -290,16 +289,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                       />
                     </View>
                     <Text style={styles.editLabel}>{t("Instagram")}</Text>
-                    <View style={styles.inputWithIcon}>
-                      <MaterialCommunityIcons 
-                        name="instagram" 
-                        size={20} 
-                        color={colors.light.primary} 
-                        style={styles.inputIcon}
+                    <View style={styles.usernameInputContainer}>
+                      <MaterialCommunityIcons
+                        name="instagram"
+                        size={20}
+                        style={styles.instagramIcon}
+                        color={colors.light.primary}
                       />
                       <TextInput
-                        style={styles.editInput}
-                        placeholder="@username"
+                        style={[styles.editInput, styles.usernameInput]}
+                        placeholder={t("Username")}
                         value={editedInstagram}
                         onChangeText={setEditedInstagram}
                         autoCapitalize="none"
@@ -323,16 +322,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 <View style={styles.userInfoStacked}>
                   <Text style={styles.username}>{userProfile.name}</Text>
                   <Text style={styles.userTitle}>@{userProfile.username}</Text>
-                  
+
                   {userProfile?.instagram && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.instagram}
-                      onPress={() => Linking.openURL(`https://instagram.com/${userProfile.instagram}`)}
+                      onPress={() =>
+                        Linking.openURL(`https://instagram.com/${userProfile.instagram}`)
+                      }
                     >
-                      <MaterialCommunityIcons 
-                        name="instagram" 
-                        size={16} 
-                        color={colors.light.primary} 
+                      <MaterialCommunityIcons
+                        name="instagram"
+                        size={16}
+                        color={colors.light.primary}
                       />
                       <Text style={styles.websiteText}>@{userProfile.instagram}</Text>
                     </TouchableOpacity>
@@ -570,7 +571,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   userInfoStacked: {
-    gap: 4,
     marginLeft: 16,
   },
   userTitle: {
@@ -617,18 +617,15 @@ const styles = StyleSheet.create({
   inputWithIcon: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderColor: colors.light.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  inputIcon: {
-    paddingLeft: 12,
   },
   instagram: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    marginTop: 4
+    marginTop: 8,
+  },
+  instagramIcon: {
+    paddingLeft: 12,
+    paddingRight: 6,
   },
 });
