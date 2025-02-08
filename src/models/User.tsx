@@ -6,6 +6,7 @@ interface UserProfile {
   name: string;
   profileImageUrl: string | null;
   created_at?: string;
+  instagram?: string;
 }
 
 export class User {
@@ -41,6 +42,7 @@ export class User {
           username,
           name,
           created_at,
+          instagram,
           profile_media:media!profiles_profile_media_id_fkey (
             file_path
           )
@@ -86,6 +88,7 @@ export class User {
           name: data.name || "Unknown",
           profileImageUrl,
           created_at: data.created_at,
+          instagram: data.instagram || undefined
         };
       }
     } catch (err) {
@@ -118,6 +121,9 @@ export class User {
   get profileImageUrl(): string {
     return this._profile?.profileImageUrl || "/assets/images/default-pfp.png";
   }
+  get instagram(): string | undefined {
+    return this._profile?.instagram;
+  }
 
   // Setters
   set profileImageUrl(url: string) {
@@ -135,6 +141,12 @@ export class User {
   set name(value: string) {
     if (this._profile) {
       this._profile.name = value;
+    }
+  }
+
+  set instagram(value: string | undefined) {
+    if (this._profile) {
+      this._profile.instagram = value;
     }
   }
 }

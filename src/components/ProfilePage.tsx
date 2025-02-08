@@ -11,6 +11,7 @@ import {
   Modal,
   RefreshControl,
   TextInput,
+  Linking,
 } from "react-native";
 import UserProgress from "./UserProgress";
 import Post from "./Post";
@@ -25,6 +26,8 @@ import { User } from "../models/User";
 import { profileService } from "../services/profileService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from "react-native-popup-menu";
+import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type ProfilePageProps = {
   userId: string;
@@ -49,6 +52,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
+  const [editedInstagram, setEditedInstagram] = useState("");
   const [userProfile, setUserProfile] = useState<User | null>(null);
 
   // for features that are only available to the user themselves
@@ -98,7 +102,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleSaveProfile = async () => {
     try {
-      // Standard username validation: allows letters, numbers, underscores, hyphens
       const isValidUsername = /^[a-zA-Z0-9_-]+$/.test(editedUsername);
 
       if (!isValidUsername) {
@@ -108,15 +111,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         );
         return;
       }
-
       const result = await profileService.updateProfile(user?.id!, {
+        instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
         name: editedName !== userProfile?.name ? editedName : undefined,
       });
-
       if (result.success) {
         userProfile!.username = editedUsername;
         userProfile!.name = editedName;
+        userProfile!.instagram = editedInstagram;
         setIsEditing(false);
       } else if (result.error) {
         Alert.alert("Error", result.error);
@@ -285,6 +288,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                         maxLength={15}
                       />
                     </View>
+                    <Text style={styles.editLabel}>{t("Instagram")}</Text>
+                    <View style={styles.usernameInputContainer}>
+                      <MaterialCommunityIcons
+                        name="instagram"
+                        size={20}
+                        style={styles.instagramIcon}
+                        color={colors.light.primary}
+                      />
+                      <TextInput
+                        style={[styles.editInput, styles.usernameInput]}
+                        placeholder={t("Username")}
+                        value={editedInstagram}
+                        onChangeText={setEditedInstagram}
+                        autoCapitalize="none"
+                        keyboardType="default"
+                      />
+                    </View>
                   </View>
                   <View style={styles.editButtonsContainer}>
                     <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
@@ -302,6 +322,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 <View style={styles.userInfoStacked}>
                   <Text style={styles.username}>{userProfile.name}</Text>
                   <Text style={styles.userTitle}>@{userProfile.username}</Text>
+
+                  {userProfile?.instagram && (
+                    <TouchableOpacity
+                      style={styles.instagram}
+                      onPress={() =>
+                        Linking.openURL(`https://instagram.com/${userProfile.instagram}`)
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name="instagram"
+                        size={16}
+                        color={colors.light.primary}
+                      />
+                      <Text style={styles.websiteText}>{userProfile.instagram}</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>
@@ -318,6 +354,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                       setIsEditing(true);
                       setEditedName(userProfile?.name || "");
                       setEditedUsername(userProfile?.username || "");
+                      setEditedInstagram(userProfile?.instagram || "");
                     }}
                   >
                     <View style={styles.menuItemContent}>
@@ -534,7 +571,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   userInfoStacked: {
-    gap: 4,
     marginLeft: 16,
   },
   userTitle: {
@@ -568,5 +604,28 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     flex: 1,
     paddingLeft: 0,
+  },
+  websiteLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  websiteText: {
+    color: colors.light.primary,
+    fontSize: 14,
+  },
+  inputWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  instagram: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 8,
+  },
+  instagramIcon: {
+    paddingLeft: 12,
+    paddingRight: 6,
   },
 });
