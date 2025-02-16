@@ -198,11 +198,11 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     fetchComments();
   };
 
-  const handlePostPress = (e: GestureResponderEvent) => {
-    if (e.target === e.currentTarget) {
-      router.push(`/post/${post.id}`);
-    }
-  };
+  // const handlePostPress = (e: GestureResponderEvent) => {
+  //   if (e.target === e.currentTarget) {
+  //     router.push(`/post/${post.id}`);
+  //   }
+  // };
 
   const handleProfilePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
@@ -310,7 +310,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   return (
     <Pressable
-      onPress={handlePostPress}
+      // onPress={handlePostPress}
       style={[styles.container, post.challenge_id ? styles.challengeContainer : null]}
     >
       <View style={styles.header}>
