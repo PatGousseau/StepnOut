@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Text } from './StyledText';
-import { colors } from '../constants/Colors';
-import { Challenge } from '../types';
-import { supabase } from '../lib/supabase';
-import { ChallengeCard } from './Challenge';
-import { PatrizioExample } from './Challenge';
-import { ShareExperience } from './Challenge';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useFetchHomeData } from '../hooks/useFetchHomeData';
+import React, { useEffect, useState } from "react";
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { useLocalSearchParams } from "expo-router";
+import { Text } from "./StyledText";
+import { colors } from "../constants/Colors";
+import { Challenge } from "../types";
+import { supabase } from "../lib/supabase";
+import { ChallengeCard } from "./Challenge";
+import { PatrizioExample } from "./Challenge";
+import { ShareExperience } from "./Challenge";
+import { useLanguage } from "../contexts/LanguageContext";
+import { useFetchHomeData } from "../hooks/useFetchHomeData";
 
 interface ChallengePageProps {
   id?: number;
@@ -18,48 +18,55 @@ interface ChallengePageProps {
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const { t, language } = useLanguage();
   const params = useLocalSearchParams();
-  const challengeId = id || (typeof params.id === 'string' ? parseInt(params.id) : params.id);
-  
+  const challengeId = id || (typeof params.id === "string" ? parseInt(params.id) : params.id);
+
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { posts, loading: postsLoading, fetchAllData } = useFetchHomeData();
 
   // Filter posts for this challenge
-  const challengePosts = posts.filter(post => post.challenge_id === challengeId);
+  const challengePosts = posts.filter((post) => post.challenge_id === challengeId);
+
+  // Add a new state for initial loading
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const loadChallenge = async () => {
     if (!challengeId) {
-      console.error('No id available:', params);
+      console.error("No id available:", params);
       return;
     }
 
     try {
       const { data, error } = await supabase
-        .from('challenges')
-        .select(`
+        .from("challenges")
+        .select(
+          `
           *,
           media:image_media_id(
             file_path
           )
-        `)
-        .eq('id', challengeId)
+        `
+        )
+        .eq("id", challengeId)
         .single();
 
       if (error) throw error;
-      
+
       // Calculate days remaining
       const now = new Date();
       const createdAt = new Date(data.created_at);
-      const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
-      const daysRemaining = 7 // - daysSinceCreation;
+      const daysSinceCreation = Math.floor(
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const daysRemaining = 7 - daysSinceCreation;
 
       setChallenge({
         ...data,
         daysRemaining,
       });
     } catch (error) {
-      console.error('Error loading challenge:', error);
+      console.error("Error loading challenge:", error);
     }
   };
 
@@ -70,15 +77,12 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   }, [challengeId, fetchAllData]);
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([loadChallenge(), fetchAllData()]).finally(() => setLoading(false));
+    setInitialLoading(true);
+    Promise.all([loadChallenge(), fetchAllData()]).finally(() => setInitialLoading(false));
   }, [challengeId]);
 
-  const handlePostDeleted = () => {
-    fetchAllData();
-  };
-
-  if (loading || postsLoading) {
+  // Update the loading condition to only show loader on initial load
+  if (initialLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={colors.light.primary} />
@@ -89,40 +93,37 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   if (!challenge) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text>{t('Challenge not found')}</Text>
+        <Text>{t("Challenge not found")}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>{t('Challenge')}</Text>
+        <Text style={styles.title}>{t("Challenge")}</Text>
         <Text style={styles.endsIn}>
-          {challenge.daysRemaining > 0 
-            ? t(challenge.daysRemaining === 1 ? 'Ends in 1 day' : 'Ends in (days) days', { days: challenge.daysRemaining })
-            : t('Past challenge')}
+          {challenge.daysRemaining > 0
+            ? t(challenge.daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days", {
+                days: challenge.daysRemaining,
+              })
+            : t("Past challenge")}
         </Text>
-        <ChallengeCard 
+        <ChallengeCard
           challenge={{
             ...challenge,
-            title: language === 'it' ? challenge.title_it : challenge.title,
-            description: language === 'it' ? challenge.description_it : challenge.description,
-          }} 
+            title: language === "it" ? challenge.title_it : challenge.title,
+            description: language === "it" ? challenge.description_it : challenge.description,
+          }}
         />
-        <PatrizioExample 
+        <PatrizioExample
           challenge={{
             ...challenge,
-            title: language === 'it' ? challenge.title_it : challenge.title,
-            description: language === 'it' ? challenge.description_it : challenge.description,
+            title: language === "it" ? challenge.title_it : challenge.title,
+            description: language === "it" ? challenge.description_it : challenge.description,
           }}
         />
         {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
@@ -170,8 +171,8 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 
 const styles = StyleSheet.create({
   centered: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   container: {
     backgroundColor: colors.light.background,
@@ -188,12 +189,12 @@ const styles = StyleSheet.create({
     color: colors.light.lightText,
     fontSize: 14,
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   noSubmissions: {
     color: colors.light.lightText,
     marginTop: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   submissionsContainer: {
     marginTop: 20,
@@ -205,17 +206,17 @@ const styles = StyleSheet.create({
   submissionsTitle: {
     color: colors.light.text,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginRight: 4,
   },
   submissionsTitleContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    flexDirection: "row",
   },
   title: {
     color: colors.light.primary,
     fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
