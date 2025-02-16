@@ -12,7 +12,7 @@ import {
   Alert,
   Share,
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { CommentsModal } from "./Comments";
 import { colors } from "../constants/Colors";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -31,6 +31,7 @@ import ImageViewer from "react-native-image-zoom-viewer";
 import { useEvent } from "expo";
 import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
+import Icon from "react-native-vector-icons/FontAwesome";
 
 interface PostProps {
   post: PostType;
@@ -331,7 +332,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         </TouchableOpacity>
         <Menu style={styles.menuContainer}>
           <MenuTrigger style={{ padding: 8 }}>
-            <Icon name="dots-vertical" size={16} color={colors.neutral.grey1} />
+            <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>
             {user?.id === post.user_id ? (
@@ -367,7 +368,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           <TouchableOpacity onPress={handleLikePress}>
             <View style={styles.iconContainer}>
               <Icon
-                name={likedPosts[post.id] ? "heart" : "heart-outline"}
+                name={likedPosts[post.id] ? "heart" : "heart-o"}
                 size={16}
                 color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1}
               />
@@ -376,7 +377,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </TouchableOpacity>
           <TouchableOpacity onPress={handleOpenComments}>
             <View style={styles.iconContainer}>
-              <Icon name="comment-outline" size={16} color={colors.neutral.grey1} />
+              <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
               <Text style={styles.iconText}>{commentCount.toString()}</Text>
             </View>
           </TouchableOpacity>
@@ -422,10 +423,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 style={styles.closeFullScreenButton}
                 onPress={() => setShowFullScreenImage(false)}
               >
-                <Icon name="close" size={24} color="white" />
+                <MaterialCommunityIcons name="close" size={24} color="white" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveButton} onPress={handleImageLongPress}>
-                <Icon
+                <MaterialCommunityIcons
                   name="send"
                   size={24}
                   color="white"
