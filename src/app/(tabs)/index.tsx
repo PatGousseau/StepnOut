@@ -24,7 +24,7 @@ const Home = () => {
     {}
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"discussions" | "submissions">("discussions");
+  const [activeTab, setActiveTab] = useState<"discussions" | "submissions">("submissions");
 
   useEffect(() => {
     const counts = posts.reduce(
@@ -76,19 +76,19 @@ const Home = () => {
       {/* Add tab buttons */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === "discussions" && styles.activeTab]}
-          onPress={() => setActiveTab("discussions")}
-        >
-          <Text style={[styles.tabText, activeTab === "discussions" && styles.activeTabText]}>
-            {t("Discussions")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[styles.tabButton, activeTab === "submissions" && styles.activeTab]}
           onPress={() => setActiveTab("submissions")}
         >
           <Text style={[styles.tabText, activeTab === "submissions" && styles.activeTabText]}>
             {t("Submissions")}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === "discussions" && styles.activeTab]}
+          onPress={() => setActiveTab("discussions")}
+        >
+          <Text style={[styles.tabText, activeTab === "discussions" && styles.activeTabText]}>
+            {t("Discussions")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -112,12 +112,12 @@ const Home = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ padding: 16 }}>
-          {filteredPosts.map((post) => {
+          {filteredPosts.map((post, index) => {
             const postUser = userMap[post.user_id] as User;
             return (
               <Post
-                key={post.id}
-                post={post} // Pass the entire post object
+                key={`${post.id}-${index}`}
+                post={post}
                 postUser={postUser}
                 setPostCounts={setPostCounts}
                 onPostDeleted={handlePostDeleted}
