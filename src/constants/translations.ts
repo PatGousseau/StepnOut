@@ -155,6 +155,8 @@ export const translations = {
     "This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?":
       "Questa azione non può essere annullata. Tutti i tuoi dati verranno eliminati permanentemente. Sei assolutamente sicuro?",
     "Instagram (Optional)": "Instagram (Opzionale)",
+    Discussions: "Discussioni",
+    Submissions: "Sfide",
   },
   en: {
     Home: "Home",
@@ -268,5 +270,7 @@ export const translations = {
     "This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?":
       "This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?",
     "Instagram (Optional)": "Instagram (Optional)",
+    Discussions: "Discussions",
+    Submissions: "Submissions",
   },
 };
