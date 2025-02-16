@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
@@ -56,14 +56,16 @@ const Home = () => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Filter posts based on active tab
-  const filteredPosts = posts.filter((post) => {
-    if (activeTab === "submissions") {
-      return post.challenge_id != null;
-    } else {
-      return post.challenge_id == null;
-    }
-  });
+  // Memoize filtered posts
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      if (activeTab === "submissions") {
+        return post.challenge_id != null;
+      } else {
+        return post.challenge_id == null;
+      }
+    });
+  }, [posts, activeTab]); // Only recompute when posts or activeTab changes
 
   return (
     <KeyboardAvoidingView
