@@ -12,7 +12,7 @@ import {
   Alert,
   Share,
 } from "react-native";
-import Icon from "react-native-vector-icons/FontAwesome";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { CommentsModal } from "./Comments";
 import { colors } from "../constants/Colors";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -30,6 +30,7 @@ import { supabase } from "../lib/supabase";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useEvent } from "expo";
 import { useLikes } from "../contexts/LikesContext";
+import { Loader } from "./Loader";
 
 interface PostProps {
   post: PostType;
@@ -330,7 +331,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         </TouchableOpacity>
         <Menu style={styles.menuContainer}>
           <MenuTrigger style={{ padding: 8 }}>
-            <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
+            <Icon name="dots-vertical" size={16} color={colors.neutral.grey1} />
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>
             {user?.id === post.user_id ? (
@@ -366,7 +367,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           <TouchableOpacity onPress={handleLikePress}>
             <View style={styles.iconContainer}>
               <Icon
-                name={likedPosts[post.id] ? "heart" : "heart-o"}
+                name={likedPosts[post.id] ? "heart" : "heart-outline"}
                 size={16}
                 color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1}
               />
@@ -375,7 +376,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </TouchableOpacity>
           <TouchableOpacity onPress={handleOpenComments}>
             <View style={styles.iconContainer}>
-              <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
+              <Icon name="comment-outline" size={16} color={colors.neutral.grey1} />
               <Text style={styles.iconText}>{commentCount.toString()}</Text>
             </View>
           </TouchableOpacity>
@@ -417,16 +418,20 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         >
           <View style={styles.fullScreenContainer}>
             <View style={styles.fullScreenHeader}>
-              <Menu>
-                <MenuTrigger style={styles.fullScreenMenuTrigger}>
-                  <Icon name="ellipsis-h" size={20} color="white" />
-                </MenuTrigger>
-                <MenuOptions customStyles={optionsStyles}>
-                  <MenuOption onSelect={handleImageLongPress}>
-                    <Text style={styles.menuOptionText}>{t("Save Image")}</Text>
-                  </MenuOption>
-                </MenuOptions>
-              </Menu>
+              <TouchableOpacity
+                style={styles.closeFullScreenButton}
+                onPress={() => setShowFullScreenImage(false)}
+              >
+                <Icon name="close" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={handleImageLongPress}>
+                <Icon
+                  name="send"
+                  size={24}
+                  color="white"
+                  style={{ transform: [{ rotate: "-45deg" }] }}
+                />
+              </TouchableOpacity>
             </View>
             <ImageViewer
               imageUrls={[
@@ -441,6 +446,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               saveToLocalByLongPress={false}
               enablePreload={true}
               style={styles.fullScreenImage}
+              onClick={() => setShowFullScreenImage(false)}
+              loadingRender={() => <Loader />}
+              backgroundColor="rgba(0, 0, 0, 0.9)"
             />
           </View>
         </Modal>
@@ -504,10 +512,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   fullScreenHeader: {
-    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     position: "absolute",
-    right: 0,
     top: 40,
+    right: 0,
+    left: 0,
+    padding: 16,
     zIndex: 9999,
   },
   fullScreenImage: {
@@ -624,6 +636,12 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center", // Center the icon
+  },
+  closeFullScreenButton: {
+    padding: 8,
+  },
+  saveButton: {
+    padding: 8,
   },
 });
 
