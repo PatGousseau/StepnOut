@@ -30,6 +30,7 @@ import { supabase } from "../lib/supabase";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useEvent } from "expo";
 import { useLikes } from "../contexts/LikesContext";
+import { Loader } from "./Loader";
 
 interface PostProps {
   post: PostType;
@@ -441,6 +442,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               saveToLocalByLongPress={false}
               enablePreload={true}
               style={styles.fullScreenImage}
+              onClick={() => setShowFullScreenImage(false)}
+              loadingRender={() => <Loader />}
+              backgroundColor="rgba(0, 0, 0, 0.9)"
             />
           </View>
         </Modal>

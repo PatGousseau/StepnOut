@@ -431,11 +431,13 @@ interface PatrizioExampleProps {
             activeOpacity={1}
             onPress={() => setFullScreenPreview(false)}
           >
-            <Image 
-              source={{ uri: mediaPreview || '' }} 
-              style={shareStyles.fullScreenImage}
-              resizeMode="contain"
-            />
+            <View style={shareStyles.fullScreenImageWrapper}>
+              <Image 
+                source={{ uri: mediaPreview || '' }} 
+                style={shareStyles.fullScreenImage}
+                resizeMode="contain"
+              />
+            </View>
           </TouchableOpacity>
         </Modal>
 
@@ -726,5 +728,10 @@ const shareStyles = StyleSheet.create({
     right: 0,
     top: 0,
     width: '100%',
+  },
+  fullScreenImageWrapper: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
 });

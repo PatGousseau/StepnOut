@@ -408,18 +408,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         transparent={true}
         onRequestClose={() => setShowFullImage(false)}
       >
-        <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => setShowFullImage(false)}>
+        <TouchableOpacity 
+          style={styles.modalContainer} 
+          activeOpacity={1}
+          onPress={() => setShowFullImage(false)}
+        >
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={() => setShowFullImage(false)}
+          >
             <Icon name="close" size={24} color="#fff" />
           </TouchableOpacity>
-          <Image
-            source={
-              userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic
-            }
-            style={styles.fullScreenImage}
-            resizeMode="contain"
-          />
-        </View>
+          <View style={styles.fullScreenImageWrapper}>
+            <Image
+              source={
+                userProfile?.profileImageUrl 
+                  ? { uri: userProfile.profileImageUrl } 
+                  : ProfilePic
+              }
+              style={styles.fullScreenImage}
+              resizeMode="contain"
+            />
+          </View>
+        </TouchableOpacity>
       </Modal>
       {/* {isOwnProfile && <FeedbackButton />} */}
     </View>
@@ -627,5 +638,9 @@ const styles = StyleSheet.create({
   instagramIcon: {
     paddingLeft: 12,
     paddingRight: 6,
+  },
+  fullScreenImageWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
