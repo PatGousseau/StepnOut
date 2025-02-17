@@ -20,11 +20,12 @@
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "^8.2.0",
+    "@react-native-community/slider": "4.5.5",
     "@react-navigation/native": "^6.0.2",
     "@supabase/supabase-js": "^2.46.1",
     "date-fns": "^4.1.0",
     "expo": "^52.0.25",
-    "expo-av": "~15.0.1",
+    "expo-av": "~15.0.2",
     "expo-device": "~7.0.1",
     "expo-font": "~13.0.1",
     "expo-image": "~2.0.0",
@@ -60,6 +61,7 @@
     "react-native-svg-transformer": "^1.5.0",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
+    "react-native-video": "^6.10.1",
     "react-native-web": "~0.19.10"
   },
   "devDependencies": {
