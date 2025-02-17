@@ -15,7 +15,6 @@ import {
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { CommentsModal } from "./Comments";
 import { colors } from "../constants/Colors";
-import { VideoView, useVideoPlayer } from "expo-video";
 import { Text } from "./StyledText";
 import { Image } from "expo-image";
 import { useAuth } from "../contexts/AuthContext";
@@ -32,6 +31,8 @@ import { useEvent } from "expo";
 import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
+import VideoPlayer from './VideoPlayer';
+import { Video } from 'expo-av';
 import { formatRelativeTime } from "../utils/time";
 
 interface PostProps {
@@ -62,6 +63,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     fetchComments,
   } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   useEffect(() => {
     const loadProfileImage = async () => {
@@ -149,49 +151,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     setShowFullScreenImage(true);
   };
 
-  const renderMedia = () => {
-    if (!post.media?.file_path) return null;
-
-    if (isVideo(post.media?.file_path)) {
-      const player = useVideoPlayer(post.media?.file_path);
-      const { isPlaying } = useEvent(player, "playingChange", { isPlaying: player.playing });
-
-      return (
-        <View style={styles.mediaContainer}>
-          <VideoView
-            player={player}
-            style={styles.mediaContent}
-            contentFit="cover"
-            nativeControls={false}
-          />
-          <View style={styles.controlsContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                if (isPlaying) {
-                  player.pause();
-                } else {
-                  player.play();
-                }
-              }}
-              style={styles.playButton}
-            >
-              <Icon name={isPlaying ? "pause" : "play"} size={20} color={colors.neutral.grey1} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    }
-    return (
-      <TouchableOpacity onPress={handleMediaPress} activeOpacity={1}>
-        <Image
-          source={{ uri: post.media?.file_path }}
-          style={styles.mediaContent}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-          transition={200}
-        />
-      </TouchableOpacity>
-    );
+  const handleVideoPress = () => {
+    setShowVideoModal(true);
   };
 
   const handleOpenComments = () => {
@@ -307,6 +268,49 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     } catch (error) {
       console.error("Error sharing image:", error);
     }
+  };
+
+  const renderMedia = () => {
+    if (!post.media?.file_path) return null;
+
+    if (isVideo(post.media?.file_path)) {
+      return (
+        <>
+          <TouchableOpacity onPress={() => setShowVideoModal(true)} activeOpacity={0.9}>
+            <Video
+              source={{ uri: post.media?.file_path }}
+              style={styles.mediaContent}
+              resizeMode="cover"
+              shouldPlay={false}
+              isMuted={true}
+              isLooping={false}
+              useNativeControls={false}
+              posterSource={{ uri: post.media?.file_path }}
+              posterStyle={styles.mediaContent}
+            />
+            <View style={styles.videoOverlay}>
+              <Icon name="play-circle" size={48} color="white" />
+            </View>
+          </TouchableOpacity>
+          <VideoPlayer
+            videoUri={post.media?.file_path}
+            visible={showVideoModal}
+            onClose={() => setShowVideoModal(false)}
+          />
+        </>
+      );
+    }
+    return (
+      <TouchableOpacity onPress={handleMediaPress} activeOpacity={1}>
+        <Image
+          source={{ uri: post.media?.file_path }}
+          style={styles.mediaContent}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          transition={200}
+        />
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -644,6 +648,16 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     padding: 8,
+  },
+  videoOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0)',
   },
   timestamp: {
     color: "#666",
