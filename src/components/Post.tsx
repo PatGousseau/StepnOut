@@ -658,6 +658,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0)',
+  },
   timestamp: {
     color: "#666",
     fontSize: 11,
