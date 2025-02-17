@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Modal, PanResponder } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Modal, PanResponder, Text } from 'react-native';
 import { Video } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from '@react-native-community/slider';
@@ -15,6 +15,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
   const [status, setStatus] = useState({});
   const [showControls, setShowControls] = useState(true);
   const [swipeY, setSwipeY] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -54,14 +55,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
   };
 
   useEffect(() => {
-    if (showControls) {
+    if (showControls && !isSeeking) {
       const timeout = setTimeout(() => {
         setShowControls(false);
-      }, 3000); // Hide controls after 3 seconds
+      }, 3000);
       
       return () => clearTimeout(timeout);
     }
-  }, [showControls]);
+  }, [showControls, isSeeking]);
+
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <Modal
@@ -113,14 +121,22 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
                   value={status.positionMillis || 0}
                   minimumValue={0}
                   maximumValue={status.durationMillis || 0}
+                  onSlidingStart={() => setIsSeeking(true)}
                   onSlidingComplete={async (value) => {
                     await videoRef.current?.setPositionAsync(value);
+                    setIsSeeking(false);
                   }}
                   minimumTrackTintColor="#FFFFFF"
                   maximumTrackTintColor="#888888"
                   thumbTintColor="#FFFFFF"
                   thumbSize={10}
                 />
+              </View>
+
+              <View style={styles.timestampContainer}>
+                <Text style={styles.timestampText}>
+                  {formatTime(status.positionMillis || 0)} / {formatTime(status.durationMillis || 0)}
+                </Text>
               </View>
             </>
           )}
@@ -169,6 +185,19 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 6,
     zIndex: 1,
+  },
+  timestampContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+  },
+  timestampText: {
+    color: 'white',
+    fontSize: 14,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
 });
 
