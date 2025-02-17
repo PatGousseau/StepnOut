@@ -69,7 +69,7 @@ export async function sendLikeNotification(
     // Send push notification
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
-
+    
     const title = translations.title.replace('(username)', senderUsername);
     const body = translations.body;
     const data = { postId, senderId };

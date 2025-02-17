@@ -41,7 +41,7 @@ export const LikesProvider = ({ children }) => {
 
     try {
       const result = await postService.toggleLike(postId, userId, postUserId, {
-        title: 'New Like',
+        title: '(username)',
         body: 'liked your post'
       });
 

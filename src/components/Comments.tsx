@@ -110,7 +110,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 commentText,
                 savedComment.id.toString(),
                 {
-                  title: t("(username) commented on your post!"),
+                  title: t("(username) commented"),
                   body: t("Check it out now."),
                 }
               );
