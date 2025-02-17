@@ -33,6 +33,7 @@ import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
 import VideoPlayer from './VideoPlayer';
 import { Video } from 'expo-av';
+import { formatRelativeTime } from "../utils/time";
 
 interface PostProps {
   post: PostType;
@@ -334,8 +335,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             <Text style={styles.username}>@{postUser?.username || t("unknown")}</Text>
           </View>
         </TouchableOpacity>
+        <Text style={styles.timestamp}>{formatRelativeTime(post.created_at)}</Text>
         <Menu style={styles.menuContainer}>
-          <MenuTrigger style={{ padding: 8 }}>
+          <MenuTrigger>
             <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
           </MenuTrigger>
           <MenuOptions customStyles={optionsStyles}>
@@ -541,7 +543,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   header: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     marginBottom: 8,
   },
@@ -563,8 +565,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   menuContainer: {
-    marginLeft: "auto",
-    padding: 8,
+    marginLeft: 8,
   },
   menuOptionText: {
     fontSize: 16,
@@ -657,6 +658,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0)',
+  timestamp: {
+    color: "#666",
+    fontSize: 11,
+    marginLeft: 5,
   },
 });
 
