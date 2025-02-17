@@ -22,7 +22,7 @@ import { supabase } from "../lib/supabase";
 import { router } from "expo-router";
 import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
+import { formatRelativeTime } from "../utils/time";
 
 export interface Comment {
   id: number;
@@ -312,35 +312,6 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
   const handleProfilePress = () => {
     onClose?.();
     router.push(`/profile/${userId}`);
-  };
-
-  // relative time (e.g., "2 hours ago")
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString + "Z"); // 'Z' to ensures UTC parsing
-    const now = new Date();
-    const nowUTC = Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      now.getUTCHours(),
-      now.getUTCMinutes(),
-      now.getUTCSeconds()
-    );
-
-    const diffInSeconds = Math.floor((nowUTC - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return t("just now");
-    if (diffInSeconds < 3600) return t("(count)m", { count: Math.floor(diffInSeconds / 60) });
-    if (diffInSeconds < 86400) return t("(count)h", { count: Math.floor(diffInSeconds / 3600) });
-    if (diffInSeconds < 604800) return t("(count)d", { count: Math.floor(diffInSeconds / 86400) });
-
-    // Format date in UTC
-    return date.toLocaleDateString(undefined, {
-      timeZone: "UTC",
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
   };
 
   const handleDeleteComment = () => {
