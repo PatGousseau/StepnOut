@@ -338,7 +338,7 @@ interface PatrizioExampleProps {
                       <View style={shareStyles.mediaPreviewContainer}>
                         {isUploading && (
                           <View style={shareStyles.uploadingOverlay}>
-                            <Loader size="small" />
+                            <Loader />
                           </View>
                         )}
                         <TouchableOpacity 
@@ -375,7 +375,7 @@ interface PatrizioExampleProps {
                     ) : (
                       <>
                         {isUploading ? (
-                          <Loader size="small" />
+                          <Loader />
                         ) : (
                           <>
                             <View style={shareStyles.mediaIconsContainer}>

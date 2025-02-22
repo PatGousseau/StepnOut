@@ -195,7 +195,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   if (progressLoading || !userProfile) {
-    return <Loader />;
+    return (
+      <View style={[styles.container]}>
+        <Loader />
+      </View>
+    );
   }
 
   if (error) {

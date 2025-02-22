@@ -10,6 +10,7 @@ import { PatrizioExample } from "./Challenge";
 import { ShareExperience } from "./Challenge";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useFetchHomeData } from "../hooks/useFetchHomeData";
+import { Loader } from "./Loader";
 
 interface ChallengePageProps {
   id?: number;
@@ -21,7 +22,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const challengeId = id || (typeof params.id === "string" ? parseInt(params.id) : params.id);
 
   const [challenge, setChallenge] = useState<Challenge | null>(null);
-  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { posts, loading: postsLoading, fetchAllData } = useFetchHomeData();
 
@@ -85,7 +85,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   if (initialLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.light.primary} />
+        <Loader />
       </View>
     );
   }
