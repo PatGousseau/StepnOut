@@ -132,9 +132,9 @@ const Home = () => {
         },
         onPanResponderMove: (_, gestureState) => {
           if (!isScrolling) {
-          const basePosition = activeTab === "submissions" ? 0 : -tabContainerWidth;
-          const newPosition = basePosition + gestureState.dx;
-          const constrainedPosition = Math.max(-tabContainerWidth, Math.min(0, newPosition));
+            const basePosition = activeTab === "submissions" ? 0 : -tabContainerWidth;
+            const newPosition = basePosition + gestureState.dx;
+            const constrainedPosition = Math.max(-tabContainerWidth, Math.min(0, newPosition));
             slideAnimation.setValue(constrainedPosition);
           }
         },
@@ -144,7 +144,11 @@ const Home = () => {
           const SWIPE_THRESHOLD = 10;
           if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussions" && !isScrolling) {
             handleTabChange("submissions");
-          } else if (gestureState.dx < -SWIPE_THRESHOLD && activeTab === "submissions" && !isScrolling) {
+          } else if (
+            gestureState.dx < -SWIPE_THRESHOLD &&
+            activeTab === "submissions" &&
+            !isScrolling
+          ) {
             handleTabChange("discussions");
           } else {
             Animated.spring(slideAnimation, {
@@ -278,7 +282,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.light.accent,
+    borderBottomColor: colors.neutral.grey1 + "90",
   },
   tabButton: {
     flex: 1,
@@ -306,8 +310,10 @@ const styles = StyleSheet.create({
   tabIndicator: {
     position: "absolute",
     bottom: 0,
-    width: "50%",
-    height: 2,
+    left: "12.5%",
+    width: "25%",
+    borderRadius: 10,
+    height: 3,
     backgroundColor: colors.light.primary,
   },
 });
