@@ -9,6 +9,7 @@ import {
   Text,
   Animated,
   LayoutChangeEvent,
+  PanResponder,
 } from "react-native";
 import Post from "../../components/Post";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
@@ -29,16 +30,30 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState<"discussions" | "submissions">("submissions");
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
-  // Tab indicator position & animation
+  // tab indicator and content positions
   const tabIndicatorPosition = useMemo(() => new Animated.Value(0), []);
+  const slideAnimation = useMemo(() => new Animated.Value(0), []);
+
+  // states for locking vertical/horizontal scrolling
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [isScrolling, setIsScrolling] = useState(false);
 
   const handleTabChange = (tab: "discussions" | "submissions") => {
-    Animated.spring(tabIndicatorPosition, {
-      toValue: tab === "submissions" ? 0 : 1,
-      useNativeDriver: true,
-      tension: 80,
-      friction: 8,
-    }).start();
+    // animations for tab indicator and content sliding
+    Animated.parallel([
+      Animated.spring(tabIndicatorPosition, {
+        toValue: tab === "submissions" ? 0 : 1,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 12,
+      }),
+      Animated.spring(slideAnimation, {
+        toValue: tab === "submissions" ? 0 : -tabContainerWidth,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 20,
+      }),
+    ]).start();
     setActiveTab(tab);
   };
 
@@ -89,6 +104,52 @@ const Home = () => {
     setTabContainerWidth(width);
   };
 
+  // pan responder for horizontal swipe
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+          // lock scrolling if we're swiping horizontally
+          if (isHorizontalSwipe && !isScrolling) {
+            setScrollEnabled(false);
+            return true;
+          }
+          return false;
+        },
+        onPanResponderMove: (_, gestureState) => {
+          const basePosition = activeTab === "submissions" ? 0 : -tabContainerWidth;
+          const newPosition = basePosition + gestureState.dx;
+          const constrainedPosition = Math.max(-tabContainerWidth, Math.min(0, newPosition));
+
+          if (!isScrolling) {
+            slideAnimation.setValue(constrainedPosition);
+          }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          setScrollEnabled(true);
+
+          const SWIPE_THRESHOLD = 40;
+          if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussions") {
+            handleTabChange("submissions");
+          } else if (gestureState.dx < -SWIPE_THRESHOLD && activeTab === "submissions") {
+            handleTabChange("discussions");
+          } else {
+            Animated.spring(slideAnimation, {
+              toValue: activeTab === "submissions" ? 0 : -tabContainerWidth,
+              useNativeDriver: true,
+              tension: 120,
+              friction: 20,
+            }).start();
+          }
+        },
+        onPanResponderTerminate: () => {
+          setScrollEnabled(true);
+        },
+      }),
+    [activeTab, tabContainerWidth, slideAnimation, isScrolling]
+  );
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -125,6 +186,11 @@ const Home = () => {
       </View>
 
       <ScrollView
+        {...panResponder.panHandlers}
+        scrollEnabled={scrollEnabled}
+        onScrollBeginDrag={() => setIsScrolling(true)}
+        onScrollEndDrag={() => setIsScrolling(false)}
+        onMomentumScrollEnd={() => setIsScrolling(false)}
         style={{ backgroundColor: colors.light.background }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         maintainVisibleContentPosition={{
@@ -142,20 +208,46 @@ const Home = () => {
         scrollEventThrottle={400}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ padding: 16 }}>
-          {filteredPosts.map((post, index) => {
-            const postUser = userMap[post.user_id] as User;
-            return (
-              <Post
-                key={`${post.id}-${index}`}
-                post={post}
-                postUser={postUser}
-                setPostCounts={setPostCounts}
-                onPostDeleted={handlePostDeleted}
-              />
-            );
-          })}
-        </View>
+        <Animated.View
+          style={{
+            flexDirection: "row",
+            width: "200%",
+            transform: [{ translateX: slideAnimation }],
+          }}
+        >
+          <View style={{ width: "50%", padding: 16 }}>
+            {filteredPosts
+              .filter((post) => post.challenge_id != null)
+              .map((post, index) => {
+                const postUser = userMap[post.user_id] as User;
+                return (
+                  <Post
+                    key={`${post.id}-${index}`}
+                    post={post}
+                    postUser={postUser}
+                    setPostCounts={setPostCounts}
+                    onPostDeleted={handlePostDeleted}
+                  />
+                );
+              })}
+          </View>
+          <View style={{ width: "50%", padding: 16 }}>
+            {filteredPosts
+              .filter((post) => post.challenge_id == null)
+              .map((post, index) => {
+                const postUser = userMap[post.user_id] as User;
+                return (
+                  <Post
+                    key={`${post.id}-${index}`}
+                    post={post}
+                    postUser={postUser}
+                    setPostCounts={setPostCounts}
+                    onPostDeleted={handlePostDeleted}
+                  />
+                );
+              })}
+          </View>
+        </Animated.View>
 
         {loading && <Loader />}
       </ScrollView>
