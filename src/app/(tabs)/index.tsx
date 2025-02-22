@@ -27,7 +27,7 @@ const Home = () => {
     {}
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"discussions" | "submissions">("submissions");
+  const [activeTab, setActiveTab] = useState<"discussion" | "submissions">("submissions");
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // tab indicator and content positions
@@ -51,7 +51,7 @@ const Home = () => {
     }, 150);
   };
 
-  const handleTabChange = (tab: "discussions" | "submissions") => {
+  const handleTabChange = (tab: "discussion" | "submissions") => {
     // animations for tab indicator and content sliding
     Animated.parallel([
       Animated.spring(tabIndicatorPosition, {
@@ -142,14 +142,14 @@ const Home = () => {
           setScrollEnabled(true);
 
           const SWIPE_THRESHOLD = 10;
-          if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussions" && !isScrolling) {
+          if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussion" && !isScrolling) {
             handleTabChange("submissions");
           } else if (
             gestureState.dx < -SWIPE_THRESHOLD &&
             activeTab === "submissions" &&
             !isScrolling
           ) {
-            handleTabChange("discussions");
+            handleTabChange("discussion");
           } else {
             Animated.spring(slideAnimation, {
               toValue: activeTab === "submissions" ? 0 : -tabContainerWidth,
@@ -179,9 +179,9 @@ const Home = () => {
             {t("Submissions")}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange("discussions")}>
-          <Text style={[styles.tabText, activeTab === "discussions" && styles.activeTabText]}>
-            {t("Discussions")}
+        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange("discussion")}>
+          <Text style={[styles.tabText, activeTab === "discussion" && styles.activeTabText]}>
+            {t("Discussion")}
           </Text>
         </TouchableOpacity>
         <Animated.View
