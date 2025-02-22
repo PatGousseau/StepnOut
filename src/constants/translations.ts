@@ -157,6 +157,8 @@ export const translations = {
     "Instagram (Optional)": "Instagram (Opzionale)",
     Discussions: "Discussioni",
     Submissions: "Sfide",
+    "How did it make you feel?\nWhat did you find difficult?": "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
+    "Share how you completed the challenge": "Condividi come hai completato la sfida",
   },
   en: {
     Home: "Home",
@@ -272,5 +274,7 @@ export const translations = {
     "Instagram (Optional)": "Instagram (Optional)",
     Discussions: "Discussions",
     Submissions: "Submissions",
+    "How did it make you feel?\nWhat did you find difficult?": "How did it make you feel?\nWhat did you find difficult?",
+    "Share how you completed the challenge": "Share how you completed the challenge",
   },
 };
