@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
   ScrollView,
@@ -37,6 +37,19 @@ const Home = () => {
   // states for locking vertical/horizontal scrolling
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handleScroll = () => {
+    setIsScrolling(true);
+
+    if (scrollTimer.current) {
+      clearTimeout(scrollTimer.current);
+    }
+
+    scrollTimer.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 150);
+  };
 
   const handleTabChange = (tab: "discussions" | "submissions") => {
     // animations for tab indicator and content sliding
@@ -118,21 +131,20 @@ const Home = () => {
           return false;
         },
         onPanResponderMove: (_, gestureState) => {
+          if (!isScrolling) {
           const basePosition = activeTab === "submissions" ? 0 : -tabContainerWidth;
           const newPosition = basePosition + gestureState.dx;
           const constrainedPosition = Math.max(-tabContainerWidth, Math.min(0, newPosition));
-
-          if (!isScrolling) {
             slideAnimation.setValue(constrainedPosition);
           }
         },
         onPanResponderRelease: (_, gestureState) => {
           setScrollEnabled(true);
 
-          const SWIPE_THRESHOLD = 40;
-          if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussions") {
+          const SWIPE_THRESHOLD = 10;
+          if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussions" && !isScrolling) {
             handleTabChange("submissions");
-          } else if (gestureState.dx < -SWIPE_THRESHOLD && activeTab === "submissions") {
+          } else if (gestureState.dx < -SWIPE_THRESHOLD && activeTab === "submissions" && !isScrolling) {
             handleTabChange("discussions");
           } else {
             Animated.spring(slideAnimation, {
@@ -188,15 +200,9 @@ const Home = () => {
       <ScrollView
         {...panResponder.panHandlers}
         scrollEnabled={scrollEnabled}
-        onScrollBeginDrag={() => setIsScrolling(true)}
-        onScrollEndDrag={() => setIsScrolling(false)}
-        onMomentumScrollEnd={() => setIsScrolling(false)}
-        style={{ backgroundColor: colors.light.background }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-        }}
         onScroll={({ nativeEvent }) => {
+          handleScroll();
+
           const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
           const isCloseToBottom =
             layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
@@ -205,7 +211,12 @@ const Home = () => {
             loadMorePosts();
           }
         }}
-        scrollEventThrottle={400}
+        scrollEventThrottle={16}
+        style={{ backgroundColor: colors.light.background }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         <Animated.View
