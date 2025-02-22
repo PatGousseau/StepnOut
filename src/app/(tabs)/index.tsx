@@ -7,6 +7,8 @@ import {
   Platform,
   TouchableOpacity,
   Text,
+  Animated,
+  LayoutChangeEvent,
 } from "react-native";
 import Post from "../../components/Post";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
@@ -25,6 +27,20 @@ const Home = () => {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"discussions" | "submissions">("submissions");
+  const [tabContainerWidth, setTabContainerWidth] = useState(0);
+
+  // Tab indicator position & animation
+  const tabIndicatorPosition = useMemo(() => new Animated.Value(0), []);
+
+  const handleTabChange = (tab: "discussions" | "submissions") => {
+    Animated.spring(tabIndicatorPosition, {
+      toValue: tab === "submissions" ? 0 : 1,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 8,
+    }).start();
+    setActiveTab(tab);
+  };
 
   useEffect(() => {
     const counts = posts.reduce(
@@ -67,6 +83,12 @@ const Home = () => {
     });
   }, [posts, activeTab]); // Only recompute when posts or activeTab changes
 
+  // container width for tab indicator
+  const onTabContainerLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setTabContainerWidth(width);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -74,23 +96,32 @@ const Home = () => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 120 : 0}
     >
       {/* Add tab buttons */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === "submissions" && styles.activeTab]}
-          onPress={() => setActiveTab("submissions")}
-        >
+      <View style={styles.tabContainer} onLayout={onTabContainerLayout}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange("submissions")}>
           <Text style={[styles.tabText, activeTab === "submissions" && styles.activeTabText]}>
             {t("Submissions")}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === "discussions" && styles.activeTab]}
-          onPress={() => setActiveTab("discussions")}
-        >
+        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange("discussions")}>
           <Text style={[styles.tabText, activeTab === "discussions" && styles.activeTabText]}>
             {t("Discussions")}
           </Text>
         </TouchableOpacity>
+        <Animated.View
+          style={[
+            styles.tabIndicator,
+            {
+              transform: [
+                {
+                  translateX: tabIndicatorPosition.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [styles.tabContainer.paddingHorizontal, tabContainerWidth / 2],
+                  }),
+                },
+              ],
+            },
+          ]}
+        />
       </View>
 
       <ScrollView
@@ -150,11 +181,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     alignItems: "center",
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  activeTab: {
-    borderBottomColor: colors.light.primary,
   },
   tabText: {
     fontSize: 16,
@@ -173,6 +199,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  tabIndicator: {
+    position: "absolute",
+    bottom: 0,
+    width: "50%",
+    height: 2,
+    backgroundColor: colors.light.primary,
   },
 });
 
