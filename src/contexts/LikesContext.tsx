@@ -1,38 +1,45 @@
 import React, { createContext, useContext, useState } from 'react';
 import { postService } from '../services/postService';
 import { Post } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LikesContextType {
   likedPosts: { [postId: number]: boolean };
   likeCounts: { [postId: number]: number };
   toggleLike: (postId: number, userId: string, postUserId: string) => Promise<void>;
-  initializeLikes: (posts: Post[]) => void;
+  initializeLikes: (posts: Post[]) => Promise<void>;
 }
 
 const LikesContext = createContext<LikesContextType | undefined>(undefined);
 
-export const LikesProvider = ({ children }) => {
+export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
   const [likedPosts, setLikedPosts] = useState<{ [postId: number]: boolean }>({});
   const [likeCounts, setLikeCounts] = useState<{ [postId: number]: number }>({});
+  const { user } = useAuth();
 
-  const initializeLikes = (posts: Post[]) => {
-    const initialLikeCounts = posts.reduce((acc, post) => ({
-      ...acc,
-      [post.id]: post.likes_count || 0
-    }), {});
+  const initializeLikes = async (posts: Post[]) => {
+    const postIds = posts.map(post => post.id);
     
-    const initialLikedState = posts.reduce((acc, post) => ({
-      ...acc,
-      [post.id]: post.liked || false
-    }), {});
+    // Fetch likes status and counts separately
+    const [likesMap, countsMap] = await Promise.all([
+      postService.fetchPostsLikes(postIds, user?.id),
+      postService.fetchLikesCounts(postIds)
+    ]);
+    
+    // Set liked status
+    const newLikedPosts: { [key: number]: boolean } = {};
+    postIds.forEach(postId => {
+      newLikedPosts[postId] = likesMap[postId]?.isLiked || false;
+    });
 
-    setLikeCounts(initialLikeCounts);
-    setLikedPosts(initialLikedState);
+    setLikedPosts(newLikedPosts);
+    setLikeCounts(countsMap);
   };
 
   const toggleLike = async (postId: number, userId: string, postUserId: string) => {
-    // Optimistic update
     const isCurrentlyLiked = likedPosts[postId];
+    
+    // Optimistic update
     setLikedPosts(prev => ({ ...prev, [postId]: !isCurrentlyLiked }));
     setLikeCounts(prev => ({ 
       ...prev, 

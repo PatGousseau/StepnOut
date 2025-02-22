@@ -2,18 +2,33 @@ import { supabase } from '../lib/supabase';
 import { sendLikeNotification } from '../lib/notificationsService';
 
 export const postService = {
-  async fetchLikes(postId: number) {
+
+  async fetchPostsLikes(postIds: number[], userId?: string) {
     try {
       const { data, error } = await supabase
         .from('likes')
-        .select('user_id')
-        .eq('post_id', postId);
+        .select('post_id, user_id')
+        .in('post_id', postIds);
 
       if (error) throw error;
-      return data;
+
+      const likesMap = postIds.reduce((acc, postId) => {
+        const postLikes = data.filter(like => like.post_id === postId);
+        return {
+          ...acc,
+          [postId]: {
+            count: postLikes.length,
+            isLiked: userId ? postLikes.some(like => like.user_id === userId) : false
+          }
+        };
+      }, {});
+
+      console.log('Fetched likes for posts:', likesMap);
+      
+      return likesMap;
     } catch (error) {
-      console.error('Error fetching likes:', error);
-      return [];
+      console.error('Error fetching posts likes:', error);
+      return {};
     }
   },
 
@@ -142,6 +157,33 @@ export const postService = {
     } catch (error) {
       console.error('Error fetching post counts:', error);
       return { likes: 0, comments: 0 };
+    }
+  },
+
+  async fetchLikesCounts(postIds: number[]) {
+    try {
+      const { data, error } = await supabase
+        .from('likes')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      if (error) throw error;
+
+      // Count likes for each post
+      const likesCount = postIds.reduce((acc, postId) => {
+        const count = data.filter(like => like.post_id === postId).length;
+        return {
+          ...acc,
+          [postId]: count
+        };
+      }, {});
+
+      console.log('Fetched likes counts:', likesCount);
+
+      return likesCount;
+    } catch (error) {
+      console.error('Error fetching likes counts:', error);
+      return {};
     }
   }
 };

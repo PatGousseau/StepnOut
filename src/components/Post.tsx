@@ -53,8 +53,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   if (!post) return null;
 
   const [showComments, setShowComments] = useState(false);
-  const [liked, setLiked] = useState(post.liked);
-  const [likeCount, setLikeCount] = useState(post.likes_count);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
   const {
@@ -97,35 +95,19 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     loadProfileImage();
   }, [postUser?.profileImageUrl]);
 
-  useEffect(() => {
-    const initializeLikes = async () => {
-      const likes = await postService.fetchLikes(post.id);
-      setLiked(likes.some((like) => like.user_id === user?.id));
-      setLikeCount(likes.length);
-    };
-
-    if (post.id) {
-      initializeLikes();
-    }
-  }, [post.id]);
-
-  useEffect(() => {
-    setCommentCount(post.comments_count);
-  }, [post.comments_count]);
-
   const updateParentCounts = useCallback(
-    (newLikeCount: number, newCommentCount: number) => {
+    (newCommentCount: number) => {
       if (setPostCounts) {
         setPostCounts((prevCounts) => ({
           ...prevCounts,
           [post.id]: {
-            likes: newLikeCount,
+            likes: likeCounts[post.id] || 0,
             comments: newCommentCount,
           },
         }));
       }
     },
-    [post.id, setPostCounts]
+    [post.id, setPostCounts, likeCounts]
   );
 
   const handleLikePress = async () => {
@@ -136,7 +118,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const handleCommentAdded = (increment: number) => {
     const newCommentCount = commentCount + increment;
     setCommentCount(newCommentCount);
-    updateParentCounts(likeCount, newCommentCount);
+    updateParentCounts(newCommentCount);
   };
 
   const isVideo = (source: string) => {
