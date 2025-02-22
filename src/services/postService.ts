@@ -137,29 +137,6 @@ export const postService = {
     }
   },
 
-  async getPostCounts(postId: number) {
-    try {
-      const [likesResponse, commentsResponse] = await Promise.all([
-        supabase
-          .from('likes')
-          .select('id', { count: 'exact' })
-          .eq('post_id', postId),
-        supabase
-          .from('comments')
-          .select('id', { count: 'exact' })
-          .eq('post_id', postId)
-      ]);
-
-      return {
-        likes: likesResponse.count || 0,
-        comments: commentsResponse.count || 0
-      };
-    } catch (error) {
-      console.error('Error fetching post counts:', error);
-      return { likes: 0, comments: 0 };
-    }
-  },
-
   async fetchLikesCounts(postIds: number[]) {
     try {
       const { data, error } = await supabase

@@ -148,96 +148,6 @@ export const useFetchHomeData = () => {
     }
   }, [POSTS_PER_PAGE, user?.id]);
 
-  const fetchLikes = async (postId: number, userId?: string) => {
-    const { data, error } = await supabase
-      .from('likes')
-      .select('user_id')
-      .eq('post_id', postId);
-
-    if (error) {
-      console.error('Error fetching likes:', error);
-      return [];
-    }
-
-    if (userId) {
-      const isLiked = data?.some(like => like.user_id === userId) ?? false;
-      setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
-    }
-
-    return data || [];
-  };
-
-  const toggleLike = async (postId: number, userId: string) => {
-    try {
-      const { data, count, error } = await supabase
-        .from('likes')
-        .select('id', { count: 'exact' })
-        .eq('post_id', postId)
-        .eq('user_id', userId)
-        .is('comment_id', null);
-
-      if (error) {
-        console.error('Error checking for existing like:', error);
-        return;
-      }
-
-      // Get post owner's ID for notification
-      const { data: postData, error: postError } = await supabase
-        .from('post')
-        .select('user_id')
-        .eq('id', postId)
-        .single();
-
-      if (postError) {
-        console.error('Error fetching post data:', postError);
-        return;
-      }
-
-      if (count > 0 && data && data.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('likes')
-          .delete()
-          .eq('id', data[0].id);
-
-        if (deleteError) console.error('Error removing like:', deleteError);
-        else {
-          setLikedPosts(prev => ({ ...prev, [postId]: false }));
-          return { liked: false };
-        }
-      } else {
-        const { error: insertError } = await supabase
-          .from('likes')
-          .insert([{ post_id: postId, user_id: userId, comment_id: null }]);
-
-        if (insertError) {
-          console.error('Error adding like:', insertError);
-        } else {
-          setLikedPosts(prev => ({ ...prev, [postId]: true }));
-          // Don't create notification if user likes their own post
-          if (postData.user_id !== userId) {
-            // Create notification for post owner
-            const { error: notificationError } = await supabase
-              .from('notifications')
-              .insert([{
-                user_id: postData.user_id,
-                trigger_user_id: userId,
-                post_id: postId,
-                action_type: 'like',
-                is_read: false
-              }]);
-
-            if (notificationError) {
-              console.error('Error creating notification:', notificationError);
-            }
-          }
-          return { liked: true };
-        }
-      }
-    } catch (err) {
-      console.error("Unexpected error in toggleLike:", err);
-    }
-  };
-
   const addComment = async (postId: number, userId: string, body: string) => {
     const { data, error } = await supabase
       .from('comments')
@@ -309,8 +219,6 @@ export const useFetchHomeData = () => {
     userMap,
     loading,
     fetchAllData,
-    fetchLikes,
-    toggleLike,
     addComment,
     loadMorePosts,
     hasMore,
