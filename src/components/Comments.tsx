@@ -284,9 +284,11 @@ interface CommentProps {
 }
 
 const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onCommentDeleted }) => {
-  const { t } = useLanguage();
+
   const { onClose } = useContext(CommentsContext);
+  const { t } = useLanguage();
   const { user: currentUser } = useAuth();
+  
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
