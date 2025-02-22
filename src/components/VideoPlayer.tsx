@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, PanResponder, Text } from 'react-native';
-import { Video } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from '@react-native-community/slider';
 
@@ -12,7 +12,7 @@ interface VideoPlayerProps {
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose }) => {
   const videoRef = useRef<Video>(null);
-  const [status, setStatus] = useState({});
+  const [status, setStatus] = useState<AVPlaybackStatus>({} as AVPlaybackStatus);
   const [showControls, setShowControls] = useState(true);
   const [swipeY, setSwipeY] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
@@ -98,7 +98,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
             style={styles.video}
             source={{ uri: videoUri }}
             useNativeControls={false}
-            resizeMode="contain"
+            progressUpdateIntervalMillis={16}
+            resizeMode={ResizeMode.CONTAIN}
             isLooping
             onPlaybackStatusUpdate={setStatus}
             onLoad={handleLoad}

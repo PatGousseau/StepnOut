@@ -27,7 +27,6 @@ import { postService } from "../services/postService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { supabase } from "../lib/supabase";
 import ImageViewer from "react-native-image-zoom-viewer";
-import { useEvent } from "expo";
 import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -133,20 +132,11 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     setShowFullScreenImage(true);
   };
 
-  const handleVideoPress = () => {
-    setShowVideoModal(true);
-  };
 
   const handleOpenComments = () => {
     setShowComments(true);
     fetchComments();
   };
-
-  // const handlePostPress = (e: GestureResponderEvent) => {
-  //   if (e.target === e.currentTarget) {
-  //     router.push(`/post/${post.id}`);
-  //   }
-  // };
 
   const handleProfilePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
