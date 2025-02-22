@@ -1,3 +1,4 @@
+import React from "react";
 import { Text } from "../components/StyledText";
 import { colors } from "../constants/Colors";
 import { TouchableOpacity, Image, Animated, TextInput } from "react-native";

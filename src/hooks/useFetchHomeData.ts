@@ -14,6 +14,11 @@ interface PostLikes {
   [postId: number]: boolean;
 }
 
+interface CommentCount {
+  post_id: number;
+  count: string;
+}
+
 export const useFetchHomeData = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
@@ -112,7 +117,7 @@ export const useFetchHomeData = () => {
         });
 
         const commentCountMap = new Map();
-        commentCountsResponse.data?.forEach((row) => {
+        commentCountsResponse.data?.forEach((row: CommentCount) => {
           commentCountMap.set(row.post_id, parseInt(row.count));
         });
 
