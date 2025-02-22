@@ -285,15 +285,17 @@ interface CommentProps {
 
 const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onCommentDeleted }) => {
   const { t } = useLanguage();
-  const [user, setUser] = useState<User | null>(null);
   const { onClose } = useContext(CommentsContext);
   const { user: currentUser } = useAuth();
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     User.getUser(userId).then(setUser);
   }, [userId]);
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   const imageSource = user.profileImageUrl.startsWith("http")
     ? {
