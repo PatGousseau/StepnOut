@@ -134,10 +134,8 @@ export const useFetchHomeData = () => {
         postData.map(post => formatPost(post, commentCountMap))
       );
 
-      // Initialize likes state in context
-      if (!isLoadMore) {
-        initializeLikes(formattedPosts);
-      }
+      // Initialize likes for all new posts, regardless of page
+      initializeLikes(formattedPosts);
 
       setHasMore(postData.length === POSTS_PER_PAGE);
       setPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);

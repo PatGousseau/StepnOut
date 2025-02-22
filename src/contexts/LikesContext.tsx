@@ -26,14 +26,18 @@ export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
       postService.fetchLikesCounts(postIds)
     ]);
     
-    // Set liked status
-    const newLikedPosts: { [key: number]: boolean } = {};
-    postIds.forEach(postId => {
-      newLikedPosts[postId] = likesMap[postId]?.isLiked || false;
-    });
+    // Merge new likes data with existing data
+    setLikedPosts(prev => ({
+      ...prev,
+      ...Object.fromEntries(
+        postIds.map(postId => [postId, likesMap[postId]?.isLiked || false])
+      )
+    }));
 
-    setLikedPosts(newLikedPosts);
-    setLikeCounts(countsMap);
+    setLikeCounts(prev => ({
+      ...prev,
+      ...countsMap
+    }));
   };
 
   const toggleLike = async (postId: number, userId: string, postUserId: string) => {
