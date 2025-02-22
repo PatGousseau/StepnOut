@@ -65,8 +65,10 @@ const ChallengeCreation: React.FC = () => {
         allowVideo: false,
         allowsEditing: true 
       });
-      setMediaPreview(result.mediaPreview);
-      setImageMediaId(result.mediaId);
+      if (result) {
+        setMediaPreview(result.mediaUrl);
+        setImageMediaId(result.mediaId);
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
       Alert.alert('Error', 'Failed to upload image');

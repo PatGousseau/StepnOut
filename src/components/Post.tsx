@@ -67,8 +67,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     const loadProfileImage = async () => {
       if (postUser?.profileImageUrl) {
         try {
-          const url = await imageService.getProfileImageUrl(postUser.profileImageUrl, "small");
-          setProfileImageUrl(url);
+          const urls = await imageService.getProfileImageUrl(postUser.profileImageUrl, "small");
+          setProfileImageUrl(urls.fullUrl);
         } catch (error) {
           console.error("Error loading profile image:", error);
         }
@@ -185,17 +185,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
   };
 
-  const getOriginalImageUrl = async (filePath: string) => {
-    if (!filePath) return "";
-    return imageService.getImageUrl(filePath);
-  };
-
   const handleImageLongPress = async () => {
     try {
-      const imageUrl = await getOriginalImageUrl(post.media?.file_path || "");
+      const urls = await imageService.getPostImageUrl(post.media?.file_path || "", "original");
 
       // Download the image first
-      const response = await fetch(imageUrl);
+      const response = await fetch(urls.fullUrl);
       const blob = await response.blob();
       const base64Data = await new Promise((resolve) => {
         const reader = new FileReader();
@@ -212,8 +207,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         });
       } else {
         await Share.share({
-          message: imageUrl,
-          url: imageUrl,
+          message: urls.fullUrl,
+          url: urls.fullUrl,
         });
       }
     } catch (error) {

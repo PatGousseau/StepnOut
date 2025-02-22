@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabase";
 import { Post } from "../types";
 import { User } from "../models/User";
 import { useAuth } from "../contexts/AuthContext";
-import { isVideo } from "../utils/utils";
 import { useLikes } from "../contexts/LikesContext";
 import { imageService } from "../services/imageService";
 
@@ -36,16 +35,14 @@ export const useFetchHomeData = () => {
       commentCount = commentCountResponse.data?.[0]?.count ?? 0;
     }
 
-    let mediaUrl = null;
+    let urls = null;
     if (post.media?.file_path) {
-      mediaUrl = isVideo(post.media.file_path)
-        ? await imageService.getImageUrl(post.media.file_path)
-        : await imageService.getPostImageUrl(post.media.file_path);
+      urls = await imageService.getPostImageUrl(post.media.file_path);
     }
 
     return {
       ...post,
-      ...(mediaUrl ? { media: { file_path: mediaUrl } } : {}),
+      ...(urls ? { media: { file_path: urls.fullUrl } } : {}),
       likes_count: post.likes?.count ?? 0,
       comments_count: commentCount ?? 0,
       liked: likedPosts[post.id] ?? false,

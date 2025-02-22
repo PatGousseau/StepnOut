@@ -23,7 +23,6 @@ import { router } from "expo-router";
 import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { formatRelativeTime } from "../utils/time";
-import { imageService } from "../services/imageService";
 
 export interface Comment {
   id: number;

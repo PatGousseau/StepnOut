@@ -59,7 +59,8 @@ export class User {
 
         if (data.profile_media?.file_path) {
           try {
-            profileImageUrl = await imageService.getProfileImageUrl(data.profile_media.file_path);
+            const urls = await imageService.getProfileImageUrl(data.profile_media.file_path);
+            profileImageUrl = urls.fullUrl;
           } catch (error) {
             console.error("Error transforming profile image:", error);
           }
