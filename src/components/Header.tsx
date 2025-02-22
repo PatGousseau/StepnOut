@@ -23,7 +23,6 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
             if (isDetailPage) {
               router.back();
             } else {
-              console.log('Logo clicked!');
               onMenuPress();
             }
           }}

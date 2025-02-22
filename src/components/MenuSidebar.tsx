@@ -45,15 +45,9 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => {
-      console.log('onStartShouldSetPanResponder', { isOpen, enableSwiping });
       return isOpen || enableSwiping;
     },
     onMoveShouldSetPanResponder: (_, gestureState) => {
-      console.log('onMoveShouldSetPanResponder', { 
-        isOpen, 
-        enableSwiping, 
-        dx: gestureState.dx 
-      });
       
       if (!isOpen) {
         return enableSwiping && Math.abs(gestureState.dx) > 5;
