@@ -36,7 +36,7 @@ export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
         ? postService.fetchPostsLikes(ids, user?.id)
         : postService.fetchCommentsLikes(ids, user?.id),
       type === "post"
-        ? postService.fetchLikesCounts(ids)
+        ? postService.fetchPostLikesCounts(ids)
         : postService.fetchCommentLikesCounts(ids),
     ]);
 
@@ -74,7 +74,7 @@ export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       const result = isPost
-        ? await postService.toggleLike(id, userId, targetUserId, {
+        ? await postService.togglePostLike(id, userId, targetUserId, {
             title: "(username)",
             body: notificationBody,
           })

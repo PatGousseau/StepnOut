@@ -146,48 +146,24 @@ export const postService = {
     }
   },
 
-  async fetchLikesCounts(postIds: number[]) {
+  async fetchItemLikesCounts(ids: number[], type: LikeableItem["type"]) {
     try {
-      const { data, error } = await supabase.from("likes").select("post_id").in("post_id", postIds);
+      const idField = `${type}_id` as const;
+      const { data, error } = await supabase.from("likes").select(idField).in(idField, ids);
 
       if (error) throw error;
 
-      // Count likes for each post
-      const likesCount = postIds.reduce((acc, postId) => {
-        const count = data.filter((like) => like.post_id === postId).length;
+      const likesCount = ids.reduce((acc, itemId) => {
+        const count = data.filter((like) => like[idField] === itemId).length;
         return {
           ...acc,
-          [postId]: count,
+          [itemId]: count,
         };
       }, {});
 
       return likesCount;
     } catch (error) {
-      console.error("Error fetching likes counts:", error);
-      return {};
-    }
-  },
-
-  async fetchCommentLikesCounts(commentIds: number[]) {
-    try {
-      const { data, error } = await supabase
-        .from("likes")
-        .select("comment_id")
-        .in("comment_id", commentIds);
-
-      if (error) throw error;
-
-      const likesCount = commentIds.reduce((acc, commentId) => {
-        const count = data.filter((like) => like.comment_id === commentId).length;
-        return {
-          ...acc,
-          [commentId]: count,
-        };
-      }, {});
-
-      return likesCount;
-    } catch (error) {
-      console.error("Error fetching comment likes counts:", error);
+      console.error(`Error fetching ${type} likes counts:`, error);
       return {};
     }
   },
@@ -228,4 +204,9 @@ export const postService = {
 
   deletePost: (postId: number) => postService.deleteItem(postId, "post"),
   deleteComment: (commentId: number) => postService.deleteItem(commentId, "comment"),
+
+  fetchPostLikesCounts: (postIds: number[]) => postService.fetchItemLikesCounts(postIds, "post"),
+
+  fetchCommentLikesCounts: (commentIds: number[]) =>
+    postService.fetchItemLikesCounts(commentIds, "comment"),
 };
