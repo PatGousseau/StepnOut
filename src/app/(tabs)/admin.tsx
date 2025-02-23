@@ -1,12 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, Image, ScrollView, RefreshControl } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
-import { supabase } from '../../lib/supabase';
-import { colors } from '../../constants/Colors';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useAuth } from '../../contexts/AuthContext';
-import { sendNewChallengeNotificationToAll } from '../../lib/notificationsService';
-import { uploadMedia } from '../../utils/handleMediaUpload';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  RefreshControl,
+} from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
+import { supabase } from "../../lib/supabase";
+import { colors } from "../../constants/Colors";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { useAuth } from "../../contexts/AuthContext";
+import { sendNewChallengeNotificationToAll } from "../../lib/notificationsService";
+import { uploadMedia } from "../../utils/handleMediaUpload";
 
 type Challenge = {
   id: number;
@@ -14,38 +24,38 @@ type Challenge = {
   title_it: string;
   description: string;
   description_it: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   created_at: string;
   image_media_id: number | null;
   is_active: boolean | null;
 };
 
 const ChallengeCreation: React.FC = () => {
-  const [title, setTitle] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [title, setTitle] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [openDifficulty, setOpenDifficulty] = useState<boolean>(false);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [imageMediaId, setImageMediaId] = useState<number | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [titleIt, setTitleIt] = useState<string>('');
-  const [descriptionIt, setDescriptionIt] = useState<string>('');
+  const [titleIt, setTitleIt] = useState<string>("");
+  const [descriptionIt, setDescriptionIt] = useState<string>("");
 
   const { user } = useAuth();
 
   const fetchChallenges = async () => {
     try {
       const { data, error } = await supabase
-        .from('challenges')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("challenges")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setChallenges(data || []);
     } catch (error) {
-      console.error('Error fetching challenges:', error);
-      Alert.alert('Error', 'Failed to load challenges');
+      console.error("Error fetching challenges:", error);
+      Alert.alert("Error", "Failed to load challenges");
     }
   };
 
@@ -61,15 +71,17 @@ const ChallengeCreation: React.FC = () => {
 
   const handleMediaUpload = async () => {
     try {
-      const result = await uploadMedia({ 
+      const result = await uploadMedia({
         allowVideo: false,
-        allowsEditing: true 
+        allowsEditing: true,
       });
-      setMediaPreview(result.mediaPreview);
-      setImageMediaId(result.mediaId);
+      if (result) {
+        setMediaPreview(result.mediaUrl);
+        setImageMediaId(result.mediaId);
+      }
     } catch (error) {
-      console.error('Error uploading file:', error);
-      Alert.alert('Error', 'Failed to upload image');
+      console.error("Error uploading file:", error);
+      Alert.alert("Error", "Failed to upload image");
     }
   };
 
@@ -77,39 +89,39 @@ const ChallengeCreation: React.FC = () => {
     try {
       const newChallenge = {
         title,
-        title_it: titleIt, 
+        title_it: titleIt,
         description,
         description_it: descriptionIt,
         difficulty,
         created_by: user?.id,
-        created_at: new Date().toISOString().split('T')[0],
-        updated_at: new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString().split("T")[0],
+        updated_at: new Date().toISOString().split("T")[0],
         image_media_id: imageMediaId,
       };
-  
-      const { error } = await supabase.from('challenges').insert([newChallenge]);
-  
+
+      const { error } = await supabase.from("challenges").insert([newChallenge]);
+
       if (error) {
-        console.error('Error inserting data:', error);
-        Alert.alert('Error', error.message);
+        console.error("Error inserting data:", error);
+        Alert.alert("Error", error.message);
       } else {
-        Alert.alert('Success', 'Challenge created successfully!');
-        setTitle('');
-        setDescription('');
-        setDifficulty('easy');
+        Alert.alert("Success", "Challenge created successfully!");
+        setTitle("");
+        setDescription("");
+        setDifficulty("easy");
         setMediaPreview(null);
         setImageMediaId(null);
         fetchChallenges();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+      Alert.alert("Error", errorMessage);
     }
   };
 
   const handleCreateChallenge = () => {
     if (!title || !description || !difficulty) {
-      Alert.alert('Error', 'All fields must be filled out.');
+      Alert.alert("Error", "All fields must be filled out.");
       return;
     }
     createChallengeInDatabase();
@@ -119,61 +131,59 @@ const ChallengeCreation: React.FC = () => {
     try {
       // First, deactivate all challenges
       const { error: deactivateError } = await supabase
-        .from('challenges')
-        .update({ 
+        .from("challenges")
+        .update({
           is_active: false,
-          updated_at: new Date().toISOString().split('T')[0]
+          updated_at: new Date().toISOString().split("T")[0],
         })
-        .neq('id', 0);
+        .neq("id", 0);
 
       if (deactivateError) throw deactivateError;
 
       // Then, activate the selected challenge
       const { error: activateError } = await supabase
-        .from('challenges')
-        .update({ 
+        .from("challenges")
+        .update({
           is_active: true,
-          updated_at: new Date().toISOString().split('T')[0]
+          updated_at: new Date().toISOString().split("T")[0],
         })
-        .eq('id', challengeId);
+        .eq("id", challengeId);
 
       if (activateError) throw activateError;
 
       // Refresh the challenges list
       await fetchChallenges();
-      Alert.alert('Success', 'Challenge activated!');
+      Alert.alert("Success", "Challenge activated!");
     } catch (error) {
-      console.error('Error activating challenge:', error);
-      Alert.alert('Error', 'Failed to activate challenge');
+      console.error("Error activating challenge:", error);
+      Alert.alert("Error", "Failed to activate challenge");
     }
   };
 
   const handleSendNotifications = async (challengeId: number, challengeTitle: string) => {
     try {
       await sendNewChallengeNotificationToAll(challengeId.toString(), challengeTitle);
-      Alert.alert('Success', 'Notifications sent to all users!');
+      Alert.alert("Success", "Notifications sent to all users!");
     } catch (error) {
-      console.error('Error sending notifications:', error);
-      Alert.alert('Error', 'Failed to send notifications');
+      console.error("Error sending notifications:", error);
+      Alert.alert("Error", "Failed to send notifications");
     }
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <Text style={styles.sectionTitle}>Create New Challenge</Text>
-        
+
         <Text style={styles.label}>Title</Text>
-        <TextInput 
-          style={styles.input} 
-          value={title} 
-          onChangeText={setTitle} 
-          placeholder="Enter title" 
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Enter title"
         />
 
         <Text style={styles.label}>Description</Text>
@@ -186,11 +196,11 @@ const ChallengeCreation: React.FC = () => {
         />
 
         <Text style={styles.label}>Italian Title</Text>
-        <TextInput 
-          style={styles.input} 
-          value={titleIt} 
-          onChangeText={setTitleIt} 
-          placeholder="Enter Italian title" 
+        <TextInput
+          style={styles.input}
+          value={titleIt}
+          onChangeText={setTitleIt}
+          placeholder="Enter Italian title"
         />
 
         <Text style={styles.label}>Italian Description</Text>
@@ -208,9 +218,9 @@ const ChallengeCreation: React.FC = () => {
             open={openDifficulty}
             value={difficulty}
             items={[
-              { label: 'Easy', value: 'easy' },
-              { label: 'Medium', value: 'medium' },
-              { label: 'Hard', value: 'hard' },
+              { label: "Easy", value: "easy" },
+              { label: "Medium", value: "medium" },
+              { label: "Hard", value: "hard" },
             ]}
             setOpen={setOpenDifficulty}
             setValue={setDifficulty}
@@ -225,7 +235,7 @@ const ChallengeCreation: React.FC = () => {
           {mediaPreview ? (
             <View style={styles.mediaPreviewContainer}>
               <Image source={{ uri: mediaPreview }} style={styles.mediaPreview} />
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.removeButton}
                 onPress={() => {
                   setMediaPreview(null);
@@ -253,18 +263,18 @@ const ChallengeCreation: React.FC = () => {
             {challenge.image_media_id && (
               <Image
                 source={{
-                  uri: `${supabase.storage.from('challenge-uploads').getPublicUrl(
-                    `image/${challenge.image_media_id}.jpg`
-                  ).data.publicUrl}`
+                  uri: `${
+                    supabase.storage
+                      .from("challenge-uploads")
+                      .getPublicUrl(`image/${challenge.image_media_id}.jpg`).data.publicUrl
+                  }`,
                 }}
                 style={styles.challengeImage}
               />
             )}
             <View style={styles.challengeInfo}>
               <Text style={styles.challengeTitle}>{challenge.title}</Text>
-              <Text style={styles.challengeDifficulty}>
-                Difficulty: {challenge.difficulty}
-              </Text>
+              <Text style={styles.challengeDifficulty}>Difficulty: {challenge.difficulty}</Text>
               <Text numberOfLines={2} style={styles.challengeDescription}>
                 {challenge.description}
               </Text>
@@ -273,15 +283,12 @@ const ChallengeCreation: React.FC = () => {
               </Text>
               <View style={styles.challengeActions}>
                 <TouchableOpacity
-                  style={[
-                    styles.activateButton,
-                    challenge.is_active && styles.activeButton
-                  ]}
+                  style={[styles.activateButton, challenge.is_active && styles.activeButton]}
                   onPress={() => handleActivateChallenge(challenge.id)}
-                  disabled={challenge.is_active}
+                  disabled={challenge.is_active ?? false}
                 >
                   <Text style={styles.buttonText}>
-                    {challenge.is_active ? 'Active' : 'Activate'}
+                    {challenge.is_active ? "Active" : "Activate"}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -313,40 +320,35 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "bold",
   },
   challengeActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 8,
   },
   challengeCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 8,
     elevation: 3,
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   challengeDate: {
-    color: '#888',
+    color: "#888",
     fontSize: 12,
   },
   challengeDescription: {
-    color: '#444',
+    color: "#444",
     fontSize: 14,
     marginBottom: 4,
   },
   challengeDifficulty: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
     marginBottom: 4,
   },
@@ -361,7 +363,7 @@ const styles = StyleSheet.create({
   },
   challengeTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   container: {
@@ -369,7 +371,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   createChallengeButton: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: colors.light.secondary,
     borderRadius: 8,
     elevation: 5,
@@ -385,7 +387,7 @@ const styles = StyleSheet.create({
     marginBottom: 60, // Add space for the dropdown options
   },
   input: {
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 4,
     borderWidth: 1,
     marginTop: 8,
@@ -393,26 +395,26 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 16,
   },
   mediaPreview: {
     borderRadius: 8,
-    height: '100%',
-    resizeMode: 'cover',
-    width: '100%',
+    height: "100%",
+    resizeMode: "cover",
+    width: "100%",
   },
   mediaPreviewContainer: {
-    height: '100%',
-    position: 'relative',
-    width: '100%',
+    height: "100%",
+    position: "relative",
+    width: "100%",
   },
   mediaUploadButton: {
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
     borderRadius: 8,
     height: 120,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginTop: 8,
     padding: 16,
   },
@@ -424,10 +426,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   removeButton: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 12,
     padding: 4,
-    position: 'absolute',
+    position: "absolute",
     right: 4,
     top: 4,
   },
@@ -438,11 +440,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.light.text,
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 16,
   },
   uploadButtonText: {
-    color: '#666',
+    color: "#666",
     marginTop: 8,
   },
 });

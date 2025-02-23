@@ -70,7 +70,6 @@ const mediaRequests = posts
           r.headers['Content-Type'] && 
           r.headers['Content-Type'].startsWith('image/'),
       });
-      console.log(`Transformed image URL: ${postsWithMedia[index].media.file_path}`);
     });
   }
 

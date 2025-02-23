@@ -22,8 +22,6 @@ export const postService = {
           }
         };
       }, {});
-
-      console.log('Fetched likes for posts:', likesMap);
       
       return likesMap;
     } catch (error) {
@@ -154,8 +152,6 @@ export const postService = {
           [postId]: count
         };
       }, {});
-
-      console.log('Fetched likes counts:', likesCount);
 
       return likesCount;
     } catch (error) {

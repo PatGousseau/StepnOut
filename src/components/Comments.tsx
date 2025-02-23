@@ -292,25 +292,20 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    User.getUser(userId).then(setUser);
+    const loadUser = async () => {
+      const userData = await User.getUser(userId);
+      setUser(userData);
+    };
+
+    loadUser();
   }, [userId]);
 
   if (!user) {
     return null;
   }
 
-  const imageSource = user.profileImageUrl.startsWith("http")
-    ? {
-        uri: supabase.storage
-          .from("challenge-uploads")
-          .getPublicUrl(user.profileImageUrl.split("challenge-uploads/")[1].split("?")[0], {
-            transform: {
-              quality: 100,
-              width: 60,
-              height: 60,
-            },
-          }).data.publicUrl,
-      }
+  const imageSource = user.profileImageUrl
+    ? { uri: user.profileImageUrl }
     : require("../assets/images/default-pfp.png");
 
   const handleProfilePress = () => {

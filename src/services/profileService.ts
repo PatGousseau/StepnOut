@@ -9,8 +9,8 @@ export const profileService = {
         allowsEditing: true,
       });
 
-      if (!result.mediaId) {
-        return { success: false };
+      if (!result || !result.mediaId) {
+        return { success: false, error: 'Error uploading profile picture' };
       }
 
       // Update profile with new media id

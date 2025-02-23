@@ -7,6 +7,7 @@ import { Text } from './StyledText';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadMedia } from '../utils/handleMediaUpload';
 import { useLanguage } from '../contexts/LanguageContext';
+import { isVideo as isVideoUtil } from '../utils/utils';
 
 const CreatePost = () => {
   const { user } = useAuth();
@@ -50,10 +51,12 @@ const CreatePost = () => {
     try {
       setIsUploading(true);
       const result = await uploadMedia({ allowVideo: true });
-      setUploadedMediaId(result.mediaId);
-      setMediaPreview(result.mediaPreview);
-      setIsVideo(result.isVideo);
-      setVideoThumbnail(result.videoThumbnail);
+      if (result) {
+        setUploadedMediaId(result.mediaId);
+        setMediaPreview(result.mediaUrl);
+        setIsVideo(isVideoUtil(result.mediaUrl));
+        setVideoThumbnail(result.videoThumbnail);
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
       alert(t('Error uploading file'));

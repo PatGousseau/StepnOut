@@ -30,9 +30,10 @@ import ImageViewer from "react-native-image-zoom-viewer";
 import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
-import VideoPlayer from './VideoPlayer';
-import { Video } from 'expo-av';
+import VideoPlayer from "./VideoPlayer";
+import { Video } from "expo-av";
 import { formatRelativeTime } from "../utils/time";
+import { imageService } from "../services/imageService";
 
 interface PostProps {
   post: PostType;
@@ -66,27 +67,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     const loadProfileImage = async () => {
       if (postUser?.profileImageUrl) {
         try {
-          const filePath = postUser.profileImageUrl;
-          const relativePath = filePath.includes("challenge-uploads/")
-            ? filePath.split("challenge-uploads/")[1].split("?")[0]
-            : filePath;
-
-          const { data } = await supabase.storage
-            .from("challenge-uploads")
-            .getPublicUrl(relativePath, {
-              transform: {
-                quality: 100,
-                width: 100,
-                height: 100,
-              },
-            });
-          setProfileImageUrl(data.publicUrl);
-        } catch (transformError) {
-          console.error("Transform error:", transformError);
-          const { data } = await supabase.storage
-            .from("challenge-uploads")
-            .getPublicUrl(postUser.profileImageUrl);
-          setProfileImageUrl(data.publicUrl);
+          const urls = await imageService.getProfileImageUrl(postUser.profileImageUrl, "small");
+          setProfileImageUrl(urls.fullUrl);
+        } catch (error) {
+          console.error("Error loading profile image:", error);
         }
       }
     };
@@ -131,7 +115,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
     setShowFullScreenImage(true);
   };
-
 
   const handleOpenComments = () => {
     setShowComments(true);
@@ -202,21 +185,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
   };
 
-  const getOriginalImageUrl = (filePath: string) => {
-    if (filePath.startsWith("http") && filePath.includes("challenge-uploads/")) {
-      const relativePath = filePath.split("challenge-uploads/")[1].split("?")[0];
-      const { data } = supabase.storage.from("challenge-uploads").getPublicUrl(relativePath);
-      return data.publicUrl;
-    }
-    return filePath;
-  };
-
   const handleImageLongPress = async () => {
     try {
-      const imageUrl = getOriginalImageUrl(post.media?.file_path || "");
+      const urls = await imageService.getPostImageUrl(post.media?.file_path || "", "original");
 
       // Download the image first
-      const response = await fetch(imageUrl);
+      const response = await fetch(urls.fullUrl);
       const blob = await response.blob();
       const base64Data = await new Promise((resolve) => {
         const reader = new FileReader();
@@ -233,8 +207,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         });
       } else {
         await Share.share({
-          message: imageUrl, // il va falloir voir si ca marche sur android
-          url: imageUrl,
+          message: urls.fullUrl,
+          url: urls.fullUrl,
         });
       }
     } catch (error) {
@@ -415,7 +389,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             <ImageViewer
               imageUrls={[
                 {
-                  url: getOriginalImageUrl(post.media?.file_path || ""),
+                  url: post.media?.file_path || "",
                 },
               ]}
               enableSwipeDown
@@ -622,14 +596,14 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   videoOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0)",
   },
   timestamp: {
     color: "#666",

@@ -1,4 +1,5 @@
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
+import { imageService } from "../services/imageService";
 
 interface UserProfile {
   id: string;
@@ -58,27 +59,10 @@ export class User {
 
         if (data.profile_media?.file_path) {
           try {
-            const filePath = data.profile_media.file_path;
-            const relativePath = filePath.includes("challenge-uploads/")
-              ? filePath.split("challenge-uploads/")[1].split("?")[0]
-              : filePath;
-
-            const { data: urlData } = await supabase.storage
-              .from("challenge-uploads")
-              .getPublicUrl(relativePath, {
-                transform: {
-                  quality: 100,
-                  width: 200,
-                  height: 200,
-                },
-              });
-            profileImageUrl = urlData.publicUrl;
-          } catch (transformError) {
-            console.error("Transform error:", transformError);
-            const { data: urlData } = await supabase.storage
-              .from("challenge-uploads")
-              .getPublicUrl(data.profile_media.file_path);
-            profileImageUrl = urlData.publicUrl;
+            const urls = await imageService.getProfileImageUrl(data.profile_media.file_path);
+            profileImageUrl = urls.fullUrl;
+          } catch (error) {
+            console.error("Error transforming profile image:", error);
           }
         }
 
@@ -88,7 +72,7 @@ export class User {
           name: data.name || "Unknown",
           profileImageUrl,
           created_at: data.created_at,
-          instagram: data.instagram || undefined
+          instagram: data.instagram || undefined,
         };
       }
     } catch (err) {
