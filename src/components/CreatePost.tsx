@@ -127,7 +127,7 @@ const CreatePost = () => {
                       resizeMode="contain"
                     />
                     <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
-                      <MaterialIcons name="close" size={20} color="white" />
+                      <MaterialIcons name="close" size={12} color="white" />
                     </TouchableOpacity>
                   </View>
                 ) : null}
@@ -180,7 +180,6 @@ const mediaUploadContainerStyle: ViewStyle = {
   justifyContent: "space-between",
   marginTop: 12,
 };
-
 
 const buttonTextStyle: TextStyle = {
   color: "white",
@@ -255,13 +254,13 @@ const modalScrollStyle: ViewStyle = {
 const removeMediaButtonStyle: ViewStyle = {
   alignItems: "center",
   backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 15,
-  height: 30,
+  borderRadius: 12,
+  height: 18,
   justifyContent: "center",
   position: "absolute",
-  right: 10,
-  top: 10,
-  width: 30,
+  right: 8,
+  top: 8,
+  width: 18,
 };
 
 const scrollContentStyle: ViewStyle = {
