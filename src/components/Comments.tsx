@@ -14,6 +14,7 @@ import {
   ImageStyle,
   Dimensions,
 } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
@@ -321,10 +322,6 @@ const Comment: React.FC<CommentProps> = ({
     return null;
   }
 
-  const imageSource = user.profileImageUrl
-    ? { uri: user.profileImageUrl }
-    : require("../assets/images/default-pfp.png");
-
   const handleProfilePress = () => {
     onClose?.();
     router.push(`/profile/${userId}`);
@@ -338,7 +335,13 @@ const Comment: React.FC<CommentProps> = ({
   return (
     <View style={commentContainerStyle}>
       <TouchableOpacity onPress={handleProfilePress}>
-        <Image source={imageSource} style={commentAvatarStyle} />
+        {user.profileImageUrl ? (
+          <Image source={{ uri: user.profileImageUrl }} style={commentAvatarStyle} />
+        ) : (
+          <View style={defaultCommentAvatarStyle}>
+            <MaterialCommunityIcons name="account-circle" size={30} color="#e1e1e1" />
+          </View>
+        )}
       </TouchableOpacity>
       <View style={commentContentStyle}>
         <View style={commentHeaderStyle}>
@@ -368,7 +371,7 @@ const Comment: React.FC<CommentProps> = ({
           contentId={id}
           contentUserId={userId}
           onDelete={onCommentDeleted}
-          menuOffset={-Dimensions.get("window").height * 0.25 +20}
+          menuOffset={-Dimensions.get("window").height * 0.25 + 20}
         >
           <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
         </ActionsMenu>
@@ -378,6 +381,13 @@ const Comment: React.FC<CommentProps> = ({
 };
 
 const commentAvatarStyle: ImageStyle = {
+  borderRadius: 15,
+  height: 30,
+  marginRight: 10,
+  width: 30,
+};
+
+const defaultCommentAvatarStyle: ViewStyle = {
   borderRadius: 15,
   height: 30,
   marginRight: 10,

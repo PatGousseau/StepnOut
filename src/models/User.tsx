@@ -1,4 +1,4 @@
-import { supabase, supabaseStorageUrl } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { imageService } from "../services/imageService";
 
 interface UserProfile {
@@ -55,7 +55,7 @@ export class User {
       if (error) throw error;
 
       if (data) {
-        let profileImageUrl = "/assets/images/default-pfp.png";
+        let profileImageUrl = null;
 
         if (data.profile_media?.file_path) {
           try {
@@ -102,8 +102,8 @@ export class User {
   get name(): string {
     return this._profile?.name || "Unknown";
   }
-  get profileImageUrl(): string {
-    return this._profile?.profileImageUrl || "/assets/images/default-pfp.png";
+  get profileImageUrl(): string | null {
+    return this._profile?.profileImageUrl || null;
   }
   get instagram(): string | undefined {
     return this._profile?.instagram;

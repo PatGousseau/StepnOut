@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import UserProgress from "./UserProgress";
 import Post from "./Post";
-import ProfilePic from "../assets/images/profile-pic.png";
 import useUserProgress from "../hooks/useUserProgress";
 import { useAuth } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -191,13 +190,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 <View style={[styles.avatar, styles.avatarLoader]}>
                   <Loader />
                 </View>
+              ) : userProfile?.profileImageUrl ? (
+                <Image source={{ uri: userProfile.profileImageUrl }} style={styles.avatar} />
               ) : (
-                <Image
-                  source={
-                    userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic
-                  }
-                  style={styles.avatar}
-                />
+                <View style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}>
+                  <MaterialCommunityIcons name="account-circle" size={80} color="#e1e1e1" />
+                </View>
               )}
               {isEditing && (
                 <TouchableOpacity
@@ -339,13 +337,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <Icon name="close" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.fullScreenImageWrapper}>
-            <Image
-              source={
-                userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic
-              }
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
+            {userProfile?.profileImageUrl ? (
+              <Image
+                source={{ uri: userProfile.profileImageUrl }}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <MaterialCommunityIcons name="account-circle" size={200} color="#e1e1e1" />
+            )}
           </View>
         </TouchableOpacity>
       </Modal>

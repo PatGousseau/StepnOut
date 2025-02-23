@@ -218,14 +218,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     >
       <View style={headerStyle}>
         <TouchableOpacity onPress={handleProfilePress}>
-          <Image
-            source={
-              profileImageUrl
-                ? { uri: profileImageUrl }
-                : require("../assets/images/default-pfp.png")
-            }
-            style={profilePictureStyle}
-          />
+          {profileImageUrl ? (
+            <Image source={{ uri: profileImageUrl }} style={profilePictureStyle} />
+          ) : (
+            <View style={defaultProfilePictureStyle}>
+              <MaterialCommunityIcons name="account-circle" size={40} color="#e1e1e1" />
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleProfilePress} style={nameContainerStyle}>
           <View style={userInfoContainerStyle}>
@@ -481,6 +480,13 @@ const nameContainerStyle: ViewStyle = {
 };
 
 const profilePictureStyle: ImageStyle = {
+  borderRadius: 20,
+  height: 40,
+  marginRight: 10,
+  width: 40,
+};
+
+const defaultProfilePictureStyle: ViewStyle = {
   borderRadius: 20,
   height: 40,
   marginRight: 10,
