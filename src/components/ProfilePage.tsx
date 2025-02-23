@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import UserProgress from "./UserProgress";
 import Post from "./Post";
-import ProfilePic from "../assets/images/profile-pic.png";
 import useUserProgress from "../hooks/useUserProgress";
 import { useAuth } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -26,6 +25,7 @@ import { profileService } from "../services/profileService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { ProfileActions } from "./ActionsMenu";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { imageService } from "../services/imageService";
 
 type ProfilePageProps = {
   userId: string;
@@ -52,6 +52,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [editedUsername, setEditedUsername] = useState("");
   const [editedInstagram, setEditedInstagram] = useState("");
   const [userProfile, setUserProfile] = useState<User | null>(null);
+  const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
+  const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
 
   // for features that are only available to the user themselves
   const isOwnProfile = userId ? userId === user?.id : true;
@@ -148,6 +150,31 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   };
 
+  const loadFullResImage = useCallback(async () => {
+    if (!userProfile?.profileImageUrl) return;
+
+    setIsLoadingFullRes(true);
+    try {
+      const { fullUrl } = await imageService.getProfileImageUrl(
+        userProfile.profileImageUrl,
+        "extraLarge"
+      );
+      setFullResImageUrl(fullUrl);
+    } catch (error) {
+      console.error("Error loading full res image:", error);
+    } finally {
+      setIsLoadingFullRes(false);
+    }
+  }, [userProfile?.profileImageUrl]);
+
+  useEffect(() => {
+    if (showFullImage) {
+      loadFullResImage();
+    } else {
+      setFullResImageUrl(null);
+    }
+  }, [showFullImage, loadFullResImage]);
+
   if (progressLoading || !userProfile) {
     return (
       <View style={[styles.container]}>
@@ -191,13 +218,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 <View style={[styles.avatar, styles.avatarLoader]}>
                   <Loader />
                 </View>
+              ) : userProfile?.profileImageUrl ? (
+                <Image source={{ uri: userProfile.profileImageUrl }} style={styles.avatar} />
               ) : (
-                <Image
-                  source={
-                    userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic
-                  }
-                  style={styles.avatar}
-                />
+                <View style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}>
+                  <MaterialCommunityIcons name="account-circle" size={80} color="#e1e1e1" />
+                </View>
               )}
               {isEditing && (
                 <TouchableOpacity
@@ -339,13 +365,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <Icon name="close" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.fullScreenImageWrapper}>
-            <Image
-              source={
-                userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic
-              }
-              style={styles.fullScreenImage}
-              resizeMode="contain"
-            />
+            {userProfile?.profileImageUrl ? (
+              <>
+                <Image
+                  source={{ uri: fullResImageUrl || userProfile.profileImageUrl }}
+                  style={styles.fullScreenImage}
+                  resizeMode="contain"
+                />
+                {isLoadingFullRes && (
+                  <View style={styles.fullScreenLoader}>
+                    <Loader />
+                  </View>
+                )}
+              </>
+            ) : (
+              <MaterialCommunityIcons name="account-circle" size={200} color="#e1e1e1" />
+            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -356,7 +391,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
 const styles = StyleSheet.create({
   avatar: {
-    borderRadius: "50%",
+    borderRadius: 40,
     height: 80,
     width: 80,
   },
@@ -559,5 +594,17 @@ const styles = StyleSheet.create({
   fullScreenImageWrapper: {
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
+    height: "80%",
+  },
+  fullScreenLoader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
 });

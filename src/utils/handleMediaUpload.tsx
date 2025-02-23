@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import * as VideoThumbnails from "expo-video-thumbnails";
-import { supabase } from "../lib/supabase";
+import { supabase, supabaseStorageUrl } from "../lib/supabase";
 
 interface MediaUploadResult {
   mediaId: number;
@@ -91,8 +91,8 @@ export const uploadMedia = async (
 
     if (uploadError) throw uploadError;
 
-    // construct the public url
-    const publicUrl = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/public/challenge-uploads/${fileName}`;
+    // construct the public url using supabaseStorageUrl from supabase config
+    const publicUrl = `${supabaseStorageUrl}/${fileName}`;
 
     // insert into media table
     const { data: mediaData, error: dbError } = await supabase
