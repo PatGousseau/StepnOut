@@ -26,6 +26,8 @@ import { Loader } from "./Loader";
 import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
 import { useLikes } from "../contexts/LikesContext";
 import { postService } from "../services/postService";
+import { OptionsMenu } from "./OptionsMenu";
+import { MenuProvider } from "react-native-popup-menu";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -253,30 +255,32 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ translateY }],
-        },
-      ]}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View {...panResponder.panHandlers} style={styles.dragHandle}>
-          <View style={styles.dragIndicator} />
-        </View>
+    <MenuProvider>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            transform: [{ translateY }],
+          },
+        ]}
+      >
+        <SafeAreaView style={styles.safeArea}>
+          <View {...panResponder.panHandlers} style={styles.dragHandle}>
+            <View style={styles.dragIndicator} />
+          </View>
 
-        <CommentsList
-          comments={comments}
-          loading={loading}
-          flatListRef={flatListRef}
-          onClose={onClose}
-          postId={postId}
-          postUserId={postUserId}
-          onCommentAdded={onCommentAdded}
-        />
-      </SafeAreaView>
-    </Animated.View>
+          <CommentsList
+            comments={comments}
+            loading={loading}
+            flatListRef={flatListRef}
+            onClose={onClose}
+            postId={postId}
+            postUserId={postUserId}
+            onCommentAdded={onCommentAdded}
+          />
+        </SafeAreaView>
+      </Animated.View>
+    </MenuProvider>
   );
 };
 
@@ -385,11 +389,6 @@ const Comment: React.FC<CommentProps> = ({
               <Text style={styles.timestamp}>{formatRelativeTime(created_at)}</Text>
             </View>
           </TouchableOpacity>
-          {currentUser?.id === userId && (
-            <TouchableOpacity onPress={handleDeleteComment} style={styles.deleteButton}>
-              <Icon name="trash-o" size={14} color="#999" />
-            </TouchableOpacity>
-          )}
         </View>
         <Text style={styles.commentText}>{text}</Text>
       </View>
@@ -404,13 +403,28 @@ const Comment: React.FC<CommentProps> = ({
             <Text style={styles.iconText}>{commentLikeCounts[id] || 0}</Text>
           </View>
         </TouchableOpacity>
-        {currentUser && currentUser.id !== userId && (
-          <TouchableOpacity onPress={handleReportComment}>
-            <View style={styles.iconContainer}>
-              <Icon name="flag-o" size={14} color={colors.neutral.grey1} />
-            </View>
-          </TouchableOpacity>
-        )}
+        <OptionsMenu
+          options={
+            currentUser?.id === userId
+              ? [
+                  {
+                    text: t("Delete Comment"),
+                    onSelect: handleDeleteComment,
+                    isDestructive: true,
+                  },
+                ]
+              : currentUser
+              ? [
+                  {
+                    text: t("Report Comment"),
+                    onSelect: handleReportComment,
+                  },
+                ]
+              : []
+          }
+        >
+          <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
+        </OptionsMenu>
       </View>
     </View>
   );

@@ -34,6 +34,7 @@ import VideoPlayer from "./VideoPlayer";
 import { Video } from "expo-av";
 import { formatRelativeTime } from "../utils/time";
 import { imageService } from "../services/imageService";
+import { OptionsMenu } from "./OptionsMenu";
 
 interface PostProps {
   post: PostType;
@@ -282,27 +283,30 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </View>
         </TouchableOpacity>
         <Text style={styles.timestamp}>{formatRelativeTime(post.created_at)}</Text>
-        <Menu style={styles.menuContainer}>
-          <MenuTrigger>
-            <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
-          </MenuTrigger>
-          <MenuOptions customStyles={optionsStyles}>
-            {user?.id === post.user_id ? (
-              <MenuOption onSelect={handleDeletePost}>
-                <Text style={[styles.menuOptionText, { color: "red" }]}>{t("Delete Post")}</Text>
-              </MenuOption>
-            ) : (
-              <>
-                <MenuOption onSelect={handleReportPost}>
-                  <Text style={styles.menuOptionText}>{t("Report Post")}</Text>
-                </MenuOption>
-                <MenuOption onSelect={handleBlockUser}>
-                  <Text style={styles.menuOptionText}>{t("Block User")}</Text>
-                </MenuOption>
-              </>
-            )}
-          </MenuOptions>
-        </Menu>
+        <OptionsMenu
+          options={
+            user?.id === post.user_id
+              ? [
+                  {
+                    text: t("Delete Post"),
+                    onSelect: handleDeletePost,
+                    isDestructive: true,
+                  },
+                ]
+              : [
+                  {
+                    text: t("Report Post"),
+                    onSelect: handleReportPost,
+                  },
+                  {
+                    text: t("Block User"),
+                    onSelect: handleBlockUser,
+                  },
+                ]
+          }
+        >
+          <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
+        </OptionsMenu>
       </View>
       {post.challenge_id && (
         <TouchableOpacity onPress={handleChallengePress}>
@@ -514,7 +518,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   menuOptionText: {
-    fontSize: 16,
+    fontSize: 14,
     padding: 10,
   },
   modalBackground: {
@@ -611,16 +615,5 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 });
-
-const optionsStyles = {
-  optionsContainer: {
-    borderRadius: 10,
-    padding: 5,
-    width: 150,
-    backgroundColor: "white",
-    zIndex: 9999,
-    marginTop: 45,
-  },
-};
 
 export default Post;
