@@ -26,6 +26,13 @@ interface MenuProps {
   menuOffset?: number;
 }
 
+interface ProfileActionsProps {
+  children: React.ReactNode;
+  onEdit: () => void;
+  onSignOut: () => void;
+  onDeleteAccount: () => void;
+}
+
 export const ActionsMenu: React.FC<MenuProps> = ({
   children,
   type,
@@ -158,6 +165,59 @@ export const ActionsMenu: React.FC<MenuProps> = ({
               </View>
             </MenuOption>
             {index < getActions().length - 1 && <View style={divider} />}
+          </React.Fragment>
+        ))}
+      </MenuOptions>
+    </Menu>
+  );
+};
+
+export const ProfileActions: React.FC<ProfileActionsProps> = ({
+  children,
+  onEdit,
+  onSignOut,
+  onDeleteAccount,
+}) => {
+  const { t } = useLanguage();
+
+  const actions: MenuOptionItem[] = [
+    {
+      text: t("Edit profile"),
+      onSelect: onEdit,
+      icon: "edit",
+    },
+    {
+      text: t("Sign out"),
+      onSelect: onSignOut,
+      icon: "logout",
+    },
+    {
+      text: t("Delete account"),
+      onSelect: onDeleteAccount,
+      isDestructive: true,
+      icon: "delete-forever",
+    },
+  ];
+
+  return (
+    <Menu style={menuContainer}>
+      <MenuTrigger>{children}</MenuTrigger>
+      <MenuOptions customStyles={optionsStyles}>
+        {actions.map((action, index) => (
+          <React.Fragment key={index}>
+            <MenuOption onSelect={action.onSelect}>
+              <View style={menuOptionContainer}>
+                <MaterialIcons
+                  name={action.icon}
+                  size={20}
+                  color={action.isDestructive ? "red" : colors.light.primary}
+                />
+                <Text style={[menuOptionText, action.isDestructive && { color: "red" }]}>
+                  {action.text}
+                </Text>
+              </View>
+            </MenuOption>
+            {index < actions.length - 1 && <View style={divider} />}
           </React.Fragment>
         ))}
       </MenuOptions>

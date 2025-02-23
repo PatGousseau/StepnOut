@@ -30,8 +30,8 @@ export const translations = {
   Name: "Nome",
   Username: "Nome utente",
   Save: "Salva",
-  "Edit Profile": "Modifica Profilo",
-  "Sign Out": "Esci",
+  "Edit profile": "Modifica Profilo",
+  "Sign out": "Esci",
   "Your Posts": "I tuoi Post",
   Posts: "Post",
   "Unknown User": "Utente Sconosciuto",
@@ -125,10 +125,10 @@ export const translations = {
   "Track your progress": "Monitora i tuoi progressi",
   "View your streaks and challenges completed.": "Visualizza le tue serie e le sfide completate.",
   Done: "Fatto",
-  "Delete Account": "Elimina Account",
+  "Delete account": "Elimina Account",
   "Are you sure you want to delete your account? This action cannot be undone.":
     "Sei sicuro di voler eliminare il tuo account? Questa azione non può essere annullata.",
-  "Failed to delete account": "Impossibile eliminare l'account",
+  "Failed to Delete account": "Impossibile eliminare l'account",
   "Share your thoughts, start a discussion, or share an achievement...":
     "Condividi i tuoi pensieri, inizia una discussione o condividi un traguardo...",
   "Please add either a description or media to complete the challenge.":
