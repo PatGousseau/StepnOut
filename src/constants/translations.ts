@@ -1,16 +1,17 @@
 export const translations = {
-  "Home": "Home",
-  "Challenge": "Sfida",
-  "Profile": "Profilo",
-  "Admin": "Admin",
-  "Delete Post": "Elimina Post",
-  "Report Post": "Segnala Post",
-  "Report Comment": "Segnala Commento",
-  "Block User": "Blocca Utente",
+  Home: "Home",
+  Challenge: "Sfida",
+  Profile: "Profilo",
+  Admin: "Admin",
+  "Delete post": "Elimina Post",
+  "Report post": "Segnala Post",
+  "Report comment": "Segnala Commento",
+  "Block user": "Blocca Utente",
   "Challenge:": "Sfida:",
-  "Unknown": "Sconosciuto",
+  Unknown: "Sconosciuto",
   "Patrizio's submission": "La soluzione di Patrizio",
-  "Check out how Patrizio tackled this challenge!": "Guarda come Patrizio ha affrontato questa sfida!",
+  "Check out how Patrizio tackled this challenge!":
+    "Guarda come Patrizio ha affrontato questa sfida!",
   "Are you sure you want to delete this post?": "Sei sicuro di voler eliminare questo post?",
   Cancel: "Annulla",
   Delete: "Elimina",
@@ -47,7 +48,8 @@ export const translations = {
   "Uploading...": "Caricamento...",
   Submit: "Invia",
   "You must be logged in to submit a challenge.": "Devi essere loggato per inviare una sfida.",
-  "Please wait for media upload to complete.": "Attendi il completamento del caricamento del media.",
+  "Please wait for media upload to complete.":
+    "Attendi il completamento del caricamento del media.",
   "Media is still uploading. Please wait.": "Il media è ancora in caricamento. Attendi.",
   "Error submitting challenge.": "Errore nell'invio della sfida.",
   "Error uploading file": "Errore nel caricamento del file",
@@ -131,9 +133,8 @@ export const translations = {
     "Condividi i tuoi pensieri, inizia una discussione o condividi un traguardo...",
   "Please add either a description or media to complete the challenge.":
     "Aggiungi una descrizione o un media per completare la sfida.",
-  "Delete Comment": "Elimina Commento",
-  "Are you sure you want to delete this comment?":
-    "Sei sicuro di voler eliminare questo commento?",
+  "Delete comment": "Elimina Commento",
+  "Are you sure you want to delete this comment?": "Sei sicuro di voler eliminare questo commento?",
   "Error deleting comment:": "Errore nell'eliminazione del commento:",
   "Are you sure you want to proceed? This will permanently delete your account.":
     "Sei sicuro di voler procedere? Questo eliminerà permanentemente il tuo account.",
@@ -145,6 +146,9 @@ export const translations = {
   Discussions: "Discussioni",
   Submissions: "Sfide",
   Discussion: "Discussione",
-  "How did it make you feel?\nWhat did you find difficult?": "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
-  "Share how you completed the challenge": "Condividi come hai completato la sfida"
+  "How did it make you feel?\nWhat did you find difficult?":
+    "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
+  "Share how you completed the challenge": "Condividi come hai completato la sfida",
+  "Report Submitted": "Segnalazione Inviata",
+  "Thank you for your report.": "Grazie per la tua segnalazione.",
 };

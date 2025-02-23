@@ -11,6 +11,9 @@ import {
   GestureResponderEvent,
   Alert,
   Share,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { CommentsModal } from "./Comments";
@@ -34,7 +37,7 @@ import VideoPlayer from "./VideoPlayer";
 import { Video } from "expo-av";
 import { formatRelativeTime } from "../utils/time";
 import { imageService } from "../services/imageService";
-import { OptionsMenu } from "./OptionsMenu";
+import { ActionsMenu } from "./ActionsMenu";
 
 interface PostProps {
   post: PostType;
@@ -48,7 +51,7 @@ interface PostProps {
 
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false }) => {
   const { t } = useLanguage();
-  const { likedPosts, likeCounts, toggleLike } = useLikes();
+  const { likedPosts, likeCounts, togglePostLike } = useLikes();
   const { user } = useAuth();
 
   if (!post) return null;
@@ -96,7 +99,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleLikePress = async () => {
     if (!user) return;
-    await toggleLike(post.id, user.id, post.user_id);
+    await togglePostLike(post.id, user.id, post.user_id);
   };
 
   const handleCommentAdded = (increment: number) => {
@@ -125,58 +128,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const handleProfilePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
     router.push(`/profile/${postUser.id}`);
-  };
-
-  const handleReportPost = () => {
-    Alert.alert(t("Report Post"), t("Are you sure you want to report this post?"), [
-      {
-        text: t("Cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("Report"),
-        style: "destructive",
-        onPress: async () => {
-          if (!user?.id) return;
-
-          await postService.reportPost(post.id, user.id, post.user_id);
-        },
-      },
-    ]);
-  };
-
-  const handleBlockUser = () => {
-    Alert.alert(t("Block User"), t("Are you sure you want to block this user?"), [
-      {
-        text: t("Cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("Block"),
-        style: "destructive",
-        onPress: async () => {
-          if (!user?.id) return;
-
-          await postService.blockUser(user.id, post.user_id);
-        },
-      },
-    ]);
-  };
-
-  const handleDeletePost = async () => {
-    Alert.alert(t("Delete Post"), t("Are you sure you want to delete this post?"), [
-      {
-        text: t("Cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("Delete"),
-        style: "destructive",
-        onPress: async () => {
-          await postService.deletePost(post.id);
-        },
-      },
-    ]);
   };
 
   const handleChallengePress = (e: GestureResponderEvent) => {
@@ -226,16 +177,16 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           <TouchableOpacity onPress={() => setShowVideoModal(true)} activeOpacity={0.9}>
             <Video
               source={{ uri: post.media?.file_path }}
-              style={styles.mediaContent}
+              style={contentStyle}
               resizeMode="cover"
               shouldPlay={false}
               isMuted={true}
               isLooping={false}
               useNativeControls={false}
               posterSource={{ uri: post.media?.file_path }}
-              posterStyle={styles.mediaContent}
+              posterStyle={mediaContentStyle}
             />
-            <View style={styles.videoOverlay}>
+            <View style={videoOverlayStyle}>
               <Icon name="play-circle" size={48} color="white" />
             </View>
           </TouchableOpacity>
@@ -251,7 +202,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       <TouchableOpacity onPress={handleMediaPress} activeOpacity={1}>
         <Image
           source={{ uri: post.media?.file_path }}
-          style={styles.mediaContent}
+          style={mediaContentStyle}
           cachePolicy="memory-disk"
           contentFit="cover"
           transition={200}
@@ -263,9 +214,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   return (
     <Pressable
       // onPress={handlePostPress}
-      style={[styles.container, post.challenge_id ? styles.challengeContainer : null]}
+      style={[containerStyle, post.challenge_id ? challengeContainerStyle : null]}
     >
-      <View style={styles.header}>
+      <View style={headerStyle}>
         <TouchableOpacity onPress={handleProfilePress}>
           <Image
             source={
@@ -273,68 +224,56 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 ? { uri: profileImageUrl }
                 : require("../assets/images/default-pfp.png")
             }
-            style={styles.profilePicture}
+            style={profilePictureStyle}
           />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleProfilePress} style={styles.nameContainer}>
-          <View style={styles.userInfoContainer}>
-            <Text style={styles.name}>{postUser?.name || t("Unknown")}</Text>
-            <Text style={styles.username}>@{postUser?.username || t("unknown")}</Text>
+        <TouchableOpacity onPress={handleProfilePress} style={nameContainerStyle}>
+          <View style={userInfoContainerStyle}>
+            <Text style={nameStyle}>{postUser?.name || t("Unknown")}</Text>
+            <Text style={usernameStyle}>@{postUser?.username || t("unknown")}</Text>
           </View>
         </TouchableOpacity>
-        <Text style={styles.timestamp}>{formatRelativeTime(post.created_at)}</Text>
-        <OptionsMenu
-          options={
-            user?.id === post.user_id
-              ? [
-                  {
-                    text: t("Delete Post"),
-                    onSelect: handleDeletePost,
-                    isDestructive: true,
-                  },
-                ]
-              : [
-                  {
-                    text: t("Report Post"),
-                    onSelect: handleReportPost,
-                  },
-                  {
-                    text: t("Block User"),
-                    onSelect: handleBlockUser,
-                  },
-                ]
-          }
+        <Text style={timestampStyle}>{formatRelativeTime(post.created_at)}</Text>
+        <ActionsMenu
+          type="post"
+          contentId={post.id}
+          contentUserId={post.user_id}
+          onDelete={() => {
+            if (isPostPage) {
+              router.back();
+            }
+          }}
         >
           <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
-        </OptionsMenu>
+        </ActionsMenu>
       </View>
       {post.challenge_id && (
         <TouchableOpacity onPress={handleChallengePress}>
-          <View style={styles.challengeBox}>
-            <Text style={styles.challengeTitle} numberOfLines={1} ellipsizeMode="tail">
+          <View style={challengeBoxStyle}>
+            <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
               <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
             </Text>
           </View>
         </TouchableOpacity>
       )}
-      {post.body && <Text style={styles.text}>{post.body}</Text>}
+      {post.body && <Text style={textStyle}>{post.body}</Text>}
       {renderMedia()}
       <View>
-        <View style={styles.footer}>
+        <View style={footerStyle}>
           <TouchableOpacity onPress={handleLikePress}>
-            <View style={styles.iconContainer}>
+            <View style={iconContainerStyle}>
               <Icon
                 name={likedPosts[post.id] ? "heart" : "heart-o"}
                 size={16}
                 color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1}
               />
-              <Text style={styles.iconText}>{likeCounts[post.id] || 0}</Text>
+              <Text style={iconTextStyle}>{likeCounts[post.id] || 0}</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleOpenComments}>
-            <View style={styles.iconContainer}>
+            <View style={iconContainerStyle}>
               <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
-              <Text style={styles.iconText}>{commentCount.toString()}</Text>
+              <Text style={iconTextStyle}>{commentCount.toString()}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -345,14 +284,14 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           visible={showComments}
           onRequestClose={() => setShowComments(false)}
         >
-          <View style={styles.modalOverlay}>
+          <View style={modalOverlayStyle}>
             <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
-              <View style={styles.modalBackground} />
+              <View style={modalBackgroundStyle} />
             </TouchableWithoutFeedback>
 
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
-              style={styles.modalContainer}
+              style={modalContainerStyle}
               keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
             >
               <CommentsModal
@@ -373,15 +312,15 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           visible={showFullScreenImage}
           onRequestClose={() => setShowFullScreenImage(false)}
         >
-          <View style={styles.fullScreenContainer}>
-            <View style={styles.fullScreenHeader}>
+          <View style={fullScreenContainerStyle}>
+            <View style={fullScreenHeaderStyle}>
               <TouchableOpacity
-                style={styles.closeFullScreenButton}
+                style={closeFullScreenButtonStyle}
                 onPress={() => setShowFullScreenImage(false)}
               >
                 <MaterialCommunityIcons name="close" size={24} color="white" />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={handleImageLongPress}>
+              <TouchableOpacity style={saveButtonStyle} onPress={handleImageLongPress}>
                 <MaterialCommunityIcons
                   name="send"
                   size={24}
@@ -391,18 +330,14 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               </TouchableOpacity>
             </View>
             <ImageViewer
-              imageUrls={[
-                {
-                  url: post.media?.file_path || "",
-                },
-              ]}
+              imageUrls={[{ url: post.media?.file_path || "" }]}
               enableSwipeDown
               onSwipeDown={() => setShowFullScreenImage(false)}
-              renderIndicator={() => null}
+              renderIndicator={() => <></>}
               onLongPress={handleImageLongPress}
               saveToLocalByLongPress={false}
               enablePreload={true}
-              style={styles.fullScreenImage}
+              style={{ width: "100%", height: "100%" } as ViewStyle}
               onClick={() => setShowFullScreenImage(false)}
               loadingRender={() => <Loader />}
               backgroundColor="rgba(0, 0, 0, 0.9)"
@@ -414,206 +349,181 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   );
 };
 
-const styles = StyleSheet.create({
-  challengeBox: {
-    alignSelf: "flex-start",
-    backgroundColor: colors.light.accent2,
-    borderColor: colors.light.primary,
-    borderRadius: 8,
-    borderWidth: 1.25,
-    marginBottom: 4,
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    width: "100%",
-  },
-  challengeContainer: {
-    // backgroundColor: '#ffeecc',
-    // borderWidth: 1,
-  },
-  challengeTitle: {
-    color: colors.light.primary,
-    fontSize: 13,
-  },
-  closeButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
-    borderRadius: 10,
-    padding: 5,
-    position: "absolute",
-    right: 10,
-    top: 10,
-  },
-  closeButtonText: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  container: {
-    borderBottomColor: "#ccc",
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginBottom: 8,
-    padding: 10,
-    paddingBottom: 16,
-  },
-  footer: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginLeft: 5,
-    marginTop: 10,
-  },
-  fullScreenContainer: {
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.9)",
-    flex: 1,
-    justifyContent: "center",
-  },
-  fullScreenHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    position: "absolute",
-    top: 40,
-    right: 0,
-    left: 0,
-    padding: 16,
-    zIndex: 9999,
-  },
-  fullScreenImage: {
-    height: "100%",
-    width: "100%",
-  },
-  fullScreenImageWrapper: {
-    alignItems: "center",
-    height: "100%",
-    justifyContent: "center",
-    width: "100%",
-  },
-  fullScreenMenuTrigger: {
-    padding: 8,
-  },
-  header: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    marginBottom: 8,
-  },
-  iconContainer: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginRight: 32,
-  },
-  iconText: {
-    color: "#5A5A5A",
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  mediaContent: {
-    aspectRatio: 1,
-    borderRadius: 8,
-    height: undefined,
-    marginTop: 8,
-    width: "100%",
-  },
-  menuContainer: {
-    marginLeft: 8,
-  },
-  menuOptionText: {
-    fontSize: 14,
-    padding: 10,
-  },
-  modalBackground: {
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  modalContainer: {
-    flex: 1,
-    height: "100%",
-    justifyContent: "flex-end",
-    maxHeight: "75%",
-    width: "100%",
-  },
-  modalOverlay: {
-    flex: 1,
-    height: "100%",
-    justifyContent: "flex-end",
-  },
-  name: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  nameContainer: {
-    flex: 1,
-  },
-  profilePicture: {
-    borderRadius: 20,
-    height: 40,
-    marginRight: 10,
-    width: 40,
-  },
-  text: {
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  userInfoContainer: {
-    flexDirection: "column",
-  },
-  username: {
-    color: "#666",
-    fontSize: 12,
-  },
-  mediaContainer: {
-    position: "relative",
-  },
-  playButtonOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.2)",
-  },
-  controlsContainer: {
-    position: "absolute",
-    bottom: 10,
-    left: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 25, // Make container perfectly round
-    width: 50, // Fixed width
-    height: 50, // Fixed height to match width
-  },
-  playButton: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center", // Center the icon
-  },
-  closeFullScreenButton: {
-    padding: 8,
-  },
-  saveButton: {
-    padding: 8,
-  },
-  videoOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0)",
-  },
-  timestamp: {
-    color: "#666",
-    fontSize: 11,
-    marginLeft: 5,
-  },
-});
+const challengeBoxStyle: ViewStyle = {
+  alignSelf: "flex-start",
+  backgroundColor: colors.light.accent2,
+  borderColor: colors.light.primary,
+  borderRadius: 8,
+  borderWidth: 1.25,
+  marginBottom: 4,
+  marginTop: 4,
+  paddingHorizontal: 16,
+  paddingVertical: 4,
+  width: "100%",
+};
+
+const challengeContainerStyle: ViewStyle = {
+  // backgroundColor: '#ffeecc',
+  // borderWidth: 1,
+};
+
+const challengeTitleStyle: TextStyle = {
+  color: colors.light.primary,
+  fontSize: 13,
+};
+
+const containerStyle: ViewStyle = {
+  borderBottomColor: "#ccc",
+  borderBottomWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  marginBottom: 8,
+  padding: 10,
+  paddingBottom: 16,
+};
+
+const footerStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  marginLeft: 5,
+  marginTop: 10,
+};
+
+const fullScreenContainerStyle: ViewStyle = {
+  alignItems: "center",
+  backgroundColor: "rgba(0, 0, 0, 0.9)",
+  flex: 1,
+  justifyContent: "center",
+};
+
+const fullScreenHeaderStyle: ViewStyle = {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  position: "absolute",
+  top: 40,
+  right: 0,
+  left: 0,
+  padding: 16,
+  zIndex: 9999,
+};
+
+const fullScreenImageStyle: ImageStyle = {
+  height: "100%",
+  width: "100%",
+};
+
+const headerStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  marginBottom: 8,
+};
+
+const iconContainerStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  marginRight: 32,
+};
+
+const iconTextStyle: TextStyle = {
+  color: "#5A5A5A",
+  fontSize: 14,
+  marginLeft: 4,
+};
+
+const contentStyle: ViewStyle = {
+  aspectRatio: 1,
+  borderRadius: 8,
+  height: undefined,
+  marginTop: 8,
+  width: "100%",
+};
+
+const mediaContentStyle: ImageStyle = {
+  aspectRatio: 1,
+  borderRadius: 8,
+  height: undefined,
+  marginTop: 8,
+  width: "100%",
+};
+
+const modalBackgroundStyle: ViewStyle = {
+  backgroundColor: "rgba(0, 0, 0, 0.7)",
+  bottom: 0,
+  left: 0,
+  position: "absolute",
+  right: 0,
+  top: 0,
+};
+
+const modalContainerStyle: ViewStyle = {
+  flex: 1,
+  height: "100%",
+  justifyContent: "flex-end",
+  maxHeight: "75%",
+  width: "100%",
+};
+
+const modalOverlayStyle: ViewStyle = {
+  flex: 1,
+  height: "100%",
+  justifyContent: "flex-end",
+};
+
+const nameStyle: TextStyle = {
+  fontSize: 14,
+  fontWeight: "bold",
+};
+
+const nameContainerStyle: ViewStyle = {
+  flex: 1,
+  justifyContent: "center",
+};
+
+const profilePictureStyle: ImageStyle = {
+  borderRadius: 20,
+  height: 40,
+  marginRight: 10,
+  width: 40,
+};
+
+const textStyle: TextStyle = {
+  fontSize: 14,
+  marginBottom: 8,
+};
+
+const userInfoContainerStyle: ViewStyle = {
+  flexDirection: "column",
+};
+
+const usernameStyle: TextStyle = {
+  color: "#666",
+  fontSize: 12,
+};
+
+const closeFullScreenButtonStyle: ViewStyle = {
+  padding: 8,
+};
+
+const saveButtonStyle: ViewStyle = {
+  padding: 8,
+};
+
+const videoOverlayStyle: ViewStyle = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "rgba(0,0,0,0)",
+};
+
+const timestampStyle: TextStyle = {
+  color: "#666",
+  fontSize: 11,
+  marginLeft: 5,
+};
 
 export default Post;
