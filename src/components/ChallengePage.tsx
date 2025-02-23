@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
+import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";

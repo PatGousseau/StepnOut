@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, Image, ScrollView } from 'react-native';
 import { colors } from '../constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { supabase } from '../lib/supabase';
@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { uploadMedia } from '../utils/handleMediaUpload';
 import { useLanguage } from '../contexts/LanguageContext';
 import { isVideo as isVideoUtil } from '../utils/utils';
-
+import { Loader } from './Loader';
 const CreatePost = () => {
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
@@ -100,7 +100,7 @@ const CreatePost = () => {
               <View style={styles.modalContent}>
                 {isUploading ? (
                   <View style={styles.mediaPreview}>
-                    <ActivityIndicator size="large" color={colors.light.accent} />
+                    <Loader />
                   </View>
                 ) : mediaPreview ? (
                   <View style={styles.mediaPreviewContainer}>
