@@ -8,7 +8,6 @@ import {
   Platform,
   Image,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { colors } from "../../constants/Colors";
@@ -17,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../lib/supabase";
 import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
+import { Loader } from "@/src/components/Loader";
 
 export default function RegisterProfileScreen() {
   const { email, password } = useLocalSearchParams<{
@@ -141,7 +141,7 @@ export default function RegisterProfileScreen() {
           >
             {imageUploading ? (
               <View style={styles.placeholderImage}>
-                <ActivityIndicator size="large" color={colors.light.primary} />
+                <Loader />
               </View>
             ) : profileImage ? (
               <Image

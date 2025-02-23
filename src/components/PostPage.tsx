@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { 
   View, 
   StyleSheet, 
-  ActivityIndicator, 
   KeyboardAvoidingView, 
   Platform, 
   FlatList 
@@ -13,7 +12,7 @@ import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
-
+import { Loader } from './Loader';
 const PostPage = () => {
   const params = useLocalSearchParams();
   const postId = typeof params.id === 'string' ? parseInt(params.id) : params.id;
@@ -45,7 +44,7 @@ const PostPage = () => {
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.light.primary} />
+        <Loader />
       </View>
     );
   }

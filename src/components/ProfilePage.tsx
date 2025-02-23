@@ -5,7 +5,6 @@ import {
   Image,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   Alert,
   Modal,
@@ -26,7 +25,6 @@ import { User } from "../models/User";
 import { profileService } from "../services/profileService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Menu, MenuOptions, MenuOption, MenuTrigger } from "react-native-popup-menu";
-import { MaterialIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type ProfilePageProps = {
@@ -249,7 +247,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <TouchableOpacity onPress={() => setShowFullImage(true)} disabled={imageUploading}>
               {imageUploading ? (
                 <View style={[styles.avatar, styles.avatarLoader]}>
-                  <ActivityIndicator size="small" color={colors.light.primary} />
+                  <Loader />
                 </View>
               ) : (
                 <Image
@@ -402,7 +400,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         ))}
         {postsLoading && (
           <View style={{ padding: 20, alignItems: "center" }}>
-            <ActivityIndicator size="small" color={colors.light.primary} />
+            <Loader />
           </View>
         )}
       </ScrollView>

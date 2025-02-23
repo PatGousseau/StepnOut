@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { uploadMedia } from '../utils/handleMediaUpload';
 import { useLanguage } from '../contexts/LanguageContext';
 import { isVideo as isVideoUtil } from '../utils/utils';
-
+import { Loader } from './Loader';
 const CreatePost = () => {
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
@@ -100,7 +100,7 @@ const CreatePost = () => {
               <View style={styles.modalContent}>
                 {isUploading ? (
                   <View style={styles.mediaPreview}>
-                    <ActivityIndicator size="large" color={colors.light.accent} />
+                    <Loader />
                   </View>
                 ) : mediaPreview ? (
                   <View style={styles.mediaPreviewContainer}>

@@ -8,7 +8,6 @@ import {
   Image,
   Animated,
   PanResponder,
-  ActivityIndicator,
   SafeAreaView,
   TouchableOpacity,
   Alert,
@@ -23,6 +22,7 @@ import { router } from "expo-router";
 import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { formatRelativeTime } from "../utils/time";
+import { Loader } from "./Loader";
 
 export interface Comment {
   id: number;
@@ -138,7 +138,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.light.primary} />
+        <Loader />
       </View>
     );
   }
