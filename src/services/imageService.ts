@@ -43,7 +43,7 @@ export const imageService = {
 
   async getProfileImageUrl(
     filePath: string,
-    size: "small" | "medium" | "large" | "original" = "medium"
+    size: "small" | "medium" | "large" | "extraLarge" | "original" = "medium"
   ): Promise<ImageUrlResult> {
     if (size === "original") {
       const fullUrl = await this.getImageUrl(filePath);
@@ -58,6 +58,7 @@ export const imageService = {
       medium: { quality: 80, width: 200, height: 200 },
       large: { quality: 100, width: 600, height: 600 },
       preview: { quality: 10, width: 20, height: 20 },
+      extraLarge: { quality: 80, width: 1000, height: 1000 },
     };
 
     const [previewUrl, fullUrl] = await Promise.all([
