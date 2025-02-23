@@ -3,15 +3,18 @@ import {
   View,
   TextInput,
   Pressable,
-  StyleSheet,
   FlatList,
   Image,
   Animated,
   PanResponder,
   SafeAreaView,
   TouchableOpacity,
-  Alert,
+  ViewStyle,
+  TextStyle,
+  ImageStyle,
+  Dimensions,
 } from "react-native";
+
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
 import { useAuth } from "../contexts/AuthContext";
@@ -23,16 +26,13 @@ import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { formatRelativeTime } from "../utils/time";
 import { Loader } from "./Loader";
-
-export interface Comment {
-  id: number;
-  text: string;
-  userId: string;
-  created_at: string;
-}
+import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
+import { useLikes } from "../contexts/LikesContext";
+import { ActionsMenu } from "./ActionsMenu";
+import { MenuProvider } from "react-native-popup-menu";
 
 interface CommentsProps {
-  initialComments: Comment[];
+  initialComments: CommentType[];
   onClose: () => void;
   loading?: boolean;
   postId: number;
@@ -41,7 +41,7 @@ interface CommentsProps {
 }
 
 interface CommentsListProps {
-  comments: Comment[];
+  comments: CommentType[];
   loading?: boolean;
   flatListRef?: React.RefObject<FlatList>;
   onClose?: () => void;
@@ -63,11 +63,16 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { initializeCommentLikes } = useLikes();
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState(initialComments);
 
   useEffect(() => {
     setComments(initialComments);
+    // Initialize likes for the comments
+    if (initialComments.length > 0) {
+      initializeCommentLikes(initialComments);
+    }
   }, [initialComments]);
 
   const handleAddComment = async () => {
@@ -94,7 +99,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               id: savedComment.id,
               text: savedComment.body,
               userId: savedComment.user_id,
+              post_id: postId,
               created_at: savedComment.created_at,
+              likes_count: 0,
+              liked: false,
             },
           ]);
 
@@ -137,7 +145,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={loadingContainerStyle}>
         <Loader />
       </View>
     );
@@ -145,10 +153,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
   return (
     <CommentsContext.Provider value={{ onClose }}>
-      <View style={styles.commentsWrapper}>
+      <View style={commentsWrapperStyle}>
         <FlatList
           ref={flatListRef}
-          style={styles.commentsList}
+          style={commentsListStyle}
           data={comments}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
@@ -157,24 +165,25 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               userId={item.userId}
               text={item.text}
               created_at={item.created_at}
+              post_id={item.post_id}
               onCommentDeleted={() => handleCommentDeleted(item.id)}
             />
           )}
           ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>{t("No comments yet!")}</Text>
+            <View style={emptyContainerStyle}>
+              <Text style={emptyTextStyle}>{t("No comments yet!")}</Text>
             </View>
           )}
           keyboardShouldPersistTaps="handled"
         />
 
-        <View style={styles.inputContainer}>
+        <View style={inputContainerStyle}>
           <TextInput
             value={newComment}
             onChangeText={setNewComment}
             placeholder={t("Add a comment...")}
             placeholderTextColor="#888"
-            style={styles.input}
+            style={inputStyle}
             multiline
             textAlignVertical="top"
             maxHeight={100}
@@ -182,13 +191,13 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           <Pressable
             onPress={handleAddComment}
             style={({ pressed }) => [
-              styles.postButton,
-              !user && styles.postButtonDisabled,
-              pressed && styles.postButtonPressed,
+              postButtonStyle,
+              !user && postButtonDisabledStyle,
+              pressed && postButtonPressedStyle,
             ]}
             disabled={!user}
           >
-            <Text style={styles.postButtonText}>{t("Post")}</Text>
+            <Text style={postButtonTextStyle}>{t("Post")}</Text>
           </Pressable>
         </View>
       </View>
@@ -196,7 +205,6 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   );
 };
 
-// Rename the main component to CommentsModal
 export const CommentsModal: React.FC<CommentsProps> = ({
   initialComments,
   onClose,
@@ -248,30 +256,32 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ translateY }],
-        },
-      ]}
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View {...panResponder.panHandlers} style={styles.dragHandle}>
-          <View style={styles.dragIndicator} />
-        </View>
+    <MenuProvider skipInstanceCheck>
+      <Animated.View
+        style={[
+          containerStyle,
+          {
+            transform: [{ translateY }],
+          },
+        ]}
+      >
+        <SafeAreaView style={safeAreaStyle}>
+          <View {...panResponder.panHandlers} style={dragHandleStyle}>
+            <View style={dragIndicatorStyle} />
+          </View>
 
-        <CommentsList
-          comments={comments}
-          loading={loading}
-          flatListRef={flatListRef}
-          onClose={onClose}
-          postId={postId}
-          postUserId={postUserId}
-          onCommentAdded={onCommentAdded}
-        />
-      </SafeAreaView>
-    </Animated.View>
+          <CommentsList
+            comments={comments}
+            loading={loading}
+            flatListRef={flatListRef}
+            onClose={onClose}
+            postId={postId}
+            postUserId={postUserId}
+            onCommentAdded={onCommentAdded}
+          />
+        </SafeAreaView>
+      </Animated.View>
+    </MenuProvider>
   );
 };
 
@@ -281,14 +291,21 @@ interface CommentProps {
   text: string;
   created_at: string;
   onCommentDeleted?: () => void;
+  post_id: number;
 }
 
-const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onCommentDeleted }) => {
-
+const Comment: React.FC<CommentProps> = ({
+  id,
+  userId,
+  text,
+  created_at,
+  onCommentDeleted,
+  post_id,
+}) => {
   const { onClose } = useContext(CommentsContext);
-  const { t } = useLanguage();
   const { user: currentUser } = useAuth();
-  
+  const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
+
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -313,187 +330,212 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
     router.push(`/profile/${userId}`);
   };
 
-  const handleDeleteComment = () => {
-    Alert.alert(t("Delete Comment"), t("Are you sure you want to delete this comment?"), [
-      {
-        text: t("Cancel"),
-        style: "cancel",
-      },
-      {
-        text: t("Delete"),
-        style: "destructive",
-        onPress: async () => {
-          try {
-            // First delete associated notifications
-            const { error: notificationError } = await supabase
-              .from("notifications")
-              .delete()
-              .eq("comment_id", id);
-
-            if (notificationError) throw notificationError;
-
-            // Then delete the comment
-            const { error: commentError } = await supabase.from("comments").delete().eq("id", id);
-
-            if (commentError) throw commentError;
-
-            onCommentDeleted?.();
-          } catch (error) {
-            console.error("Error deleting comment:", error);
-          }
-        },
-      },
-    ]);
+  const handleLikePress = async () => {
+    if (!currentUser) return;
+    await toggleCommentLike(id, post_id, currentUser.id, userId);
   };
 
   return (
-    <View style={styles.commentContainer}>
+    <View style={commentContainerStyle}>
       <TouchableOpacity onPress={handleProfilePress}>
-        <Image source={imageSource} style={styles.commentAvatar} />
+        <Image source={imageSource} style={commentAvatarStyle} />
       </TouchableOpacity>
-      <View style={styles.commentContent}>
-        <View style={styles.commentHeader}>
+      <View style={commentContentStyle}>
+        <View style={commentHeaderStyle}>
           <TouchableOpacity onPress={handleProfilePress}>
-            <View style={styles.nameContainer}>
-              <Text style={styles.displayName}>{user.name}</Text>
-              <Text style={styles.username}>@{user.username}</Text>
-              <Text style={styles.timestamp}>{formatRelativeTime(created_at)}</Text>
+            <View style={nameContainerStyle}>
+              <Text style={displayNameStyle}>{user.name}</Text>
+              <Text style={usernameStyle}>@{user.username}</Text>
+              <Text style={timestampStyle}>{formatRelativeTime(created_at)}</Text>
             </View>
           </TouchableOpacity>
-          {currentUser?.id === userId && (
-            <TouchableOpacity onPress={handleDeleteComment} style={styles.deleteButton}>
-              <Icon name="trash-o" size={14} color="#999" />
-            </TouchableOpacity>
-          )}
         </View>
-        <Text style={styles.commentText}>{text}</Text>
+        <Text style={commentTextStyle}>{text}</Text>
+      </View>
+      <View style={commentFooterStyle}>
+        <TouchableOpacity onPress={handleLikePress}>
+          <View style={iconContainerStyle}>
+            <Icon
+              name={likedComments[id] ? "heart" : "heart-o"}
+              size={14}
+              color={likedComments[id] ? "#eb656b" : colors.neutral.grey1}
+            />
+            <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
+          </View>
+        </TouchableOpacity>
+        <ActionsMenu
+          type="comment"
+          contentId={id}
+          contentUserId={userId}
+          onDelete={onCommentDeleted}
+          menuOffset={-Dimensions.get("window").height * 0.25 +20}
+        >
+          <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
+        </ActionsMenu>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  commentAvatar: {
-    borderRadius: 15,
-    height: 30,
-    marginRight: 10,
-    width: 30,
-  },
-  commentContainer: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginBottom: 10,
-  },
-  commentContent: {
-    flex: 1,
-  },
-  commentText: {
-    color: "#333",
-    fontSize: 14,
-  },
-  commentsList: {
-    flexGrow: 1,
-  },
-  commentsWrapper: {
-    flex: 1,
-  },
-  container: {
-    backgroundColor: colors.light.background,
-    borderTopLeftRadius: 15,
-    borderTopRightRadius: 15,
-    flex: 1,
-    padding: 10,
-  },
-  displayName: {
-    color: "#333",
-    fontWeight: "bold",
-  },
-  dragHandle: {
-    alignItems: "center",
-    height: 30,
-    justifyContent: "center",
-    marginBottom: 5,
-  },
-  dragIndicator: {
-    backgroundColor: "#DDDDDD",
-    borderRadius: 3,
-    height: 5,
-    width: 40,
-  },
-  emptyContainer: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    paddingVertical: 20,
-  },
-  emptyText: {
-    color: "#666",
-    fontSize: 16,
-  },
-  input: {
-    backgroundColor: "#f0f0f0",
-    borderColor: "#ccc",
-    borderRadius: 5,
-    borderWidth: 1,
-    flex: 1,
-    marginRight: 10,
-    padding: 10,
-    minHeight: 40,
-    maxHeight: 100,
-  },
-  inputContainer: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginBottom: 8,
-    marginTop: 10,
-    paddingHorizontal: 8,
-  },
-  loadingContainer: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  nameContainer: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
-  },
-  postButton: {
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    alignSelf: "flex-start",
-  },
-  postButtonDisabled: {
-    backgroundColor: colors.light.primary + "80",
-  },
-  postButtonText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
-  safeArea: {
-    flex: 1,
-  },
-  timestamp: {
-    color: "#666",
-    fontSize: 12,
-    marginLeft: 5,
-  },
-  username: {
-    color: "#666",
-    fontSize: 12,
-  },
-  postButtonPressed: {
-    opacity: 0.7,
-  },
-  commentHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  deleteButton: {
-    padding: 8,
-  },
-});
+const commentAvatarStyle: ImageStyle = {
+  borderRadius: 15,
+  height: 30,
+  marginRight: 10,
+  width: 30,
+};
+
+const commentContainerStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  marginBottom: 10,
+};
+
+const commentContentStyle: ViewStyle = {
+  flex: 1,
+};
+
+const commentTextStyle: TextStyle = {
+  color: "#333",
+  fontSize: 14,
+};
+
+const commentsListStyle: ViewStyle = {
+  flexGrow: 1,
+};
+
+const commentsWrapperStyle: ViewStyle = {
+  flex: 1,
+};
+
+const containerStyle: ViewStyle = {
+  backgroundColor: colors.light.background,
+  borderTopLeftRadius: 15,
+  borderTopRightRadius: 15,
+  flex: 1,
+  padding: 10,
+};
+
+const displayNameStyle: TextStyle = {
+  color: "#333",
+  fontWeight: "bold",
+};
+
+const dragHandleStyle: ViewStyle = {
+  alignItems: "center",
+  height: 30,
+  justifyContent: "center",
+  marginBottom: 5,
+};
+
+const dragIndicatorStyle: ViewStyle = {
+  backgroundColor: "#DDDDDD",
+  borderRadius: 3,
+  height: 5,
+  width: 40,
+};
+
+const emptyContainerStyle: ViewStyle = {
+  alignItems: "center",
+  flex: 1,
+  justifyContent: "center",
+  paddingVertical: 20,
+};
+
+const emptyTextStyle: TextStyle = {
+  color: "#666",
+  fontSize: 16,
+};
+
+const inputStyle: TextStyle = {
+  backgroundColor: "#f0f0f0",
+  borderColor: "#ccc",
+  borderRadius: 5,
+  borderWidth: 1,
+  flex: 1,
+  marginRight: 10,
+  padding: 10,
+  minHeight: 40,
+  maxHeight: 100,
+};
+
+const inputContainerStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  marginBottom: 8,
+  marginTop: 10,
+  paddingHorizontal: 8,
+};
+
+const loadingContainerStyle: ViewStyle = {
+  alignItems: "center",
+  flex: 1,
+  justifyContent: "center",
+};
+
+const nameContainerStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  gap: 4,
+};
+
+const postButtonStyle: ViewStyle = {
+  backgroundColor: colors.light.primary,
+  borderRadius: 5,
+  paddingHorizontal: 15,
+  paddingVertical: 10,
+  alignSelf: "flex-start",
+};
+
+const postButtonDisabledStyle: ViewStyle = {
+  backgroundColor: colors.light.primary + "80",
+};
+
+const postButtonTextStyle: TextStyle = {
+  color: "#ffffff",
+  fontWeight: "bold",
+};
+
+const safeAreaStyle: ViewStyle = {
+  flex: 1,
+};
+
+const timestampStyle: TextStyle = {
+  color: "#666",
+  fontSize: 12,
+  marginLeft: 5,
+};
+
+const usernameStyle: TextStyle = {
+  color: "#666",
+  fontSize: 12,
+};
+
+const postButtonPressedStyle: ViewStyle = {
+  opacity: 0.7,
+};
+
+const commentHeaderStyle: ViewStyle = {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 4,
+};
+
+const commentFooterStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 8,
+  paddingLeft: 4,
+};
+
+const iconContainerStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  marginRight: 16,
+};
+
+const iconTextStyle: TextStyle = {
+  fontSize: 12,
+  color: colors.neutral.grey1,
+  marginLeft: 4,
+};

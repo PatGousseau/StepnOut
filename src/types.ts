@@ -18,18 +18,18 @@ export interface Challenge {
   export interface Post {
     id: number;
     user_id: string;
-    media_id?: number;
-    created_at: string;
-    featured: boolean;
     body: string;
-    likes_count: number;
-    comments_count: number;
-    challenge_id?: number;
-    challenge_title?: string;
-    liked: boolean;
+    media_id?: number;
     media?: {
       file_path: string;
     };
+    created_at: string;
+    featured: boolean;
+    challenge_id?: number;
+    challenge_title?: string;
+    likes_count: number;
+    comments_count: number;
+    liked: boolean;
     likes?: {
       count: number;
     };
@@ -67,4 +67,22 @@ export interface Challenge {
     comment?: {
       body: string;
     };
+  }
+
+  export interface Comment {
+    id: number;
+    text: string;
+    userId: string;
+    created_at: string;
+    post_id: number;
+    liked: boolean;
+    likes?: {
+      count: number;
+    };
+  }
+
+  export interface LikeableItem {
+    id: number;
+    type: "post" | "comment";
+    parentId?: number; // for comments, this is the postId
   }

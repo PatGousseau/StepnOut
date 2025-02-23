@@ -24,7 +24,7 @@ import { Loader } from "./Loader";
 import { User } from "../models/User";
 import { profileService } from "../services/profileService";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Menu, MenuOptions, MenuOption, MenuTrigger } from "react-native-popup-menu";
+import { ProfileActions } from "./ActionsMenu";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 type ProfilePageProps = {
@@ -61,9 +61,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       const targetUserId = userId || user?.id;
       if (!targetUserId) return;
 
-      const userProfile = await User.getUser(targetUserId);
-      if (userProfile) {
-        setUserProfile(userProfile);
+      const profile = await profileService.loadUserProfile(targetUserId);
+      if (profile) {
+        setUserProfile(profile);
       }
     };
 
@@ -100,20 +100,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleSaveProfile = async () => {
     try {
-      const isValidUsername = /^[a-zA-Z0-9_-]+$/.test(editedUsername);
-
-      if (!isValidUsername) {
-        Alert.alert(
-          "Invalid Username",
-          "Username can only contain letters, numbers, underscores, and hyphens."
-        );
-        return;
-      }
-      const result = await profileService.updateProfile(user?.id!, {
+      const result = await profileService.validateAndUpdateProfile(user?.id!, {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
         name: editedName !== userProfile?.name ? editedName : undefined,
       });
+
       if (result.success) {
         userProfile!.username = editedUsername;
         userProfile!.name = editedName;
@@ -144,52 +136,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleDeleteAccount = async () => {
-    // First confirmation
-    Alert.alert(
-      t("Delete Account"),
-      t("Are you sure you want to proceed? This will permanently delete your account."),
-      [
-        {
-          text: t("Cancel"),
-          style: "cancel",
-        },
-        {
-          text: t("Continue"),
-          style: "destructive",
-          onPress: () => {
-            // Second confirmation
-            Alert.alert(
-              t("Final Warning"),
-              t(
-                "This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?"
-              ),
-              [
-                {
-                  text: t("Cancel"),
-                  style: "cancel",
-                },
-                {
-                  text: t("Delete Account"),
-                  style: "destructive",
-                  onPress: async () => {
-                    try {
-                      const result = await profileService.deleteAccount(user?.id!);
-                      if (result.success) {
-                        await signOut();
-                      } else {
-                        Alert.alert("Error", result.error || t("Failed to delete account"));
-                      }
-                    } catch (error) {
-                      Alert.alert("Error", (error as Error).message);
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
+    try {
+      const result = await profileService.confirmAndDeleteAccount(user?.id!, t);
+      if (result.success) {
+        await signOut();
+      } else if (result.error) {
+        Alert.alert("Error", result.error || t("Failed to Delete account"));
+      }
+    } catch (error) {
+      Alert.alert("Error", (error as Error).message);
+    }
   };
 
   if (progressLoading || !userProfile) {
@@ -207,20 +163,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       </Text>
     );
   }
-
-  const menuStyles = {
-    optionsContainer: {
-      backgroundColor: "white",
-      borderRadius: 8,
-      width: 150,
-      borderWidth: 2,
-      borderColor: colors.light.primary,
-    },
-    optionWrapper: {
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-    },
-  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -346,40 +288,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </View>
           <View style={styles.headerButtons}>
             {isOwnProfile && (
-              <Menu>
-                <MenuTrigger>
-                  <Icon name="settings-outline" size={24} color="#333" />
-                </MenuTrigger>
-                <MenuOptions customStyles={menuStyles}>
-                  <MenuOption
-                    onSelect={() => {
-                      setIsEditing(true);
-                      setEditedName(userProfile?.name || "");
-                      setEditedUsername(userProfile?.username || "");
-                      setEditedInstagram(userProfile?.instagram || "");
-                    }}
-                  >
-                    <View style={styles.menuItemContent}>
-                      <Icon name="pencil-outline" size={16} color={colors.light.primary} />
-                      <Text style={styles.menuOptionText}>{t("Edit Profile")}</Text>
-                    </View>
-                  </MenuOption>
-                  <MenuOption onSelect={handleSignOut}>
-                    <View style={styles.menuItemContent}>
-                      <Icon name="log-out-outline" size={16} color={colors.light.primary} />
-                      <Text style={styles.menuOptionText}>{t("Sign Out")}</Text>
-                    </View>
-                  </MenuOption>
-                  <MenuOption onSelect={handleDeleteAccount}>
-                    <View style={styles.menuItemContent}>
-                      <Icon name="trash-outline" size={16} color="#FF3B30" />
-                      <Text style={[styles.menuOptionText, { color: "#FF3B30" }]}>
-                        {t("Delete Account")}
-                      </Text>
-                    </View>
-                  </MenuOption>
-                </MenuOptions>
-              </Menu>
+              <ProfileActions
+                onEdit={() => {
+                  setIsEditing(true);
+                  setEditedName(userProfile?.name || "");
+                  setEditedUsername(userProfile?.username || "");
+                  setEditedInstagram(userProfile?.instagram || "");
+                }}
+                onSignOut={handleSignOut}
+                onDeleteAccount={handleDeleteAccount}
+              >
+                <Icon name="settings-outline" size={24} color="#333" />
+              </ProfileActions>
             )}
           </View>
         </View>
@@ -410,23 +330,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         transparent={true}
         onRequestClose={() => setShowFullImage(false)}
       >
-        <TouchableOpacity 
-          style={styles.modalContainer} 
+        <TouchableOpacity
+          style={styles.modalContainer}
           activeOpacity={1}
           onPress={() => setShowFullImage(false)}
         >
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => setShowFullImage(false)}
-          >
+          <TouchableOpacity style={styles.closeButton} onPress={() => setShowFullImage(false)}>
             <Icon name="close" size={24} color="#fff" />
           </TouchableOpacity>
           <View style={styles.fullScreenImageWrapper}>
             <Image
               source={
-                userProfile?.profileImageUrl 
-                  ? { uri: userProfile.profileImageUrl } 
-                  : ProfilePic
+                userProfile?.profileImageUrl ? { uri: userProfile.profileImageUrl } : ProfilePic
               }
               style={styles.fullScreenImage}
               resizeMode="contain"

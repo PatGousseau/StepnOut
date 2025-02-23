@@ -1,87 +1,122 @@
-import React, { createContext, useContext, useState } from 'react';
-import { postService } from '../services/postService';
-import { Post } from '../types';
-import { useAuth } from '../contexts/AuthContext';
+import React, { createContext, useContext, useState } from "react";
+import { postService } from "../services/postService";
+import { Post, Comment, LikeableItem } from "../types";
+import { useAuth } from "../contexts/AuthContext";
 
 interface LikesContextType {
   likedPosts: { [postId: number]: boolean };
+  likedComments: { [commentId: number]: boolean };
   likeCounts: { [postId: number]: number };
-  toggleLike: (postId: number, userId: string, postUserId: string) => Promise<void>;
-  initializeLikes: (posts: Post[]) => Promise<void>;
+  commentLikeCounts: { [commentId: number]: number };
+  togglePostLike: (postId: number, userId: string, postUserId: string) => Promise<void>;
+  toggleCommentLike: (
+    commentId: number,
+    postId: number,
+    userId: string,
+    commentUserId: string
+  ) => Promise<void>;
+  initializePostLikes: (posts: Post[]) => Promise<void>;
+  initializeCommentLikes: (comments: Comment[]) => Promise<void>;
 }
 
 const LikesContext = createContext<LikesContextType | undefined>(undefined);
 
 export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
   const [likedPosts, setLikedPosts] = useState<{ [postId: number]: boolean }>({});
-  const [likeCounts, setLikeCounts] = useState<{ [postId: number]: number }>({});
+  const [likedComments, setLikedComments] = useState<{ [commentId: number]: boolean }>({});
+  const [postLikeCounts, setPostLikeCounts] = useState<{ [postId: number]: number }>({});
+  const [commentLikeCounts, setCommentLikeCounts] = useState<{ [commentId: number]: number }>({});
   const { user } = useAuth();
 
-  const initializeLikes = async (posts: Post[]) => {
-    const postIds = posts.map(post => post.id);
-    
-    // Fetch likes status and counts separately
+  const initializeLikes = async (items: (Post | Comment)[], type: "post" | "comment") => {
+    const ids = items.map((item) => item.id);
+
     const [likesMap, countsMap] = await Promise.all([
-      postService.fetchPostsLikes(postIds, user?.id),
-      postService.fetchLikesCounts(postIds)
+      type === "post"
+        ? postService.fetchPostsLikes(ids, user?.id)
+        : postService.fetchCommentsLikes(ids, user?.id),
+      type === "post"
+        ? postService.fetchPostLikesCounts(ids)
+        : postService.fetchCommentLikesCounts(ids),
     ]);
-    
-    // Merge new likes data with existing data
-    setLikedPosts(prev => ({
+
+    const setLikedItems = type === "post" ? setLikedPosts : setLikedComments;
+    const setItemCounts = type === "post" ? setPostLikeCounts : setCommentLikeCounts;
+
+    setLikedItems((prev) => ({
       ...prev,
-      ...Object.fromEntries(
-        postIds.map(postId => [postId, likesMap[postId]?.isLiked || false])
-      )
+      ...Object.fromEntries(ids.map((id) => [id, likesMap[id]?.isLiked || false])),
     }));
 
-    setLikeCounts(prev => ({
+    setItemCounts((prev) => ({
       ...prev,
-      ...countsMap
+      ...countsMap,
     }));
   };
 
-  const toggleLike = async (postId: number, userId: string, postUserId: string) => {
-    const isCurrentlyLiked = likedPosts[postId];
-    
+  const toggleLike = async (item: LikeableItem, userId: string, targetUserId: string) => {
+    const { id, type, parentId } = item;
+    const isPost = type === "post";
+
+    const likedItems = isPost ? likedPosts : likedComments;
+    const setLikedItems = isPost ? setLikedPosts : setLikedComments;
+    const setItemCounts = isPost ? setPostLikeCounts : setCommentLikeCounts;
+
+    const isCurrentlyLiked = likedItems[id];
+    const notificationBody = isPost ? "liked your post" : "liked your comment";
+
     // Optimistic update
-    setLikedPosts(prev => ({ ...prev, [postId]: !isCurrentlyLiked }));
-    setLikeCounts(prev => ({ 
-      ...prev, 
-      [postId]: prev[postId] + (isCurrentlyLiked ? -1 : 1)
+    setLikedItems((prev) => ({ ...prev, [id]: !isCurrentlyLiked }));
+    setItemCounts((prev) => ({
+      ...prev,
+      [id]: (prev[id] || 0) + (isCurrentlyLiked ? -1 : 1),
     }));
 
     try {
-      const result = await postService.toggleLike(postId, userId, postUserId, {
-        title: '(username)',
-        body: 'liked your post'
-      });
+      const result = isPost
+        ? await postService.togglePostLike(id, userId, targetUserId, {
+            title: "(username)",
+            body: notificationBody,
+          })
+        : await postService.toggleCommentLike(id, parentId!, userId, targetUserId, {
+            title: "(username)",
+            body: notificationBody,
+          });
 
       if (result === null) {
         // Revert on failure
-        setLikedPosts(prev => ({ ...prev, [postId]: isCurrentlyLiked }));
-        setLikeCounts(prev => ({ 
-          ...prev, 
-          [postId]: prev[postId] + (isCurrentlyLiked ? 1 : -1)
+        setLikedItems((prev) => ({ ...prev, [id]: isCurrentlyLiked }));
+        setItemCounts((prev) => ({
+          ...prev,
+          [id]: (prev[id] || 0) + (isCurrentlyLiked ? 1 : -1),
         }));
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error(`Error toggling ${type} like:`, error);
       // Revert on error
-      setLikedPosts(prev => ({ ...prev, [postId]: isCurrentlyLiked }));
-      setLikeCounts(prev => ({ 
-        ...prev, 
-        [postId]: prev[postId] + (isCurrentlyLiked ? 1 : -1)
+      setLikedItems((prev) => ({ ...prev, [id]: isCurrentlyLiked }));
+      setItemCounts((prev) => ({
+        ...prev,
+        [id]: (prev[id] || 0) + (isCurrentlyLiked ? 1 : -1),
       }));
     }
   };
 
   return (
-    <LikesContext.Provider value={{ 
-      likedPosts, 
-      likeCounts, 
-      toggleLike,
-      initializeLikes 
-    }}>
+    <LikesContext.Provider
+      value={{
+        likedPosts,
+        likedComments,
+        likeCounts: postLikeCounts,
+        commentLikeCounts,
+        togglePostLike: (postId, userId, postUserId) =>
+          toggleLike({ id: postId, type: "post" }, userId, postUserId),
+        toggleCommentLike: (commentId, postId, userId, commentUserId) =>
+          toggleLike({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId),
+        initializePostLikes: (posts) => initializeLikes(posts, "post"),
+        initializeCommentLikes: (comments) => initializeLikes(comments, "comment"),
+      }}
+    >
       {children}
     </LikesContext.Provider>
   );
@@ -90,7 +125,7 @@ export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
 export const useLikes = () => {
   const context = useContext(LikesContext);
   if (context === undefined) {
-    throw new Error('useLikes must be used within a LikesProvider');
+    throw new Error("useLikes must be used within a LikesProvider");
   }
   return context;
-}; 
+};
