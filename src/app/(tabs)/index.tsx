@@ -267,9 +267,11 @@ const Home = () => {
         {loading && <Loader />}
       </ScrollView>
 
-      <View style={styles.createPostButton}>
-        <CreatePost />
-      </View>
+      {activeTab === "discussion" && (
+        <View style={styles.createPostButton}>
+          <CreatePost />
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
