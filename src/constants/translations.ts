@@ -87,6 +87,7 @@ export const translations = {
   "Check it out now.": "Dai un'occhiata ora.",
   "(username) commented on your post!": "(username) ha commentato il tuo post!",
   "A new challenge is available!": "È disponibile una nuova sfida!",
+  "New challenge alert!": "Nuova sfida in arrivo!",
   "Send Feedback": "Invia Feedback",
   "What's on your mind?": "Cosa ne pensi?",
   "Thank you for your feedback!": "Grazie per il tuo feedback!",

@@ -120,7 +120,7 @@ export async function sendNewChallengeNotification(recipientId: string, challeng
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = 'A new challenge is available!';
+    const title = 'New challenge alert!';
     const body = challengeTitle;
     const data = { challengeId };
 
