@@ -23,16 +23,12 @@ import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { formatRelativeTime } from "../utils/time";
 import { Loader } from "./Loader";
-
-export interface Comment {
-  id: number;
-  text: string;
-  userId: string;
-  created_at: string;
-}
+import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
+import { useLikes } from "../contexts/LikesContext";
+import { postService } from "../services/postService";
 
 interface CommentsProps {
-  initialComments: Comment[];
+  initialComments: CommentType[];
   onClose: () => void;
   loading?: boolean;
   postId: number;
@@ -41,7 +37,7 @@ interface CommentsProps {
 }
 
 interface CommentsListProps {
-  comments: Comment[];
+  comments: CommentType[];
   loading?: boolean;
   flatListRef?: React.RefObject<FlatList>;
   onClose?: () => void;
@@ -63,11 +59,16 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const { initializeCommentLikes } = useLikes();
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState(initialComments);
 
   useEffect(() => {
     setComments(initialComments);
+    // Initialize likes for the comments
+    if (initialComments.length > 0) {
+      initializeCommentLikes(initialComments);
+    }
   }, [initialComments]);
 
   const handleAddComment = async () => {
@@ -94,7 +95,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               id: savedComment.id,
               text: savedComment.body,
               userId: savedComment.user_id,
+              post_id: postId,
               created_at: savedComment.created_at,
+              likes_count: 0,
+              liked: false,
             },
           ]);
 
@@ -157,6 +161,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               userId={item.userId}
               text={item.text}
               created_at={item.created_at}
+              post_id={item.post_id}
               onCommentDeleted={() => handleCommentDeleted(item.id)}
             />
           )}
@@ -281,14 +286,22 @@ interface CommentProps {
   text: string;
   created_at: string;
   onCommentDeleted?: () => void;
+  post_id: number;
 }
 
-const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onCommentDeleted }) => {
-
+const Comment: React.FC<CommentProps> = ({
+  id,
+  userId,
+  text,
+  created_at,
+  onCommentDeleted,
+  post_id,
+}) => {
   const { onClose } = useContext(CommentsContext);
   const { t } = useLanguage();
   const { user: currentUser } = useAuth();
-  
+  const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
+
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -323,23 +336,35 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
         text: t("Delete"),
         style: "destructive",
         onPress: async () => {
-          try {
-            // First delete associated notifications
-            const { error: notificationError } = await supabase
-              .from("notifications")
-              .delete()
-              .eq("comment_id", id);
-
-            if (notificationError) throw notificationError;
-
-            // Then delete the comment
-            const { error: commentError } = await supabase.from("comments").delete().eq("id", id);
-
-            if (commentError) throw commentError;
-
+          const success = await postService.deleteComment(id);
+          if (success) {
             onCommentDeleted?.();
-          } catch (error) {
-            console.error("Error deleting comment:", error);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleLikePress = async () => {
+    if (!currentUser) return;
+    await toggleCommentLike(id, post_id, currentUser.id, userId);
+  };
+
+  const handleReportComment = () => {
+    if (!currentUser) return;
+
+    Alert.alert(t("Report Comment"), t("Are you sure you want to report this comment?"), [
+      {
+        text: t("Cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("Report"),
+        style: "destructive",
+        onPress: async () => {
+          const success = await postService.reportComment(id, currentUser.id, userId);
+          if (success) {
+            Alert.alert(t("Report Submitted"), t("Thank you for your report."));
           }
         },
       },
@@ -367,6 +392,25 @@ const Comment: React.FC<CommentProps> = ({ id, userId, text, created_at, onComme
           )}
         </View>
         <Text style={styles.commentText}>{text}</Text>
+      </View>
+      <View style={styles.commentFooter}>
+        <TouchableOpacity onPress={handleLikePress}>
+          <View style={styles.iconContainer}>
+            <Icon
+              name={likedComments[id] ? "heart" : "heart-o"}
+              size={14}
+              color={likedComments[id] ? "#eb656b" : colors.neutral.grey1}
+            />
+            <Text style={styles.iconText}>{commentLikeCounts[id] || 0}</Text>
+          </View>
+        </TouchableOpacity>
+        {currentUser && currentUser.id !== userId && (
+          <TouchableOpacity onPress={handleReportComment}>
+            <View style={styles.iconContainer}>
+              <Icon name="flag-o" size={14} color={colors.neutral.grey1} />
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -495,5 +539,21 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 8,
+  },
+  commentFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    paddingLeft: 4,
+  },
+  iconContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  iconText: {
+    fontSize: 12,
+    color: colors.neutral.grey1,
+    marginLeft: 4,
   },
 });

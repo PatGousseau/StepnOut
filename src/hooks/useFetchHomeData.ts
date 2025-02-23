@@ -14,6 +14,10 @@ interface PostLikes {
   [postId: number]: boolean;
 }
 
+interface CommentLikes {
+  [commentId: number]: boolean;
+}
+
 interface CommentCount {
   post_id: number;
   count: string;
@@ -27,8 +31,9 @@ export const useFetchHomeData = () => {
   const [userMap, setUserMap] = useState<UserMap>({});
   const [loading, setLoading] = useState(true);
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
+  const [likedComments, setLikedComments] = useState<CommentLikes>({});
   const { user } = useAuth();
-  const { initializeLikes } = useLikes();
+  const { initializePostLikes } = useLikes();
 
   const formatPost = async (post: Post, commentCountMap?: Map<number, number>): Promise<Post> => {
     // If we don't have a pre-fetched comment count, fetch it individually
@@ -135,7 +140,7 @@ export const useFetchHomeData = () => {
         );
 
         // Initialize likes for all new posts, regardless of page
-        initializeLikes(formattedPosts);
+        initializePostLikes(formattedPosts);
 
         setHasMore(postData.length === POSTS_PER_PAGE);
         setPosts((prev) => (isLoadMore ? [...prev, ...formattedPosts] : formattedPosts));
@@ -149,24 +154,39 @@ export const useFetchHomeData = () => {
     [POSTS_PER_PAGE, user?.id]
   );
 
+  const formatComment = async (comment: any): Promise<any> => {
+    return {
+      ...comment,
+      likes_count: comment.likes?.count ?? 0,
+      liked: likedComments[comment.id] ?? false,
+    };
+  };
+
   const addComment = async (postId: number, userId: string, body: string) => {
     const { data, error } = await supabase
       .from("comments")
-      .insert([{ post_id: postId, user_id: userId, body }])
-      .select();
+      .insert([{ post_id: postId, user_id: userId, body }]).select(`
+        *,
+        likes:likes(count)
+      `);
 
     if (error) {
       console.error("Error adding comment:", error);
       return null;
     }
-    return data?.[0]
-      ? {
-          id: data[0].id,
-          text: data[0].body,
-          userId: data[0].user_id,
-          created_at: data[0].created_at,
-        }
-      : null;
+
+    if (data?.[0]) {
+      const formattedComment = await formatComment(data[0]);
+      return {
+        id: formattedComment.id,
+        text: formattedComment.body,
+        userId: formattedComment.user_id,
+        created_at: formattedComment.created_at,
+        likes_count: formattedComment.likes_count,
+        liked: formattedComment.liked,
+      };
+    }
+    return null;
   };
 
   const loadMorePosts = useCallback(() => {
@@ -229,5 +249,6 @@ export const useFetchHomeData = () => {
     hasMore,
     fetchPost,
     likedPosts,
+    likedComments,
   };
 };
