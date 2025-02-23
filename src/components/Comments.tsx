@@ -12,6 +12,7 @@ import {
   ViewStyle,
   TextStyle,
   ImageStyle,
+  Dimensions,
 } from "react-native";
 
 import { Text } from "./StyledText";
@@ -27,7 +28,6 @@ import { formatRelativeTime } from "../utils/time";
 import { Loader } from "./Loader";
 import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
 import { useLikes } from "../contexts/LikesContext";
-import { postService } from "../services/postService";
 import { ActionsMenu } from "./ActionsMenu";
 import { MenuProvider } from "react-native-popup-menu";
 
@@ -205,7 +205,6 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   );
 };
 
-// Rename the main component to CommentsModal
 export const CommentsModal: React.FC<CommentsProps> = ({
   initialComments,
   onClose,
@@ -257,7 +256,7 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   return (
-    <MenuProvider>
+    <MenuProvider skipInstanceCheck>
       <Animated.View
         style={[
           containerStyle,
@@ -304,7 +303,6 @@ const Comment: React.FC<CommentProps> = ({
   post_id,
 }) => {
   const { onClose } = useContext(CommentsContext);
-  const { t } = useLanguage();
   const { user: currentUser } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
 
@@ -370,6 +368,7 @@ const Comment: React.FC<CommentProps> = ({
           contentId={id}
           contentUserId={userId}
           onDelete={onCommentDeleted}
+          menuOffset={-Dimensions.get("window").height * 0.25 +20}
         >
           <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
         </ActionsMenu>

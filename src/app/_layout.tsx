@@ -1,7 +1,6 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { StyleSheet } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -165,10 +164,3 @@ export default function Layout() {
     </AuthProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    flex: 1,
-  },
-});

@@ -1,11 +1,12 @@
 import React from "react";
-import { Alert, ViewStyle, TextStyle } from "react-native";
+import { Alert, ViewStyle, TextStyle, View } from "react-native";
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { postService } from "../services/postService";
+import { MaterialIcons } from "@expo/vector-icons";
 
 type ContentType = "post" | "comment";
 
@@ -13,6 +14,7 @@ interface MenuOptionItem {
   text: string;
   onSelect: () => void;
   isDestructive?: boolean;
+  icon: keyof typeof MaterialIcons.glyphMap;
 }
 
 interface MenuProps {
@@ -21,6 +23,7 @@ interface MenuProps {
   contentId: number;
   contentUserId: string;
   onDelete?: () => void;
+  menuOffset?: number;
 }
 
 export const ActionsMenu: React.FC<MenuProps> = ({
@@ -29,6 +32,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   contentId,
   contentUserId,
   onDelete,
+  menuOffset = 20,
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -108,6 +112,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
           text: t(`Delete ${type}`),
           onSelect: handleDelete,
           isDestructive: true,
+          icon: "delete",
         },
       ];
     }
@@ -116,10 +121,12 @@ export const ActionsMenu: React.FC<MenuProps> = ({
       {
         text: t(`Report ${type}`),
         onSelect: handleReport,
+        icon: "report",
       },
       {
         text: t("Block user"),
         onSelect: handleBlock,
+        icon: "block",
       },
     ];
   };
@@ -127,13 +134,31 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   return (
     <Menu style={menuContainer}>
       <MenuTrigger>{children}</MenuTrigger>
-      <MenuOptions customStyles={optionsStyles}>
+      <MenuOptions
+        customStyles={{
+          ...optionsStyles,
+          optionsContainer: {
+            ...optionsStyles.optionsContainer,
+            marginTop: menuOffset,
+          },
+        }}
+      >
         {getActions().map((action, index) => (
-          <MenuOption key={index} onSelect={action.onSelect}>
-            <Text style={[menuOptionText, action.isDestructive && { color: "red" }]}>
-              {action.text}
-            </Text>
-          </MenuOption>
+          <React.Fragment key={index}>
+            <MenuOption onSelect={action.onSelect}>
+              <View style={menuOptionContainer}>
+                <MaterialIcons
+                  name={action.icon}
+                  size={20}
+                  color={action.isDestructive ? "red" : colors.light.primary}
+                />
+                <Text style={[menuOptionText, action.isDestructive && { color: "red" }]}>
+                  {action.text}
+                </Text>
+              </View>
+            </MenuOption>
+            {index < getActions().length - 1 && <View style={divider} />}
+          </React.Fragment>
         ))}
       </MenuOptions>
     </Menu>
@@ -143,9 +168,17 @@ export const ActionsMenu: React.FC<MenuProps> = ({
 const menuContainer: ViewStyle = {
   padding: 8,
 };
+
+const menuOptionContainer: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  padding: 4,
+};
+
 const menuOptionText: TextStyle = {
   fontSize: 14,
-  padding: 10,
+  marginLeft: 10,
+  color: colors.light.primary,
 };
 
 const optionsStyles = {
@@ -153,12 +186,18 @@ const optionsStyles = {
     borderRadius: 8,
     width: 200,
     backgroundColor: colors.neutral.grey2,
-    marginTop: 45,
     shadowColor: "transparent",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 0,
-    zIndex: 9999,
+    padding: 4,
   },
+};
+
+const divider: ViewStyle = {
+  height: 1,
+  backgroundColor: colors.neutral.grey3,
+  opacity: 0.2,
+  marginHorizontal: 10,
 };
