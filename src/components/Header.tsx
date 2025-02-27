@@ -34,9 +34,11 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
           )}
         </TouchableOpacity>
         
-        <TouchableOpacity onPress={() => router.push('/(tabs)')}>
-          <Text style={styles.stepnOut}>Stepn Out</Text>
-        </TouchableOpacity>
+        <Image 
+          source={require('../assets/images/header-logo.png')} 
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
         
         <View style={styles.headerRight}>
           <TouchableOpacity 
@@ -107,11 +109,9 @@ const styles = StyleSheet.create({
     // backgroundColor: colors.light.primary,
     backgroundColor: colors.light.background
   },
-  stepnOut: {
-    color: colors.light.primary,
-    fontFamily: 'PingFangSC-Bold',
-    fontSize: 18,
-    fontWeight: 'bold',
+  headerLogo: {
+    height: 30,
+    width: 120,
   },
 });
 

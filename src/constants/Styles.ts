@@ -1,8 +1,9 @@
 export const globalStyles = {
     text: {
-      fontFamily: 'HelveticaNeue'
+      fontFamily: 'Montserrat-Regular'
     },
     textBold: {
-      fontFamily: 'HelveticaNeue-Bold'
+      fontFamily: 'Montserrat-Regular',
+      fontWeight: 'bold'
     }
 };

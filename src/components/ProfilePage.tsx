@@ -607,4 +607,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
+  difficultyText: (difficulty) => ({
+    color: difficulty === 'easy' ? colors.light.easyGreen :
+           difficulty === 'medium' ? colors.light.mediumYellow :
+           colors.light.hardRed,
+    fontSize: 12,
+    fontWeight: 'bold'
+  })
 });
