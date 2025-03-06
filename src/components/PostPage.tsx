@@ -4,7 +4,8 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  FlatList 
+  FlatList,
+  ScrollView
 } from 'react-native';
 import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
@@ -63,20 +64,18 @@ const PostPage = () => {
       style={styles.container}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}
     >
-      <FlatList
-        ListHeaderComponent={() => (
-          <Post
-            post={post}
-            postUser={userMap[post.user_id]}
-            setPostCounts={() => {}}
-            isPostPage={true}
-          />
-        )}
-        data={[]}
-        keyboardShouldPersistTaps="handled"
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
-      />
+        keyboardShouldPersistTaps="handled"
+      >
+        <Post
+          post={post}
+          postUser={userMap[post.user_id]}
+          setPostCounts={() => {}}
+          isPostPage={true}
+        />
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
