@@ -80,7 +80,7 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
       <Text style={styles.yourProgressText}>{t('Your Progress')}</Text>
       <View style={styles.rowContainer}>
         <View style={styles.totalContainer}>
-          <FontAwesome name="trophy" size={32} color="#7798AB" />
+          <FontAwesome name="trophy" size={32} color="#4D5382" />
           <View style={styles.totalTextContainer}>
             <Text style={styles.totalText}>{total}</Text>
             <Text style={styles.totalLabel}>{t('Total')}</Text>
@@ -100,7 +100,7 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
         ].map((level) => (
           <View key={level.label} style={[styles.challengeBox, { backgroundColor: level.color }]}>
             <Text style={[styles.challengeCount, { color: level.textColor }]}>{level.count}</Text>
-            <Text style={styles.challengeLabel}>{level.label}</Text>
+            <Text style={[styles.challengeLabel, { color: level.textColor}]}>{level.label}</Text>
           </View>
         ))}
       </View>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   },
   totalContainer: {
     alignItems: 'center',
-    backgroundColor: '#F3F3F3',
+    backgroundColor: '#B6B8CB',
     borderRadius: 12,
     flex: 1,
     flexDirection: 'row',
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   totalLabel: {
-    color: '#7F8C8D',
+    color: 'black',
     fontSize: 14,
   },
   streakContainer: {
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   
   // Streak Calendar Styles
   streakCalendarContainer: {
-    backgroundColor: '#F3F3F3',
+    backgroundColor: '#B6B8CB',
     borderRadius: 12,
     padding: 12,
   },
