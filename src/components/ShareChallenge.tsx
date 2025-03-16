@@ -41,7 +41,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   const handleShare = async () => {
     try {
       const streakEmoji = streakCount >= 3 ? '🔥' : '💪';
-      const defaultMessage = t('Share challenge message', {
+      const defaultMessage = t("(emoji) Join me as the (count)th person to complete this week's challenge on Stepn Out! 🚀\n\nhttps://apps.apple.com/us/app/stepn-out/id6739888631", {
         emoji: streakEmoji,
         count: completionCount + 1
       });
