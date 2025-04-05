@@ -11,9 +11,17 @@ interface HeaderProps {
   onFeedbackPress: () => void;
   unreadCount: number;
   isDetailPage?: boolean;
+  hideLogo?: boolean;
 }
 
-const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount, isDetailPage = false }: HeaderProps) => {
+const Header = ({ 
+  onNotificationPress, 
+  onMenuPress,
+   onFeedbackPress, 
+   unreadCount, 
+   isDetailPage = false,
+   hideLogo = false
+  }: HeaderProps) => {
   
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -34,11 +42,13 @@ const Header = ({ onNotificationPress, onMenuPress, onFeedbackPress, unreadCount
           )}
         </TouchableOpacity>
         
-        <Image 
-          source={require('../assets/images/header-logo.png')} 
-          style={styles.headerLogo}
-          resizeMode="contain"
-        />
+        {!hideLogo && (
+          <Image 
+            source={require('../assets/images/header-logo.png')} 
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+        )}
         
         <View style={styles.headerRight}>
           <TouchableOpacity 
