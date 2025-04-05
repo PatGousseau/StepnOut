@@ -43,6 +43,9 @@ function RootLayoutNav() {
                       pathname.includes('/profile/') || 
                       pathname.includes('/challenge/');
 
+  // hide logo on auth screens
+  const hideLogo = pathname === '/login' || pathname === '/register';
+
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
     if (!loading) {
@@ -107,6 +110,7 @@ function RootLayoutNav() {
             onFeedbackPress={() => setShowFeedback(true)}
             unreadCount={unreadCount}
             isDetailPage={isDetailPage}
+            hideLogo={hideLogo}
           />
           <Stack
             screenOptions={{
