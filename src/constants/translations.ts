@@ -152,4 +152,5 @@ export const translations = {
   "Share how you completed the challenge": "Condividi come hai completato la sfida",
   "Report Submitted": "Segnalazione Inviata",
   "Thank you for your report.": "Grazie per la tua segnalazione.",
+  "End User License Agreement": "Accettazione Accordo Utente",
 };

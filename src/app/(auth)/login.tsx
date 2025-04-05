@@ -15,21 +15,20 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { EULA } from '../../constants/EULA';
+import { EULA_IT, EULA } from '../../constants/EULA';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert(t('Error'), t('Please fill in all fields'));
       return;
     }
-
     try {
       setLoading(true);
       await signIn(email, password);
@@ -48,7 +47,7 @@ export default function LoginScreen() {
         .single();
 
       if (!profile?.eula_accepted) {
-        Alert.alert(t('End User License Agreement'), EULA, [
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
           { text: t('Accept'), onPress: async () => {
             await supabase
               .from('profiles')
