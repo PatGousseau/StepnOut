@@ -46,9 +46,6 @@ function RootLayoutNav() {
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register';
 
-  console.log('hideLogo', hideLogo);
-  console.log('pathname', pathname);
-
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
     if (!loading) {
