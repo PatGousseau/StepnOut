@@ -1,5 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import * as VideoThumbnails from "expo-video-thumbnails";
+import * as ImageManipulator from 'expo-image-manipulator';
+import { Video } from 'react-native-compressor';
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
 
 interface MediaUploadResult {
@@ -55,9 +57,16 @@ export const uploadMedia = async (
         thumbnailUri = uri;
 
         if (thumbnailUri) {
+          // Compress thumbnail
+          const compressedThumbnail = await ImageManipulator.manipulateAsync(
+            thumbnailUri,
+            [],
+            { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+          );
+
           const thumbnailFormData = new FormData();
           thumbnailFormData.append("file", {
-            uri: thumbnailUri,
+            uri: compressedThumbnail.uri,
             name: thumbnailFileName,
             type: "image/jpeg",
           } as any);
@@ -75,9 +84,38 @@ export const uploadMedia = async (
       }
     }
 
+    // Compress media before upload
+    let fileUri;
+    if (isVideoFile) {
+      try {
+        // Compress video with medium quality
+        fileUri = await Video.compress(
+          file.uri,
+          {
+            compressionMethod: "auto",
+            minimumFileSizeForCompress: 0, // Always compress
+          },
+          (progress) => {
+            console.log('Compression progress: ', progress);
+          }
+        );
+      } catch (e) {
+        console.warn("Video compression failed, using original:", e);
+        fileUri = file.uri;
+      }
+    } else {
+      // Compress image
+      const compressed = await ImageManipulator.manipulateAsync(
+        file.uri,
+        [],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      fileUri = compressed.uri;
+    }
+
     const formData = new FormData();
     formData.append("file", {
-      uri: file.uri,
+      uri: fileUri,
       name: fileName,
       type: mediaType === "video" ? "video/mp4" : "image/jpeg",
     } as any);

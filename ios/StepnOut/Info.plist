@@ -105,5 +105,7 @@
 	<string></string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>We need to send notifcations to keep you updated</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 </dict>
 </plist>
