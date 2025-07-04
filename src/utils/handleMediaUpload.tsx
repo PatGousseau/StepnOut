@@ -88,12 +88,14 @@ export const uploadMedia = async (
     let fileUri;
     if (isVideoFile) {
       try {
-        // Compress video with medium quality
+        // Compress video with absolute maximum compression
         fileUri = await Video.compress(
           file.uri,
           {
-            compressionMethod: "auto",
+            compressionMethod: "manual",
             minimumFileSizeForCompress: 0, // Always compress
+            maxSize: 1 * 1024 * 1024, // Extremely small target max size of 1MB
+            bitrate: 250000, // Ultra low 250Kbps bitrate
           },
           (progress) => {
             console.log('Compression progress: ', progress);
