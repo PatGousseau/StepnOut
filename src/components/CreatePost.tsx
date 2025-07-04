@@ -18,7 +18,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import { Text } from "./StyledText";
 import { useAuth } from "../contexts/AuthContext";
-import { uploadMedia } from "../utils/handleMediaUpload";
+import { selectMediaForPreview, MediaSelectionResult } from "../utils/handleMediaUpload";
+import { backgroundUploadService } from "../services/backgroundUploadService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
 import { Loader } from "./Loader";
@@ -26,12 +27,12 @@ import { Loader } from "./Loader";
 const CreatePost = () => {
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-  const [uploadedMediaId, setUploadedMediaId] = useState<number | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
   const [postText, setPostText] = useState("");
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
-  const [isVideo, setIsVideo] = useState(false);
-  const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessingMedia, setIsProcessingMedia] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
   const inputAccessoryViewID = "uniqueID";
   const { t } = useLanguage();
 
@@ -42,18 +43,41 @@ const CreatePost = () => {
     }
 
     try {
-      await supabase.from("post").insert([
+      // Create post immediately with media preview
+      const { data: postData, error: postError } = await supabase.from("post").insert([
         {
           user_id: user.id,
-          media_id: uploadedMediaId,
+          media_id: selectedMedia?.mediaId || null,
           body: postText,
           featured: false,
         },
-      ]);
+      ]).select("id").single();
+
+      if (postError) throw postError;
+
+      // If there's media, start background upload
+      if (selectedMedia) {
+        setIsBackgroundUploading(true);
+        backgroundUploadService.addToQueue(
+          selectedMedia.mediaId,
+          selectedMedia.pendingUpload,
+          postData.id,
+          (progress) => {
+            setUploadProgress(progress);
+          },
+          (success, mediaUrl) => {
+            setIsBackgroundUploading(false);
+            setUploadProgress(0);
+            if (!success) {
+              console.error("Background upload failed for post:", postData.id);
+              // Could show a notification to user that upload failed
+            }
+          }
+        );
+      }
 
       setPostText("");
-      setUploadedMediaId(null);
-      setMediaPreview(null);
+      setSelectedMedia(null);
       setModalVisible(false);
     } catch (error) {
       console.error("Error creating post:", error);
@@ -63,27 +87,24 @@ const CreatePost = () => {
 
   const handleMediaUpload = async () => {
     try {
+      console.log("🚀 [CREATE POST] Starting media upload process...");
       setIsUploading(true);
-      const result = await uploadMedia({ allowVideo: true });
+      const result = await selectMediaForPreview({ allowVideo: true });
       if (result) {
-        setUploadedMediaId(result.mediaId);
-        setMediaPreview(result.mediaUrl);
-        setIsVideo(isVideoUtil(result.mediaUrl));
-        setVideoThumbnail(result.videoThumbnail);
+        setSelectedMedia(result);
+        console.log("✅ [CREATE POST] Media selected successfully - Send button should be enabled!");
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      alert(t("Error uploading file"));
+      console.error("❌ [CREATE POST] Error selecting media:", error);
+      alert(t("Error selecting media"));
     } finally {
       setIsUploading(false);
+      console.log("🔓 [CREATE POST] Upload UI unlocked - user can interact");
     }
   };
 
   const handleRemoveMedia = () => {
-    setUploadedMediaId(null);
-    setMediaPreview(null);
-    setIsVideo(false);
-    setVideoThumbnail(null);
+    setSelectedMedia(null);
   };
 
   return (
@@ -119,18 +140,38 @@ const CreatePost = () => {
                   <View style={mediaPreviewContainerStyle}>
                     <Loader />
                   </View>
-                ) : mediaPreview ? (
+                ) : selectedMedia ? (
                   <View style={mediaPreviewContainerStyle}>
                     <Image
-                      source={{ uri: isVideo ? videoThumbnail || mediaPreview : mediaPreview }}
+                      source={{ 
+                        uri: selectedMedia.isVideo 
+                          ? selectedMedia.thumbnailUri || selectedMedia.previewUrl 
+                          : selectedMedia.previewUrl 
+                      }}
                       style={mediaPreviewStyle}
                       resizeMode="contain"
                     />
                     <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
                       <MaterialIcons name="close" size={12} color="white" />
                     </TouchableOpacity>
+                    {selectedMedia.isVideo && (
+                      <View style={videoIndicatorStyle}>
+                        <MaterialIcons name="play-circle-filled" size={24} color="white" />
+                      </View>
+                    )}
                   </View>
                 ) : null}
+
+                {isBackgroundUploading && (
+                  <View style={uploadProgressContainerStyle}>
+                    <Text style={uploadProgressTextStyle}>
+                      {t("Uploading media...")} {Math.round(uploadProgress)}%
+                    </Text>
+                    <View style={progressBarContainerStyle}>
+                      <View style={[progressBarFillStyle, { width: `${uploadProgress}%` }]} />
+                    </View>
+                  </View>
+                )}
 
                 <TextInput
                   style={textInputStyle}
@@ -296,6 +337,42 @@ const uploadButtonStyle: ViewStyle = {
   height: 56,
   justifyContent: "center",
   width: 56,
+};
+
+const videoIndicatorStyle: ViewStyle = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: [{ translateX: -12 }, { translateY: -12 }],
+  backgroundColor: "rgba(0,0,0,0.5)",
+  borderRadius: 12,
+  padding: 4,
+};
+
+const uploadProgressContainerStyle: ViewStyle = {
+  marginTop: 10,
+  padding: 10,
+  backgroundColor: "#f5f5f5",
+  borderRadius: 8,
+};
+
+const uploadProgressTextStyle: TextStyle = {
+  fontSize: 12,
+  color: "#666",
+  marginBottom: 5,
+};
+
+const progressBarContainerStyle: ViewStyle = {
+  height: 4,
+  backgroundColor: "#ddd",
+  borderRadius: 2,
+  overflow: "hidden",
+};
+
+const progressBarFillStyle: ViewStyle = {
+  height: "100%",
+  backgroundColor: colors.light.accent,
+  borderRadius: 2,
 };
 
 export default CreatePost;

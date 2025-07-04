@@ -13,7 +13,8 @@ import { Loader } from "../components/Loader";
 import ShareChallenge from "../components/ShareChallenge";
 import { View, StyleSheet } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
-import { uploadMedia } from "../utils/handleMediaUpload";
+import { selectMediaForPreview, MediaSelectionResult } from "../utils/handleMediaUpload";
+import { backgroundUploadService } from "../services/backgroundUploadService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
 import { router } from "expo-router";
@@ -164,17 +165,16 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const { t } = useLanguage();
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-  const [uploadedMediaId, setUploadedMediaId] = useState<number | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
   const [postText, setPostText] = useState("");
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [showNotification, setShowNotification] = useState(false);
   const notificationAnim = useRef(new Animated.Value(0)).current;
-  const [isVideo, setIsVideo] = useState(false);
-  const [videoThumbnail, setVideoThumbnail] = useState<string | null>(null);
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -183,43 +183,56 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
     }
 
     if (isUploading) {
-      alert(t("Please wait for media upload to complete."));
+      alert(t("Please wait for media selection to complete."));
       return;
     }
 
-    if (!postText.trim() && !uploadedMediaId) {
+    if (!postText.trim() && !selectedMedia) {
       alert(t("Please add either a description or media to complete the challenge."));
       return;
     }
 
-    if (mediaPreview && !uploadedMediaId) {
-      alert(t("Media is still uploading. Please wait."));
-      return;
-    }
-
     try {
-      const { error: postError } = await supabase
+      // Create post immediately with media preview
+      const { data: postData, error: postError } = await supabase
         .from("post")
         .insert([
           {
             user_id: user.id,
             challenge_id: challenge.id,
-            media_id: uploadedMediaId,
+            media_id: selectedMedia?.mediaId || null,
             body: postText,
             featured: false,
           },
         ])
-        .select()
+        .select("id")
         .single();
 
       if (postError) throw postError;
 
+      // If there's media, start background upload
+      if (selectedMedia) {
+        setIsBackgroundUploading(true);
+        backgroundUploadService.addToQueue(
+          selectedMedia.mediaId,
+          selectedMedia.pendingUpload,
+          postData.id,
+          (progress) => {
+            setUploadProgress(progress);
+          },
+          (success, mediaUrl) => {
+            setIsBackgroundUploading(false);
+            setUploadProgress(0);
+            if (!success) {
+              console.error("Background upload failed for challenge submission:", postData.id);
+            }
+          }
+        );
+      }
+
       setModalVisible(false);
       setPostText("");
-      setUploadedMediaId(null);
-      setMediaPreview(null);
-      setIsVideo(false);
-      setVideoThumbnail(null);
+      setSelectedMedia(null);
 
       setTimeout(() => {
         setShowShareModal(true);
@@ -232,27 +245,24 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
   const handleMediaUpload = async () => {
     try {
+      console.log("🚀 [CHALLENGE] Starting media upload process...");
       setIsUploading(true);
-      const result = await uploadMedia({ allowVideo: true });
+      const result = await selectMediaForPreview({ allowVideo: true });
       if (result) {
-        setUploadedMediaId(result.mediaId);
-        setMediaPreview(result.mediaUrl);
-        setIsVideo(isVideoUtil(result.mediaUrl));
-        setVideoThumbnail(result.videoThumbnail);
+        setSelectedMedia(result);
+        console.log("✅ [CHALLENGE] Media selected successfully - Submit button should be enabled!");
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      alert(t("Error uploading file"));
+      console.error("❌ [CHALLENGE] Error selecting media:", error);
+      alert(t("Error selecting media"));
     } finally {
       setIsUploading(false);
+      console.log("🔓 [CHALLENGE] Upload UI unlocked - user can interact");
     }
   };
 
   const handleRemoveMedia = () => {
-    setMediaPreview(null);
-    setUploadedMediaId(null);
-    setVideoThumbnail(null);
-    setIsVideo(false);
+    setSelectedMedia(null);
   };
 
   // Add fadeIn/fadeOut functions
@@ -331,7 +341,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 </View>
 
                 <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
-                  {mediaPreview ? (
+                  {selectedMedia ? (
                     <View style={shareStyles.mediaPreviewContainer}>
                       {isUploading && (
                         <View style={shareStyles.uploadingOverlay}>
@@ -346,11 +356,13 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                         <MaterialIcons name="close" size={12} color="white" />
                       </TouchableOpacity>
 
-                      {isVideo ? (
+                      {selectedMedia.isVideo ? (
                         <View style={shareStyles.videoPreviewContainer}>
                           <TouchableOpacity onPress={() => setFullScreenPreview(true)}>
                             <Image
-                              source={{ uri: videoThumbnail || mediaPreview }}
+                              source={{ 
+                                uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl 
+                              }}
                               style={shareStyles.mediaPreview}
                               resizeMode="cover"
                             />
@@ -362,7 +374,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                       ) : (
                         <TouchableOpacity onPress={() => setFullScreenPreview(true)}>
                           <Image
-                            source={{ uri: mediaPreview }}
+                            source={{ uri: selectedMedia.previewUrl }}
                             style={shareStyles.mediaPreview}
                             resizeMode="cover"
                           />
@@ -392,6 +404,17 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   )}
                 </TouchableOpacity>
 
+                {isBackgroundUploading && (
+                  <View style={shareStyles.uploadProgressContainer}>
+                    <Text style={shareStyles.uploadProgressText}>
+                      {t("Uploading media...")} {Math.round(uploadProgress)}%
+                    </Text>
+                    <View style={shareStyles.progressBarContainer}>
+                      <View style={[shareStyles.progressBarFill, { width: `${uploadProgress}%` }]} />
+                    </View>
+                  </View>
+                )}
+
                 <TextInput
                   style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
                   multiline
@@ -420,7 +443,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
             </TouchableOpacity>
           </KeyboardAvoidingView>
         </Animated.View>
-      </Modal>
+              </Modal>
 
       <Modal
         transparent={true}
@@ -435,7 +458,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         >
           <View style={shareStyles.fullScreenImageWrapper}>
             <Image
-              source={{ uri: mediaPreview || "" }}
+              source={{ uri: selectedMedia?.previewUrl || "" }}
               style={shareStyles.fullScreenImage}
               resizeMode="contain"
             />
@@ -448,7 +471,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         onClose={() => setShowShareModal(false)}
         title={challenge.title}
         challengeId={challenge.id}
-        mediaPreview={mediaPreview}
+        mediaPreview={selectedMedia?.previewUrl || null}
         streakCount={1}
       />
     </>
@@ -735,5 +758,27 @@ const shareStyles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
+  },
+  uploadProgressContainer: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    marginTop: 10,
+    padding: 10,
+  },
+  uploadProgressText: {
+    color: "#666",
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  progressBarContainer: {
+    backgroundColor: "#ddd",
+    borderRadius: 2,
+    height: 4,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    backgroundColor: colors.light.accent,
+    borderRadius: 2,
+    height: "100%",
   },
 });
