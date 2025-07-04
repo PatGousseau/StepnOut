@@ -211,10 +211,10 @@ export const uploadMediaInBackground = async (
         compressedUri = await Video.compress(
           pendingUpload.originalUri,
           {
-            compressionMethod: "manual",
+            compressionMethod: "auto",               // Smart defaults + manual overrides
             minimumFileSizeForCompress: 0,
-            maxSize: 1 * 1024 * 1024,
-            bitrate: 250000,
+            maxSize: 50 * 1024 * 1024,                 // Allow uploads up to 50 MB
+            bitrate: 500000,                          // 1 Mbps – great for 720p video
           },
           (progress) => {
             // Report compression progress (10-70% of total)
@@ -307,7 +307,7 @@ export const uploadMedia = async (
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images", "videos"],
       allowsEditing: options.allowsEditing ?? false,
-      quality: 0.2,
+      // quality: 0.2,
       videoMaxDuration: 120,
     });
 
@@ -373,10 +373,10 @@ export const uploadMedia = async (
         fileUri = await Video.compress(
           file.uri,
           {
-            compressionMethod: "manual",
-            minimumFileSizeForCompress: 0, // Always compress
-            maxSize: 1 * 1024 * 1024, // Extremely small target max size of 1MB
-            bitrate: 250000, // Ultra low 250Kbps bitrate
+            compressionMethod: "auto",
+            minimumFileSizeForCompress: 0,
+            maxSize: 1 * 1024 * 1024,
+            bitrate: 250000,
           },
           (progress) => {
             console.log('Compression progress: ', progress);
