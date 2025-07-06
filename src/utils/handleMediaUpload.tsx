@@ -285,7 +285,6 @@ export const uploadMedia = async (
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images", "videos"],
       allowsEditing: options.allowsEditing ?? false,
-      // quality: 0.2,
       videoMaxDuration: 120,
     });
 
