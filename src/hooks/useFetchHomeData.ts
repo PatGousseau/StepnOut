@@ -92,11 +92,16 @@ export const useFetchHomeData = () => {
           body, 
           media_id, 
           challenge_id,
-          media (file_path),
+          media!inner (
+            file_path,
+            upload_status
+          ),
           likes:likes(count),
           challenges:challenge_id (title)
         `
           )
+          .neq("media.upload_status", "failed")
+          .neq("media.upload_status", "pending")
           .order("created_at", { ascending: false });
 
         // Add the blocked users filter only if there are blocked users

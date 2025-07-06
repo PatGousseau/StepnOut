@@ -28,11 +28,16 @@ const useUserProgress = (targetUserId: string) => {
           media_id, 
           challenge_id,
           challenges (title),
-          media (file_path),
+          media!inner (
+            file_path,
+            upload_status
+          ),
           likes:likes(count),
           comments:comments(count)
         `)
         .eq('user_id', targetUserId)
+        .neq("media.upload_status", "failed")
+        .neq("media.upload_status", "pending")
         .order('created_at', { ascending: false })
         .range((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE - 1);
 
@@ -113,9 +118,17 @@ const useUserProgress = (targetUserId: string) => {
         // Fetch submissions for the user
         const { data: submissionData, error: submissionError } = await supabase
           .from('post')
-          .select(`challenge_id`)
+          .select(`
+            challenge_id,
+            media!inner (
+              file_path,
+              upload_status
+            )
+          `)
           .eq('user_id', user.id)
-          .not('challenge_id', 'is', null);
+          .not('challenge_id', 'is', null)
+          .neq("media.upload_status", "failed")
+          .neq("media.upload_status", "pending");
 
         if (submissionError) throw submissionError;
 
