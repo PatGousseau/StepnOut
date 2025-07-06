@@ -23,16 +23,17 @@ export interface MediaSelectionResult {
   };
 }
 
-// Stage 1: Select media and upload preview/thumbnail immediately
+/**
+ * Selects media from media library to get the preview url and thumbnail uri
+ * @param options - The options for the media selection
+ * @returns The media selection result
+ */
 export const selectMediaForPreview = async (
   options: {
     allowVideo?: boolean;
     allowsEditing?: boolean;
   } = {}
 ): Promise<MediaSelectionResult | null> => {
-  console.log("🎬 [MEDIA SELECT] Starting media selection...");
-  const startTime = Date.now();
-  
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
   if (status !== "granted") {
@@ -40,24 +41,14 @@ export const selectMediaForPreview = async (
   }
 
   try {
-    console.log("📱 [MEDIA SELECT] Opening image picker...");
-    const pickerStart = Date.now();
-    
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images", "videos"],
       allowsEditing: options.allowsEditing ?? false,
-      quality: 1.0, // NO compression - fastest possible
+      quality: 1.0,
       videoMaxDuration: 120,
-      selectionLimit: 1, // Only one file
-      exif: false, // Skip EXIF data processing
+      selectionLimit: 1, // change if we want to allow multiple images
+      exif: false, // no exif -- might make it faster for just selecting media
     });
-
-    const pickerTime = Date.now() - pickerStart;
-    console.log(`✅ [MEDIA SELECT] Image picker promise resolved in ${pickerTime}ms`);
-    
-    if (pickerTime > 3000) {
-      console.warn("⚠️ [MEDIA SELECT] Slow picker processing detected. iOS is processing large media file.");
-    }
 
     if (result.canceled) {
       return null;
@@ -75,48 +66,33 @@ export const selectMediaForPreview = async (
     let thumbnailFileName = null;
     let previewUrl = file.uri;
 
-    console.log(`🎯 [MEDIA SELECT] Selected ${isVideoFile ? 'video' : 'image'}: ${file.uri}`);
-
     // Store original URI for background compression
     const originalUri = file.uri;
 
     // For videos, generate and upload thumbnail immediately
     if (isVideoFile) {
-      console.log("🎥 [VIDEO THUMBNAIL] Starting video thumbnail generation...");
-      const thumbnailStart = Date.now();
-      
       try {
         thumbnailFileName = `thumbnails/${baseFileName}.jpg`;
 
-        console.log("🎯 [VIDEO THUMBNAIL] Generating thumbnail from video...");
-        const thumbnailGenStart = Date.now();
-        
         const { uri } = await VideoThumbnails.getThumbnailAsync(file.uri, {
           time: 0,
           quality: 0.5,
         });
         thumbnailUri = uri;
 
-        console.log(`✅ [VIDEO THUMBNAIL] Thumbnail generated in ${Date.now() - thumbnailGenStart}ms`);
-
         if (thumbnailUri) {
           // Use local thumbnail immediately, upload later in background
           previewUrl = thumbnailUri;
-          console.log(`🎉 [VIDEO THUMBNAIL] Local thumbnail ready in ${Date.now() - thumbnailStart}ms - Upload will happen in background`);
         }
       } catch (e) {
         console.warn("❌ [VIDEO THUMBNAIL] Couldn't generate or upload thumbnail", e);
       }
     } else {
-      console.log("📸 [IMAGE PREVIEW] Using original image as preview");
       // For images, use original file as preview initially
       // Final compressed version will be uploaded in background
       previewUrl = file.uri;
     }
 
-    console.log("💾 [DATABASE] Creating media record...");
-    const dbStart = Date.now();
-    
     // Create media record with upload_status = 'pending'
     const { data: mediaData, error: dbError } = await supabase
       .from("media")
@@ -131,11 +107,6 @@ export const selectMediaForPreview = async (
       .single();
 
     if (dbError) throw dbError;
-
-    console.log(`✅ [DATABASE] Media record created in ${Date.now() - dbStart}ms`);
-
-    const totalTime = Date.now() - startTime;
-    console.log(`🎉 [MEDIA SELECT] TOTAL TIME: ${totalTime}ms - User can now hit Send!`);
 
     return {
       mediaId: mediaData.id,
@@ -155,7 +126,13 @@ export const selectMediaForPreview = async (
   }
 };
 
-// Stage 2: Upload the full media in background and update media record
+/**
+ * Upload media in background and update the media record
+ * @param mediaId - The id of the media to upload
+ * @param pendingUpload - The pending upload to upload
+ * @param onProgress - The function to call with the progress
+ * @returns The public url of the uploaded media
+ */
 export const uploadMediaInBackground = async (
   mediaId: number,
   pendingUpload: MediaSelectionResult['pendingUpload'],
@@ -168,8 +145,6 @@ export const uploadMediaInBackground = async (
     // For videos, also upload thumbnail in background if needed
     if (isVideoFile && pendingUpload.thumbnailFileName) {
       if (onProgress) onProgress(5);
-      
-      console.log("☁️ [BACKGROUND] Uploading video thumbnail...");
       
       // Re-generate and upload thumbnail
       try {
@@ -211,18 +186,17 @@ export const uploadMediaInBackground = async (
         compressedUri = await Video.compress(
           pendingUpload.originalUri,
           {
-            compressionMethod: "auto",               // Smart defaults + manual overrides
+            compressionMethod: "auto",
             minimumFileSizeForCompress: 0,
-            maxSize: 50 * 1024 * 1024,                 // Allow uploads up to 50 MB
-            bitrate: 500000,                          // 1 Mbps – great for 720p video
+            maxSize: 50 * 1024 * 1024,
+            bitrate: 500000,
           },
           (progress) => {
-            // Report compression progress (10-70% of total)
             if (onProgress) onProgress(10 + (progress * 0.6));
           }
         );
         
-        if (onProgress) onProgress(70); // Compression complete
+        if (onProgress) onProgress(70);
       } catch (e) {
         console.warn("Video compression failed, using original:", e);
         compressedUri = pendingUpload.originalUri;
@@ -290,7 +264,11 @@ export const uploadMediaInBackground = async (
   }
 };
 
-// Legacy function for backward compatibility
+/**
+ * Uploads media to supabase storage and inserts into media table. Not done in the background.
+ * @param options - The options for the media upload
+ * @returns The media upload result
+ */
 export const uploadMedia = async (
   options: {
     allowVideo?: boolean;
@@ -378,9 +356,6 @@ export const uploadMedia = async (
             maxSize: 1 * 1024 * 1024,
             bitrate: 250000,
           },
-          (progress) => {
-            console.log('Compression progress: ', progress);
-          }
         );
       } catch (e) {
         console.warn("Video compression failed, using original:", e);
