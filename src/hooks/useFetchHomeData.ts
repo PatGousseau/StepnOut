@@ -81,10 +81,8 @@ export const useFetchHomeData = () => {
         // Create array of blocked user IDs
         const blockedUserIds = blockedUsers?.map((block) => block.blocked_id) || [];
 
-        let query = supabase
-          .from("post")
-          .select(
-            `
+        // Base query parts
+        const baseSelect = `
           id, 
           user_id, 
           created_at, 
@@ -92,34 +90,66 @@ export const useFetchHomeData = () => {
           body, 
           media_id, 
           challenge_id,
-          media!inner (
+          media (
             file_path,
             upload_status
           ),
-          likes:likes(count),
-          challenges:challenge_id (title)
-        `
-          )
-          .neq("media.upload_status", "failed")
-          .neq("media.upload_status", "pending")
+          likes:likes(count)
+        `;
+
+        // Query for challenge posts
+        let challengeQuery = supabase
+          .from("post")
+          .select(`
+            ${baseSelect},
+            challenges (
+              title
+            )
+          `)
+          .not('media.upload_status', 'in', '("failed","pending")')
+          .not('challenge_id', 'is', null)
           .order("created_at", { ascending: false });
 
-        // Add the blocked users filter only if there are blocked users
+        // Query for discussion posts
+        let discussionQuery = supabase
+          .from("post")
+          .select(baseSelect)
+          .not('media.upload_status', 'in', '("failed","pending")')
+          .is('challenge_id', null)
+          .order("created_at", { ascending: false });
+
+        // Add blocked users filter if needed
         if (blockedUserIds.length > 0) {
-          query = query.not("user_id", "in", `(${blockedUserIds.join(",")})`);
+          challengeQuery = challengeQuery.not("user_id", "in", `(${blockedUserIds.join(",")})`);
+          discussionQuery = discussionQuery.not("user_id", "in", `(${blockedUserIds.join(",")})`);
         }
 
-        // Add the range filter
-        const postResponse = await query.range(
-          (pageNumber - 1) * POSTS_PER_PAGE,
-          pageNumber * POSTS_PER_PAGE - 1
-        );
+        // Add pagination
+        const start = (pageNumber - 1) * POSTS_PER_PAGE;
+        const end = pageNumber * POSTS_PER_PAGE - 1;
+        challengeQuery = challengeQuery.range(start, end);
+        discussionQuery = discussionQuery.range(start, end);
 
-        if (postResponse.error) throw postResponse.error;
-        const postData = postResponse.data.map((post) => ({
+        // Execute both queries
+        const [challengeResponse, discussionResponse] = await Promise.all([
+          challengeQuery,
+          discussionQuery
+        ]);
+
+        if (challengeResponse.error) throw challengeResponse.error;
+        if (discussionResponse.error) throw discussionResponse.error;
+
+        // Process challenge posts
+        const challengePosts = challengeResponse.data.map((post) => ({
           ...post,
           challenge_title: post.challenges?.title,
         }));
+
+        // Process discussion posts
+        const discussionPosts = discussionResponse.data;
+
+        // Combine all posts
+        const postData = [...challengePosts, ...discussionPosts];
 
         const postIds = postData.map((post) => post.id.toString());
         const commentCountsResponse = await supabase.rpc("get_comment_counts", {

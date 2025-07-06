@@ -231,36 +231,32 @@ const Home = () => {
           }}
         >
           <View style={{ width: "50%", padding: 16 }}>
-            {filteredPosts
-              .filter((post) => post.challenge_id != null)
-              .map((post, index) => {
-                const postUser = userMap[post.user_id] as User;
-                return (
-                  <Post
-                    key={`${post.id}-${index}`}
-                    post={post}
-                    postUser={postUser}
-                    setPostCounts={setPostCounts}
-                    onPostDeleted={handlePostDeleted}
-                  />
-                );
-              })}
+            {filteredPosts.map((post, index) => {
+              const postUser = userMap[post.user_id] as User;
+              return (
+                <Post
+                  key={`${post.id}-${index}`}
+                  post={post}
+                  postUser={postUser}
+                  setPostCounts={setPostCounts}
+                  onPostDeleted={handlePostDeleted}
+                />
+              );
+            })}
           </View>
           <View style={{ width: "50%", padding: 16 }}>
-            {filteredPosts
-              .filter((post) => post.challenge_id == null)
-              .map((post, index) => {
-                const postUser = userMap[post.user_id] as User;
-                return (
-                  <Post
-                    key={`${post.id}-${index}`}
-                    post={post}
-                    postUser={postUser}
-                    setPostCounts={setPostCounts}
-                    onPostDeleted={handlePostDeleted}
-                  />
-                );
-              })}
+            {filteredPosts.map((post, index) => {
+              const postUser = userMap[post.user_id] as User;
+              return (
+                <Post
+                  key={`${post.id}-${index}`}
+                  post={post}
+                  postUser={postUser}
+                  setPostCounts={setPostCounts}
+                  onPostDeleted={handlePostDeleted}
+                />
+              );
+            })}
           </View>
         </Animated.View>
 
