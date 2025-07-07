@@ -28,7 +28,7 @@ const useUserProgress = (targetUserId: string) => {
           media_id, 
           challenge_id,
           challenges (title),
-          media!inner (
+          media (
             file_path,
             upload_status
           ),
@@ -120,7 +120,7 @@ const useUserProgress = (targetUserId: string) => {
           .from('post')
           .select(`
             challenge_id,
-            media!inner (
+            media (
               file_path,
               upload_status
             )

@@ -101,7 +101,7 @@ export const useFetchHomeData = () => {
             challenges!inner (
               title
             ),
-            media!inner (
+            media (
               file_path,
               upload_status
             ),
@@ -116,7 +116,7 @@ export const useFetchHomeData = () => {
           .from("post")
           .select(`
             *,
-            media!inner (
+            media (
               file_path,
               upload_status
             ),
