@@ -38,7 +38,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
   ).current;
 
   const togglePlayPause = async () => {
-    if (status.isPlaying) {
+    if (status.isLoaded && (status as any).isPlaying) {
       await videoRef.current?.pauseAsync();
     } else {
       await videoRef.current?.playAsync();
@@ -114,14 +114,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
               
               <View style={styles.controls}>
                 <TouchableOpacity onPress={togglePlayPause} style={styles.playButton}>
-                  <Icon name={status.isPlaying ? "pause" : "play"} size={32} color="white" />
+                  <Icon name={status.isLoaded && (status as any).isPlaying ? "pause" : "play"} size={32} color="white" />
                 </TouchableOpacity>
                 
                 <Slider
                   style={styles.slider}
-                  value={status.positionMillis || 0}
+                  value={status.isLoaded ? (status as any).positionMillis || 0 : 0}
                   minimumValue={0}
-                  maximumValue={status.durationMillis || 0}
+                  maximumValue={status.isLoaded ? (status as any).durationMillis || 0 : 0}
                   onSlidingStart={() => setIsSeeking(true)}
                   onSlidingComplete={async (value) => {
                     await videoRef.current?.setPositionAsync(value);
@@ -130,13 +130,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
                   minimumTrackTintColor="#FFFFFF"
                   maximumTrackTintColor="#888888"
                   thumbTintColor="#FFFFFF"
-                  thumbSize={10}
                 />
               </View>
 
               <View style={styles.timestampContainer}>
                 <Text style={styles.timestampText}>
-                  {formatTime(status.positionMillis || 0)} / {formatTime(status.durationMillis || 0)}
+                  {formatTime(status.isLoaded ? (status as any).positionMillis || 0 : 0)} / {formatTime(status.isLoaded ? (status as any).durationMillis || 0 : 0)}
                 </Text>
               </View>
             </>

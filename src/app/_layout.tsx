@@ -16,6 +16,7 @@ import FeedbackModal from '../components/FeedbackModal';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
+import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -98,62 +99,66 @@ function RootLayoutNav() {
   return (
     <MenuProvider>
       <LanguageProvider>
-        <SafeAreaView 
-          style={{ flex: 1, backgroundColor: colors.light.background }}
-          edges={['top', 'left', 'right']}
-          onLayout={onLayoutRootView}
-        >
-          <StatusBar backgroundColor={colors.light.background} style="dark" />
-          <Header 
-            onNotificationPress={handleNotificationPress}
-            onMenuPress={() => setShowMenu(true)}
-            onFeedbackPress={() => setShowFeedback(true)}
-            unreadCount={unreadCount}
-            isDetailPage={isDetailPage}
-            hideLogo={hideLogo}
-          />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              gestureEnabled: true,
-              gestureDirection: 'horizontal',
-              fullScreenGestureEnabled: true,
-              presentation: 'card'
-            }}
-          >
-            <Stack.Screen 
-              name="(tabs)" 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="post/[id]" 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="profile/[id]" 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="challenge/[id]" 
-              options={{ headerShown: false }}
-            />
-          </Stack>
+        <LikesProvider>
+          <UploadProgressProvider>
+            <SafeAreaView 
+              style={{ flex: 1, backgroundColor: colors.light.background }}
+              edges={['top', 'left', 'right']}
+              onLayout={onLayoutRootView}
+            >
+              <StatusBar backgroundColor={colors.light.background} style="dark" />
+              <Header 
+                onNotificationPress={handleNotificationPress}
+                onMenuPress={() => setShowMenu(true)}
+                onFeedbackPress={() => setShowFeedback(true)}
+                unreadCount={unreadCount}
+                isDetailPage={isDetailPage}
+                hideLogo={hideLogo}
+              />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  gestureEnabled: true,
+                  gestureDirection: 'horizontal',
+                  fullScreenGestureEnabled: true,
+                  presentation: 'card'
+                }}
+              >
+                <Stack.Screen 
+                  name="(tabs)" 
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen 
+                  name="post/[id]" 
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen 
+                  name="profile/[id]" 
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen 
+                  name="challenge/[id]" 
+                  options={{ headerShown: false }}
+                />
+              </Stack>
 
-          <NotificationSidebar 
-            visible={showNotifications}
-            onClose={() => setShowNotifications(false)}
-            notifications={notifications}
-          />
-          <MenuSidebar 
-            isOpen={showMenu}
-            onClose={() => setShowMenu(false)}
-            enableSwiping={!isDetailPage}
-          />
-          <FeedbackModal 
-            isVisible={showFeedback}
-            onClose={() => setShowFeedback(false)}
-          />
-        </SafeAreaView>
+              <NotificationSidebar 
+                visible={showNotifications}
+                onClose={() => setShowNotifications(false)}
+                notifications={notifications}
+              />
+              <MenuSidebar 
+                isOpen={showMenu}
+                onClose={() => setShowMenu(false)}
+                enableSwiping={!isDetailPage}
+              />
+              <FeedbackModal 
+                isVisible={showFeedback}
+                onClose={() => setShowFeedback(false)}
+              />
+            </SafeAreaView>
+          </UploadProgressProvider>
+        </LikesProvider>
       </LanguageProvider>
     </MenuProvider>
   );
@@ -162,9 +167,7 @@ function RootLayoutNav() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <LikesProvider>
       <RootLayoutNav />
-      </LikesProvider>
     </AuthProvider>
   );
 }

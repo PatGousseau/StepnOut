@@ -1,23 +1,24 @@
 import { supabase } from "../lib/supabase";
-import { uploadMedia } from "../utils/handleMediaUpload";
+import { selectMediaForPreview, uploadMediaInBackground } from "../utils/handleMediaUpload";
 import { Alert } from "react-native";
 import { User } from "../models/User";
 
 export const profileService = {
   async updateProfilePicture(
-    userId: string
-  ): Promise<{ success: boolean; error?: string; profileImageUrl?: string }> {
+    userId: string,
+    onProgress?: (progress: number) => void
+  ): Promise<{ success: boolean; error?: string; profileImageUrl?: string; previewUrl?: string }> {
     try {
-      const result = await uploadMedia({
+      const result = await selectMediaForPreview({
         allowVideo: false,
         allowsEditing: true,
       });
 
-      if (!result || !result.mediaId) {
-        return { success: false, error: "Error uploading profile picture" };
+      if (!result) {
+        return { success: false, error: "No media selected" };
       }
 
-      // Update profile with new media id
+      // Update profile with new media id immediately
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ profile_media_id: result.mediaId })
@@ -25,9 +26,15 @@ export const profileService = {
 
       if (updateError) throw updateError;
 
+      // Start background upload process
+      uploadMediaInBackground(result.mediaId, result.pendingUpload, onProgress).catch((error) => {
+        console.error("Error in background upload:", error);
+        // Optionally notify the user of upload failure
+      });
+
       return {
         success: true,
-        profileImageUrl: result.mediaUrl,
+        previewUrl: result.previewUrl, // Return preview URL for immediate display
       };
     } catch (error) {
       console.error("Error updating profile picture:", error);

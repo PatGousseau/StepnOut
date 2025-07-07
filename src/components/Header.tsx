@@ -1,9 +1,10 @@
-import React from 'react';
-import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform, Animated } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 import { router } from 'expo-router';
+import { useUploadProgress } from '../contexts/UploadProgressContext';
 
 interface HeaderProps {
   onNotificationPress: () => void;
@@ -17,14 +18,83 @@ interface HeaderProps {
 const Header = ({ 
   onNotificationPress, 
   onMenuPress,
-   onFeedbackPress, 
-   unreadCount, 
-   isDetailPage = false,
-   hideLogo = false
-  }: HeaderProps) => {
-  
+  onFeedbackPress, 
+  unreadCount, 
+  isDetailPage = false,
+  hideLogo = false
+}: HeaderProps) => {
+  const { uploadProgress, uploadMessage } = useUploadProgress();
+  const progressAnimation = useRef(new Animated.Value(0)).current;
+  const messageOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (uploadProgress !== null) {
+      // Smoothly animate to the new progress value
+      Animated.timing(progressAnimation, {
+        toValue: uploadProgress,
+        duration: 300,
+        useNativeDriver: false
+      }).start();
+
+      // Show message with fade in if present
+      if (uploadMessage) {
+        Animated.timing(messageOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true
+        }).start();
+      } else {
+        Animated.timing(messageOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true
+        }).start();
+      }
+    } else {
+      // Reset progress when upload is complete
+      Animated.timing(progressAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false
+      }).start();
+      
+      Animated.timing(messageOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true
+      }).start();
+    }
+  }, [uploadProgress, uploadMessage]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      {uploadProgress !== null && (
+        <View style={styles.uploadContainer}>
+          <View style={styles.progressBarContainer}>
+            <Animated.View 
+              style={[
+                styles.progressBarFill, 
+                { 
+                  width: progressAnimation.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: ['0%', '100%']
+                  })
+                }
+              ]} 
+            />
+          </View>
+          {uploadMessage && (
+            <Animated.View 
+              style={[
+                styles.messageContainer,
+                { opacity: messageOpacity }
+              ]}
+            >
+              <Text style={styles.messageText}>{uploadMessage}</Text>
+            </Animated.View>
+          )}
+        </View>
+      )}
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => {
@@ -122,6 +192,34 @@ const styles = StyleSheet.create({
   headerLogo: {
     height: 30,
     width: 120,
+  },
+  uploadContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 44 : 0,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+  },
+  progressBarContainer: {
+    height: 3,
+    backgroundColor: '#ddd',
+    width: '100%',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.light.accent,
+    borderRadius: 1.5,
+  },
+  messageContainer: {
+    backgroundColor: colors.light.accent,
+    padding: 8,
+    alignItems: 'center',
+  },
+  messageText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

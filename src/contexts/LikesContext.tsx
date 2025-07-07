@@ -21,7 +21,7 @@ interface LikesContextType {
 
 const LikesContext = createContext<LikesContextType | undefined>(undefined);
 
-export const LikesProvider = ({ children }: { children: React.ReactNode }) => {
+export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [likedPosts, setLikedPosts] = useState<{ [postId: number]: boolean }>({});
   const [likedComments, setLikedComments] = useState<{ [commentId: number]: boolean }>({});
   const [postLikeCounts, setPostLikeCounts] = useState<{ [postId: number]: number }>({});
