@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -15,115 +15,38 @@ import {
 } from "react-native";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { supabase } from "../lib/supabase";
 import { Text } from "./StyledText";
 import { useAuth } from "../contexts/AuthContext";
-import { selectMediaForPreview, MediaSelectionResult } from "../utils/handleMediaUpload";
-import { backgroundUploadService } from "../services/backgroundUploadService";
 import { useLanguage } from "../contexts/LanguageContext";
-import { isVideo as isVideoUtil } from "../utils/utils";
 import { Loader } from "./Loader";
-import { useUploadProgress } from "../contexts/UploadProgressContext";
-import { createProgressManager } from "../utils/progressManager";
+import { useMediaUpload } from "../hooks/useMediaUpload";
 
 const CreatePost = () => {
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
-  const [postText, setPostText] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [isProcessingMedia, setIsProcessingMedia] = useState(false);
-  const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
-  const inputAccessoryViewID = "uniqueID";
   const { t } = useLanguage();
-  const { setUploadProgress, setUploadMessage } = useUploadProgress();
-  const progressManagerRef = useRef(createProgressManager(setUploadProgress));
+  const inputAccessoryViewID = "uniqueID";
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      progressManagerRef.current.cleanup();
-    };
-  }, []);
+  const {
+    selectedMedia,
+    setPostText,
+    isUploading,
+    uploadProgress,
+    handleMediaUpload,
+    handleRemoveMedia,
+    handleSubmit,
+  } = useMediaUpload({
+    onUploadComplete: () => setModalVisible(false),
+    successMessage: t("Post sent successfully!"),
+  });
 
-  const handleSubmit = async () => {
+  const onSubmit = async () => {
     if (!user) {
       alert(t("You must be logged in to submit a post."));
       return;
     }
 
-    try {
-      const { data: postData, error: postError } = await supabase.from("post").insert([
-        {
-          user_id: user.id,
-          media_id: selectedMedia?.mediaId || null,
-          body: postText,
-          featured: false,
-        },
-      ]).select("id").single();
-
-      if (postError) throw postError;
-
-      if (selectedMedia) {
-        setIsBackgroundUploading(true);
-        progressManagerRef.current.startUpload();
-        
-        backgroundUploadService.addToQueue(
-          selectedMedia.mediaId,
-          selectedMedia.pendingUpload,
-          postData.id,
-          (progress) => {
-            progressManagerRef.current.updateProgress(progress);
-          },
-          (success, mediaUrl) => {
-            setIsBackgroundUploading(false);
-            if (!success) {
-              console.error("Background upload failed for post:", postData.id);
-              setUploadMessage(t("Upload failed"));
-              setTimeout(() => {
-                setUploadMessage(null);
-                setUploadProgress(null);
-              }, 3000);
-            } else {
-              progressManagerRef.current.complete();
-              setUploadMessage(t("Post sent successfully!"));
-              setTimeout(() => {
-                setUploadMessage(null);
-                setUploadProgress(null);
-              }, 3000);
-            }
-          }
-        );
-      } else {
-        setUploadMessage(t("Post sent successfully!"));
-        setTimeout(() => setUploadMessage(null), 3000);
-      }
-
-      setPostText("");
-      setSelectedMedia(null);
-      setModalVisible(false);
-    } catch (error) {
-      console.error("Error creating post:", error);
-      alert(t("Error submitting post."));
-    }
-  };
-
-  const handleMediaUpload = async () => {
-    try {
-      setIsUploading(true);
-      const result = await selectMediaForPreview({ allowVideo: true });
-      if (result) {
-        setSelectedMedia(result);
-      }
-    } catch (error) {
-      alert(t("Error selecting media"));
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleRemoveMedia = () => {
-    setSelectedMedia(null);
+    await handleSubmit({ user_id: user.id });
   };
 
   return (
@@ -190,7 +113,6 @@ const CreatePost = () => {
                     "Share your thoughts, start a discussion, or share an achievement..."
                   )}
                   placeholderTextColor="#999"
-                  value={postText}
                   onChangeText={setPostText}
                   inputAccessoryViewID={inputAccessoryViewID}
                 />
@@ -206,7 +128,7 @@ const CreatePost = () => {
 
                   <TouchableOpacity
                     style={[submitButtonStyle, isUploading && disabledButtonStyle]}
-                    onPress={handleSubmit}
+                    onPress={onSubmit}
                     disabled={isUploading}
                   >
                     <Text style={[buttonTextStyle, isUploading && disabledButtonTextStyle]}>
@@ -214,6 +136,22 @@ const CreatePost = () => {
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+                {uploadProgress !== null && (
+                  <View style={uploadProgressContainerStyle}>
+                    <Text style={uploadProgressTextStyle}>
+                      {t("Uploading media...")} {Math.round(uploadProgress)}%
+                    </Text>
+                    <View style={progressBarContainerStyle}>
+                      <View 
+                        style={[
+                          progressBarFillStyle, 
+                          { width: `${uploadProgress}%` }
+                        ]} 
+                      />
+                    </View>
+                  </View>
+                )}
               </View>
             </ScrollView>
           </View>

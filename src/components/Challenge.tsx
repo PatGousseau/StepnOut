@@ -21,6 +21,7 @@ import { router } from "expo-router";
 import { imageService } from "../services/imageService";
 import { useUploadProgress } from "../contexts/UploadProgressContext";
 import { createProgressManager } from "../utils/progressManager";
+import { useMediaUpload } from "../hooks/useMediaUpload";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -167,131 +168,40 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const { t } = useLanguage();
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
-  const [postText, setPostText] = useState("");
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showNotification, setShowNotification] = useState(false);
   const notificationAnim = useRef(new Animated.Value(0)).current;
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
-  const { setUploadProgress, setUploadMessage } = useUploadProgress();
-  const progressManagerRef = useRef(createProgressManager(setUploadProgress));
-  const [localUploadProgress, setLocalUploadProgress] = useState(0);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      progressManagerRef.current.cleanup();
-    };
-  }, []);
+  const {
+    selectedMedia,
+    setPostText,
+    isUploading,
+    uploadProgress,
+    handleMediaUpload,
+    handleRemoveMedia,
+    handleSubmit,
+  } = useMediaUpload({
+    onUploadComplete: () => {
+      setModalVisible(false);
+      setTimeout(() => {
+        setShowShareModal(true);
+      }, 100);
+    },
+    successMessage: t("Challenge completed successfully!"),
+  });
 
-  const handleSubmit = async () => {
+  const onSubmit = async () => {
     if (!user) {
       alert(t("You must be logged in to submit a challenge."));
       return;
     }
 
-    if (isUploading) {
-      alert(t("Please wait for media selection to complete."));
-      return;
-    }
-
-    if (!postText.trim() && !selectedMedia) {
-      alert(t("Please add either a description or media to complete the challenge."));
-      return;
-    }
-
-    try {
-      // Create post immediately with media preview
-      const { data: postData, error: postError } = await supabase
-        .from("post")
-        .insert([
-          {
-            user_id: user.id,
-            challenge_id: challenge.id,
-            media_id: selectedMedia?.mediaId || null,
-            body: postText,
-            featured: false,
-          },
-        ])
-        .select("id")
-        .single();
-
-      if (postError) throw postError;
-
-      // If there's media, start background upload
-      if (selectedMedia) {
-        setIsBackgroundUploading(true);
-        progressManagerRef.current.startUpload();
-        
-        backgroundUploadService.addToQueue(
-          selectedMedia.mediaId,
-          selectedMedia.pendingUpload,
-          postData.id,
-          (progress) => {
-            setLocalUploadProgress(progress);
-            progressManagerRef.current.updateProgress(progress);
-          },
-          (success, mediaUrl) => {
-            setIsBackgroundUploading(false);
-            setLocalUploadProgress(0);
-            if (!success) {
-              console.error("Background upload failed for challenge submission:", postData.id);
-              setUploadMessage(t("Upload failed"));
-              setTimeout(() => {
-                setUploadMessage(null);
-                setUploadProgress(null);
-              }, 3000);
-            } else {
-              progressManagerRef.current.complete();
-              setUploadMessage(t("Challenge completed successfully!"));
-              setTimeout(() => {
-                setUploadMessage(null);
-                setUploadProgress(null);
-              }, 3000);
-            }
-          }
-        );
-      } else {
-        setUploadMessage(t("Challenge completed successfully!"));
-        setTimeout(() => setUploadMessage(null), 3000);
-      }
-
-      setModalVisible(false);
-      setPostText("");
-      setSelectedMedia(null);
-
-      setTimeout(() => {
-        setShowShareModal(true);
-      }, 100);
-    } catch (error) {
-      console.error("Error creating submission:", error);
-      alert(t("Error submitting challenge."));
-    }
-  };
-
-  const handleMediaUpload = async () => {
-    try {
-      console.log("🚀 [CHALLENGE] Starting media upload process...");
-      setIsUploading(true);
-      const result = await selectMediaForPreview({ allowVideo: true });
-      if (result) {
-        setSelectedMedia(result);
-        console.log("✅ [CHALLENGE] Media selected successfully - Submit button should be enabled!");
-      }
-    } catch (error) {
-      console.error("❌ [CHALLENGE] Error selecting media:", error);
-      alert(t("Error selecting media"));
-    } finally {
-      setIsUploading(false);
-      console.log("🔓 [CHALLENGE] Upload UI unlocked - user can interact");
-    }
-  };
-
-  const handleRemoveMedia = () => {
-    setSelectedMedia(null);
+    await handleSubmit({
+      user_id: user.id,
+      challenge_id: challenge.id,
+    });
   };
 
   // Add fadeIn/fadeOut functions
@@ -433,16 +343,16 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   )}
                 </TouchableOpacity>
 
-                {isBackgroundUploading && (
+                {uploadProgress !== null && (
                   <View style={shareStyles.uploadProgressContainer}>
                     <Text style={shareStyles.uploadProgressText}>
-                      {t("Uploading media...")} {Math.round(localUploadProgress)}%
+                      {t("Uploading media...")} {Math.round(uploadProgress)}%
                     </Text>
                     <View style={shareStyles.progressBarContainer}>
                       <View 
                         style={[
                           shareStyles.progressBarFill, 
-                          { width: `${localUploadProgress}%` }
+                          { width: `${uploadProgress}%` }
                         ]} 
                       />
                     </View>
@@ -454,7 +364,6 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   multiline
                   placeholder={t("How did it make you feel?\nWhat did you find difficult?")}
                   placeholderTextColor="#999"
-                  value={postText}
                   onChangeText={setPostText}
                 />
 
@@ -464,7 +373,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                     shareStyles.submitButton,
                     isUploading && shareStyles.disabledButton,
                   ]}
-                  onPress={handleSubmit}
+                  onPress={onSubmit}
                   disabled={isUploading}
                 >
                   <Text
@@ -477,7 +386,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
             </TouchableOpacity>
           </KeyboardAvoidingView>
         </Animated.View>
-              </Modal>
+      </Modal>
 
       <Modal
         transparent={true}
