@@ -19,6 +19,8 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
 import { router } from "expo-router";
 import { imageService } from "../services/imageService";
+import { useUploadProgress } from "../contexts/UploadProgressContext";
+import { createProgressManager } from "../utils/progressManager";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -174,7 +176,16 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const [showShareModal, setShowShareModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const { setUploadProgress, setUploadMessage } = useUploadProgress();
+  const progressManagerRef = useRef(createProgressManager(setUploadProgress));
+  const [localUploadProgress, setLocalUploadProgress] = useState(0);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      progressManagerRef.current.cleanup();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -213,21 +224,39 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       // If there's media, start background upload
       if (selectedMedia) {
         setIsBackgroundUploading(true);
+        progressManagerRef.current.startUpload();
+        
         backgroundUploadService.addToQueue(
           selectedMedia.mediaId,
           selectedMedia.pendingUpload,
           postData.id,
           (progress) => {
-            setUploadProgress(progress);
+            setLocalUploadProgress(progress);
+            progressManagerRef.current.updateProgress(progress);
           },
           (success, mediaUrl) => {
             setIsBackgroundUploading(false);
-            setUploadProgress(0);
+            setLocalUploadProgress(0);
             if (!success) {
               console.error("Background upload failed for challenge submission:", postData.id);
+              setUploadMessage(t("Upload failed"));
+              setTimeout(() => {
+                setUploadMessage(null);
+                setUploadProgress(null);
+              }, 3000);
+            } else {
+              progressManagerRef.current.complete();
+              setUploadMessage(t("Challenge completed successfully!"));
+              setTimeout(() => {
+                setUploadMessage(null);
+                setUploadProgress(null);
+              }, 3000);
             }
           }
         );
+      } else {
+        setUploadMessage(t("Challenge completed successfully!"));
+        setTimeout(() => setUploadMessage(null), 3000);
       }
 
       setModalVisible(false);
@@ -407,10 +436,15 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 {isBackgroundUploading && (
                   <View style={shareStyles.uploadProgressContainer}>
                     <Text style={shareStyles.uploadProgressText}>
-                      {t("Uploading media...")} {Math.round(uploadProgress)}%
+                      {t("Uploading media...")} {Math.round(localUploadProgress)}%
                     </Text>
                     <View style={shareStyles.progressBarContainer}>
-                      <View style={[shareStyles.progressBarFill, { width: `${uploadProgress}%` }]} />
+                      <View 
+                        style={[
+                          shareStyles.progressBarFill, 
+                          { width: `${localUploadProgress}%` }
+                        ]} 
+                      />
                     </View>
                   </View>
                 )}

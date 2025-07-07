@@ -108,7 +108,7 @@ export const useFetchHomeData = () => {
             likes:likes(count)
           `)
           .not('challenge_id', 'is', null)
-          // .not('media.upload_status', 'in', '("failed","pending")')
+          .not('media.upload_status', 'in', '("failed","pending")')
           .order("created_at", { ascending: false });
 
         // Query for discussion posts

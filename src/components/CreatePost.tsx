@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -23,6 +23,8 @@ import { backgroundUploadService } from "../services/backgroundUploadService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
 import { Loader } from "./Loader";
+import { useUploadProgress } from "../contexts/UploadProgressContext";
+import { createProgressManager } from "../utils/progressManager";
 
 const CreatePost = () => {
   const { user } = useAuth();
@@ -31,10 +33,18 @@ const CreatePost = () => {
   const [postText, setPostText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
   const inputAccessoryViewID = "uniqueID";
   const { t } = useLanguage();
+  const { setUploadProgress, setUploadMessage } = useUploadProgress();
+  const progressManagerRef = useRef(createProgressManager(setUploadProgress));
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      progressManagerRef.current.cleanup();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -43,7 +53,6 @@ const CreatePost = () => {
     }
 
     try {
-      // Create post immediately with media preview
       const { data: postData, error: postError } = await supabase.from("post").insert([
         {
           user_id: user.id,
@@ -55,25 +64,39 @@ const CreatePost = () => {
 
       if (postError) throw postError;
 
-      // If there's media, start background upload
       if (selectedMedia) {
         setIsBackgroundUploading(true);
+        progressManagerRef.current.startUpload();
+        
         backgroundUploadService.addToQueue(
           selectedMedia.mediaId,
           selectedMedia.pendingUpload,
           postData.id,
           (progress) => {
-            setUploadProgress(progress);
+            progressManagerRef.current.updateProgress(progress);
           },
           (success, mediaUrl) => {
             setIsBackgroundUploading(false);
-            setUploadProgress(0);
             if (!success) {
               console.error("Background upload failed for post:", postData.id);
-              // Could show a notification to user that upload failed
+              setUploadMessage(t("Upload failed"));
+              setTimeout(() => {
+                setUploadMessage(null);
+                setUploadProgress(null);
+              }, 3000);
+            } else {
+              progressManagerRef.current.complete();
+              setUploadMessage(t("Post sent successfully!"));
+              setTimeout(() => {
+                setUploadMessage(null);
+                setUploadProgress(null);
+              }, 3000);
             }
           }
         );
+      } else {
+        setUploadMessage(t("Post sent successfully!"));
+        setTimeout(() => setUploadMessage(null), 3000);
       }
 
       setPostText("");
@@ -87,19 +110,15 @@ const CreatePost = () => {
 
   const handleMediaUpload = async () => {
     try {
-      console.log("🚀 [CREATE POST] Starting media upload process...");
       setIsUploading(true);
       const result = await selectMediaForPreview({ allowVideo: true });
       if (result) {
         setSelectedMedia(result);
-        console.log("✅ [CREATE POST] Media selected successfully - Send button should be enabled!");
       }
     } catch (error) {
-      console.error("❌ [CREATE POST] Error selecting media:", error);
       alert(t("Error selecting media"));
     } finally {
       setIsUploading(false);
-      console.log("🔓 [CREATE POST] Upload UI unlocked - user can interact");
     }
   };
 
@@ -161,17 +180,6 @@ const CreatePost = () => {
                     )}
                   </View>
                 ) : null}
-
-                {isBackgroundUploading && (
-                  <View style={uploadProgressContainerStyle}>
-                    <Text style={uploadProgressTextStyle}>
-                      {t("Uploading media...")} {Math.round(uploadProgress)}%
-                    </Text>
-                    <View style={progressBarContainerStyle}>
-                      <View style={[progressBarFillStyle, { width: `${uploadProgress}%` }]} />
-                    </View>
-                  </View>
-                )}
 
                 <TextInput
                   style={textInputStyle}
