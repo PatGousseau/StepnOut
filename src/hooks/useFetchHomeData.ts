@@ -90,10 +90,6 @@ export const useFetchHomeData = () => {
           body, 
           media_id, 
           challenge_id,
-          media (
-            file_path,
-            upload_status
-          ),
           likes:likes(count)
         `;
 
@@ -101,21 +97,33 @@ export const useFetchHomeData = () => {
         let challengeQuery = supabase
           .from("post")
           .select(`
-            ${baseSelect},
-            challenges (
+            *,
+            challenges!inner (
               title
-            )
+            ),
+            media!inner (
+              file_path,
+              upload_status
+            ),
+            likes:likes(count)
           `)
-          .not('media.upload_status', 'in', '("failed","pending")')
           .not('challenge_id', 'is', null)
+          // .not('media.upload_status', 'in', '("failed","pending")')
           .order("created_at", { ascending: false });
 
         // Query for discussion posts
         let discussionQuery = supabase
           .from("post")
-          .select(baseSelect)
-          .not('media.upload_status', 'in', '("failed","pending")')
+          .select(`
+            *,
+            media!inner (
+              file_path,
+              upload_status
+            ),
+            likes:likes(count)
+          `)
           .is('challenge_id', null)
+          .not('media.upload_status', 'in', '("failed","pending")')
           .order("created_at", { ascending: false });
 
         // Add blocked users filter if needed
