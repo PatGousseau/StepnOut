@@ -40,6 +40,7 @@ export const translations = {
   Notifications: "Notifiche",
   "No notifications yet": "Nessuna notifica",
   "Share my experience": "Condividi la mia esperienza",
+  "Share your experience": "Condividi la tua esperienza",
   "Your post has been submitted!": "Il tuo post è stato inviato!",
   "How did it go?": "Com'è andata?",
   "Share your experience with the community": "Condividi la tua esperienza con la community",
