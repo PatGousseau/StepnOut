@@ -14,26 +14,11 @@ export default function OnboardingScreen() {
       onDone={() => router.replace('/(tabs)')}
       showNext={true}
       showSkip={false}
+      nextLabel={t('Next')}
       bottomBarHighlight={false}
       bottomBarColor={colors.light.background}
-      NextButtonComponent={props => (
-        <View style={{
-          padding: 10,
-          backgroundColor: colors.light.primary,
-          borderRadius: 16,
-          marginTop: 10,
-          marginHorizontal: 12
-        }}>
-          <Text style={{
-            color: 'white',
-            fontSize: 14,
-            lineHeight: 13,
-            fontWeight: 'bold'
-          }}>
-            {t('Done')}
-          </Text>
-        </View>
-      )}
+      transitionAnimationDuration={200}
+      allowFontScalingButtons={false}
       containerStyles={{
         padding: 0,
         margin: 0,
@@ -57,7 +42,7 @@ export default function OnboardingScreen() {
         fontSize: 15,
         color: colors.light.text,
       }}
-      bottomBarHeight={40}
+      bottomBarHeight={60}
       topBarHeight={0}
       controlStatusBar={false}
       pages={[
