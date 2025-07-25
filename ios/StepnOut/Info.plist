@@ -95,6 +95,8 @@
 	</array>
 	<key>UIUserInterfaceStyle</key>
 	<string>Automatic</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
 	<key>LSApplicationCategoryType</key>
 	<string></string>
 	<key>NS</key>
