@@ -100,6 +100,11 @@ const Home = () => {
     fetchAllData();
   }, [fetchAllData]);
 
+  const handlePostCreated = useCallback(() => {
+    // Refresh the posts list when a new post is created
+    fetchAllData();
+  }, [fetchAllData]);
+
   // Memoize filtered posts
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -265,7 +270,7 @@ const Home = () => {
 
       {activeTab === "discussion" && (
         <View style={styles.createPostButton}>
-          <CreatePost />
+          <CreatePost onPostCreated={handlePostCreated} />
         </View>
       )}
     </KeyboardAvoidingView>
