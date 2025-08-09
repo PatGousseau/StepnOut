@@ -161,7 +161,7 @@ export const useFetchHomeData = () => {
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
 
-        // ✅ Correct hasMore: true if EITHER bucket filled its page
+        // true if EITHER bucket filled its page
         setHasMore(
           (challengePosts.length === POSTS_PER_PAGE) ||
           (discussionPosts.length === POSTS_PER_PAGE)
