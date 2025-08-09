@@ -57,7 +57,7 @@ export const useFetchHomeData = () => {
       comments_count: commentCount ?? 0,
       liked: likedPosts[post.id] ?? false,
       challenge_id: post.challenge_id,
-      challenge_title: post.challenge_title,
+      challenge_title: (post as any).challenge_title, // preserved when we add it below
     };
   };
 
@@ -74,29 +74,18 @@ export const useFetchHomeData = () => {
         const { data: blockedUsers, error: blockError } = await supabase
           .from("blocks")
           .select("blocked_id")
-          .eq("blocker_id", user?.id);
+          .eq("blocker_id", user.id);
 
         if (blockError) throw blockError;
 
         // Create array of blocked user IDs
         const blockedUserIds = blockedUsers?.map((block) => block.blocked_id) || [];
 
-        // Base query parts
-        const baseSelect = `
-          id, 
-          user_id, 
-          created_at, 
-          featured, 
-          body, 
-          media_id, 
-          challenge_id,
-          likes:likes(count)
-        `;
-
         // Query for challenge posts
         let challengeQuery = supabase
           .from("post")
-          .select(`
+          .select(
+            `
             *,
             challenges!inner (
               title
@@ -106,33 +95,37 @@ export const useFetchHomeData = () => {
               upload_status
             ),
             likes:likes(count)
-          `)
-          .not('challenge_id', 'is', null)
-          .not('media.upload_status', 'in', '("failed","pending")')
+          `
+          )
+          .not("challenge_id", "is", null)
+          .not("media.upload_status", "in", '("failed","pending")')
           .order("created_at", { ascending: false });
 
         // Query for discussion posts
         let discussionQuery = supabase
           .from("post")
-          .select(`
+          .select(
+            `
             *,
             media (
               file_path,
               upload_status
             ),
             likes:likes(count)
-          `)
-          .is('challenge_id', null)
-          .not('media.upload_status', 'in', '("failed","pending")')
+          `
+          )
+          .is("challenge_id", null)
+          .not("media.upload_status", "in", '("failed","pending")')
           .order("created_at", { ascending: false });
 
-        // Add blocked users filter if needed
+        // Add blocked users filter if needed (quote UUIDs)
         if (blockedUserIds.length > 0) {
-          challengeQuery = challengeQuery.not("user_id", "in", `(${blockedUserIds.join(",")})`);
-          discussionQuery = discussionQuery.not("user_id", "in", `(${blockedUserIds.join(",")})`);
+          const quotedList = `(${blockedUserIds.map((id) => `"${id}"`).join(",")})`;
+          challengeQuery = challengeQuery.not("user_id", "in", quotedList);
+          discussionQuery = discussionQuery.not("user_id", "in", quotedList);
         }
 
-        // Add pagination
+        // Add pagination (offset-based)
         const start = (pageNumber - 1) * POSTS_PER_PAGE;
         const end = pageNumber * POSTS_PER_PAGE - 1;
         challengeQuery = challengeQuery.range(start, end);
@@ -141,43 +134,56 @@ export const useFetchHomeData = () => {
         // Execute both queries
         const [challengeResponse, discussionResponse] = await Promise.all([
           challengeQuery,
-          discussionQuery
+          discussionQuery,
         ]);
 
         if (challengeResponse.error) throw challengeResponse.error;
         if (discussionResponse.error) throw discussionResponse.error;
 
-        // Process challenge posts
-        const challengePosts = challengeResponse.data.map((post) => ({
+        // Process challenge posts (attach title)
+        const challengePosts = (challengeResponse.data ?? []).map((post: any) => ({
           ...post,
           challenge_title: post.challenges?.title,
         }));
 
         // Process discussion posts
-        const discussionPosts = discussionResponse.data;
+        const discussionPosts = discussionResponse.data ?? [];
 
-        // Combine all posts
-        const postData = [...challengePosts, ...discussionPosts];
+        // Combine & enforce global ordering (newest first)
+        const postData = [...challengePosts, ...discussionPosts].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
 
+        // ✅ Correct hasMore: true if EITHER bucket filled its page
+        setHasMore(
+          (challengePosts.length === POSTS_PER_PAGE) ||
+          (discussionPosts.length === POSTS_PER_PAGE)
+        );
+
+        // Batch comment counts
         const postIds = postData.map((post) => post.id.toString());
         const commentCountsResponse = await supabase.rpc("get_comment_counts", {
           post_ids: postIds,
         });
 
-        const commentCountMap = new Map();
+        const commentCountMap = new Map<number, number>();
         commentCountsResponse.data?.forEach((row: CommentCount) => {
-          commentCountMap.set(row.post_id, parseInt(row.count));
+          commentCountMap.set(row.post_id, parseInt(row.count, 10));
         });
 
+        // Fetch unique users
         const uniqueUserIds = [...new Set(postData.map((post) => post.user_id))];
+        const users = await Promise.all(
+          uniqueUserIds.map((userId) => User.getUser(userId))
+        );
 
-        const users = await Promise.all(uniqueUserIds.map((userId) => User.getUser(userId)));
-
-        const newUserMap = users.reduce((acc, user) => {
-          acc[user.id] = user;
+        const newUserMap = users.reduce((acc, u) => {
+          if (u) acc[u.id] = u;
           return acc;
         }, {} as UserMap);
 
+        // Format posts (image URLs, counts, liked state)
         const formattedPosts = await Promise.all(
           postData.map((post) => formatPost(post, commentCountMap))
         );
@@ -185,7 +191,6 @@ export const useFetchHomeData = () => {
         // Initialize likes for all new posts, regardless of page
         initializePostLikes(formattedPosts);
 
-        setHasMore(postData.length === POSTS_PER_PAGE);
         setPosts((prev) => (isLoadMore ? [...prev, ...formattedPosts] : formattedPosts));
         setUserMap((prev) => ({ ...prev, ...newUserMap }));
       } catch (error) {
@@ -194,7 +199,7 @@ export const useFetchHomeData = () => {
         setLoading(false);
       }
     },
-    [POSTS_PER_PAGE, user?.id]
+    [POSTS_PER_PAGE, user?.id, initializePostLikes] // keep deps tight
   );
 
   const formatComment = async (comment: any): Promise<any> => {
@@ -208,10 +213,13 @@ export const useFetchHomeData = () => {
   const addComment = async (postId: number, userId: string, body: string) => {
     const { data, error } = await supabase
       .from("comments")
-      .insert([{ post_id: postId, user_id: userId, body }]).select(`
+      .insert([{ post_id: postId, user_id: userId, body }])
+      .select(
+        `
         *,
         likes:likes(count)
-      `);
+      `
+      );
 
     if (error) {
       console.error("Error adding comment:", error);
@@ -238,7 +246,7 @@ export const useFetchHomeData = () => {
       setPage(nextPage);
       fetchAllData(nextPage, true);
     }
-  }, [loading, hasMore, page]);
+  }, [loading, hasMore, page, fetchAllData]);
 
   const fetchPost = async (postId: number): Promise<Post | null> => {
     try {
@@ -259,18 +267,18 @@ export const useFetchHomeData = () => {
 
       const postWithChallenge = {
         ...post,
-        challenge_title: post.challenges?.title,
+        challenge_title: (post as any).challenges?.title,
       };
 
       const formattedPost = await formatPost(postWithChallenge);
 
       // Fetch the user data if not already in userMap
       if (post && !userMap[post.user_id]) {
-        const user = await User.getUser(post.user_id);
-        if (user) {
+        const u = await User.getUser(post.user_id);
+        if (u) {
           setUserMap((prev) => ({
             ...prev,
-            [user.id]: user,
+            [u.id]: u,
           }));
         }
       }
