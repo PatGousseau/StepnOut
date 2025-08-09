@@ -68,6 +68,12 @@ export const useFetchHomeData = () => {
         return;
       }
 
+      // Reset pagination state when starting fresh (not loading more)
+      if (!isLoadMore) {
+        setPage(1);
+        setHasMore(true);
+      }
+
       setLoading(true);
       try {
         // First, get the list of blocked user IDs

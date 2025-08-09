@@ -21,7 +21,11 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 
-const CreatePost = () => {
+interface CreatePostProps {
+  onPostCreated?: () => void;
+}
+
+const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const { t } = useLanguage();
@@ -36,7 +40,12 @@ const CreatePost = () => {
     handleRemoveMedia,
     handleSubmit,
   } = useMediaUpload({
-    onUploadComplete: () => setModalVisible(false),
+    onUploadComplete: () => {
+      setModalVisible(false);
+      if (onPostCreated) {
+        onPostCreated();
+      }
+    },
     successMessage: t("Post sent successfully!"),
   });
 

@@ -117,6 +117,11 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
                 setUploadMessage(null);
                 setUploadProgress(null);
               }, 3000);
+              
+              // Call completion callback for successful background upload
+              if (options.onUploadComplete) {
+                options.onUploadComplete();
+              }
             }
           }
         );
