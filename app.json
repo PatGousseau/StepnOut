@@ -38,6 +38,15 @@
           "icon": "./src/assets/images/appstore.png",
           "color": "#ffffff"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.22",
+            "gradlePluginVersion": "8.3.0"
+          }
+        }
       ]
     ],
     "experiments": {
