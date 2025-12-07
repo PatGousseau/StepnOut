@@ -20,7 +20,7 @@ interface UseMediaUploadResult {
   handleMediaUpload: () => Promise<void>;
   handleRemoveMedia: () => void;
   setPostText: (text: string) => void;
-  handleSubmit: (additionalData?: Record<string, any>) => Promise<void>;
+  handleSubmit: (additionalData?: Record<string, any>, text?: string) => Promise<void>;
 }
 
 export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
@@ -59,8 +59,10 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     setSelectedMedia(null);
   };
 
-  const handleSubmit = async (additionalData: Record<string, any> = {}) => {
-    if (!postText.trim() && !selectedMedia) {
+  const handleSubmit = async (additionalData: Record<string, any> = {}, text?: string) => {
+    const finalText = text !== undefined ? text : postText;
+    
+    if (!finalText.trim() && !selectedMedia) {
       setUploadMessage(t('Please add either a description or media'));
       return;
     }
@@ -77,7 +79,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
         .insert([
           {
             media_id: selectedMedia?.mediaId || null,
-            body: postText,
+            body: finalText,
             featured: false,
             ...additionalData,
           },

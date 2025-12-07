@@ -172,6 +172,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
   const {
     selectedMedia,
+    postText,
     setPostText,
     isUploading,
     uploadProgress,
@@ -194,10 +195,17 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       return;
     }
 
-    await handleSubmit({
-      user_id: user.id,
-      challenge_id: challenge.id,
-    });
+    // Use placeholder text if user didn't input anything
+    const placeholderText = t("Just completed this week's challenge!");
+    const textToSubmit = postText && postText.trim() ? postText : placeholderText;
+
+    await handleSubmit(
+      {
+        user_id: user.id,
+        challenge_id: challenge.id,
+      },
+      textToSubmit
+    );
   };
 
   // Add fadeIn/fadeOut functions
