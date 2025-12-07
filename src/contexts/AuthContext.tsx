@@ -126,6 +126,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (updateError) throw updateError;
     }
+
+    // create a welcome post in the discussion feed
+    await supabase.from("post").insert({
+      user_id: user.id,
+      body: "",
+      is_welcome: true,
+    });
   };
 
   const signIn = async (email: string, password: string) => {

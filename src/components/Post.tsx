@@ -53,9 +53,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
   const { user } = useAuth();
-
-  if (!post) return null;
-
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
@@ -96,6 +93,18 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     },
     [post.id, setPostCounts, likeCounts]
   );
+
+  // welcome posts are rendered differently
+  if (post.is_welcome) {
+    return (
+      <View style={welcomePostStyle}>
+        <Text style={{ fontSize: 14 }}>👋</Text>
+        <Text style={welcomeTextStyle}>
+          {t("hi")} <Text style={welcomeUsernameStyle}>{postUser?.name || t("Someone")}</Text>{t(", welcome to the StepnOut community!")}
+        </Text>
+      </View>
+    );
+  }
 
   const handleLikePress = async () => {
     if (!user) return;
@@ -530,6 +539,24 @@ const timestampStyle: TextStyle = {
   color: "#666",
   fontSize: 11,
   marginLeft: 5,
+};
+
+const welcomePostStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingVertical: 12,
+  paddingHorizontal: 8,
+  gap: 6,
+};
+
+const welcomeTextStyle: TextStyle = {
+  color: colors.neutral.grey3,
+  fontSize: 13,
+};
+
+const welcomeUsernameStyle: TextStyle = {
+  fontWeight: "600",
+  color: colors.light.text,
 };
 
 export default Post;
