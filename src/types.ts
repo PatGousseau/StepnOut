@@ -33,6 +33,7 @@ export interface Challenge {
     likes?: {
       count: number;
     };
+    is_welcome?: boolean;
   }
 
   export interface ChallengeProgress {

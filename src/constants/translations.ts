@@ -154,4 +154,7 @@ export const translations = {
   "Report Submitted": "Segnalazione Inviata",
   "Thank you for your report.": "Grazie per la tua segnalazione.",
   "End User License Agreement": "Accettazione Accordo Utente",
+  hi: "ciao",
+  ", welcome to the StepnOut community!": ", benvenuto nella community di StepnOut!",
+  Someone: "Qualcuno",
 };
