@@ -17,6 +17,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
+import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -115,6 +116,7 @@ function RootLayoutNav() {
                 isDetailPage={isDetailPage}
                 hideLogo={hideLogo}
               />
+              {!hideLogo && !isDetailPage && <RecentlyActiveBanner />}
               <Stack
                 screenOptions={{
                   headerShown: false,

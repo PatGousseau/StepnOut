@@ -157,4 +157,6 @@ export const translations = {
   hi: "ciao",
   ", welcome to the StepnOut community!": ", benvenuto nella community di StepnOut!",
   Someone: "Qualcuno",
+  "active today": "attivi oggi",
+  "Recently active": "Attivi di recente",
 };
