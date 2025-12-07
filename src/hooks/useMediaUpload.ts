@@ -146,6 +146,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   return {
     selectedMedia,
+    postText,
     setPostText,
     isUploading,
     uploadProgress: isBackgroundUploading ? localUploadProgress : null,

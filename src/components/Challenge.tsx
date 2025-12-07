@@ -3,7 +3,7 @@ import { Text } from "../components/StyledText";
 import { colors } from "../constants/Colors";
 import { TouchableOpacity, Image, Animated, TextInput } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
@@ -13,14 +13,10 @@ import { Loader } from "../components/Loader";
 import ShareChallenge from "../components/ShareChallenge";
 import { View, StyleSheet } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
-import { selectMediaForPreview, MediaSelectionResult } from "../utils/handleMediaUpload";
-import { backgroundUploadService } from "../services/backgroundUploadService";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
 import { router } from "expo-router";
 import { imageService } from "../services/imageService";
-import { useUploadProgress } from "../contexts/UploadProgressContext";
-import { createProgressManager } from "../utils/progressManager";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 
 interface ChallengeCardProps {
@@ -243,7 +239,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       )}
 
       <TouchableOpacity style={shareStyles.button} onPress={fadeIn}>
-        <Text style={shareStyles.buttonText}>{t("Share my experience")}</Text>
+        <Text style={shareStyles.buttonText}>{t("Mark as complete")}</Text>
       </TouchableOpacity>
 
       <Modal
@@ -362,7 +358,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 <TextInput
                   style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
                   multiline
-                  placeholder={t("How did it make you feel?\nWhat did you find difficult?")}
+                  placeholder={t("Just completed this week's challenge!")}
                   placeholderTextColor="#999"
                   onChangeText={setPostText}
                 />
