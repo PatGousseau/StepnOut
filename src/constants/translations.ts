@@ -159,4 +159,6 @@ export const translations = {
   Someone: "Qualcuno",
   "active today": "attivi oggi",
   "Recently active": "Attivi di recente",
+  "Mark as complete": "Segna come completato",
+  "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
 };
