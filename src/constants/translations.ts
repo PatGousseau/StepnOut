@@ -154,4 +154,6 @@ export const translations = {
   "Report Submitted": "Segnalazione Inviata",
   "Thank you for your report.": "Grazie per la tua segnalazione.",
   "End User License Agreement": "Accettazione Accordo Utente",
+  "active today": "attivi oggi",
+  "Recently active": "Attivi di recente",
 };
