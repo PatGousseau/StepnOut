@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -16,13 +16,103 @@ import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { EULA_IT, EULA } from '../../constants/EULA';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+
+// Required for Google auth to work properly
+WebBrowser.maybeCompleteAuthSession();
+
+// Replace with your actual iOS Client ID from Google Cloud Console
+const IOS_CLIENT_ID = '881483240750-cc4pm3i893ov879f0s98hgqmb5j9mbu8.apps.googleusercontent.com';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { signIn } = useAuth();
   const { t, language } = useLanguage();
+
+  // Google Auth setup
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: IOS_CLIENT_ID,
+  });
+
+  // Handle Google Sign-In response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleSignIn(response.authentication?.idToken);
+    }
+  }, [response]);
+
+  const handleGoogleSignIn = async (idToken: string | undefined) => {
+    if (!idToken) {
+      Alert.alert(t('Error'), t('Failed to get Google credentials'));
+      return;
+    }
+
+    try {
+      setGoogleLoading(true);
+
+      // Sign in to Supabase with the Google token
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) throw error;
+
+      const userId = data.user?.id;
+      if (!userId) throw new Error(t('Login failed'));
+
+      // Check if profile exists (new user vs returning user)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_login, eula_accepted, username')
+        .eq('id', userId)
+        .single();
+
+      // If no username, this is a new Google user - send to profile setup
+      if (!profile?.username) {
+        router.replace('/(auth)/register-profile?isGoogleUser=true');
+        return;
+      }
+
+      // Handle EULA
+      if (!profile?.eula_accepted) {
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+          { text: t('Accept'), onPress: async () => {
+            await supabase
+              .from('profiles')
+              .update({ eula_accepted: true })
+              .eq('id', userId);
+          } },
+          {
+            text: t('Decline'),
+            onPress: async () => {
+              await supabase.auth.signOut();
+              router.replace('/(auth)/login');
+            }
+          }
+        ]);
+      }
+
+      // Handle first login / onboarding
+      if (profile?.first_login) {
+        await supabase
+          .from('profiles')
+          .update({ first_login: false })
+          .eq('id', userId);
+        router.replace('/(auth)/onboarding');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      Alert.alert(t('Error'), (error as Error).message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -36,8 +126,6 @@ export default function LoginScreen() {
       // Get the current session to get user info
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error(t('Login failed'));
-
-
 
       // Check if this is their first login after verification
       const { data: profile } = await supabase
@@ -114,6 +202,29 @@ export default function LoginScreen() {
             {loading ? t('Logging in...') : t('Log In')}
           </Text>
         </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.divider} />
+          <Text style={styles.dividerText}>{t('or')}</Text>
+          <View style={styles.divider} />
+        </View>
+
+        {/* Google Sign-In Button */}
+        <TouchableOpacity 
+          style={[styles.googleButton, googleLoading && styles.buttonDisabled]} 
+          onPress={() => promptAsync()}
+          disabled={!request || googleLoading}
+        >
+          <Image 
+            source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }} 
+            style={styles.googleIcon}
+            defaultSource={require('../../assets/images/logo.png')}
+          />
+          <Text style={styles.googleButtonText}>
+            {googleLoading ? t('Signing in...') : t('Continue with Google')}
+          </Text>
+        </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.linkButton}
@@ -145,10 +256,44 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.background,
     flex: 1,
   },
+  divider: {
+    backgroundColor: '#ddd',
+    flex: 1,
+    height: 1,
+  },
+  dividerContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginVertical: 20,
+  },
+  dividerText: {
+    color: '#666',
+    marginHorizontal: 10,
+  },
   form: {
     flex: 1,
     justifyContent: 'center',
     padding: 20,
+  },
+  googleButton: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderColor: '#ddd',
+    borderRadius: 5,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 15,
+  },
+  googleButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  googleIcon: {
+    height: 20,
+    marginRight: 10,
+    width: 20,
   },
   input: {
     borderColor: '#ddd',
