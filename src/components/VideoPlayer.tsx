@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, PanResponder, Text } from 'react-native';
-import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Audio, Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from '@react-native-community/slider';
 
@@ -16,6 +16,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
   const [showControls, setShowControls] = useState(true);
   const [swipeY, setSwipeY] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
+
+  useEffect(() => {
+    // Ensure audio plays even when the iPhone hardware mute switch is on
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+    }).catch(() => {
+    });
+  }, []);
 
   const panResponder = useRef(
     PanResponder.create({
