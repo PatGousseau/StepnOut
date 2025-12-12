@@ -27,6 +27,7 @@ const useUserProgress = (targetUserId: string) => {
           body, 
           media_id, 
           challenge_id,
+          is_welcome,
           challenges (title),
           media (
             file_path,
@@ -43,19 +44,24 @@ const useUserProgress = (targetUserId: string) => {
 
       if (error) throw error;
 
+      // Drop welcome posts from profile feeds
       const transformedPosts = posts.map(post => ({
         ...post,
         challenge_title: post.challenges?.title
-      }));
+      })).filter(post => !post.is_welcome);
 
       // Then fetch like status separately
-      const { data: likedPosts } = await supabase
-        .from('likes')
-        .select('post_id')
-        .eq('user_id', user?.id)
-        .in('post_id', transformedPosts.map(post => post.id));
+      const likedPostIds = new Set<string>();
 
-      const likedPostIds = new Set(likedPosts?.map(like => like.post_id));
+      if (transformedPosts.length > 0) {
+        const { data: likedPosts } = await supabase
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', user?.id)
+          .in('post_id', transformedPosts.map(post => post.id));
+
+        likedPosts?.forEach(like => likedPostIds.add(like.post_id));
+      }
 
       const formattedPosts: Post[] = transformedPosts.map(post => ({
         ...post,
