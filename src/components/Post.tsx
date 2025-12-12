@@ -34,7 +34,7 @@ import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
 import VideoPlayer from "./VideoPlayer";
-import { Video } from "expo-av";
+import { Video, ResizeMode } from "expo-av";
 import { formatRelativeTime } from "../utils/time";
 import { imageService } from "../services/imageService";
 import { ActionsMenu } from "./ActionsMenu";
@@ -93,18 +93,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     },
     [post.id, setPostCounts, likeCounts]
   );
-
-  // welcome posts are rendered differently
-  if (post.is_welcome) {
-    return (
-      <View style={welcomePostStyle}>
-        <Text style={{ fontSize: 14 }}>👋</Text>
-        <Text style={welcomeTextStyle}>
-          {t("hi")} <Text style={welcomeUsernameStyle}>{postUser?.name || t("Someone")}</Text>{t(", welcome to the StepnOut community!")}
-        </Text>
-      </View>
-    );
-  }
 
   const handleLikePress = async () => {
     if (!user) return;
@@ -187,7 +175,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             <Video
               source={{ uri: post.media?.file_path }}
               style={contentStyle}
-              resizeMode="cover"
+              resizeMode={ResizeMode.COVER}
               shouldPlay={false}
               isMuted={true}
               isLooping={false}
@@ -219,6 +207,28 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       </TouchableOpacity>
     );
   };
+
+  // welcome posts are rendered differently
+  if (post.is_welcome) {
+    const goToProfile = () => {
+      if (postUser?.id) {
+        router.push(`/profile/${postUser.id}`);
+      }
+    };
+
+    return (
+      <View style={welcomePostStyle}>
+        <Text style={{ fontSize: 14 }}>👋</Text>
+        <Text style={welcomeTextStyle}>
+          {t("hi")}{" "}
+          <Text style={welcomeUsernameStyle} onPress={goToProfile}>
+            {postUser?.name || t("Someone")}
+          </Text>
+          {t(", welcome to the StepnOut community!")}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <Pressable
