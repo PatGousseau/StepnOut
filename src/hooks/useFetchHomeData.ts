@@ -26,7 +26,7 @@ interface CommentCount {
 export const useFetchHomeData = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(1);
-  const POSTS_PER_PAGE = 10;
+  const POSTS_PER_PAGE = 20;
   const [hasMore, setHasMore] = useState(true);
   const [userMap, setUserMap] = useState<UserMap>({});
   const [loading, setLoading] = useState(true);
