@@ -212,9 +212,9 @@ export const profileService = {
     }
   },
 
-  async loadUserProfile(userId: string): Promise<User | null> {
+  async loadUserProfile(userId: string, forceRefresh: boolean = false): Promise<User | null> {
     try {
-      return await User.getUser(userId);
+      return await User.getUser(userId, forceRefresh);
     } catch (error) {
       console.error("Error loading user profile:", error);
       return null;

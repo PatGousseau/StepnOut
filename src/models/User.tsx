@@ -18,13 +18,24 @@ export class User {
 
   private constructor(private userId: string) {}
 
-  static async getUser(userId: string): Promise<User> {
-    if (!this.userCache.has(userId)) {
-      const user = new User(userId);
+  static async getUser(userId: string, forceRefresh: boolean = false): Promise<User> {
+    const cachedUser = this.userCache.get(userId);
+
+    if (!cachedUser || forceRefresh) {
+      const user = forceRefresh || !cachedUser ? new User(userId) : cachedUser;
       this.userCache.set(userId, user);
       await user.load();
     }
+
     return this.userCache.get(userId)!;
+  }
+
+  static invalidate(userId?: string) {
+    if (userId) {
+      this.userCache.delete(userId);
+    } else {
+      this.userCache.clear();
+    }
   }
 
   async load(): Promise<void> {

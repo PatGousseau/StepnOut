@@ -85,11 +85,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       const result = await profileService.updateProfilePicture(user?.id!);
 
       if (result.success) {
-        // Reload the user profile to get updated data
+        if (result.previewUrl && userProfile) {
+          // Immediately show the new image while background upload finishes
+          userProfile.profileImageUrl = result.previewUrl;
+          const clonedUser = Object.assign(
+            Object.create(Object.getPrototypeOf(userProfile)),
+            userProfile
+          ) as User;
+          setUserProfile(clonedUser);
+        }
+
         if (user?.id) {
-          const userProfile = await User.getUser(user.id);
-          if (userProfile && result.profileImageUrl) {
-            userProfile.profileImageUrl = result.profileImageUrl;
+          // Force reload to bypass cached user data
+          const refreshedProfile = await profileService.loadUserProfile(user.id, true);
+          if (refreshedProfile) {
+            if (!refreshedProfile.profileImageUrl && result.previewUrl) {
+              refreshedProfile.profileImageUrl = result.previewUrl;
+            }
+            setUserProfile(refreshedProfile);
           }
         }
       } else if (result.error) {
