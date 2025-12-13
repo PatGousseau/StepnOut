@@ -322,7 +322,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   return (
     <Pressable
       // onPress={handlePostPress}
-      style={[containerStyle, post.challenge_id ? challengeContainerStyle : null]}
+      style={[containerStyle, post.challenge_id ? challengeContainerStyle : null, { position: "relative" }]}
     >
       <View style={headerStyle}>
         <TouchableOpacity onPress={handleProfilePress}>
@@ -363,8 +363,30 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </View>
         </TouchableOpacity>
       )}
-      {post.body && <Text style={textStyle}>{post.body}</Text>}
-      {renderMedia()}
+      {post.body && !post.media?.file_path ? (
+        <Pressable onPress={handleDoubleTap}>
+          <Text style={textStyle}>{post.body}</Text>
+        </Pressable>
+      ) : (
+        <>
+          {post.body && <Text style={textStyle}>{post.body}</Text>}
+          {renderMedia()}
+        </>
+      )}
+      {!post.media?.file_path && (
+        <Animated.View
+          style={[
+            heartOverlayStyle,
+            {
+              transform: [{ scale: heartScale }],
+              opacity: heartOpacity,
+            },
+          ]}
+          pointerEvents="none"
+        >
+          <Icon name="heart" size={64} color="#eb656b" />
+        </Animated.View>
+      )}
       <View>
         <View style={footerStyle}>
           <TouchableOpacity onPress={handleLikePress}>
