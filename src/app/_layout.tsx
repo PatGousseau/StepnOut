@@ -62,6 +62,9 @@ function RootLayoutNav() {
 
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register';
+  
+  // hide recently active banner on onboarding
+  const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
@@ -131,7 +134,7 @@ function RootLayoutNav() {
                 isDetailPage={isDetailPage}
                 hideLogo={hideLogo}
               />
-              {!hideLogo && !isDetailPage && <RecentlyActiveBanner />}
+              {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
               <Stack
                 screenOptions={{
                   headerShown: false,
