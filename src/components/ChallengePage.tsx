@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
-import { Challenge } from "../types";
-import { supabase } from "../lib/supabase";
 import { ChallengeCard } from "./Challenge";
 import { PatrizioExample } from "./Challenge";
 import { ShareExperience } from "./Challenge";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useFetchHomeData } from "../hooks/useFetchHomeData";
 import { Loader } from "./Loader";
+import { useQuery } from "@tanstack/react-query";
+import { challengeService } from "../services/challengeService";
 
 interface ChallengePageProps {
   id?: number;
@@ -19,70 +19,42 @@ interface ChallengePageProps {
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const { t, language } = useLanguage();
   const params = useLocalSearchParams();
-  const challengeId = id || (typeof params.id === "string" ? parseInt(params.id) : params.id);
-
-  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  
+  // Get challenge ID from prop or URL params
+  const challengeId = id ?? (params.id ? parseInt(String(params.id)) : undefined);
+  
   const [refreshing, setRefreshing] = useState(false);
   const { posts, loading: postsLoading, fetchAllData } = useFetchHomeData();
 
   // Filter posts for this challenge
   const challengePosts = posts.filter((post) => post.challenge_id === challengeId);
 
-  // Add a new state for initial loading
-  const [initialLoading, setInitialLoading] = useState(true);
+  // Use React Query to fetch challenge data
+  const {
+    data: challenge,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["challenge", challengeId],
+    queryFn: () => {
+      if (!challengeId) {
+        throw new Error("Invalid challenge ID");
+      }
+      return challengeService.fetchChallengeById(challengeId);
+    },
+    enabled: !!challengeId,
+    staleTime: 30000,
+  });
 
-  const loadChallenge = async () => {
-    if (!challengeId) {
-      console.error("No id available:", params);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("challenges")
-        .select(
-          `
-          *,
-          media:image_media_id(
-            file_path
-          )
-        `
-        )
-        .eq("id", challengeId)
-        .single();
-
-      if (error) throw error;
-
-      // Calculate days remaining
-      const now = new Date();
-      const createdAt = new Date(data.created_at);
-      const daysSinceCreation = Math.floor(
-        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const daysRemaining = 7 - daysSinceCreation;
-
-      setChallenge({
-        ...data,
-        daysRemaining,
-      });
-    } catch (error) {
-      console.error("Error loading challenge:", error);
-    }
-  };
-
-  const onRefresh = React.useCallback(async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadChallenge(), fetchAllData()]);
+    await Promise.all([refetch(), fetchAllData()]);
     setRefreshing(false);
-  }, [challengeId, fetchAllData]);
+  }, [refetch, fetchAllData]);
 
-  useEffect(() => {
-    setInitialLoading(true);
-    Promise.all([loadChallenge(), fetchAllData()]).finally(() => setInitialLoading(false));
-  }, [challengeId]);
-
-  // Update the loading condition to only show loader on initial load
-  if (initialLoading) {
+  // Loading state
+  if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Loader />
@@ -90,6 +62,16 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text>{t("Error loading challenge")}</Text>
+      </View>
+    );
+  }
+
+  // Challenge not found
   if (!challenge) {
     return (
       <View style={[styles.container, styles.centered]}>

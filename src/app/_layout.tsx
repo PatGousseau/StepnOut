@@ -18,6 +18,7 @@ import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -31,6 +32,16 @@ Notifications.setNotificationHandler({
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
+// Create a QueryClient instance with defaults
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // 30 seconds
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    },
+  },
+});
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
@@ -169,7 +180,9 @@ function RootLayoutNav() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <QueryClientProvider client={queryClient}>
+        <RootLayoutNav />
+      </QueryClientProvider>
     </AuthProvider>
   );
 }
