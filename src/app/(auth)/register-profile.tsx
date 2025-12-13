@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { colors } from "../../constants/Colors";
-import { useAuth } from "../../contexts/AuthContext";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../lib/supabase";
 import { Text } from "../../components/StyledText";
@@ -29,7 +28,6 @@ export default function RegisterProfileScreen() {
   const [displayName, setDisplayName] = useState("");
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [instagram, setInstagram] = useState('');
@@ -88,8 +86,7 @@ export default function RegisterProfileScreen() {
     }
   };
 
-  // Handle Google user profile setup
-  const handleGoogleProfileSetup = async () => {
+  const handleRegister = async () => {
     if (!username || !displayName) {
       Alert.alert(t("Error"), t("Please fill in all required fields"));
       return;
@@ -98,112 +95,63 @@ export default function RegisterProfileScreen() {
     try {
       setLoading(true);
 
-      // Get current user session (Google user is already signed in)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error(t("No active session"));
-      }
-
-      const userId = session.user.id;
-
-      // Check if username is already taken
+      // Check if username is taken
       const { data: existingUser, error: checkError } = await supabase
         .from("profiles")
         .select("username")
         .eq("username", username)
-        .neq("id", userId)
         .single();
+      if (checkError && checkError.code !== "PGRST116") throw checkError;
+      if (existingUser) throw new Error("Username is already taken");
 
-      if (checkError && checkError.code !== "PGRST116") {
-        throw checkError;
+      let userId: string;
+
+      if (isGoogleSignUp) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) throw new Error(t("No active session"));
+        userId = session.user.id;
+      } else {
+        const { data: { user }, error } = await supabase.auth.signUp({
+          email: email!,
+          password: password!,
+          options: { data: { username, display_name: displayName } },
+        });
+        if (error) throw error;
+        if (!user) throw new Error("No user returned after signup");
+        userId = user.id;
       }
 
-      if (existingUser) {
-        throw new Error(t("Username is already taken"));
-      }
-
-      // Update the profile with username, display name, etc.
-      const updates: Record<string, any> = {
+      // Update profile
+      const { error: profileError } = await supabase.from("profiles").update({
         username,
-        name: displayName,
-        first_login: true,
-      };
-      if (profileMediaId) updates.profile_media_id = profileMediaId;
-      if (instagram) updates.instagram = instagram.replace(/@/g, '');
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("id", userId);
-
-      if (updateError) throw updateError;
+        display_name: displayName,
+        ...(profileMediaId && { profile_media_id: profileMediaId }),
+        instagram: instagram.replace(/@/g, '') || null,
+        ...(isGoogleSignUp && { first_login: true }),
+      }).eq("id", userId);
+      if (profileError) throw profileError;
 
       // Create welcome post
-      await supabase.from("post").insert({
-        user_id: userId,
-        body: "",
-        is_welcome: true,
-      });
+      await supabase.from("post").insert({ user_id: userId, body: "", is_welcome: true });
 
-      // Show EULA
-      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-        { text: t('Accept'), onPress: async () => {
-          await supabase
-            .from('profiles')
-            .update({ eula_accepted: true })
-            .eq('id', userId);
-          router.replace('/(auth)/onboarding');
-        } },
-        {
-          text: t('Decline'),
-          onPress: async () => {
+      if (isGoogleSignUp) {
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+          { text: t('Accept'), onPress: async () => {
+            await supabase.from('profiles').update({ eula_accepted: true }).eq('id', userId);
+            router.replace('/(auth)/onboarding');
+          }},
+          { text: t('Decline'), onPress: async () => {
             await supabase.auth.signOut();
             router.replace('/(auth)/login');
-          }
-        }
-      ]);
-    } catch (error) {
-      Alert.alert(t("Error"), (error as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRegister = async () => {
-    // If this is a Google user, use different flow
-    if (isGoogleSignUp) {
-      await handleGoogleProfileSetup();
-      return;
-    }
-
-    // Original email/password registration flow
-    if (!username || !displayName) {
-      Alert.alert(t("Error"), t("Please fill in all required fields"));
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await signUp(
-        email!,
-        password!,
-        username,
-        displayName,
-        profileMediaId,
-        instagram.replace(/@/g, '')
-      );
-      Alert.alert(
-        t("Registration Successful"),
-        t(
-          "Please check your email to verify your account. After verification, you can log in to continue."
-        ),
-        [
-          {
-            text: t("OK"),
-            onPress: () => router.replace("/(auth)/login"),
-          },
-        ]
-      );
+          }},
+        ]);
+      } else {
+        Alert.alert(
+          t("Registration Successful"),
+          t("Please check your email to verify your account. After verification, you can log in to continue."),
+          [{ text: t("OK"), onPress: () => router.replace("/(auth)/login") }]
+        );
+      }
     } catch (error) {
       Alert.alert(t("Error"), (error as Error).message);
     } finally {

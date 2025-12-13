@@ -7,14 +7,6 @@ type AuthContextType = {
   user: Session["user"] | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (
-    email: string,
-    password: string,
-    username: string,
-    displayName: string,
-    profileMediaId?: number | null,
-    instagram?: string
-  ) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -69,72 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const signUp = async (
-    email: string,
-    password: string,
-    username: string,
-    displayName: string,
-    profileMediaId?: number | null,
-    instagram?: string
-  ) => {
-    // Check if username is already taken
-    const { data: existingUser, error: checkError } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("username", username)
-      .single();
-
-    if (checkError && checkError.code !== "PGRST116") {
-      throw checkError;
-    }
-
-    if (existingUser) {
-      throw new Error("Username is already taken");
-    }
-
-    // Sign up the user
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-          display_name: displayName,
-        },
-      },
-    });
-
-    if (error) throw error;
-    if (!user) throw new Error("No user returned after signup");
-
-    const updates: any = {};
-    if (profileMediaId) updates.profile_media_id = profileMediaId;
-    if (instagram) updates.instagram = instagram;
-
-    // If a profile picture or instgram link was uploaded, update the profile
-    if (profileMediaId || instagram) {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          ...updates,
-          instagram: instagram || null, // Explicitly set even if empty
-        })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-    }
-
-    // create a welcome post in the discussion feed
-    await supabase.from("post").insert({
-      user_id: user.id,
-      body: "",
-      is_welcome: true,
-    });
-  };
-
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -155,7 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session?.user || null,
         loading,
         isAdmin,
-        signUp,
         signIn,
         signOut,
       }}
