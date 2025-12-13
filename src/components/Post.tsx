@@ -146,6 +146,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           useNativeDriver: true,
         }),
         Animated.timing(heartScale, {
+          toValue: 1.0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.delay(1000),
+        Animated.timing(heartScale, {
           toValue: 0,
           duration: 200,
           useNativeDriver: true,
@@ -157,7 +163,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           duration: 100,
           useNativeDriver: true,
         }),
-        Animated.delay(600),
+        Animated.delay(1000),
         Animated.timing(heartOpacity, {
           toValue: 0,
           duration: 200,
