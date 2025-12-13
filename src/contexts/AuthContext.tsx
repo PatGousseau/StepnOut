@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, initializeSupabase } from "../lib/supabase";
+import { captureEvent } from "../lib/posthog";
 
 type SignUpOptions = {
   // Required for email/password signup, not needed for Google
@@ -105,6 +106,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: "",
       is_welcome: true,
     });
+
+    // Track sign up event
+    captureEvent('user_signed_up', {
+      username,
+      display_name: displayName,
+      has_profile_picture: !!profileMediaId,
+      has_instagram: !!instagram,
+    });
   };
 
   // Unified signup function for both email/password and Google users
@@ -195,10 +204,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     });
-    if (error) throw error;
+    if (error) {
+      // Track failed sign in attempt
+      captureEvent('user_sign_in_failed', {
+        error: error.message,
+      });
+      throw error;
+    }
+    // Track successful sign in
+    captureEvent('user_signed_in');
   };
 
   const signOut = async () => {
+    // Track sign out event before actually signing out
+    captureEvent('user_signed_out');
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

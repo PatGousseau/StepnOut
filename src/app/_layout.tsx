@@ -19,6 +19,7 @@ import { LikesProvider } from '../contexts/LikesContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PostHogProvider } from 'posthog-react-native';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -185,10 +186,36 @@ function RootLayoutNav() {
 }
 
 export default function Layout() {
+  // Get API key from environment variable
+  const posthogApiKey = process.env.EXPO_PUBLIC_POSTHOG_API_KEY || '';
+  const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
+  const isPostHogDisabled = process.env.EXPO_PUBLIC_POSTHOG_DISABLED === 'true' || !posthogApiKey;
+
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <RootLayoutNav />
+        <PostHogProvider 
+          apiKey={posthogApiKey || 'placeholder'} 
+          options={{
+            host: posthogHost,
+            disabled: isPostHogDisabled,
+            debug: __DEV__,
+            // Enable session recordings (free tier: 5,000/month)
+            enableSessionReplay: true,
+            // Capture app lifecycle events
+            captureAppLifecycleEvents: true,
+            // Flush settings
+            flushAt: 20,
+            flushInterval: 10000,
+            sessionExpirationTimeSeconds: 1800,
+          }}
+          autocapture={{
+            captureScreens: false, // We're handling screen tracking manually for expo-router
+            captureTouches: true, // Capture touch events automatically
+          }}
+        >
+          <RootLayoutNav />
+        </PostHogProvider>
       </QueryClientProvider>
     </AuthProvider>
   );

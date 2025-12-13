@@ -47,7 +47,8 @@
             "gradlePluginVersion": "8.3.0"
           }
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true
