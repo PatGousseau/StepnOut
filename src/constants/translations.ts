@@ -68,6 +68,7 @@ export const translations = {
   "No comments yet!": "Ancora nessun commento!",
   "Add a comment...": "Aggiungi un commento...",
   Post: "Pubblica",
+  "Posting...": "Pubblicazione...",
   "just now": "proprio ora",
   "(count)m": "(count)m",
   "(count)h": "(count)h",
