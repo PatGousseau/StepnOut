@@ -56,7 +56,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     comments: commentList,
     loading: commentsLoading,
     fetchComments,
-    error: commentsError,
     addComment: addCommentMutation,
     isAddingComment,
   } = useFetchComments(post.id);
@@ -536,11 +535,6 @@ const fullScreenHeaderStyle: ViewStyle = {
   left: 0,
   padding: 16,
   zIndex: 9999,
-};
-
-const fullScreenImageStyle: ImageStyle = {
-  height: "100%",
-  width: "100%",
 };
 
 const headerStyle: ViewStyle = {
