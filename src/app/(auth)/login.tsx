@@ -19,10 +19,8 @@ import { EULA_IT, EULA } from '../../constants/EULA';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 
-// Required for Google auth to work properly
 WebBrowser.maybeCompleteAuthSession();
 
-// Replace with your actual iOS Client ID from Google Cloud Console
 const IOS_CLIENT_ID = '881483240750-cc4pm3i893ov879f0s98hgqmb5j9mbu8.apps.googleusercontent.com';
 
 export default function LoginScreen() {
