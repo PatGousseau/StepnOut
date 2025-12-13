@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -14,6 +14,7 @@ import {
   ViewStyle,
   TextStyle,
   ImageStyle,
+  Animated,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { CommentsModal } from "./Comments";
@@ -63,6 +64,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const lastTapTime = useRef<number>(0);
+  const singleTapTimer = useRef<NodeJS.Timeout | null>(null);
+  const heartScale = useRef(new Animated.Value(0)).current;
+  const heartOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loadProfileImage = async () => {
@@ -78,6 +83,15 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
     loadProfileImage();
   }, [postUser?.profileImageUrl]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (singleTapTimer.current) {
+        clearTimeout(singleTapTimer.current);
+      }
+    };
+  }, []);
 
   const updateParentCounts = useCallback(
     (newCommentCount: number) => {
@@ -115,6 +129,70 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
 
     setShowFullScreenImage(true);
+  };
+
+  const showHeartAnimation = () => {
+    // Reset animation values
+    heartScale.setValue(0);
+    heartOpacity.setValue(0);
+
+    // Animate heart appearing
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(heartScale, {
+          toValue: 1.2,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heartScale, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(heartOpacity, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.delay(600),
+        Animated.timing(heartOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300;
+
+    if (lastTapTime.current && now - lastTapTime.current < DOUBLE_PRESS_DELAY) {
+      // Double tap detected
+      if (singleTapTimer.current) {
+        clearTimeout(singleTapTimer.current);
+        singleTapTimer.current = null;
+      }
+      handleLikePress();
+      showHeartAnimation();
+      lastTapTime.current = 0;
+    } else {
+      // First tap - wait for potential second tap
+      lastTapTime.current = now;
+      singleTapTimer.current = setTimeout(() => {
+        // Single tap - open fullscreen/modal
+        if (post.media?.file_path && isVideo(post.media.file_path)) {
+          setShowVideoModal(true);
+        } else {
+          setShowFullScreenImage(true);
+        }
+        lastTapTime.current = 0;
+        singleTapTimer.current = null;
+      }, DOUBLE_PRESS_DELAY);
+    }
   };
 
   const handleOpenComments = () => {
@@ -168,10 +246,15 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const renderMedia = () => {
     if (!post.media?.file_path) return null;
 
+    const heartAnimationStyle = {
+      transform: [{ scale: heartScale }],
+      opacity: heartOpacity,
+    };
+
     if (isVideo(post.media?.file_path)) {
       return (
         <>
-          <TouchableOpacity onPress={() => setShowVideoModal(true)} activeOpacity={0.9}>
+          <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
             <Video
               source={{ uri: post.media?.file_path }}
               style={contentStyle}
@@ -186,7 +269,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             <View style={videoOverlayStyle}>
               <Icon name="play-circle" size={48} color="white" />
             </View>
-          </TouchableOpacity>
+            <Animated.View style={[heartOverlayStyle, heartAnimationStyle]} pointerEvents="none">
+              <Icon name="heart" size={64} color="#eb656b" />
+            </Animated.View>
+          </Pressable>
           <VideoPlayer
             videoUri={post.media?.file_path}
             visible={showVideoModal}
@@ -196,7 +282,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       );
     }
     return (
-      <TouchableOpacity onPress={handleMediaPress} activeOpacity={1}>
+      <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
         <Image
           source={{ uri: post.media?.file_path }}
           style={mediaContentStyle}
@@ -204,7 +290,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           contentFit="cover"
           transition={200}
         />
-      </TouchableOpacity>
+        <Animated.View style={[heartOverlayStyle, heartAnimationStyle]} pointerEvents="none">
+          <Icon name="heart" size={64} color="#eb656b" />
+        </Animated.View>
+      </Pressable>
     );
   };
 
@@ -543,6 +632,17 @@ const videoOverlayStyle: ViewStyle = {
   justifyContent: "center",
   alignItems: "center",
   backgroundColor: "rgba(0,0,0,0)",
+};
+
+const heartOverlayStyle: ViewStyle = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  justifyContent: "center",
+  alignItems: "center",
+  pointerEvents: "none",
 };
 
 const timestampStyle: TextStyle = {
