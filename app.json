@@ -4,7 +4,7 @@
     "slug": "stepnout",
     "version": "1.0.6",
     "orientation": "portrait",
-    "scheme": "myapp",
+    "scheme": "com.patrickgousseau.stepnout",
     "userInterfaceStyle": "automatic",
     "plugins": [
       [
