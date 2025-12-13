@@ -88,95 +88,7 @@ export default function RegisterProfileScreen() {
     }
   };
 
-  // Handle Google user profile setup
-  const handleGoogleProfileSetup = async () => {
-    if (!username || !displayName) {
-      Alert.alert(t("Error"), t("Please fill in all required fields"));
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      // Get current user session (Google user is already signed in)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error(t("No active session"));
-      }
-
-      const userId = session.user.id;
-
-      // Check if username is already taken
-      const { data: existingUser, error: checkError } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("username", username)
-        .neq("id", userId)
-        .single();
-
-      if (checkError && checkError.code !== "PGRST116") {
-        throw checkError;
-      }
-
-      if (existingUser) {
-        throw new Error(t("Username is already taken"));
-      }
-
-      // Update the profile with username, display name, etc.
-      const updates: Record<string, any> = {
-        username,
-        name: displayName,
-        first_login: true,
-      };
-      if (profileMediaId) updates.profile_media_id = profileMediaId;
-      if (instagram) updates.instagram = instagram.replace(/@/g, '');
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("id", userId);
-
-      if (updateError) throw updateError;
-
-      // Create welcome post
-      await supabase.from("post").insert({
-        user_id: userId,
-        body: "",
-        is_welcome: true,
-      });
-
-      // Show EULA
-      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-        { text: t('Accept'), onPress: async () => {
-          await supabase
-            .from('profiles')
-            .update({ eula_accepted: true })
-            .eq('id', userId);
-          router.replace('/(auth)/onboarding');
-        } },
-        {
-          text: t('Decline'),
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/(auth)/login');
-          }
-        }
-      ]);
-    } catch (error) {
-      Alert.alert(t("Error"), (error as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleRegister = async () => {
-    // If this is a Google user, use different flow
-    if (isGoogleSignUp) {
-      await handleGoogleProfileSetup();
-      return;
-    }
-
-    // Original email/password registration flow
     if (!username || !displayName) {
       Alert.alert(t("Error"), t("Please fill in all required fields"));
       return;
@@ -184,26 +96,51 @@ export default function RegisterProfileScreen() {
 
     try {
       setLoading(true);
-      await signUp(
-        email!,
-        password!,
+
+      // Use unified signUp for both Google and email/password
+      const userId = await signUp({
+        email: isGoogleSignUp ? undefined : email,
+        password: isGoogleSignUp ? undefined : password,
         username,
         displayName,
         profileMediaId,
-        instagram.replace(/@/g, '')
-      );
-      Alert.alert(
-        t("Registration Successful"),
-        t(
-          "Please check your email to verify your account. After verification, you can log in to continue."
-        ),
-        [
+        instagram: instagram.replace(/@/g, ''),
+        isGoogleUser: isGoogleSignUp,
+      });
+
+      if (isGoogleSignUp) {
+        // Google signup: show EULA then go to onboarding
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+          { text: t('Accept'), onPress: async () => {
+            await supabase
+              .from('profiles')
+              .update({ eula_accepted: true })
+              .eq('id', userId);
+            router.replace('/(auth)/onboarding');
+          }},
           {
-            text: t("OK"),
-            onPress: () => router.replace("/(auth)/login"),
-          },
-        ]
-      );
+            text: t('Decline'),
+            onPress: async () => {
+              await supabase.auth.signOut();
+              router.replace('/(auth)/login');
+            }
+          }
+        ]);
+      } else {
+        // Email/password signup: show verification message
+        Alert.alert(
+          t("Registration Successful"),
+          t(
+            "Please check your email to verify your account. After verification, you can log in to continue."
+          ),
+          [
+            {
+              text: t("OK"),
+              onPress: () => router.replace("/(auth)/login"),
+            },
+          ]
+        );
+      }
     } catch (error) {
       Alert.alert(t("Error"), (error as Error).message);
     } finally {
