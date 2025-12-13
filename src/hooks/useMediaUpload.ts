@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { Alert, Linking, Platform } from 'react-native';
 import { useUploadProgress } from '../contexts/UploadProgressContext';
 import { createProgressManager } from '../utils/progressManager';
 import { selectMediaForPreview, MediaSelectionResult } from '../utils/handleMediaUpload';
@@ -47,9 +48,31 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
       if (result) {
         setSelectedMedia(result);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error selecting media:', error);
-      setUploadMessage(t('Error selecting media'));
+      
+      // Check if it's a permissions error
+      if (error?.message?.includes('permissions not granted')) {
+        Alert.alert(
+          t('Photo Access Required'),
+          t('Please enable photo library access in Settings to share photos and videos.'),
+          [
+            { text: t('Cancel'), style: 'cancel' },
+            { 
+              text: t('Open Settings'), 
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              }
+            },
+          ]
+        );
+      } else {
+        setUploadMessage(t('Error selecting media'));
+      }
     } finally {
       setIsUploading(false);
     }

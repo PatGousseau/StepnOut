@@ -164,4 +164,17 @@ export const translations = {
   "Recently active": "Attivi di recente",
   "Mark as complete": "Segna come completato",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
+  "Share your thoughts...": "Condividi i tuoi pensieri...",
+  "You must be logged in to submit a post.": "Devi essere loggato per pubblicare un post.",
+  "Photo Access Required": "Accesso Foto Richiesto",
+  "Please enable photo library access in Settings to share photos and videos.":
+    "Abilita l'accesso alla libreria foto nelle Impostazioni per condividere foto e video.",
+  "Open Settings": "Apri Impostazioni",
+  "Error selecting media": "Errore nella selezione del media",
+  "Please add either a description or media": "Aggiungi una descrizione o un media",
+  "Please wait for media selection to complete": "Attendi il completamento della selezione del media",
+  "Upload failed": "Caricamento fallito",
+  "Upload completed successfully!": "Caricamento completato con successo!",
+  "Post sent successfully!": "Post inviato con successo!",
+  "Error submitting": "Errore nell'invio",
 };
