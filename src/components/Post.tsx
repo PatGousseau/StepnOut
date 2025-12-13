@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback, useState, useRef } from "react";
 import {
   View,
-  StyleSheet,
   Modal,
   TouchableOpacity,
   Pressable,
@@ -9,7 +8,6 @@ import {
   Platform,
   TouchableWithoutFeedback,
   GestureResponderEvent,
-  Alert,
   Share,
   ViewStyle,
   TextStyle,
@@ -25,11 +23,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { User, UserProfile } from "../models/User";
 import { useFetchComments } from "../hooks/useFetchComments";
 import { router } from "expo-router";
-import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 import { Post as PostType } from "../types";
-import { postService } from "../services/postService";
 import { useLanguage } from "../contexts/LanguageContext";
-import { supabase } from "../lib/supabase";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
