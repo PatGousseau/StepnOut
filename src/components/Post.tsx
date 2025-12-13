@@ -62,6 +62,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     loading: commentsLoading,
     fetchComments,
     error: commentsError,
+    addComment: addCommentMutation,
+    isAddingComment,
   } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -438,6 +440,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 postId={post.id}
                 postUserId={postUser.id}
                 onCommentAdded={handleCommentAdded}
+                addComment={addCommentMutation}
+                isAddingComment={isAddingComment}
               />
             </KeyboardAvoidingView>
           </View>

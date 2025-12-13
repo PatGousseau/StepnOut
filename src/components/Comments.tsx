@@ -22,7 +22,6 @@ import { colors } from "../constants/Colors";
 import { useAuth } from "../contexts/AuthContext";
 import { User } from "../models/User";
 import { sendCommentNotification } from "../lib/notificationsService";
-import { supabase } from "../lib/supabase";
 import { router } from "expo-router";
 import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -40,6 +39,8 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
+  addComment: (userId: string, body: string) => Promise<CommentType | null>;
+  isAddingComment?: boolean;
 }
 
 interface CommentsListProps {
@@ -50,6 +51,8 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
+  addComment: (userId: string, body: string) => Promise<CommentType | null>;
+  isAddingComment?: boolean;
 }
 
 const CommentsContext = React.createContext<{ onClose?: () => void }>({});
@@ -62,6 +65,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   postId,
   postUserId,
   onCommentAdded,
+  addComment,
+  isAddingComment = false,
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -83,34 +88,18 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       const commentText = newComment.trim();
 
       try {
-        const { data: savedComment, error } = await supabase
-          .from("comments")
-          .insert({
-            user_id: user.id,
-            post_id: postId,
-            body: commentText,
-          })
-          .select("*")
-          .single();
+        // Use the mutation from useFetchComments hook
+        const newCommentData = await addComment(user.id, commentText);
 
-        if (error) throw error;
-
-        if (savedComment) {
-          setComments((prevComments) => [
-            ...prevComments,
-            {
-              id: savedComment.id,
-              text: savedComment.body,
-              userId: savedComment.user_id,
-              post_id: postId,
-              created_at: savedComment.created_at,
-              likes_count: 0,
-              liked: false,
-            },
-          ]);
-
+        if (newCommentData) {
+          // Clear input immediately for better UX
           setNewComment("");
 
+          // Update local state for immediate UI feedback
+          // (React Query already does optimistic update, but this ensures local state is in sync)
+          setComments((prevComments) => [...prevComments, newCommentData]);
+
+          // Send notification if needed
           if (user.id !== postUserId) {
             try {
               await sendCommentNotification(
@@ -119,7 +108,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 postUserId,
                 postId.toString(),
                 commentText,
-                savedComment.id.toString(),
+                newCommentData.id.toString(),
                 {
                   title: t("(username) commented"),
                   body: t("Check it out now."),
@@ -130,14 +119,12 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             }
           }
 
+          // Notify parent component about comment count change
           onCommentAdded?.(1);
-
-          // Invalidate queries to refresh data
-          queryClient.invalidateQueries({ queryKey: ["home-posts"] }); // Refresh comment counts on home page
-          queryClient.invalidateQueries({ queryKey: ["comments", postId] }); // Refresh comments list
         }
       } catch (error) {
         console.error("Error adding comment:", error);
+        // Optionally show error to user
       }
     }
   };
@@ -204,12 +191,14 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             onPress={handleAddComment}
             style={({ pressed }) => [
               postButtonStyle,
-              !user && postButtonDisabledStyle,
+              (!user || isAddingComment) && postButtonDisabledStyle,
               pressed && postButtonPressedStyle,
             ]}
-            disabled={!user}
+            disabled={!user || isAddingComment}
           >
-            <Text style={postButtonTextStyle}>{t("Post")}</Text>
+            <Text style={postButtonTextStyle}>
+              {isAddingComment ? t("Posting...") : t("Post")}
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -224,6 +213,8 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   postId,
   postUserId,
   onCommentAdded,
+  addComment,
+  isAddingComment,
 }) => {
   const [comments, setComments] = useState(initialComments);
   const flatListRef = useRef<FlatList>(null);
@@ -290,6 +281,8 @@ export const CommentsModal: React.FC<CommentsProps> = ({
             postId={postId}
             postUserId={postUserId}
             onCommentAdded={onCommentAdded}
+            addComment={addComment}
+            isAddingComment={isAddingComment}
           />
         </SafeAreaView>
       </Animated.View>
