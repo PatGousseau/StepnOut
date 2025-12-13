@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
         paddingBottom: 0,
         paddingTop: 0,
         flex: 0,
-        height: '70%',
+        height: '65%',
       }}
       titleStyles={{
         marginTop: 10,
