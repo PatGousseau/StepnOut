@@ -132,8 +132,9 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
           onCommentAdded?.(1);
 
-          // Invalidate posts query to refresh comment counts on home page
-          queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ["home-posts"] }); // Refresh comment counts on home page
+          queryClient.invalidateQueries({ queryKey: ["comments", postId] }); // Refresh comments list
         }
       } catch (error) {
         console.error("Error adding comment:", error);
@@ -146,8 +147,9 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       const newComments = prevComments.filter((comment) => comment.id !== commentId);
       onCommentAdded?.(-1);
       
-      // Invalidate posts query to refresh comment counts on home page
-      queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["home-posts"] }); // Refresh comment counts on home page
+      queryClient.invalidateQueries({ queryKey: ["comments", postId] }); // Refresh comments list
       
       return newComments;
     });

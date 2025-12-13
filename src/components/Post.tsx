@@ -61,6 +61,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     comments: commentList,
     loading: commentsLoading,
     fetchComments,
+    error: commentsError,
   } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -197,6 +198,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleOpenComments = () => {
     setShowComments(true);
+    // React Query automatically fetches comments, but we can refetch to ensure fresh data
     fetchComments();
   };
 
