@@ -17,11 +17,13 @@ import { supabase } from "../../lib/supabase";
 import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
+import { EULA_IT, EULA } from "../../constants/EULA";
 
 export default function RegisterProfileScreen() {
-  const { email, password } = useLocalSearchParams<{
-    email: string;
-    password: string;
+  const { email, password, isGoogleUser } = useLocalSearchParams<{
+    email?: string;
+    password?: string;
+    isGoogleUser?: string;
   }>();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -31,7 +33,9 @@ export default function RegisterProfileScreen() {
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [instagram, setInstagram] = useState('');
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  const isGoogleSignUp = isGoogleUser === 'true';
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -92,26 +96,51 @@ export default function RegisterProfileScreen() {
 
     try {
       setLoading(true);
-      await signUp(
-        email!,
-        password!,
+
+      // Use unified signUp for both Google and email/password
+      const userId = await signUp({
+        email: isGoogleSignUp ? undefined : email,
+        password: isGoogleSignUp ? undefined : password,
         username,
         displayName,
         profileMediaId,
-        instagram.replace(/@/g, '')
-      );
-      Alert.alert(
-        t("Registration Successful"),
-        t(
-          "Please check your email to verify your account. After verification, you can log in to continue."
-        ),
-        [
+        instagram: instagram.replace(/@/g, ''),
+        isGoogleUser: isGoogleSignUp,
+      });
+
+      if (isGoogleSignUp) {
+        // Google signup: show EULA then go to onboarding
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+          { text: t('Accept'), onPress: async () => {
+            await supabase
+              .from('profiles')
+              .update({ eula_accepted: true })
+              .eq('id', userId);
+            router.replace('/(auth)/onboarding');
+          }},
           {
-            text: t("OK"),
-            onPress: () => router.replace("/(auth)/login"),
-          },
-        ]
-      );
+            text: t('Decline'),
+            onPress: async () => {
+              await supabase.auth.signOut();
+              router.replace('/(auth)/login');
+            }
+          }
+        ]);
+      } else {
+        // Email/password signup: show verification message
+        Alert.alert(
+          t("Registration Successful"),
+          t(
+            "Please check your email to verify your account. After verification, you can log in to continue."
+          ),
+          [
+            {
+              text: t("OK"),
+              onPress: () => router.replace("/(auth)/login"),
+            },
+          ]
+        );
+      }
     } catch (error) {
       Alert.alert(t("Error"), (error as Error).message);
     } finally {
@@ -131,6 +160,9 @@ export default function RegisterProfileScreen() {
             style={styles.logo}
           />
           <Text style={styles.stepnOut}>{t("Stepn Out")}</Text>
+          {isGoogleSignUp && (
+            <Text style={styles.subtitle}>{t("Complete your profile")}</Text>
+          )}
         </View>
 
         <View style={styles.profileSection}>
@@ -191,7 +223,11 @@ export default function RegisterProfileScreen() {
           disabled={loading || imageUploading}
         >
           <Text style={styles.buttonText}>
-            {loading ? t("Creating Account...") : t("Complete Registration")}
+            {loading 
+              ? t("Creating Account...") 
+              : isGoogleSignUp 
+                ? t("Complete Setup")
+                : t("Complete Registration")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -277,5 +313,10 @@ const styles = StyleSheet.create({
     color: colors.light.primary,
     fontFamily: "PingFangSC-Medium",
     fontSize: 24,
+  },
+  subtitle: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    marginTop: 8,
   },
 });

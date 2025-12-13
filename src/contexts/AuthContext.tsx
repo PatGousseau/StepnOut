@@ -2,19 +2,26 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, initializeSupabase } from "../lib/supabase";
 
+type SignUpOptions = {
+  // Required for email/password signup, not needed for Google
+  email?: string;
+  password?: string;
+  // Required for all signups
+  username: string;
+  displayName: string;
+  // Optional for all signups
+  profileMediaId?: number | null;
+  instagram?: string;
+  // Flag to indicate Google signup
+  isGoogleUser?: boolean;
+};
+
 type AuthContextType = {
   session: Session | null;
   user: Session["user"] | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (
-    email: string,
-    password: string,
-    username: string,
-    displayName: string,
-    profileMediaId?: number | null,
-    instagram?: string
-  ) => Promise<void>;
+  signUp: (options: SignUpOptions) => Promise<string>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -69,20 +76,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const signUp = async (
-    email: string,
-    password: string,
-    username: string,
-    displayName: string,
-    profileMediaId?: number | null,
-    instagram?: string
-  ) => {
-    // Check if username is already taken
-    const { data: existingUser, error: checkError } = await supabase
+  // Helper: Check if username is taken
+  const checkUsernameAvailable = async (username: string, excludeUserId?: string) => {
+    let query = supabase
       .from("profiles")
       .select("username")
-      .eq("username", username)
-      .single();
+      .eq("username", username);
+    
+    if (excludeUserId) {
+      query = query.neq("id", excludeUserId);
+    }
+
+    const { data: existingUser, error: checkError } = await query.single();
 
     if (checkError && checkError.code !== "PGRST116") {
       throw checkError;
@@ -91,48 +96,98 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (existingUser) {
       throw new Error("Username is already taken");
     }
+  };
 
-    // Sign up the user
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-          display_name: displayName,
-        },
-      },
-    });
-
-    if (error) throw error;
-    if (!user) throw new Error("No user returned after signup");
-
-    const updates: any = {};
-    if (profileMediaId) updates.profile_media_id = profileMediaId;
-    if (instagram) updates.instagram = instagram;
-
-    // If a profile picture or instgram link was uploaded, update the profile
-    if (profileMediaId || instagram) {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          ...updates,
-          instagram: instagram || null, // Explicitly set even if empty
-        })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-    }
-
-    // create a welcome post in the discussion feed
+  // Helper: Create welcome post
+  const createWelcomePost = async (userId: string) => {
     await supabase.from("post").insert({
-      user_id: user.id,
+      user_id: userId,
       body: "",
       is_welcome: true,
     });
+  };
+
+  // Unified signup function for both email/password and Google users
+  const signUp = async (options: SignUpOptions): Promise<string> => {
+    const { email, password, username, displayName, profileMediaId, instagram, isGoogleUser } = options;
+
+    let userId: string;
+
+    if (isGoogleUser) {
+      // Google signup: user already authenticated, just need to complete profile
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error("No active session");
+      }
+      userId = session.user.id;
+
+      // Check username availability (excluding current user since profile exists)
+      await checkUsernameAvailable(username, userId);
+    } else {
+      // Email/password signup: need to create auth user first
+      if (!email || !password) {
+        throw new Error("Email and password are required");
+      }
+
+      // Check username availability (no exclusion since user doesn't exist yet)
+      await checkUsernameAvailable(username);
+
+      // Create auth user (triggers DB to create profile with username/displayName from metadata)
+      const { data: { user }, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username,
+            display_name: displayName,
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (!user) throw new Error("No user returned after signup");
+      userId = user.id;
+    }
+
+    // Build profile updates
+    const updates: Record<string, any> = {};
+
+    // Google users need username/displayName set explicitly (not from DB trigger)
+    if (isGoogleUser) {
+      updates.id = userId; // Required for upsert
+      updates.username = username;
+      updates.name = displayName;
+      updates.first_login = true;
+    }
+
+    // Both flows can have optional profile picture and instagram
+    if (profileMediaId) updates.profile_media_id = profileMediaId;
+    if (instagram) updates.instagram = instagram;
+
+    // Update profile if there's anything to update
+    if (Object.keys(updates).length > 0) {
+      if (isGoogleUser) {
+        // Use upsert for Google users to ensure profile exists
+        const { error: upsertError } = await supabase
+          .from("profiles")
+          .upsert(updates, { onConflict: 'id' });
+
+        if (upsertError) throw upsertError;
+      } else {
+        // Regular update for email/password users (profile already created by DB trigger)
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update(updates)
+          .eq("id", userId);
+
+        if (updateError) throw updateError;
+      }
+    }
+
+    // Create welcome post
+    await createWelcomePost(userId);
+
+    return userId;
   };
 
   const signIn = async (email: string, password: string) => {
