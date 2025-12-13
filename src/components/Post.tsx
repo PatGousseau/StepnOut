@@ -126,14 +126,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     return source.match(/\.(mp4|mov|avi|wmv)$/i);
   };
 
-  const handleMediaPress = () => {
-    if (post.media?.file_path && isVideo(post.media.file_path)) {
-      return;
-    }
-
-    setShowFullScreenImage(true);
-  };
-
   const showHeartAnimation = () => {
     // Reset animation values
     heartScale.setValue(0);
@@ -192,11 +184,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       // First tap - wait for potential second tap
       lastTapTime.current = now;
       singleTapTimer.current = setTimeout(() => {
-        // Single tap - open fullscreen/modal
-        if (post.media?.file_path && isVideo(post.media.file_path)) {
-          setShowVideoModal(true);
-        } else {
-          setShowFullScreenImage(true);
+        // Single tap - open fullscreen/modal only if there's media
+        if (post.media?.file_path) {
+          if (isVideo(post.media.file_path)) {
+            setShowVideoModal(true);
+          } else {
+            setShowFullScreenImage(true);
+          }
         }
         lastTapTime.current = 0;
         singleTapTimer.current = null;
