@@ -28,6 +28,7 @@ const Home = () => {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"discussion" | "submissions">("submissions");
+  const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // tab indicator and content positions
@@ -92,6 +93,7 @@ const Home = () => {
     try {
       // Refetch posts using React Query
       await refetchPosts();
+      setPromptRefreshKey((prev) => prev + 1);
     } finally {
       setRefreshing(false);
     }
@@ -105,6 +107,7 @@ const Home = () => {
   const handlePostCreated = useCallback(() => {
     // Refresh the posts list when a new post is created
     refetchPosts();
+    setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
   // Memoize filtered posts
@@ -256,7 +259,7 @@ const Home = () => {
           </View>
           {/* Discussion tab content */}
           <View style={{ width: "50%", padding: 16 }}>
-            <InlineCreatePost onPostCreated={handlePostCreated} />
+            <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
             {filteredPosts.map((post, index) => {
               const postUser = userMap[post.user_id] as User;
               // Guard: don't render Post if user not loaded yet (prevents crash)

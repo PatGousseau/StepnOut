@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   TextInput,
@@ -19,14 +19,36 @@ import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import ImageViewer from "react-native-image-zoom-viewer";
 
+const POST_PROMPT_KEYS = [
+  "What made you step outside your comfort zone today?",
+  "Share a small win from pushing your boundaries...",
+  "What's something you've been avoiding but want to try?",
+  "Describe a moment you surprised yourself recently...",
+  "Share a lesson from a time you felt uncomfortable...",
+  "What would you do if fear wasn't holding you back?",
+  "Tell us about an unexpected conversation you had...",
+  "What's one thing that scared you but was worth it?",
+  "Reflect on a time you grew from discomfort...",
+];
+
 interface InlineCreatePostProps {
   onPostCreated?: () => void;
+  refreshKey?: number;
 }
 
-const InlineCreatePost = ({ onPostCreated }: InlineCreatePostProps) => {
+const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostProps) => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState("");
+  
+  // Pick a random prompt when refreshKey changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const placeholderKey = useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * POST_PROMPT_KEYS.length);
+    return POST_PROMPT_KEYS[randomIndex];
+  }, [refreshKey]);
+  
+  const placeholder = t(placeholderKey);
   const [isFocused, setIsFocused] = useState(false);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
 
@@ -123,7 +145,7 @@ const InlineCreatePost = ({ onPostCreated }: InlineCreatePostProps) => {
       <View style={inputRowStyle}>
         <TextInput
           style={[textInputStyle, isFocused && textInputFocusedStyle]}
-          placeholder={t("Share your thoughts...")}
+          placeholder={placeholder}
           placeholderTextColor={colors.light.lightText}
           value={inputText}
           onChangeText={handleTextChange}

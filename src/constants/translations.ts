@@ -177,4 +177,23 @@ export const translations = {
   "Upload completed successfully!": "Caricamento completato con successo!",
   "Post sent successfully!": "Post inviato con successo!",
   "Error submitting": "Errore nell'invio",
+  // Post prompts
+  "What made you step outside your comfort zone today?":
+    "Cosa ti ha fatto uscire dalla tua zona di comfort oggi?",
+  "Share a small win from pushing your boundaries...":
+    "Condividi una piccola vittoria nel superare i tuoi limiti...",
+  "What's something you've been avoiding but want to try?":
+    "C'è qualcosa che stai evitando ma vorresti provare?",
+  "Describe a moment you surprised yourself recently...":
+    "Descrivi un momento in cui ti sei sorpreso di recente...",
+  "Share a lesson from a time you felt uncomfortable...":
+    "Condividi una lezione da un momento di disagio...",
+  "What would you do if fear wasn't holding you back?":
+    "Cosa faresti se la paura non ti trattenesse?",
+  "Tell us about an unexpected conversation you had...":
+    "Raccontaci di una conversazione inaspettata che hai avuto...",
+  "What's one thing that scared you but was worth it?":
+    "Qual è una cosa che ti ha spaventato ma ne è valsa la pena?",
+  "Reflect on a time you grew from discomfort...":
+    "Rifletti su un momento in cui sei cresciuto dal disagio...",
 };
