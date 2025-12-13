@@ -24,7 +24,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const challengeId = id ?? (params.id ? parseInt(String(params.id)) : undefined);
   
   const [refreshing, setRefreshing] = useState(false);
-  const { posts, loading: postsLoading, fetchAllData } = useFetchHomeData();
+  const { posts, loading: postsLoading, refetchPosts } = useFetchHomeData();
 
   // Filter posts for this challenge
   const challengePosts = posts.filter((post) => post.challenge_id === challengeId);
@@ -49,9 +49,9 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), fetchAllData()]);
+    await Promise.all([refetch(), refetchPosts()]);
     setRefreshing(false);
-  }, [refetch, fetchAllData]);
+  }, [refetch, refetchPosts]);
 
   // Loading state
   if (isLoading) {

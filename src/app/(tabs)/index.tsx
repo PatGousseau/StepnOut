@@ -22,7 +22,7 @@ import { useLanguage } from "../../contexts/LanguageContext";
 
 const Home = () => {
   const { t } = useLanguage();
-  const { posts, userMap, loading, fetchAllData, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
+  const { posts, userMap, loading, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
     {}
   );
