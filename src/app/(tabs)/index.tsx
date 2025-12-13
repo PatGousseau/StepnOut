@@ -22,7 +22,7 @@ import { useLanguage } from "../../contexts/LanguageContext";
 
 const Home = () => {
   const { t } = useLanguage();
-  const { posts, userMap, loading, fetchAllData, loadMorePosts, hasMore } = useFetchHomeData();
+  const { posts, userMap, loading, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
     {}
   );
@@ -84,26 +84,28 @@ const Home = () => {
     setPostCounts(counts);
   }, [posts]);
 
-  // Initial fetch when component mounts
-  useEffect(() => {
-    fetchAllData();
-  }, []);
+  // Note: React Query handles initial fetch automatically, no need for useEffect
+  // The useInfiniteQuery in useFetchHomeData will fetch on mount
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchAllData();
-    setRefreshing(false);
-  }, [fetchAllData]);
+    try {
+      // Refetch posts using React Query
+      await refetchPosts();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchPosts]);
 
   const handlePostDeleted = useCallback(() => {
-    // Refresh the posts list
-    fetchAllData();
-  }, [fetchAllData]);
+    // Refresh the posts list using React Query
+    refetchPosts();
+  }, [refetchPosts]);
 
   const handlePostCreated = useCallback(() => {
     // Refresh the posts list when a new post is created
-    fetchAllData();
-  }, [fetchAllData]);
+    refetchPosts();
+  }, [refetchPosts]);
 
   // Memoize filtered posts
   const filteredPosts = useMemo(() => {
@@ -238,6 +240,8 @@ const Home = () => {
           <View style={{ width: "50%", padding: 16 }}>
             {filteredPosts.map((post, index) => {
               const postUser = userMap[post.user_id] as User;
+              // Guard: don't render Post if user not loaded yet (prevents crash)
+              if (!postUser) return null;
               return (
                 <Post
                   key={`${post.id}-${index}`}
@@ -252,6 +256,8 @@ const Home = () => {
           <View style={{ width: "50%", padding: 16 }}>
             {filteredPosts.map((post, index) => {
               const postUser = userMap[post.user_id] as User;
+              // Guard: don't render Post if user not loaded yet (prevents crash)
+              if (!postUser) return null;
               return (
                 <Post
                   key={`${post.id}-${index}`}
@@ -265,7 +271,11 @@ const Home = () => {
           </View>
         </Animated.View>
 
-        {loading && <Loader />}
+        {(loading || isFetchingNextPage) && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Loader />
+          </View>
+        )}
       </ScrollView>
 
       {activeTab === "discussion" && (

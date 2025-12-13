@@ -22,7 +22,7 @@ import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { Image } from "expo-image";
 import { useAuth } from "../contexts/AuthContext";
-import { User } from "../models/User";
+import { User, UserProfile } from "../models/User";
 import { useFetchComments } from "../hooks/useFetchComments";
 import { router } from "expo-router";
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
@@ -42,7 +42,7 @@ import { ActionsMenu } from "./ActionsMenu";
 
 interface PostProps {
   post: PostType;
-  postUser: User;
+  postUser: User | UserProfile;
   setPostCounts?: React.Dispatch<
     React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>
   >;
@@ -61,6 +61,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     comments: commentList,
     loading: commentsLoading,
     fetchComments,
+    error: commentsError,
+    addComment: addCommentMutation,
+    isAddingComment,
   } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -145,6 +148,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           useNativeDriver: true,
         }),
         Animated.timing(heartScale, {
+          toValue: 1.0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.delay(1000),
+        Animated.timing(heartScale, {
           toValue: 0,
           duration: 200,
           useNativeDriver: true,
@@ -156,7 +165,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           duration: 100,
           useNativeDriver: true,
         }),
-        Animated.delay(600),
+        Animated.delay(1000),
         Animated.timing(heartOpacity, {
           toValue: 0,
           duration: 200,
@@ -197,6 +206,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleOpenComments = () => {
     setShowComments(true);
+    // React Query automatically fetches comments, but we can refetch to ensure fresh data
     fetchComments();
   };
 
@@ -430,6 +440,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 postId={post.id}
                 postUserId={postUser.id}
                 onCommentAdded={handleCommentAdded}
+                addComment={addCommentMutation}
+                isAddingComment={isAddingComment}
               />
             </KeyboardAvoidingView>
           </View>

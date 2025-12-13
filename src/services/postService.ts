@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { sendLikeNotification } from "../lib/notificationsService";
-import { LikeableItem } from "../types";
+import { LikeableItem, Post } from "../types";
 
 export const postService = {
   async fetchLikes(ids: number[], type: LikeableItem["type"], userId?: string) {
@@ -209,4 +209,99 @@ export const postService = {
 
   fetchCommentLikesCounts: (commentIds: number[]) =>
     postService.fetchItemLikesCounts(commentIds, "comment"),
+
+  async fetchHomePosts(
+    pageParam: number,
+    blockedUserIds: string[],
+    postsPerPage: number = 20
+  ): Promise<{ posts: Post[]; hasMore: boolean }> {
+    try {
+      // Query for challenge posts
+      let challengeQuery = supabase
+        .from("post")
+        .select(
+          `
+          *,
+          challenges!inner (
+            title
+          ),
+          media (
+            file_path,
+            upload_status
+          ),
+          likes:likes(count)
+        `
+        )
+        .not("challenge_id", "is", null)
+        .not("media.upload_status", "in", '("failed","pending")')
+        .order("created_at", { ascending: false });
+
+      // Query for discussion posts
+      let discussionQuery = supabase
+        .from("post")
+        .select(
+          `
+          *,
+          media (
+            file_path,
+            upload_status
+          ),
+          likes:likes(count)
+        `
+        )
+        .is("challenge_id", null)
+        .not("media.upload_status", "in", '("failed","pending")')
+        .order("created_at", { ascending: false });
+
+      // Add blocked users filter if needed (quote UUIDs)
+      if (blockedUserIds.length > 0) {
+        const quotedList = `(${blockedUserIds.map((id) => `"${id}"`).join(",")})`;
+        challengeQuery = challengeQuery.not("user_id", "in", quotedList);
+        discussionQuery = discussionQuery.not("user_id", "in", quotedList);
+      }
+
+      // Add pagination (offset-based)
+      const start = (pageParam - 1) * postsPerPage;
+      const end = pageParam * postsPerPage - 1;
+      challengeQuery = challengeQuery.range(start, end);
+      discussionQuery = discussionQuery.range(start, end);
+
+      // Execute both queries
+      const [challengeResponse, discussionResponse] = await Promise.all([
+        challengeQuery,
+        discussionQuery,
+      ]);
+
+      if (challengeResponse.error) throw challengeResponse.error;
+      if (discussionResponse.error) throw discussionResponse.error;
+
+      // Process challenge posts (attach title)
+      const challengePosts = (challengeResponse.data ?? []).map((post: any) => ({
+        ...post,
+        challenge_title: post.challenges?.title,
+      }));
+
+      // Process discussion posts
+      const discussionPosts = discussionResponse.data ?? [];
+
+      // Combine & enforce global ordering (newest first)
+      const postData = [...challengePosts, ...discussionPosts].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      // true if EITHER bucket filled its page
+      const hasMore =
+        challengePosts.length === postsPerPage ||
+        discussionPosts.length === postsPerPage;
+
+      return {
+        posts: postData as Post[],
+        hasMore,
+      };
+    } catch (error) {
+      console.error("Error fetching home posts:", error);
+      throw error; // Re-throw for React Query to handle
+    }
+  },
 };

@@ -1,7 +1,8 @@
 import { supabase } from "../lib/supabase";
 import { selectMediaForPreview, uploadMediaInBackground } from "../utils/handleMediaUpload";
 import { Alert } from "react-native";
-import { User } from "../models/User";
+import { User, UserProfile } from "../models/User";
+import { imageService } from "./imageService";
 
 export const profileService = {
   async updateProfilePicture(
@@ -218,6 +219,65 @@ export const profileService = {
     } catch (error) {
       console.error("Error loading user profile:", error);
       return null;
+    }
+  },
+
+  async fetchProfileById(userId: string): Promise<UserProfile | null> {
+    if (!userId) {
+      throw new Error("User ID is required");
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          `
+          id,
+          username,
+          name,
+          created_at,
+          instagram,
+          profile_media:media!profiles_profile_media_id_fkey (
+            file_path
+          )
+        `
+        )
+        .eq("id", userId)
+        .single();
+
+      if (error) throw error;
+
+      if (!data) {
+        return null;
+      }
+
+      let profileImageUrl = null;
+
+      // Handle profile_media - it can be an object or array from Supabase
+      const profileMedia = Array.isArray(data.profile_media) 
+        ? data.profile_media[0] 
+        : data.profile_media;
+
+      if (profileMedia?.file_path) {
+        try {
+          const urls = await imageService.getProfileImageUrl(profileMedia.file_path);
+          profileImageUrl = urls.fullUrl;
+        } catch (error) {
+          console.error("Error transforming profile image:", error);
+        }
+      }
+
+      return {
+        id: data.id,
+        username: data.username || "Unknown",
+        name: data.name || "Unknown",
+        profileImageUrl,
+        created_at: data.created_at,
+        instagram: data.instagram || undefined,
+      };
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      throw error; // Re-throw for React Query to handle
     }
   },
 };

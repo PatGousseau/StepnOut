@@ -20,12 +20,13 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
 import { colors } from "../constants/Colors";
 import { Loader } from "./Loader";
-import { User } from "../models/User";
 import { profileService } from "../services/profileService";
+import { UserProfile } from "../models/User";
 import { useLanguage } from "../contexts/LanguageContext";
 import { ProfileActions } from "./ActionsMenu";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { imageService } from "../services/imageService";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type ProfilePageProps = {
   userId: string;
@@ -34,6 +35,7 @@ type ProfilePageProps = {
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const {
     data,
     loading: progressLoading,
@@ -51,33 +53,39 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [editedName, setEditedName] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
   const [editedInstagram, setEditedInstagram] = useState("");
-  const [userProfile, setUserProfile] = useState<User | null>(null);
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
 
   // for features that are only available to the user themselves
   const isOwnProfile = userId ? userId === user?.id : true;
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const targetUserId = userId || user?.id;
-      if (!targetUserId) return;
+  // Get target user ID (from prop or current user)
+  const targetUserId = userId || user?.id;
 
-      const profile = await profileService.loadUserProfile(targetUserId);
-      if (profile) {
-        setUserProfile(profile);
+  // Use React Query to fetch profile data
+  const {
+    data: userProfile,
+    isLoading: profileLoading,
+    error: profileError,
+    refetch: refetchProfile,
+  } = useQuery({
+    queryKey: ["profile", targetUserId],
+    queryFn: () => {
+      if (!targetUserId) {
+        throw new Error("Invalid user ID");
       }
-    };
-
-    loadUser();
-  }, [userId, user?.id]);
+      return profileService.fetchProfileById(targetUserId);
+    },
+    enabled: !!targetUserId,
+    staleTime: 30000,
+  });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setPage(1);
-    await fetchUserPosts(1);
+    await Promise.all([refetchProfile(), fetchUserPosts(1)]);
     setRefreshing(false);
-  }, [fetchUserPosts]);
+  }, [fetchUserPosts, refetchProfile]);
 
   const handleUpdateProfilePicture = async () => {
     try {
@@ -85,25 +93,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       const result = await profileService.updateProfilePicture(user?.id!);
 
       if (result.success) {
-        if (result.previewUrl && userProfile) {
-          // Immediately show the new image while background upload finishes
-          userProfile.profileImageUrl = result.previewUrl;
-          const clonedUser = Object.assign(
-            Object.create(Object.getPrototypeOf(userProfile)),
-            userProfile
-          ) as User;
-          setUserProfile(clonedUser);
+        // Optimistically update with preview URL if available
+        if (result.previewUrl && userProfile && targetUserId) {
+          queryClient.setQueryData<UserProfile>(["profile", targetUserId], (old) => {
+            if (!old) return old;
+            return {
+              ...old,
+              profileImageUrl: result.previewUrl || old.profileImageUrl,
+            };
+          });
         }
 
-        if (user?.id) {
-          // Force reload to bypass cached user data
-          const refreshedProfile = await profileService.loadUserProfile(user.id, true);
-          if (refreshedProfile) {
-            if (!refreshedProfile.profileImageUrl && result.previewUrl) {
-              refreshedProfile.profileImageUrl = result.previewUrl;
-            }
-            setUserProfile(refreshedProfile);
-          }
+        // Invalidate query to refetch fresh data
+        if (targetUserId) {
+          queryClient.invalidateQueries({ queryKey: ["profile", targetUserId] });
         }
       } else if (result.error) {
         Alert.alert("Error", result.error);
@@ -122,9 +125,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       });
 
       if (result.success) {
-        userProfile!.username = editedUsername;
-        userProfile!.name = editedName;
-        userProfile!.instagram = editedInstagram;
+        // Invalidate query to refetch fresh data
+        if (targetUserId) {
+          queryClient.invalidateQueries({ queryKey: ["profile", targetUserId] });
+        }
         setIsEditing(false);
       } else if (result.error) {
         Alert.alert("Error", result.error);
@@ -188,7 +192,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   }, [showFullImage, loadFullResImage]);
 
-  if (progressLoading || !userProfile) {
+  if (progressLoading || profileLoading || !userProfile) {
     return (
       <View style={[styles.container]}>
         <Loader />
@@ -196,10 +200,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     );
   }
 
-  if (error) {
+  if (error || profileError) {
     return (
       <Text>
-        {t("Error")}: {error}
+        {t("Error")}: {error || (profileError as Error)?.message || "Failed to load profile"}
       </Text>
     );
   }

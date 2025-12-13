@@ -1,7 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { imageService } from "../services/imageService";
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   username: string;
   name: string;
