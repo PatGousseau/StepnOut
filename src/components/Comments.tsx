@@ -15,6 +15,7 @@ import {
   Dimensions,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
@@ -65,6 +66,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { initializeCommentLikes } = useLikes();
+  const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState(initialComments);
 
@@ -129,6 +131,9 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           }
 
           onCommentAdded?.(1);
+
+          // Invalidate posts query to refresh comment counts on home page
+          queryClient.invalidateQueries({ queryKey: ["home-posts"] });
         }
       } catch (error) {
         console.error("Error adding comment:", error);
@@ -140,6 +145,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     setComments((prevComments) => {
       const newComments = prevComments.filter((comment) => comment.id !== commentId);
       onCommentAdded?.(-1);
+      
+      // Invalidate posts query to refresh comment counts on home page
+      queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+      
       return newComments;
     });
   };
