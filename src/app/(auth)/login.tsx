@@ -215,9 +215,8 @@ export default function LoginScreen() {
           disabled={!request || googleLoading}
         >
           <Image 
-            source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }} 
+            source={require('../../assets/images/google.png')}
             style={styles.googleIcon}
-            defaultSource={require('../../assets/images/logo.png')}
           />
           <Text style={styles.googleButtonText}>
             {googleLoading ? t('Signing in...') : t('Continue with Google')}
