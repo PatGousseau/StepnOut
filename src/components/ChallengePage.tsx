@@ -7,7 +7,6 @@ import { ChallengeCard } from "./Challenge";
 import { PatrizioExample } from "./Challenge";
 import { ShareExperience } from "./Challenge";
 import { useLanguage } from "../contexts/LanguageContext";
-import { useFetchHomeData } from "../hooks/useFetchHomeData";
 import { Loader } from "./Loader";
 import { useQuery } from "@tanstack/react-query";
 import { challengeService } from "../services/challengeService";
@@ -24,10 +23,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const challengeId = id ?? (params.id ? parseInt(String(params.id)) : undefined);
   
   const [refreshing, setRefreshing] = useState(false);
-  const { posts, loading: postsLoading, refetchPosts } = useFetchHomeData();
-
-  // Filter posts for this challenge
-  const challengePosts = posts.filter((post) => post.challenge_id === challengeId);
 
   // Use React Query to fetch challenge data
   const {
@@ -49,9 +44,9 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([refetch(), refetchPosts()]);
+    await refetch();
     setRefreshing(false);
-  }, [refetch, refetchPosts]);
+  }, [refetch]);
 
   // Loading state
   if (isLoading) {
@@ -110,43 +105,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
         />
         {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
       </View>
-
-      {/* Challenge Submissions Section */}
-      {/* <View style={styles.submissionsContainer}>
-        <TouchableOpacity 
-          onPress={() => setIsSubmissionsExpanded(!isSubmissionsExpanded)}
-          style={styles.submissionsHeader}
-        >
-          <View style={styles.submissionsTitleContainer}>
-            <Text style={styles.submissionsTitle}>{t('Submissions')}</Text>
-            <MaterialIcons 
-              name={isSubmissionsExpanded ? "keyboard-arrow-down" : "keyboard-arrow-right"} 
-              size={24} 
-              color={colors.light.text} 
-            />
-          </View>
-        </TouchableOpacity>
-        
-        {isSubmissionsExpanded && (
-          <>
-            {challengePosts.map(post => {
-              const postUser = userMap[post.user_id] as User;
-              return (
-                <Post
-                  key={post.id}
-                  post={post}
-                  postUser={postUser}
-                  setPostCounts={setPostCounts}
-                  onPostDeleted={handlePostDeleted}
-                />
-              );
-            })}
-            {challengePosts.length === 0 && (
-              <Text style={styles.noSubmissions}>{t('No submissions yet')}</Text>
-            )}
-          </>
-        )}
-      </View> */}
     </ScrollView>
   );
 };
@@ -172,28 +130,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 20,
     textAlign: "center",
-  },
-  noSubmissions: {
-    color: colors.light.lightText,
-    marginTop: 20,
-    textAlign: "center",
-  },
-  submissionsContainer: {
-    marginTop: 20,
-    padding: 16,
-  },
-  submissionsHeader: {
-    marginBottom: 16,
-  },
-  submissionsTitle: {
-    color: colors.light.text,
-    fontSize: 20,
-    fontWeight: "bold",
-    marginRight: 4,
-  },
-  submissionsTitleContainer: {
-    alignItems: "center",
-    flexDirection: "row",
   },
   title: {
     color: colors.light.primary,
