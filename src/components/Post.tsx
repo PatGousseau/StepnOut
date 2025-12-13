@@ -22,7 +22,7 @@ import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { Image } from "expo-image";
 import { useAuth } from "../contexts/AuthContext";
-import { User } from "../models/User";
+import { User, UserProfile } from "../models/User";
 import { useFetchComments } from "../hooks/useFetchComments";
 import { router } from "expo-router";
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
@@ -42,7 +42,7 @@ import { ActionsMenu } from "./ActionsMenu";
 
 interface PostProps {
   post: PostType;
-  postUser: User;
+  postUser: User | UserProfile;
   setPostCounts?: React.Dispatch<
     React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>
   >;
