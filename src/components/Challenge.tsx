@@ -11,7 +11,7 @@ import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
 import { Loader } from "../components/Loader";
 import ShareChallenge from "../components/ShareChallenge";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Dimensions } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
@@ -387,6 +387,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 <TextInput
                   style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
                   multiline
+                  scrollEnabled
                   placeholder={t("Just completed this week's challenge!")}
                   placeholderTextColor="#999"
                   onChangeText={setPostText}
@@ -693,6 +694,7 @@ const shareStyles = StyleSheet.create({
     borderWidth: 1,
     marginVertical: 10,
     minHeight: 80,
+    maxHeight: Dimensions.get("window").height * 0.15,
     minWidth: "100%",
     padding: 10,
     textAlignVertical: "top",

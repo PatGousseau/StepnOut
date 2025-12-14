@@ -8,6 +8,8 @@ import {
   Platform,
   Alert,
   Image,
+  Keyboard,
+  Pressable,
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
@@ -169,7 +171,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.form}>
+      <Pressable style={styles.form} onPress={Keyboard.dismiss}>
         <View style={styles.logoContainer}>
           <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.stepnOut}>{t('Stepn Out')}</Text>
@@ -229,7 +231,7 @@ export default function LoginScreen() {
         >
           <Text style={styles.linkText}>{t("Don't have an account? Register")}</Text>
         </TouchableOpacity>
-      </View>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }
