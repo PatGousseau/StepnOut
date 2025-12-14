@@ -43,8 +43,12 @@
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "1.9.22",
-            "gradlePluginVersion": "8.3.0"
+            "kotlinVersion": "2.2.20",
+            "gradlePluginVersion": "8.3.0",
+            "ndkVersion": "26.1.10909125",
+            "splits": {
+              "abi": ["arm64-v8a"]
+            }
           }
         }
       ],
