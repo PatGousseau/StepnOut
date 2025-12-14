@@ -184,8 +184,16 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         if (post.media?.file_path) {
           if (isVideo(post.media.file_path)) {
             setShowVideoModal(true);
+            captureEvent(POST_EVENTS.VIDEO_PLAYED, {
+              post_id: post.id,
+              is_challenge_post: !!post.challenge_id,
+            });
           } else {
             setShowFullScreenImage(true);
+            captureEvent(POST_EVENTS.MEDIA_VIEWED, {
+              post_id: post.id,
+              is_challenge_post: !!post.challenge_id,
+            });
           }
         }
         lastTapTime.current = 0;
