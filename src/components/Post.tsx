@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback, useState, useRef } from "react";
 import {
   View,
-  StyleSheet,
   Modal,
   TouchableOpacity,
   Pressable,
@@ -9,7 +8,6 @@ import {
   Platform,
   TouchableWithoutFeedback,
   GestureResponderEvent,
-  Alert,
   Share,
   ViewStyle,
   TextStyle,
@@ -25,11 +23,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { User, UserProfile } from "../models/User";
 import { useFetchComments } from "../hooks/useFetchComments";
 import { router } from "expo-router";
-import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 import { Post as PostType } from "../types";
-import { postService } from "../services/postService";
 import { useLanguage } from "../contexts/LanguageContext";
-import { supabase } from "../lib/supabase";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
@@ -61,7 +56,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     comments: commentList,
     loading: commentsLoading,
     fetchComments,
-    error: commentsError,
     addComment: addCommentMutation,
     isAddingComment,
   } = useFetchComments(post.id);
@@ -126,14 +120,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     return source.match(/\.(mp4|mov|avi|wmv)$/i);
   };
 
-  const handleMediaPress = () => {
-    if (post.media?.file_path && isVideo(post.media.file_path)) {
-      return;
-    }
-
-    setShowFullScreenImage(true);
-  };
-
   const showHeartAnimation = () => {
     // Reset animation values
     heartScale.setValue(0);
@@ -192,11 +178,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       // First tap - wait for potential second tap
       lastTapTime.current = now;
       singleTapTimer.current = setTimeout(() => {
-        // Single tap - open fullscreen/modal
-        if (post.media?.file_path && isVideo(post.media.file_path)) {
-          setShowVideoModal(true);
-        } else {
-          setShowFullScreenImage(true);
+        // Single tap - open fullscreen/modal only if there's media
+        if (post.media?.file_path) {
+          if (isVideo(post.media.file_path)) {
+            setShowVideoModal(true);
+          } else {
+            setShowFullScreenImage(true);
+          }
         }
         lastTapTime.current = 0;
         singleTapTimer.current = null;
@@ -547,11 +535,6 @@ const fullScreenHeaderStyle: ViewStyle = {
   left: 0,
   padding: 16,
   zIndex: 9999,
-};
-
-const fullScreenImageStyle: ImageStyle = {
-  height: "100%",
-  width: "100%",
 };
 
 const headerStyle: ViewStyle = {

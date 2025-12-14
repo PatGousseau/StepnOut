@@ -14,7 +14,7 @@ import {
 import Post from "../../components/Post";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
 import { colors } from "../../constants/Colors";
-import CreatePost from "../../components/CreatePost";
+import InlineCreatePost from "../../components/InlineCreatePost";
 import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
 import { StyleSheet } from "react-native";
@@ -28,6 +28,7 @@ const Home = () => {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"discussion" | "submissions">("submissions");
+  const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
 
   // tab indicator and content positions
@@ -92,6 +93,7 @@ const Home = () => {
     try {
       // Refetch posts using React Query
       await refetchPosts();
+      setPromptRefreshKey((prev) => prev + 1);
     } finally {
       setRefreshing(false);
     }
@@ -105,6 +107,7 @@ const Home = () => {
   const handlePostCreated = useCallback(() => {
     // Refresh the posts list when a new post is created
     refetchPosts();
+    setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
   // Memoize filtered posts
@@ -237,6 +240,7 @@ const Home = () => {
             transform: [{ translateX: slideAnimation }],
           }}
         >
+          {/* Submissions tab content */}
           <View style={{ width: "50%", padding: 16 }}>
             {filteredPosts.map((post, index) => {
               const postUser = userMap[post.user_id] as User;
@@ -253,7 +257,9 @@ const Home = () => {
               );
             })}
           </View>
+          {/* Discussion tab content */}
           <View style={{ width: "50%", padding: 16 }}>
+            <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
             {filteredPosts.map((post, index) => {
               const postUser = userMap[post.user_id] as User;
               // Guard: don't render Post if user not loaded yet (prevents crash)
@@ -277,12 +283,6 @@ const Home = () => {
           </View>
         )}
       </ScrollView>
-
-      {activeTab === "discussion" && (
-        <View style={styles.createPostButton}>
-          <CreatePost onPostCreated={handlePostCreated} />
-        </View>
-      )}
     </KeyboardAvoidingView>
   );
 };
@@ -309,16 +309,6 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: colors.light.primary,
     fontWeight: "bold",
-  },
-  createPostButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   tabIndicator: {
     position: "absolute",
