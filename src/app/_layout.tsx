@@ -20,6 +20,8 @@ import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
+import { captureScreen, captureEvent } from '../lib/posthog';
+import { UI_EVENTS } from '../constants/analyticsEvents';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -67,6 +69,16 @@ function RootLayoutNav() {
   // hide recently active banner on onboarding
   const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
 
+  // Track screen views when pathname changes
+  useEffect(() => {
+    if (pathname) {
+      captureScreen(pathname, {
+        is_detail_page: isDetailPage,
+        is_auth_screen: hideLogo,
+      });
+    }
+  }, [pathname, isDetailPage, hideLogo]);
+
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
     if (!loading) {
@@ -110,6 +122,14 @@ function RootLayoutNav() {
   const handleNotificationPress = () => {
     markAllAsRead();
     setShowNotifications(true);
+    captureEvent(UI_EVENTS.NOTIFICATIONS_OPENED, {
+      unread_count: unreadCount,
+    });
+  };
+
+  const handleMenuPress = () => {
+    setShowMenu(true);
+    captureEvent(UI_EVENTS.MENU_OPENED);
   };
 
   if (loading) {
@@ -129,7 +149,7 @@ function RootLayoutNav() {
               <StatusBar backgroundColor={colors.light.background} style="dark" />
               <Header 
                 onNotificationPress={handleNotificationPress}
-                onMenuPress={() => setShowMenu(true)}
+                onMenuPress={handleMenuPress}
                 onFeedbackPress={() => setShowFeedback(true)}
                 unreadCount={unreadCount}
                 isDetailPage={isDetailPage}

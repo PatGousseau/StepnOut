@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase, initializeSupabase } from "../lib/supabase";
-import { captureEvent } from "../lib/posthog";
+import { captureEvent, identifyUser, resetPostHog, setUserProperties } from "../lib/posthog";
+import { AUTH_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 type SignUpOptions = {
   // Required for email/password signup, not needed for Google
@@ -49,6 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .eq("id", session.user.id)
               .single();
             setIsAdmin(data?.is_admin || false);
+            // Identify user in PostHog when session is restored
+            identifyUser(session.user.id, {
+              [USER_PROPERTIES.EMAIL]: session.user.email,
+              [USER_PROPERTIES.USERNAME]: session.user.user_metadata?.username,
+              [USER_PROPERTIES.DISPLAY_NAME]: session.user.user_metadata?.display_name,
+              [USER_PROPERTIES.IS_ADMIN]: data?.is_admin || false,
+            });
           }
           setLoading(false);
         })
@@ -68,8 +76,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .eq("id", session.user.id)
             .single();
           setIsAdmin(data?.is_admin || false);
+          // Identify user in PostHog on auth state change
+          identifyUser(session.user.id, {
+            [USER_PROPERTIES.EMAIL]: session.user.email,
+            [USER_PROPERTIES.USERNAME]: session.user.user_metadata?.username,
+            [USER_PROPERTIES.DISPLAY_NAME]: session.user.user_metadata?.display_name,
+            [USER_PROPERTIES.IS_ADMIN]: data?.is_admin || false,
+          });
         } else {
           setIsAdmin(false);
+          // Reset PostHog when user logs out
+          resetPostHog();
         }
       });
 
@@ -108,11 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Track sign up event
-    captureEvent('user_signed_up', {
-      username,
-      display_name: displayName,
-      has_profile_picture: !!profileMediaId,
-      has_instagram: !!instagram,
+    captureEvent(AUTH_EVENTS.SIGNED_UP, {
+      [USER_PROPERTIES.USERNAME]: username,
+      [USER_PROPERTIES.DISPLAY_NAME]: displayName,
+      [USER_PROPERTIES.HAS_PROFILE_PICTURE]: !!profileMediaId,
+      [USER_PROPERTIES.HAS_INSTAGRAM]: !!instagram,
     });
   };
 
@@ -206,18 +223,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     if (error) {
       // Track failed sign in attempt
-      captureEvent('user_sign_in_failed', {
+      captureEvent(AUTH_EVENTS.SIGN_IN_FAILED, {
         error: error.message,
       });
       throw error;
     }
     // Track successful sign in
-    captureEvent('user_signed_in');
+    captureEvent(AUTH_EVENTS.SIGNED_IN);
+    // Update last active
+    setUserProperties({
+      [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),
+    });
   };
 
   const signOut = async () => {
     // Track sign out event before actually signing out
-    captureEvent('user_signed_out');
+    captureEvent(AUTH_EVENTS.SIGNED_OUT);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

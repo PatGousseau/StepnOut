@@ -34,6 +34,8 @@ import { Video, ResizeMode } from "expo-av";
 import { formatRelativeTime } from "../utils/time";
 import { imageService } from "../services/imageService";
 import { ActionsMenu } from "./ActionsMenu";
+import { captureEvent } from "../lib/posthog";
+import { POST_EVENTS } from "../constants/analyticsEvents";
 
 interface PostProps {
   post: PostType;
@@ -196,17 +198,30 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     setShowComments(true);
     // React Query automatically fetches comments, but we can refetch to ensure fresh data
     fetchComments();
+    captureEvent(POST_EVENTS.COMMENTS_OPENED, {
+      post_id: post.id,
+      comment_count: commentCount,
+      is_challenge_post: !!post.challenge_id,
+    });
   };
 
   const handleProfilePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
     router.push(`/profile/${postUser.id}`);
+    captureEvent(POST_EVENTS.PROFILE_CLICKED, {
+      post_id: post.id,
+      target_user_id: postUser.id,
+    });
   };
 
   const handleChallengePress = (e: GestureResponderEvent) => {
     e.stopPropagation();
     if (post.challenge_id) {
       router.push(`/challenge/${post.challenge_id}`);
+      captureEvent(POST_EVENTS.CHALLENGE_CLICKED, {
+        post_id: post.id,
+        challenge_id: post.challenge_id,
+      });
     }
   };
 
@@ -236,6 +251,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           url: urls.fullUrl,
         });
       }
+      captureEvent(POST_EVENTS.SHARED, {
+        post_id: post.id,
+        is_challenge_post: !!post.challenge_id,
+      });
     } catch (error) {
       console.error("Error sharing image:", error);
     }

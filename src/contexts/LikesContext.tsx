@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState } from "react";
 import { postService } from "../services/postService";
 import { Post, Comment, LikeableItem } from "../types";
 import { useAuth } from "../contexts/AuthContext";
+import { captureEvent } from "../lib/posthog";
+import { POST_EVENTS, COMMENT_EVENTS } from "../constants/analyticsEvents";
 
 interface LikesContextType {
   likedPosts: { [postId: number]: boolean };
@@ -90,6 +92,17 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...prev,
           [id]: (prev[id] || 0) + (isCurrentlyLiked ? 1 : -1),
         }));
+      } else {
+        // Track like/unlike event on success
+        const eventName = isPost
+          ? (isCurrentlyLiked ? POST_EVENTS.UNLIKED : POST_EVENTS.LIKED)
+          : (isCurrentlyLiked ? COMMENT_EVENTS.UNLIKED : COMMENT_EVENTS.LIKED);
+        
+        captureEvent(eventName, {
+          [`${type}_id`]: id,
+          target_user_id: targetUserId,
+          ...(parentId && { post_id: parentId }),
+        });
       }
     } catch (error) {
       console.error(`Error toggling ${type} like:`, error);

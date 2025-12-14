@@ -31,6 +31,8 @@ import { Comment as CommentType } from "../types"; // todo: rename one of the Co
 import { useLikes } from "../contexts/LikesContext";
 import { ActionsMenu } from "./ActionsMenu";
 import { MenuProvider } from "react-native-popup-menu";
+import { captureEvent } from "../lib/posthog";
+import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -121,6 +123,13 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
           // Notify parent component about comment count change
           onCommentAdded?.(1);
+
+          // Track comment created event
+          captureEvent(COMMENT_EVENTS.CREATED, {
+            post_id: postId,
+            comment_id: newCommentData.id,
+            comment_length: commentText.length,
+          });
         }
       } catch (error) {
         console.error("Error adding comment:", error);
@@ -329,6 +338,11 @@ const Comment: React.FC<CommentProps> = ({
   const handleProfilePress = () => {
     onClose?.();
     router.push(`/profile/${userId}`);
+    captureEvent(COMMENT_EVENTS.PROFILE_CLICKED, {
+      comment_id: id,
+      target_user_id: userId,
+      post_id: post_id,
+    });
   };
 
   const handleLikePress = async () => {

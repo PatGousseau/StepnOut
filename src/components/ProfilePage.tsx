@@ -27,6 +27,8 @@ import { ProfileActions } from "./ActionsMenu";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { imageService } from "../services/imageService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { captureEvent, setUserProperties } from "../lib/posthog";
+import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 type ProfilePageProps = {
   userId: string;
@@ -108,6 +110,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         if (targetUserId) {
           queryClient.invalidateQueries({ queryKey: ["profile", targetUserId] });
         }
+
+        captureEvent(PROFILE_EVENTS.PICTURE_UPDATED);
+        setUserProperties({
+          [USER_PROPERTIES.HAS_PROFILE_PICTURE]: true,
+        });
       } else if (result.error) {
         Alert.alert("Error", result.error);
       }
@@ -130,6 +137,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           queryClient.invalidateQueries({ queryKey: ["profile", targetUserId] });
         }
         setIsEditing(false);
+        captureEvent(PROFILE_EVENTS.EDITED, {
+          changed_name: editedName !== userProfile?.name,
+          changed_username: editedUsername !== userProfile?.username,
+          changed_instagram: editedInstagram !== userProfile?.instagram,
+        });
+        // Update user properties if instagram was changed
+        if (editedInstagram !== userProfile?.instagram) {
+          setUserProperties({
+            [USER_PROPERTIES.HAS_INSTAGRAM]: !!editedInstagram,
+          });
+        }
       } else if (result.error) {
         Alert.alert("Error", result.error);
       }
@@ -158,6 +176,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     try {
       const result = await profileService.confirmAndDeleteAccount(user?.id!, t);
       if (result.success) {
+        captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
         await signOut();
       } else if (result.error) {
         Alert.alert("Error", result.error || t("Failed to Delete account"));
@@ -191,6 +210,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       setFullResImageUrl(null);
     }
   }, [showFullImage, loadFullResImage]);
+
+  // Track profile viewed when profile data loads
+  useEffect(() => {
+    if (userProfile && targetUserId) {
+      captureEvent(PROFILE_EVENTS.VIEWED, {
+        profile_user_id: targetUserId,
+        is_own_profile: isOwnProfile,
+      });
+    }
+  }, [userProfile, targetUserId, isOwnProfile]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return (
@@ -313,9 +342,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                   {userProfile?.instagram && (
                     <TouchableOpacity
                       style={styles.instagram}
-                      onPress={() =>
-                        Linking.openURL(`https://instagram.com/${userProfile.instagram}`)
-                      }
+                      onPress={() => {
+                        Linking.openURL(`https://instagram.com/${userProfile.instagram}`);
+                        captureEvent(PROFILE_EVENTS.INSTAGRAM_CLICKED, {
+                          profile_user_id: targetUserId,
+                          is_own_profile: isOwnProfile,
+                        });
+                      }}
                     >
                       <MaterialCommunityIcons
                         name="instagram"

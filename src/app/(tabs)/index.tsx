@@ -97,7 +97,7 @@ const Home = () => {
     } finally {
       setRefreshing(false);
     }
-  }, [refetchPosts]);
+  }, [refetchPosts, activeTab]);
 
   const handlePostDeleted = useCallback(() => {
     // Refresh the posts list using React Query

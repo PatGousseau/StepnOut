@@ -15,6 +15,8 @@ import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { captureEvent } from '../lib/posthog';
+import { UI_EVENTS } from '../constants/analyticsEvents';
 
 interface FeedbackModalProps {
   isVisible: boolean;
@@ -48,6 +50,10 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isVisible, onClose }) => 
         });
 
       if (error) throw error;
+
+      captureEvent(UI_EVENTS.FEEDBACK_SUBMITTED, {
+        feedback_length: feedback.trim().length,
+      });
 
       setShowSuccess(true);
       setTimeout(() => {
