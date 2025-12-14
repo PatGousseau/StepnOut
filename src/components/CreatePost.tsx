@@ -93,10 +93,12 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
           keyboardVerticalOffset={Platform.OS === "ios" ? -64 : 0}
         >
           <View style={modalContainerStyle}>
-            <ScrollView
+              <ScrollView
               style={modalScrollStyle}
               contentContainerStyle={scrollContentStyle}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
             >
               <View style={modalContentStyle}>
                 <View style={modalHeaderStyle}>

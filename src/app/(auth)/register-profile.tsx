@@ -8,6 +8,8 @@ import {
   Platform,
   Image,
   Alert,
+  Keyboard,
+  Pressable,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { colors } from "../../constants/Colors";
@@ -153,7 +155,7 @@ export default function RegisterProfileScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.form}>
+      <Pressable style={styles.form} onPress={Keyboard.dismiss}>
         <View style={styles.logoContainer}>
           <Image
             source={require("../../assets/images/logo.png")}
@@ -230,7 +232,7 @@ export default function RegisterProfileScreen() {
                 : t("Complete Registration")}
           </Text>
         </TouchableOpacity>
-      </View>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }

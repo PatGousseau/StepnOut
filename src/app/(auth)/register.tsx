@@ -7,6 +7,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Keyboard,
+  Pressable,
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
@@ -53,7 +55,7 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.form}>
+      <Pressable style={styles.form} onPress={Keyboard.dismiss}>
         <View style={styles.logoContainer}>
           <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
           <Text style={styles.stepnOut}>Stepn Out</Text>
@@ -94,7 +96,7 @@ export default function RegisterScreen() {
         >
           <Text style={styles.linkText}>{t('Already have an account? Log in')}</Text>
         </TouchableOpacity>
-      </View>
+      </Pressable>
     </KeyboardAvoidingView>
   );
 }

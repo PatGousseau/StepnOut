@@ -256,6 +256,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           }
         }}
         scrollEventThrottle={400}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <View style={styles.profileHeader}>
           <View style={styles.headerLeft}>

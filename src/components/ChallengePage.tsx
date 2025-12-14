@@ -79,6 +79,8 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
     >
       <View style={styles.content}>
         <Text style={styles.title}>{t("Challenge")}</Text>

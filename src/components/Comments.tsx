@@ -183,6 +183,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             </View>
           )}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         />
 
         <View style={inputContainerStyle}>

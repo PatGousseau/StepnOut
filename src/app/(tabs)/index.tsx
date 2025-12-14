@@ -232,6 +232,7 @@ const Home = () => {
           minIndexForVisible: 0,
         }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <Animated.View
           style={{

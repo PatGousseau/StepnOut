@@ -68,6 +68,7 @@ const PostPage = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <Post
           post={post}
