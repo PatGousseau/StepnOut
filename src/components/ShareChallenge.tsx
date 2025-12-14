@@ -6,6 +6,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
 import { useLanguage } from '../contexts/LanguageContext';
+import { captureEvent } from '../lib/posthog';
+import { CHALLENGE_EVENTS } from '../constants/analyticsEvents';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -52,6 +54,12 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
           android: defaultMessage,
         }) ?? defaultMessage,
         title: t('Join Me on StepN Out!'),
+      });
+      
+      captureEvent(CHALLENGE_EVENTS.SHARED, {
+        challenge_id: challengeId,
+        challenge_title: title,
+        completion_count: completionCount,
       });
       
       onClose();
@@ -113,7 +121,12 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
               style={styles.laterButton} 
-              onPress={onClose}
+              onPress={() => {
+                captureEvent(CHALLENGE_EVENTS.SHARE_SKIPPED, {
+                  challenge_id: challengeId,
+                });
+                onClose();
+              }}
             >
               <Text style={styles.laterButtonText}>{t('Skip')}</Text>
             </TouchableOpacity>

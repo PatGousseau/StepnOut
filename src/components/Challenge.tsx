@@ -18,6 +18,8 @@ import { isVideo as isVideoUtil } from "../utils/utils";
 import { router } from "expo-router";
 import { imageService } from "../services/imageService";
 import { useMediaUpload } from "../hooks/useMediaUpload";
+import { captureEvent, setUserProperties } from "../lib/posthog";
+import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -128,6 +130,10 @@ export const PatrizioExample: React.FC<PatrizioExampleProps> = ({ challenge }) =
   const handlePress = () => {
     if (patrizioSubmission) {
       router.push(`/post/${patrizioSubmission.id}`);
+      captureEvent(CHALLENGE_EVENTS.PATRIZIO_EXAMPLE_CLICKED, {
+        challenge_id: challenge.id,
+        post_id: patrizioSubmission.id,
+      });
     }
   };
 
@@ -182,8 +188,23 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   } = useMediaUpload({
     onUploadComplete: () => {
       setModalVisible(false);
+      // Track challenge completed
+      captureEvent(CHALLENGE_EVENTS.COMPLETED, {
+        challenge_id: challenge.id,
+        challenge_title: challenge.title,
+        challenge_difficulty: challenge.difficulty,
+        has_media: !!selectedMedia,
+        is_video: selectedMedia?.isVideo || false,
+      });
+      // Update user properties
+      setUserProperties({
+        [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),
+      });
       setTimeout(() => {
         setShowShareModal(true);
+        captureEvent(CHALLENGE_EVENTS.SHARE_MODAL_OPENED, {
+          challenge_id: challenge.id,
+        });
       }, 100);
     },
     successMessage: t("Challenge completed successfully!"),

@@ -6,13 +6,23 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_POSTHOG_HOST": "https://eu.i.posthog.com",
+        "EXPO_PUBLIC_POSTHOG_DISABLED": "true"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_POSTHOG_HOST": "https://eu.i.posthog.com"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_POSTHOG_HOST": "https://eu.i.posthog.com"
+      }
     }
   },
   "submit": {
