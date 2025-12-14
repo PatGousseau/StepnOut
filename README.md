@@ -20,50 +20,25 @@
   </a>
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Users-50+-brightgreen?style=flat-square" alt="50+ Users" />
-  <img src="https://img.shields.io/badge/Rating-5.0%20⭐-yellow?style=flat-square" alt="5.0 Rating" />
-  <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey?style=flat-square" alt="Platform" />
-</p>
-
 ---
 
-## 📱 About
+## About
 
 **Stepn Out** is a mobile app designed to help you break out of your comfort zone—one challenge at a time. Every week, all users receive the same challenge designed to encourage personal growth, build confidence, and foster meaningful connections.
 
 Complete challenges by posting photos, videos, or written reflections to a supportive community feed where users share experiences, motivate each other, and celebrate progress together.
 
-> *"A little discomfort leads to big growth. Ready to Step Out?"*
-
 ---
 
-## ✨ Features
+## Features
 
-- 🎯 **Weekly Challenges** - New challenges every week with varying difficulty levels (Easy, Medium, Hard)
-- 📸 **Share Your Journey** - Post photos and videos of your challenge completions
-- 💬 **Community Feed** - Two tabs: Challenge Submissions & General Discussion
-- 👥 **Supportive Community** - Like, comment, and engage with fellow challengers
-- 🔥 **Streak Tracking** - Keep your streak alive and track your progress over time
-- 🔔 **Push Notifications** - Stay updated on likes, comments, and new challenges
-- 🌍 **Multi-language Support** - Available in English and Italian
-- 🔐 **Secure Authentication** - Email/password and Google Sign-In support
-
----
-
-## 📸 Screenshots
-
-<p align="center">
-  <img src="src/assets/images/home-screen.png" alt="Home Screen" width="200" />
-  &nbsp;&nbsp;
-  <img src="src/assets/images/challenge-screen.png" alt="Challenge Screen" width="200" />
-  &nbsp;&nbsp;
-  <img src="src/assets/images/profile-screen.png" alt="Profile Screen" width="200" />
-</p>
-
-<p align="center">
-  <img src="src/assets/images/complete-challenge.png" alt="Complete Challenge" width="200" />
-</p>
+- **Weekly Challenges** - New challenges every week with varying difficulty levels (Easy, Medium, Hard)
+- **Share Your Journey** - Post photos and videos of your challenge completions
+- **Community Feed** - Two tabs: Challenge Submissions & General Discussion
+- **Supportive Community** - Like, comment, and engage with fellow challengers
+- **Streak Tracking** - Keep your streak alive and track your progress over time
+- **Push Notifications** - Stay updated on likes, comments, and new challenges
+- **Multi-language Support** - Available in English and Italian
 
 ---
 
@@ -127,10 +102,6 @@ Follow us on social media for updates, challenge previews, and community highlig
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-<p align="center">
-  Made with ❤️ by the Stepn Out Team
-</p>
 
 <p align="center">
   <strong>Step up. Step out. Step forward.</strong>
