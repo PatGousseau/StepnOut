@@ -231,7 +231,7 @@ export default function Layout() {
           }}
           autocapture={{
             captureScreens: false, // We're handling screen tracking manually for expo-router
-            captureTouches: true, // Capture touch events automatically
+            captureTouches: false, 
           }}
         >
           <RootLayoutNav />
