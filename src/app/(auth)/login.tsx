@@ -24,6 +24,7 @@ import * as WebBrowser from 'expo-web-browser';
 WebBrowser.maybeCompleteAuthSession();
 
 const IOS_CLIENT_ID = '881483240750-cc4pm3i893ov879f0s98hgqmb5j9mbu8.apps.googleusercontent.com';
+const ANDROID_CLIENT_ID = '881483240750-jp0mujvlvrf8sl3is67b9hcokge2s3qf.apps.googleusercontent.com';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -36,6 +37,7 @@ export default function LoginScreen() {
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: IOS_CLIENT_ID,
+    androidClientId: ANDROID_CLIENT_ID,
   });
 
   // Handle Google Sign-In response
@@ -203,27 +205,29 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>{t('or')}</Text>
-          <View style={styles.divider} />
-        </View>
+        {Platform.OS !== 'android' && (
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>{t('or')}</Text>
+            <View style={styles.divider} />
+          </View>
+        )}
 
-        {/* Google Sign-In Button */}
-        <TouchableOpacity 
-          style={[styles.googleButton, googleLoading && styles.buttonDisabled]} 
-          onPress={() => promptAsync()}
-          disabled={!request || googleLoading}
-        >
-          <Image 
-            source={require('../../assets/images/google.png')}
-            style={styles.googleIcon}
-          />
-          <Text style={styles.googleButtonText}>
-            {googleLoading ? t('Signing in...') : t('Continue with Google')}
-          </Text>
-        </TouchableOpacity>
+        {Platform.OS !== 'android' && (
+          <TouchableOpacity 
+            style={[styles.googleButton, googleLoading && styles.buttonDisabled]} 
+            onPress={() => promptAsync()}
+            disabled={!request || googleLoading}
+          >
+            <Image 
+              source={require('../../assets/images/google.png')}
+              style={styles.googleIcon}
+            />
+            <Text style={styles.googleButtonText}>
+              {googleLoading ? t('Signing in...') : t('Continue with Google')}
+            </Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity 
           style={styles.linkButton}
