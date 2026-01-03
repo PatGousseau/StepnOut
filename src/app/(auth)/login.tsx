@@ -24,6 +24,7 @@ import * as WebBrowser from 'expo-web-browser';
 WebBrowser.maybeCompleteAuthSession();
 
 const IOS_CLIENT_ID = '881483240750-cc4pm3i893ov879f0s98hgqmb5j9mbu8.apps.googleusercontent.com';
+const ANDROID_CLIENT_ID = '881483240750-jp0mujvlvrf8sl3is67b9hcokge2s3qf.apps.googleusercontent.com';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -36,6 +37,7 @@ export default function LoginScreen() {
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: IOS_CLIENT_ID,
+    androidClientId: ANDROID_CLIENT_ID,
   });
 
   // Handle Google Sign-In response
