@@ -205,27 +205,29 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>{t('or')}</Text>
-          <View style={styles.divider} />
-        </View>
+        {Platform.OS !== 'android' && (
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>{t('or')}</Text>
+            <View style={styles.divider} />
+          </View>
+        )}
 
-        {/* Google Sign-In Button */}
-        <TouchableOpacity 
-          style={[styles.googleButton, googleLoading && styles.buttonDisabled]} 
-          onPress={() => promptAsync()}
-          disabled={!request || googleLoading}
-        >
-          <Image 
-            source={require('../../assets/images/google.png')}
-            style={styles.googleIcon}
-          />
-          <Text style={styles.googleButtonText}>
-            {googleLoading ? t('Signing in...') : t('Continue with Google')}
-          </Text>
-        </TouchableOpacity>
+        {Platform.OS !== 'android' && (
+          <TouchableOpacity 
+            style={[styles.googleButton, googleLoading && styles.buttonDisabled]} 
+            onPress={() => promptAsync()}
+            disabled={!request || googleLoading}
+          >
+            <Image 
+              source={require('../../assets/images/google.png')}
+              style={styles.googleIcon}
+            />
+            <Text style={styles.googleButtonText}>
+              {googleLoading ? t('Signing in...') : t('Continue with Google')}
+            </Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity 
           style={styles.linkButton}
