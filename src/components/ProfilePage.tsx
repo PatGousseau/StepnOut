@@ -301,7 +301,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                       <TextInput
                         style={[styles.editInput, styles.usernameInput]}
                         value={editedUsername}
-                        onChangeText={(text) => setEditedUsername(text.replace("@", ""))}
+                        onChangeText={(text) => setEditedUsername(text.replace(/@|\s/g, ''))}
                         placeholder={t("Username")}
                         maxLength={15}
                       />

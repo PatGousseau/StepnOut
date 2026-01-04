@@ -178,7 +178,7 @@ export default function RegisterProfileScreen() {
               placeholder={t("Username*")}
               placeholderTextColor="#666"
               value={username}
-              onChangeText={setUsername}
+              onChangeText={(text) => setUsername(text.replace(/\s/g, ''))}
               autoCapitalize="none"
             />
             <TextInput
