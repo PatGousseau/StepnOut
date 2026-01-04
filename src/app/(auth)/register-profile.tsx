@@ -109,39 +109,23 @@ export default function RegisterProfileScreen() {
         isGoogleUser: isGoogleSignUp,
       });
 
-      if (isGoogleSignUp) {
-        // Google signup: show EULA then go to onboarding
-        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          { text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', userId);
-            router.replace('/(auth)/onboarding');
-          }},
-          {
-            text: t('Decline'),
-            onPress: async () => {
-              await supabase.auth.signOut();
-              router.replace('/(auth)/login');
-            }
+      // Show EULA then go to onboarding
+      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+        { text: t('Accept'), onPress: async () => {
+          await supabase
+            .from('profiles')
+            .update({ eula_accepted: true })
+            .eq('id', userId);
+          router.replace('/(auth)/onboarding');
+        }},
+        {
+          text: t('Decline'),
+          onPress: async () => {
+            await supabase.auth.signOut();
+            router.replace('/(auth)/login');
           }
-        ]);
-      } else {
-        // Email/password signup: show verification message
-        Alert.alert(
-          t("Registration Successful"),
-          t(
-            "Please check your email to verify your account. After verification, you can log in to continue."
-          ),
-          [
-            {
-              text: t("OK"),
-              onPress: () => router.replace("/(auth)/login"),
-            },
-          ]
-        );
-      }
+        }
+      ]);
     } catch (error) {
       setError(t((error as Error).message));
     } finally {

@@ -20,6 +20,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(true);
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -37,13 +38,18 @@ export default function RegisterScreen() {
   const handleNextStep = async () => {
     setError(null);
     
-    if (!email || !password) {
+    if (!email || !password || !confirmPassword) {
       setError(t('Please fill in all fields'));
       return;
     }
 
     if (!isValidEmail(email)) {
       setError(t('Please enter a valid email address'));
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError(t('Passwords do not match'));
       return;
     }
 
@@ -108,10 +114,19 @@ export default function RegisterScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Password*"
+          placeholder={t("Password*")}
           placeholderTextColor="#666"
           value={password}
           onChangeText={setPassword}
+          secureTextEntry
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder={t("Confirm Password*")}
+          placeholderTextColor="#666"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
           secureTextEntry
         />
 

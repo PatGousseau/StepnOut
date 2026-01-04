@@ -201,4 +201,7 @@ export const translations = {
   "Username is already taken": "Questo nome utente è già in uso",
   "Checking...": "Verifica...",
   "Registration failed. Please try again.": "Registrazione fallita. Riprova.",
+  "Confirm Password*": "Conferma Password*",
+  "Passwords do not match": "Le password non corrispondono",
+  "Password*": "Password*",
 };
