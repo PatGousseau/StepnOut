@@ -12,14 +12,16 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
-import { Alert } from 'react-native';
 import { Text } from '../../components/StyledText';
 import { useLanguage } from '@/src/contexts/LanguageContext';
+import { supabase } from '../../lib/supabase';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [isEmailValid, setIsEmailValid] = useState(true);
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
 
   const isValidEmail = (email: string) => {
@@ -33,21 +35,51 @@ export default function RegisterScreen() {
   };
 
   const handleNextStep = async () => {
+    setError(null);
+    
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      setError(t('Please fill in all fields'));
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      setError(t('Please enter a valid email address'));
       return;
     }
 
-    // Navigate to next step with credentials
-    router.push({
-      pathname: '/(auth)/register-profile',
-      params: { email, password }
-    });
+    try {
+      setLoading(true);
+      
+      // Attempt to create auth user to check if email already exists
+      const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (signUpError) {
+        console.log("Supabase signup error:", signUpError.message);
+        // Check for duplicate email error
+        if (signUpError.message?.toLowerCase().includes("already registered") || 
+            signUpError.message?.toLowerCase().includes("already been registered")) {
+          setError(t("An account with this email already exists"));
+        } else {
+          setError(t(signUpError.message));
+        }
+        return;
+      }
+
+      if (!user) {
+        setError(t("Registration failed. Please try again."));
+        return;
+      }
+
+      // Navigate to next step
+      router.push('/(auth)/register-profile');
+    } catch (err) {
+      setError(t((err as Error).message));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,11 +115,16 @@ export default function RegisterScreen() {
           secureTextEntry
         />
 
+        {error && (
+          <Text style={styles.formErrorText}>{error}</Text>
+        )}
+
         <TouchableOpacity 
-          style={styles.button}
+          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleNextStep}
+          disabled={loading}
         >
-          <Text style={styles.buttonText}>{t('Next')}</Text>
+          <Text style={styles.buttonText}>{loading ? t('Checking...') : t('Next')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -126,6 +163,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginLeft: 5,
     marginTop: -10,
+  },
+  formErrorText: {
+    color: '#dc2626',
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   form: {
     flex: 1,

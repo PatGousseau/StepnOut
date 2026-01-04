@@ -22,9 +22,7 @@ import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
 
 export default function RegisterProfileScreen() {
-  const { email, password, isGoogleUser } = useLocalSearchParams<{
-    email?: string;
-    password?: string;
+  const { isGoogleUser } = useLocalSearchParams<{
     isGoogleUser?: string;
   }>();
   const [username, setUsername] = useState("");
@@ -35,6 +33,7 @@ export default function RegisterProfileScreen() {
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [instagram, setInstagram] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
 
   const isGoogleSignUp = isGoogleUser === 'true';
@@ -91,18 +90,18 @@ export default function RegisterProfileScreen() {
   };
 
   const handleRegister = async () => {
+    setError(null);
+    
     if (!username || !displayName) {
-      Alert.alert(t("Error"), t("Please fill in all required fields"));
+      setError(t("Please fill in all required fields"));
       return;
     }
 
     try {
       setLoading(true);
 
-      // Use unified signUp for both Google and email/password
+      // Complete profile setup
       const userId = await signUp({
-        email: isGoogleSignUp ? undefined : email,
-        password: isGoogleSignUp ? undefined : password,
         username,
         displayName,
         profileMediaId,
@@ -144,7 +143,7 @@ export default function RegisterProfileScreen() {
         );
       }
     } catch (error) {
-      Alert.alert(t("Error"), (error as Error).message);
+      setError(t((error as Error).message));
     } finally {
       setLoading(false);
     }
@@ -216,6 +215,10 @@ export default function RegisterProfileScreen() {
           </View>
         </View>
 
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
+
         <TouchableOpacity
           style={[
             styles.button,
@@ -255,6 +258,12 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.light.background,
     flex: 1,
+  },
+  errorText: {
+    color: "#dc2626",
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: "center",
   },
   form: {
     flex: 1,

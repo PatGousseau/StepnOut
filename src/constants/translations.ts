@@ -196,4 +196,9 @@ export const translations = {
     "Qual è una cosa che ti ha spaventato ma ne è valsa la pena?",
   "Reflect on a time you grew from discomfort...":
     "Rifletti su un momento in cui sei cresciuto dal disagio...",
+  "An account with this email already exists":
+    "Esiste già un account con questa email",
+  "Username is already taken": "Questo nome utente è già in uso",
+  "Checking...": "Verifica...",
+  "Registration failed. Please try again.": "Registrazione fallita. Riprova.",
 };
