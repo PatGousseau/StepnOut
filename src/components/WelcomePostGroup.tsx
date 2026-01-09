@@ -45,7 +45,7 @@ const WelcomePostGroup = ({ posts, userMap, isExpanded, onToggle }: WelcomePostG
             })}
             {t("joined the community!")}
           </Text>
-          <Text style={styles.toggle} onPress={onToggle}>
+          <Text style={[styles.toggle, styles.toggleExpanded]} onPress={onToggle}>
             {t("Show less")}
           </Text>
         </View>
@@ -106,6 +106,9 @@ const styles: Record<string, ViewStyle | TextStyle> = {
   toggle: {
     color: colors.light.primary,
     fontSize: 13,
+  },
+  toggleExpanded: {
+    marginTop: 8,
   },
 };
 
