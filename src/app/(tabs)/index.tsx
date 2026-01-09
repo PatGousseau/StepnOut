@@ -110,16 +110,47 @@ const Home = () => {
     setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
-  // Memoize filtered posts
-  const filteredPosts = useMemo(() => {
-    return posts.filter((post) => {
-      if (activeTab === "submissions") {
-        return post.challenge_id != null;
-      } else {
-        return post.challenge_id == null;
+  // Memoize filtered posts for each tab independently (not dependent on activeTab)
+  const submissionPosts = useMemo(() => {
+    return posts.filter((post) => post.challenge_id != null);
+  }, [posts]);
+
+  const discussionPosts = useMemo(() => {
+    return posts.filter((post) => post.challenge_id == null);
+  }, [posts]);
+
+  // Shared scroll handler for infinite loading
+  const handleScrollEvent = useCallback(
+    ({ nativeEvent }: { nativeEvent: { layoutMeasurement: { height: number }; contentOffset: { y: number }; contentSize: { height: number } } }) => {
+      handleScroll();
+      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+      const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+      if (isCloseToBottom && !loading && hasMore) {
+        loadMorePosts();
       }
-    });
-  }, [posts, activeTab]); // Only recompute when posts or activeTab changes
+    },
+    [loading, hasMore, loadMorePosts]
+  );
+
+  // Render posts list for a tab
+  const renderPostsList = useCallback(
+    (tabPosts: typeof posts, keyPrefix: string) => {
+      return tabPosts.map((post, index) => {
+        const postUser = userMap[post.user_id] as User;
+        if (!postUser) return null;
+        return (
+          <Post
+            key={`${keyPrefix}-${post.id}-${index}`}
+            post={post}
+            postUser={postUser}
+            setPostCounts={setPostCounts}
+            onPostDeleted={handlePostDeleted}
+          />
+        );
+      });
+    },
+    [userMap, setPostCounts, handlePostDeleted]
+  );
 
   // container width for tab indicator
   const onTabContainerLayout = (event: LayoutChangeEvent) => {
@@ -211,79 +242,54 @@ const Home = () => {
         />
       </View>
 
-      <ScrollView
+      <Animated.View
         {...panResponder.panHandlers}
-        scrollEnabled={scrollEnabled}
-        onScroll={({ nativeEvent }) => {
-          handleScroll();
-
-          const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-          const isCloseToBottom =
-            layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-
-          if (isCloseToBottom && !loading && hasMore) {
-            loadMorePosts();
-          }
+        style={{
+          flex: 1,
+          flexDirection: "row",
+          width: "200%",
+          transform: [{ translateX: slideAnimation }],
         }}
-        scrollEventThrottle={16}
-        style={{ backgroundColor: colors.light.background }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-        }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
       >
-        <Animated.View
-          style={{
-            flexDirection: "row",
-            width: "200%",
-            transform: [{ translateX: slideAnimation }],
-          }}
+        {/* Submissions tab content */}
+        <ScrollView
+          scrollEnabled={scrollEnabled}
+          onScroll={handleScrollEvent}
+          scrollEventThrottle={16}
+          style={styles.tabScrollView}
+          contentContainerStyle={styles.tabContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
-          {/* Submissions tab content */}
-          <View style={{ width: "50%", padding: 16 }}>
-            {filteredPosts.map((post, index) => {
-              const postUser = userMap[post.user_id] as User;
-              // Guard: don't render Post if user not loaded yet (prevents crash)
-              if (!postUser) return null;
-              return (
-                <Post
-                  key={`${post.id}-${index}`}
-                  post={post}
-                  postUser={postUser}
-                  setPostCounts={setPostCounts}
-                  onPostDeleted={handlePostDeleted}
-                />
-              );
-            })}
-          </View>
-          {/* Discussion tab content */}
-          <View style={{ width: "50%", padding: 16 }}>
-            <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
-            {filteredPosts.map((post, index) => {
-              const postUser = userMap[post.user_id] as User;
-              // Guard: don't render Post if user not loaded yet (prevents crash)
-              if (!postUser) return null;
-              return (
-                <Post
-                  key={`${post.id}-${index}`}
-                  post={post}
-                  postUser={postUser}
-                  setPostCounts={setPostCounts}
-                  onPostDeleted={handlePostDeleted}
-                />
-              );
-            })}
-          </View>
-        </Animated.View>
+          {renderPostsList(submissionPosts, "submission")}
+          {(loading || isFetchingNextPage) && (
+            <View style={styles.loaderContainer}>
+              <Loader />
+            </View>
+          )}
+        </ScrollView>
 
-        {(loading || isFetchingNextPage) && (
-          <View style={{ padding: 20, alignItems: "center" }}>
-            <Loader />
-          </View>
-        )}
-      </ScrollView>
+        {/* Discussion tab content */}
+        <ScrollView
+          scrollEnabled={scrollEnabled}
+          onScroll={handleScrollEvent}
+          scrollEventThrottle={16}
+          style={styles.tabScrollView}
+          contentContainerStyle={styles.tabContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
+          {renderPostsList(discussionPosts, "discussion")}
+          {(loading || isFetchingNextPage) && (
+            <View style={styles.loaderContainer}>
+              <Loader />
+            </View>
+          )}
+        </ScrollView>
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 };
@@ -319,6 +325,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 3,
     backgroundColor: colors.light.primary,
+  },
+  tabScrollView: {
+    width: "50%",
+    backgroundColor: colors.light.background,
+  },
+  tabContent: {
+    padding: 16,
+  },
+  loaderContainer: {
+    padding: 20,
+    alignItems: "center",
   },
 });
 
