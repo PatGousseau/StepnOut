@@ -137,15 +137,6 @@ const Home = () => {
     return posts.filter((post) => post.challenge_id == null);
   }, [posts]);
 
-  // Auto-load more if too many welcome posts collapse into few visible items
-  const MIN_VISIBLE_CONTENT_POSTS = 5;
-  useEffect(() => {
-    const nonWelcomeDiscussionPosts = discussionPosts.filter((p) => !p.is_welcome);
-    if (nonWelcomeDiscussionPosts.length < MIN_VISIBLE_CONTENT_POSTS && hasMore && !loading && !isFetchingNextPage) {
-      loadMorePosts();
-    }
-  }, [discussionPosts, hasMore, loading, isFetchingNextPage, loadMorePosts]);
-
   // Shared scroll handler for infinite loading
   const handleScrollEvent = useCallback(
     ({ nativeEvent }: { nativeEvent: { layoutMeasurement: { height: number }; contentOffset: { y: number }; contentSize: { height: number } } }) => {
