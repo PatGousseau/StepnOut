@@ -54,6 +54,7 @@ const ChallengeCreation: React.FC = () => {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [sendingNotification, setSendingNotification] = useState<boolean>(false);
+  const [userSearch, setUserSearch] = useState<string>("");
 
   const { user } = useAuth();
 
@@ -364,13 +365,31 @@ const ChallengeCreation: React.FC = () => {
 
         {!sendToAll && (
           <View style={styles.userListContainer}>
+            <TextInput
+              style={styles.userSearchInput}
+              value={userSearch}
+              onChangeText={setUserSearch}
+              placeholder="Search users..."
+              autoCapitalize="none"
+            />
             <View style={styles.userListHeader}>
               <Text style={styles.userListTitle}>
                 {selectedUserIds.length} user{selectedUserIds.length !== 1 ? "s" : ""} selected
               </Text>
               <View style={styles.selectAllButtons}>
                 <TouchableOpacity
-                  onPress={() => setSelectedUserIds(allUsers.map((u) => u.id))}
+                  onPress={() => {
+                    const filteredIds = allUsers
+                      .filter((u) => {
+                        const search = userSearch.toLowerCase();
+                        return (
+                          u.username?.toLowerCase().includes(search) ||
+                          u.name?.toLowerCase().includes(search)
+                        );
+                      })
+                      .map((u) => u.id);
+                    setSelectedUserIds((prev) => [...new Set([...prev, ...filteredIds])]);
+                  }}
                   style={styles.selectAllButton}
                 >
                   <Text style={styles.selectAllText}>Select All</Text>
@@ -383,27 +402,37 @@ const ChallengeCreation: React.FC = () => {
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={styles.userList}>
-              {allUsers.map((u) => (
-                <TouchableOpacity
-                  key={u.id}
-                  style={[
-                    styles.userItem,
-                    selectedUserIds.includes(u.id) && styles.userItemSelected,
-                  ]}
-                  onPress={() => toggleUserSelection(u.id)}
-                >
-                  <MaterialIcons
-                    name={selectedUserIds.includes(u.id) ? "check-box" : "check-box-outline-blank"}
-                    size={20}
-                    color={selectedUserIds.includes(u.id) ? colors.light.primary : "#666"}
-                  />
-                  <Text style={styles.userItemText}>
-                    {u.username || u.name || "Unknown"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView style={styles.userList} nestedScrollEnabled>
+              {allUsers
+                .filter((u) => {
+                  if (!userSearch) return true;
+                  const search = userSearch.toLowerCase();
+                  return (
+                    u.username?.toLowerCase().includes(search) ||
+                    u.name?.toLowerCase().includes(search)
+                  );
+                })
+                .map((u) => (
+                  <TouchableOpacity
+                    key={u.id}
+                    style={[
+                      styles.userItem,
+                      selectedUserIds.includes(u.id) && styles.userItemSelected,
+                    ]}
+                    onPress={() => toggleUserSelection(u.id)}
+                  >
+                    <MaterialIcons
+                      name={selectedUserIds.includes(u.id) ? "check-box" : "check-box-outline-blank"}
+                      size={20}
+                      color={selectedUserIds.includes(u.id) ? colors.light.primary : "#666"}
+                    />
+                    <View style={styles.userItemTextContainer}>
+                      <Text style={styles.userItemName}>{u.name || "Unknown"}</Text>
+                      {u.username && <Text style={styles.userItemUsername}>@{u.username}</Text>}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
           </View>
         )}
 
@@ -636,7 +665,13 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     borderWidth: 1,
-    maxHeight: 300,
+    maxHeight: 350,
+  },
+  userSearchInput: {
+    borderBottomColor: "#eee",
+    borderBottomWidth: 1,
+    padding: 12,
+    fontSize: 14,
   },
   userListHeader: {
     flexDirection: "row",
@@ -665,6 +700,7 @@ const styles = StyleSheet.create({
   },
   userList: {
     padding: 8,
+    maxHeight: 200,
   },
   userItem: {
     flexDirection: "row",
@@ -677,9 +713,17 @@ const styles = StyleSheet.create({
   userItemSelected: {
     backgroundColor: `${colors.light.primary}15`,
   },
-  userItemText: {
+  userItemTextContainer: {
+    flex: 1,
+  },
+  userItemName: {
     fontSize: 14,
     color: "#333",
+    fontWeight: "500",
+  },
+  userItemUsername: {
+    fontSize: 12,
+    color: "#888",
   },
   sendNotificationButton: {
     alignItems: "center",
