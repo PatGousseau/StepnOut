@@ -8,6 +8,7 @@ import { useActiveChallenge } from '../hooks/useActiveChallenge';
 import { useLanguage } from '../contexts/LanguageContext';
 import { captureEvent } from '../lib/posthog';
 import { CHALLENGE_EVENTS } from '../constants/analyticsEvents';
+import { appConfigService } from '../services/appConfigService';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -42,10 +43,12 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 
   const handleShare = async () => {
     try {
+      const shareLink = await appConfigService.getShareLink();
       const streakEmoji = streakCount >= 3 ? '🔥' : '💪';
-      const defaultMessage = t("(emoji) Join me as the (count)th person to complete this week's challenge on Stepn Out! 🚀\n\nhttps://apps.apple.com/us/app/stepn-out/id6739888631", {
+      const defaultMessage = t("(emoji) Join me as the (count)th person to complete this week's challenge on Stepn Out! 🚀\n\n(link)", {
         emoji: streakEmoji,
-        count: completionCount + 1
+        count: completionCount + 1,
+        link: shareLink
       });
       
       await Share.share({

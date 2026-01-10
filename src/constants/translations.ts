@@ -54,8 +54,8 @@ export const translations = {
   "Media is still uploading. Please wait.": "Il media è ancora in caricamento. Attendi.",
   "Error submitting challenge.": "Errore nell'invio della sfida.",
   "Error uploading file": "Errore nel caricamento del file",
-  "(emoji) Join me as the (count)th person to complete this week's challenge on Stepn Out! 🚀\n\nhttps://apps.apple.com/us/app/stepn-out/id6739888631":
-    "(emoji) Unisciti a me come la (count)ª persona a completare la sfida settimanale su Stepn Out! 🚀\n\nhttps://apps.apple.com/us/app/stepn-out/id6739888631",
+  "(emoji) Join me as the (count)th person to complete this week's challenge on Stepn Out! 🚀\n\n(link)":
+    "(emoji) Unisciti a me come la (count)ª persona a completare la sfida settimanale su Stepn Out! 🚀\n\n(link)",
   "Join Me on Stepn Out!": "Unisciti a me su Step Out!",
   "Error sharing:": "Errore nella condivisione:",
   "Challenge Complete!": "Sfida Completata!",
