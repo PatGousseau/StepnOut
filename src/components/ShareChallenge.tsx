@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Share, Platform, Modal, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Share, Modal, Image } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -49,10 +49,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
       });
       
       await Share.share({
-        message: Platform.select({
-          ios: defaultMessage,
-          android: defaultMessage,
-        }) ?? defaultMessage,
+        message: defaultMessage,
         title: t('Join Me on Stepn Out!'),
       });
       
