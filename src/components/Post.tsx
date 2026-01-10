@@ -36,6 +36,7 @@ import { imageService } from "../services/imageService";
 import { ActionsMenu } from "./ActionsMenu";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { translationService } from "../services/translationService";
 
 interface PostProps {
   post: PostType;
@@ -50,8 +51,10 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [showComments, setShowComments] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
   const {
@@ -116,6 +119,20 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     const newCommentCount = commentCount + increment;
     setCommentCount(newCommentCount);
     updateParentCounts(newCommentCount);
+  };
+
+  const handleTranslate = async () => {
+    if (!post.body || isTranslating) return;
+
+    setIsTranslating(true);
+    const result = await translationService.translateToEnglish(post.body);
+    setIsTranslating(false);
+
+    if (result.translatedText) {
+      setTranslatedText(result.translatedText);
+    } else if (result.error) {
+      console.error('Translation error:', result.error);
+    }
   };
 
   const isVideo = (source: string) => {
@@ -391,10 +408,22 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       {post.body && !post.media?.file_path ? (
         <Pressable onPress={handleDoubleTap}>
           <Text style={textStyle}>{post.body}</Text>
+          {translatedText && (
+            <View style={translationContainerStyle}>
+              <Text style={translationLabelStyle}>Translation:</Text>
+              <Text style={translationTextStyle}>{translatedText}</Text>
+            </View>
+          )}
         </Pressable>
       ) : (
         <>
           {post.body && <Text style={textStyle}>{post.body}</Text>}
+          {translatedText && (
+            <View style={translationContainerStyle}>
+              <Text style={translationLabelStyle}>Translation:</Text>
+              <Text style={translationTextStyle}>{translatedText}</Text>
+            </View>
+          )}
           {renderMedia()}
         </>
       )}
@@ -430,6 +459,20 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               <Text style={iconTextStyle}>{commentCount.toString()}</Text>
             </View>
           </TouchableOpacity>
+          {isAdmin && post.body && (
+            <TouchableOpacity onPress={handleTranslate} disabled={isTranslating}>
+              <View style={iconContainerStyle}>
+                <Icon
+                  name="language"
+                  size={16}
+                  color={translatedText ? colors.light.primary : colors.neutral.grey1}
+                />
+                <Text style={iconTextStyle}>
+                  {isTranslating ? "..." : translatedText ? "Translated" : "Translate"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         <Modal
@@ -710,6 +753,28 @@ const welcomeTextStyle: TextStyle = {
 
 const welcomeUsernameStyle: TextStyle = {
   fontWeight: "600",
+  color: colors.light.text,
+};
+
+const translationContainerStyle: ViewStyle = {
+  backgroundColor: colors.light.accent2,
+  borderLeftWidth: 3,
+  borderLeftColor: colors.light.primary,
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  marginTop: 8,
+  borderRadius: 4,
+};
+
+const translationLabelStyle: TextStyle = {
+  fontSize: 11,
+  color: colors.light.primary,
+  fontWeight: "600",
+  marginBottom: 4,
+};
+
+const translationTextStyle: TextStyle = {
+  fontSize: 14,
   color: colors.light.text,
 };
 
