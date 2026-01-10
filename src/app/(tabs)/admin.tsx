@@ -15,7 +15,7 @@ import { supabase } from "../../lib/supabase";
 import { colors } from "../../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAuth } from "../../contexts/AuthContext";
-import { sendNewChallengeNotificationToAll } from "../../lib/notificationsService";
+import { sendNewChallengeNotificationToAll, sendCustomNotification, getAllUserIds } from "../../lib/notificationsService";
 import { uploadMedia } from "../../utils/handleMediaUpload";
 
 type Challenge = {
@@ -30,6 +30,12 @@ type Challenge = {
   is_active: boolean | null;
 };
 
+type UserProfile = {
+  id: string;
+  username: string;
+  name: string;
+};
+
 const ChallengeCreation: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -41,6 +47,13 @@ const ChallengeCreation: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [titleIt, setTitleIt] = useState<string>("");
   const [descriptionIt, setDescriptionIt] = useState<string>("");
+
+  const [notifTitle, setNotifTitle] = useState<string>("");
+  const [notifBody, setNotifBody] = useState<string>("");
+  const [sendToAll, setSendToAll] = useState<boolean>(true);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [sendingNotification, setSendingNotification] = useState<boolean>(false);
 
   const { user } = useAuth();
 
@@ -59,14 +72,29 @@ const ChallengeCreation: React.FC = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, username, name")
+        .order("username", { ascending: true });
+
+      if (error) throw error;
+      setAllUsers(data || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await fetchChallenges();
+    await Promise.all([fetchChallenges(), fetchUsers()]);
     setRefreshing(false);
   }, []);
 
   useEffect(() => {
     fetchChallenges();
+    fetchUsers();
   }, []);
 
   const handleMediaUpload = async () => {
@@ -170,6 +198,45 @@ const ChallengeCreation: React.FC = () => {
     }
   };
 
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const handleSendCustomNotification = async () => {
+    if (!notifTitle.trim() || !notifBody.trim()) {
+      Alert.alert("Error", "Title and body are required");
+      return;
+    }
+
+    const targetUserIds = sendToAll
+      ? await getAllUserIds()
+      : selectedUserIds;
+
+    if (targetUserIds.length === 0) {
+      Alert.alert("Error", "No users selected");
+      return;
+    }
+
+    setSendingNotification(true);
+    try {
+      const result = await sendCustomNotification(notifTitle.trim(), notifBody.trim(), targetUserIds);
+      Alert.alert(
+        "Success",
+        `Notifications sent: ${result.sent} successful, ${result.failed} failed`
+      );
+      setNotifTitle("");
+      setNotifBody("");
+      setSelectedUserIds([]);
+    } catch (error) {
+      console.error("Error sending custom notification:", error);
+      Alert.alert("Error", "Failed to send notifications");
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -255,6 +322,99 @@ const ChallengeCreation: React.FC = () => {
 
         <TouchableOpacity style={styles.createChallengeButton} onPress={handleCreateChallenge}>
           <Text style={styles.buttonText}>Create Challenge</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.sectionTitle}>Send Notification</Text>
+
+        <Text style={styles.label}>Title</Text>
+        <TextInput
+          style={styles.input}
+          value={notifTitle}
+          onChangeText={setNotifTitle}
+          placeholder="Notification title"
+        />
+
+        <Text style={styles.label}>Body</Text>
+        <TextInput
+          style={[styles.input, { minHeight: 80 }]}
+          value={notifBody}
+          onChangeText={setNotifBody}
+          placeholder="Notification message"
+          multiline
+        />
+
+        <View style={styles.recipientToggle}>
+          <TouchableOpacity
+            style={[styles.toggleButton, sendToAll && styles.toggleButtonActive]}
+            onPress={() => setSendToAll(true)}
+          >
+            <Text style={[styles.toggleButtonText, sendToAll && styles.toggleButtonTextActive]}>
+              All Users
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleButton, !sendToAll && styles.toggleButtonActive]}
+            onPress={() => setSendToAll(false)}
+          >
+            <Text style={[styles.toggleButtonText, !sendToAll && styles.toggleButtonTextActive]}>
+              Select Users
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {!sendToAll && (
+          <View style={styles.userListContainer}>
+            <View style={styles.userListHeader}>
+              <Text style={styles.userListTitle}>
+                {selectedUserIds.length} user{selectedUserIds.length !== 1 ? "s" : ""} selected
+              </Text>
+              <View style={styles.selectAllButtons}>
+                <TouchableOpacity
+                  onPress={() => setSelectedUserIds(allUsers.map((u) => u.id))}
+                  style={styles.selectAllButton}
+                >
+                  <Text style={styles.selectAllText}>Select All</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setSelectedUserIds([])}
+                  style={styles.selectAllButton}
+                >
+                  <Text style={styles.selectAllText}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.userList}>
+              {allUsers.map((u) => (
+                <TouchableOpacity
+                  key={u.id}
+                  style={[
+                    styles.userItem,
+                    selectedUserIds.includes(u.id) && styles.userItemSelected,
+                  ]}
+                  onPress={() => toggleUserSelection(u.id)}
+                >
+                  <MaterialIcons
+                    name={selectedUserIds.includes(u.id) ? "check-box" : "check-box-outline-blank"}
+                    size={20}
+                    color={selectedUserIds.includes(u.id) ? colors.light.primary : "#666"}
+                  />
+                  <Text style={styles.userItemText}>
+                    {u.username || u.name || "Unknown"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.sendNotificationButton, sendingNotification && styles.buttonDisabled]}
+          onPress={handleSendCustomNotification}
+          disabled={sendingNotification}
+        >
+          <Text style={styles.buttonText}>
+            {sendingNotification ? "Sending..." : "Send Notification"}
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>Existing Challenges</Text>
@@ -446,6 +606,91 @@ const styles = StyleSheet.create({
   uploadButtonText: {
     color: "#666",
     marginTop: 8,
+  },
+  // Notification styles
+  recipientToggle: {
+    flexDirection: "row",
+    marginTop: 16,
+    gap: 8,
+  },
+  toggleButton: {
+    borderColor: colors.light.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  toggleButtonActive: {
+    backgroundColor: colors.light.primary,
+  },
+  toggleButtonText: {
+    color: colors.light.primary,
+    fontWeight: "600",
+  },
+  toggleButtonTextActive: {
+    color: "white",
+  },
+  userListContainer: {
+    marginTop: 16,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    borderWidth: 1,
+    maxHeight: 300,
+  },
+  userListHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderBottomColor: "#eee",
+    borderBottomWidth: 1,
+    backgroundColor: "#f9f9f9",
+  },
+  userListTitle: {
+    fontWeight: "600",
+    color: "#666",
+  },
+  selectAllButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  selectAllButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  selectAllText: {
+    color: colors.light.primary,
+    fontWeight: "600",
+  },
+  userList: {
+    padding: 8,
+  },
+  userItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    gap: 10,
+  },
+  userItemSelected: {
+    backgroundColor: `${colors.light.primary}15`,
+  },
+  userItemText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  sendNotificationButton: {
+    alignItems: "center",
+    backgroundColor: colors.light.primary,
+    borderRadius: 8,
+    marginTop: 16,
+    marginBottom: 8,
+    paddingVertical: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 
