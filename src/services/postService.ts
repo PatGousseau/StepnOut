@@ -236,7 +236,7 @@ export const postService = {
         .not("media.upload_status", "in", '("failed","pending")')
         .order("created_at", { ascending: false });
 
-      // Query for discussion posts
+      // Query for discussion posts (excluding welcome posts for proper pagination)
       let discussionQuery = supabase
         .from("post")
         .select(
@@ -250,14 +250,38 @@ export const postService = {
         `
         )
         .is("challenge_id", null)
+        .or("is_welcome.is.null,is_welcome.eq.false")
         .not("media.upload_status", "in", '("failed","pending")')
         .order("created_at", { ascending: false });
+
+      // Query for welcome posts (only on first page, fetch all recent ones)
+      let welcomeQuery = pageParam === 1
+        ? supabase
+            .from("post")
+            .select(
+              `
+              *,
+              media (
+                file_path,
+                upload_status
+              ),
+              likes:likes(count)
+            `
+            )
+            .is("challenge_id", null)
+            .eq("is_welcome", true)
+            .order("created_at", { ascending: false })
+            .limit(100)
+        : null;
 
       // Add blocked users filter if needed (quote UUIDs)
       if (blockedUserIds.length > 0) {
         const quotedList = `(${blockedUserIds.map((id) => `"${id}"`).join(",")})`;
         challengeQuery = challengeQuery.not("user_id", "in", quotedList);
         discussionQuery = discussionQuery.not("user_id", "in", quotedList);
+        if (welcomeQuery) {
+          welcomeQuery = welcomeQuery.not("user_id", "in", quotedList);
+        }
       }
 
       // Add pagination (offset-based)
@@ -266,14 +290,16 @@ export const postService = {
       challengeQuery = challengeQuery.range(start, end);
       discussionQuery = discussionQuery.range(start, end);
 
-      // Execute both queries
-      const [challengeResponse, discussionResponse] = await Promise.all([
-        challengeQuery,
-        discussionQuery,
-      ]);
+      // Execute queries
+      const queries: Promise<any>[] = [challengeQuery, discussionQuery];
+      if (welcomeQuery) queries.push(welcomeQuery);
+
+      const responses = await Promise.all(queries);
+      const [challengeResponse, discussionResponse, welcomeResponse] = responses;
 
       if (challengeResponse.error) throw challengeResponse.error;
       if (discussionResponse.error) throw discussionResponse.error;
+      if (welcomeResponse?.error) throw welcomeResponse.error;
 
       // Process challenge posts (attach title)
       const challengePosts = (challengeResponse.data ?? []).map((post: any) => ({
@@ -284,8 +310,11 @@ export const postService = {
       // Process discussion posts
       const discussionPosts = discussionResponse.data ?? [];
 
+      // Process welcome posts (only on first page)
+      const welcomePosts = welcomeResponse?.data ?? [];
+
       // Combine & enforce global ordering (newest first)
-      const postData = [...challengePosts, ...discussionPosts].sort(
+      const postData = [...challengePosts, ...discussionPosts, ...welcomePosts].sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );

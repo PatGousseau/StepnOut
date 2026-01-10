@@ -10,15 +10,32 @@ import {
   Animated,
   LayoutChangeEvent,
   PanResponder,
+  StyleSheet,
 } from "react-native";
 import Post from "../../components/Post";
+import WelcomePostGroup from "../../components/WelcomePostGroup";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
 import { colors } from "../../constants/Colors";
 import InlineCreatePost from "../../components/InlineCreatePost";
 import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
-import { StyleSheet } from "react-native";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { Post as PostType } from "../../types";
+
+const groupWelcomePosts = (posts: PostType[]): (PostType | PostType[])[] =>
+  posts.reduce<(PostType | PostType[])[]>((acc, post) => {
+    if (!post.is_welcome) {
+      acc.push(post);
+    } else {
+      const last = acc[acc.length - 1];
+      if (Array.isArray(last)) {
+        last.push(post);
+      } else {
+        acc.push([post]);
+      }
+    }
+    return acc;
+  }, []);
 
 const Home = () => {
   const { t } = useLanguage();
@@ -30,6 +47,7 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState<"discussion" | "submissions">("submissions");
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
+  const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
 
   // tab indicator and content positions
   const tabIndicatorPosition = useMemo(() => new Animated.Value(0), []);
@@ -132,16 +150,44 @@ const Home = () => {
     [loading, hasMore, loadMorePosts]
   );
 
+  // Toggle welcome group expansion
+  const toggleWelcomeGroup = useCallback((key: string) => {
+    setExpandedWelcomeGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
   // Render posts list for a tab
   const renderPostsList = useCallback(
     (tabPosts: typeof posts, keyPrefix: string) => {
-      return tabPosts.map((post, index) => {
-        const postUser = userMap[post.user_id] as User;
+      return groupWelcomePosts(tabPosts).map((item, index) => {
+        // Welcome post group
+        if (Array.isArray(item)) {
+          const groupKey = `${keyPrefix}-welcome-${index}`;
+          return (
+            <WelcomePostGroup
+              key={groupKey}
+              posts={item}
+              userMap={userMap}
+              isExpanded={expandedWelcomeGroups.has(groupKey)}
+              onToggle={() => toggleWelcomeGroup(groupKey)}
+            />
+          );
+        }
+
+        // Regular post
+        const postUser = userMap[item.user_id] as User;
         if (!postUser) return null;
         return (
           <Post
-            key={`${keyPrefix}-${post.id}-${index}`}
-            post={post}
+            key={`${keyPrefix}-${item.id}-${index}`}
+            post={item}
             postUser={postUser}
             setPostCounts={setPostCounts}
             onPostDeleted={handlePostDeleted}
@@ -149,7 +195,7 @@ const Home = () => {
         );
       });
     },
-    [userMap, setPostCounts, handlePostDeleted]
+    [userMap, setPostCounts, handlePostDeleted, expandedWelcomeGroups, toggleWelcomeGroup]
   );
 
   // container width for tab indicator

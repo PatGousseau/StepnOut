@@ -196,4 +196,8 @@ export const translations = {
     "Qual è una cosa che ti ha spaventato ma ne è valsa la pena?",
   "Reflect on a time you grew from discomfort...":
     "Rifletti su un momento in cui sei cresciuto dal disagio...",
+  "and (count) other joined the community!": "e (count) altro si sono uniti alla community!",
+  "and (count) others joined the community!": "e (count) altri si sono uniti alla community!",
+  "joined the community!": "si è unito alla community!",
+  "Show less": "Mostra meno",
 };
