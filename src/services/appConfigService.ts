@@ -12,14 +12,14 @@ export const appConfigService = {
       if (error) {
         console.warn("Error fetching share link from Supabase:", error);
         // Fallback to default
-        return "https://apps.apple.com/us/app/stepn-out/id6739888631";
+        return "https://linktr.ee/stepnout";
       }
 
-      return data?.value || "https://apps.apple.com/us/app/stepn-out/id6739888631";
+      return data?.value || "https://linktr.ee/stepnout";
     } catch (error) {
       console.error("Error fetching share link:", error);
       // Fallback to default
-      return "https://apps.apple.com/us/app/stepn-out/id6739888631";
+      return "https://linktr.ee/stepnout";
     }
   },
 };
