@@ -53,7 +53,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
           ios: defaultMessage,
           android: defaultMessage,
         }) ?? defaultMessage,
-        title: t('Join Me on StepN Out!'),
+        title: t('Join Me on Stepn Out!'),
       });
       
       captureEvent(CHALLENGE_EVENTS.SHARED, {
