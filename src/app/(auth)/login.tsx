@@ -49,6 +49,61 @@ export default function LoginScreen() {
     }
   }, [response]);
 
+  const handleSocialSignIn = async (provider: 'google' | 'apple', token: string) => {
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider,
+      token,
+    });
+
+    if (error) throw error;
+
+    const userId = data.user?.id;
+    if (!userId) throw new Error(t('Login failed'));
+
+    // Check if profile exists (new user vs returning user)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('first_login, eula_accepted, username')
+      .eq('id', userId)
+      .single();
+
+    // If no username, this is a new user - send to profile setup
+    if (!profile?.username) {
+      router.replace(`/(auth)/register-profile?isSocialUser=true`);
+      return;
+    }
+
+    // Handle EULA
+    if (!profile?.eula_accepted) {
+      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+        { text: t('Accept'), onPress: async () => {
+          await supabase
+            .from('profiles')
+            .update({ eula_accepted: true })
+            .eq('id', userId);
+        } },
+        {
+          text: t('Decline'),
+          onPress: async () => {
+            await supabase.auth.signOut();
+            router.replace('/(auth)/login');
+          }
+        }
+      ]);
+    }
+
+    // Handle first login / onboarding
+    if (profile?.first_login) {
+      await supabase
+        .from('profiles')
+        .update({ first_login: false })
+        .eq('id', userId);
+      router.replace('/(auth)/onboarding');
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   const handleGoogleSignIn = async (idToken: string | undefined) => {
     if (!idToken) {
       Alert.alert(t('Error'), t('Failed to get Google credentials'));
@@ -57,60 +112,7 @@ export default function LoginScreen() {
 
     try {
       setGoogleLoading(true);
-
-      // Sign in to Supabase with the Google token
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: idToken,
-      });
-
-      if (error) throw error;
-
-      const userId = data.user?.id;
-      if (!userId) throw new Error(t('Login failed'));
-
-      // Check if profile exists (new user vs returning user)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_login, eula_accepted, username')
-        .eq('id', userId)
-        .single();
-
-      // If no username, this is a new Google user - send to profile setup
-      if (!profile?.username) {
-        router.replace('/(auth)/register-profile?isGoogleUser=true');
-        return;
-      }
-
-      // Handle EULA
-      if (!profile?.eula_accepted) {
-        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          { text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', userId);
-          } },
-          {
-            text: t('Decline'),
-            onPress: async () => {
-              await supabase.auth.signOut();
-              router.replace('/(auth)/login');
-            }
-          }
-        ]);
-      }
-
-      // Handle first login / onboarding
-      if (profile?.first_login) {
-        await supabase
-          .from('profiles')
-          .update({ first_login: false })
-          .eq('id', userId);
-        router.replace('/(auth)/onboarding');
-      } else {
-        router.replace('/(tabs)');
-      }
+      await handleSocialSignIn('google', idToken);
     } catch (error) {
       Alert.alert(t('Error'), (error as Error).message);
     } finally {
@@ -133,59 +135,7 @@ export default function LoginScreen() {
         throw new Error(t('Failed to get Apple credentials'));
       }
 
-      // Sign in to Supabase with the Apple token
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'apple',
-        token: credential.identityToken,
-      });
-
-      if (error) throw error;
-
-      const userId = data.user?.id;
-      if (!userId) throw new Error(t('Login failed'));
-
-      // Check if profile exists (new user vs returning user)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_login, eula_accepted, username')
-        .eq('id', userId)
-        .single();
-
-      // If no username, this is a new Apple user - send to profile setup
-      if (!profile?.username) {
-        router.replace('/(auth)/register-profile?isAppleUser=true');
-        return;
-      }
-
-      // Handle EULA
-      if (!profile?.eula_accepted) {
-        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          { text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', userId);
-          } },
-          {
-            text: t('Decline'),
-            onPress: async () => {
-              await supabase.auth.signOut();
-              router.replace('/(auth)/login');
-            }
-          }
-        ]);
-      }
-
-      // Handle first login / onboarding
-      if (profile?.first_login) {
-        await supabase
-          .from('profiles')
-          .update({ first_login: false })
-          .eq('id', userId);
-        router.replace('/(auth)/onboarding');
-      } else {
-        router.replace('/(tabs)');
-      }
+      await handleSocialSignIn('apple', credential.identityToken);
     } catch (error: unknown) {
       // Don't show error if user cancelled
       if ((error as { code?: string })?.code === 'ERR_REQUEST_CANCELED') {

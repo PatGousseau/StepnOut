@@ -22,11 +22,10 @@ import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
 
 export default function RegisterProfileScreen() {
-  const { email, password, isGoogleUser, isAppleUser } = useLocalSearchParams<{
+  const { email, password, isSocialUser } = useLocalSearchParams<{
     email?: string;
     password?: string;
-    isGoogleUser?: string;
-    isAppleUser?: string;
+    isSocialUser?: string;
   }>();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -38,7 +37,7 @@ export default function RegisterProfileScreen() {
   const [instagram, setInstagram] = useState('');
   const { t, language } = useLanguage();
 
-  const isSocialSignUp = isGoogleUser === 'true' || isAppleUser === 'true';
+  const isSocialSignUp = isSocialUser === 'true';
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
