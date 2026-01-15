@@ -52,7 +52,14 @@
           }
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-apple-authentication",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for video recording."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -86,7 +93,8 @@
         "resizeMode": "contain",
         "backgroundColor": "#FFFFFF"
       },
-      "usesApnsToken": true
+      "usesApnsToken": true,
+      "usesAppleSignIn": true
     }
   }
 }

@@ -22,10 +22,10 @@ import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
 
 export default function RegisterProfileScreen() {
-  const { email, password, isGoogleUser } = useLocalSearchParams<{
+  const { email, password, isSocialUser } = useLocalSearchParams<{
     email?: string;
     password?: string;
-    isGoogleUser?: string;
+    isSocialUser?: string;
   }>();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -37,7 +37,7 @@ export default function RegisterProfileScreen() {
   const [instagram, setInstagram] = useState('');
   const { t, language } = useLanguage();
 
-  const isGoogleSignUp = isGoogleUser === 'true';
+  const isSocialSignUp = isSocialUser === 'true';
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -101,16 +101,16 @@ export default function RegisterProfileScreen() {
 
       // Use unified signUp for both Google and email/password
       const userId = await signUp({
-        email: isGoogleSignUp ? undefined : email,
-        password: isGoogleSignUp ? undefined : password,
+        email: isSocialSignUp ? undefined : email,
+        password: isSocialSignUp ? undefined : password,
         username,
         displayName,
         profileMediaId,
         instagram: instagram.replace(/@/g, ''),
-        isGoogleUser: isGoogleSignUp,
+        isGoogleUser: isSocialSignUp,
       });
 
-      if (isGoogleSignUp) {
+      if (isSocialSignUp) {
         // Google signup: show EULA then go to onboarding
         Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
           { text: t('Accept'), onPress: async () => {
@@ -162,7 +162,7 @@ export default function RegisterProfileScreen() {
             style={styles.logo}
           />
           <Text style={styles.stepnOut}>{t("Stepn Out")}</Text>
-          {isGoogleSignUp && (
+          {isSocialSignUp && (
             <Text style={styles.subtitle}>{t("Complete your profile")}</Text>
           )}
         </View>
@@ -227,7 +227,7 @@ export default function RegisterProfileScreen() {
           <Text style={styles.buttonText}>
             {loading 
               ? t("Creating Account...") 
-              : isGoogleSignUp 
+              : isSocialSignUp 
                 ? t("Complete Setup")
                 : t("Complete Registration")}
           </Text>

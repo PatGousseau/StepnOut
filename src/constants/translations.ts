@@ -102,6 +102,8 @@ export const translations = {
   "Display Name*": "Nome Visualizzato*",
   "Creating Account...": "Creazione Account...",
   "Complete Registration": "Completa Registrazione",
+  "Complete Setup": "Completa Configurazione",
+  "Complete your profile": "Completa il tuo profilo",
   "Registration Successful": "Registrazione Completata",
   "Please check your email to verify your account. After verification, you can log in to continue.":
     "Controlla la tua email per verificare il tuo account. Dopo la verifica, potrai accedere per continuare.",
@@ -113,6 +115,8 @@ export const translations = {
   "Signing in...": "Accesso in corso...",
   "Log In": "Accedi",
   "Continue with Google": "Continua con Google",
+  "Failed to get Google credentials": "Impossibile ottenere le credenziali Google",
+  "Failed to get Apple credentials": "Impossibile ottenere le credenziali Apple",
   Email: "Email",
   Password: "Password",
   "Don't have an account? Register": "Non hai un account? Registrati",
