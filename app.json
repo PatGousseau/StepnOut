@@ -53,7 +53,13 @@
         }
       ],
       "expo-localization",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for video recording."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
