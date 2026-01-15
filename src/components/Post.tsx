@@ -487,9 +487,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </TouchableWithoutFeedback>
 
             <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              behavior="padding"
               style={modalContainerStyle}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
+              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
             >
               <CommentsModal
                 initialComments={commentList}
