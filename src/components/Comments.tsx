@@ -7,13 +7,13 @@ import {
   Image,
   Animated,
   PanResponder,
-  SafeAreaView,
   TouchableOpacity,
   ViewStyle,
   TextStyle,
   ImageStyle,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -195,7 +195,6 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             style={inputStyle}
             multiline
             textAlignVertical="top"
-            maxHeight={100}
           />
           <Pressable
             onPress={handleAddComment}
