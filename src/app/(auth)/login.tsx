@@ -20,6 +20,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { EULA_IT, EULA } from '../../constants/EULA';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -31,6 +32,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const { signIn } = useAuth();
   const { t, language } = useLanguage();
 
@@ -113,6 +115,85 @@ export default function LoginScreen() {
       Alert.alert(t('Error'), (error as Error).message);
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setAppleLoading(true);
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error(t('Failed to get Apple credentials'));
+      }
+
+      // Sign in to Supabase with the Apple token
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken,
+      });
+
+      if (error) throw error;
+
+      const userId = data.user?.id;
+      if (!userId) throw new Error(t('Login failed'));
+
+      // Check if profile exists (new user vs returning user)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_login, eula_accepted, username')
+        .eq('id', userId)
+        .single();
+
+      // If no username, this is a new Apple user - send to profile setup
+      if (!profile?.username) {
+        router.replace('/(auth)/register-profile?isAppleUser=true');
+        return;
+      }
+
+      // Handle EULA
+      if (!profile?.eula_accepted) {
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+          { text: t('Accept'), onPress: async () => {
+            await supabase
+              .from('profiles')
+              .update({ eula_accepted: true })
+              .eq('id', userId);
+          } },
+          {
+            text: t('Decline'),
+            onPress: async () => {
+              await supabase.auth.signOut();
+              router.replace('/(auth)/login');
+            }
+          }
+        ]);
+      }
+
+      // Handle first login / onboarding
+      if (profile?.first_login) {
+        await supabase
+          .from('profiles')
+          .update({ first_login: false })
+          .eq('id', userId);
+        router.replace('/(auth)/onboarding');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (error: unknown) {
+      // Don't show error if user cancelled
+      if ((error as { code?: string })?.code === 'ERR_REQUEST_CANCELED') {
+        return;
+      }
+      Alert.alert(t('Error'), (error as Error).message);
+    } finally {
+      setAppleLoading(false);
     }
   };
 
@@ -214,12 +295,12 @@ export default function LoginScreen() {
         )}
 
         {Platform.OS !== 'android' && (
-          <TouchableOpacity 
-            style={[styles.googleButton, googleLoading && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
             onPress={() => promptAsync()}
             disabled={!request || googleLoading}
           >
-            <Image 
+            <Image
               source={require('../../assets/images/google.png')}
               style={styles.googleIcon}
             />
@@ -228,7 +309,17 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
         )}
-        
+
+        {Platform.OS === 'ios' && (
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            cornerRadius={5}
+            style={styles.appleButton}
+            onPress={handleAppleSignIn}
+          />
+        )}
+
         <TouchableOpacity 
           style={styles.linkButton}
           onPress={() => router.push('/(auth)/register')}
@@ -297,6 +388,11 @@ const styles = StyleSheet.create({
     height: 20,
     marginRight: 10,
     width: 20,
+  },
+  appleButton: {
+    height: 50,
+    marginTop: 10,
+    width: '100%',
   },
   input: {
     borderColor: '#ddd',
