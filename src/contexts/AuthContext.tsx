@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { AppState, AppStateStatus } from "react-native";
 import { Session } from "@supabase/supabase-js";
 import { supabase, initializeSupabase } from "../lib/supabase";
 import { captureEvent, identifyUser, resetPostHog, setUserProperties } from "../lib/posthog";
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     // Initialize Supabase first
@@ -92,6 +94,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return () => subscription.unsubscribe();
     });
+  }, []);
+
+  // Refresh session when app comes to foreground after being backgrounded
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === "active"
+      ) {
+        // refresh the session
+        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+        if (refreshedSession) {
+          setSession(refreshedSession);
+        }
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    return () => subscription.remove();
   }, []);
 
   // Helper: Check if username is taken
