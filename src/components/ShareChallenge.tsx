@@ -168,11 +168,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  inspirationText: {
-    color: colors.neutral.darkGrey,
-    fontSize: 14,
-    textAlign: 'center',
-  },
   laterButton: {
     alignItems: 'center',
     backgroundColor: colors.neutral.grey2,
@@ -238,22 +233,6 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     fontSize: 16,
     lineHeight: 24,
-    textAlign: 'center',
-  },
-  streakBadge: {
-    backgroundColor: colors.light.accent,
-    borderRadius: 12,
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  subtitle: {
-    color: colors.light.accent,
-    fontSize: 16,
-    fontWeight: '600',
     textAlign: 'center',
   },
   title: {

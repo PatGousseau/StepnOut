@@ -144,11 +144,40 @@ async function getAllUserIds(): Promise<string[]> {
 // Handle sending notifications to all users about a new challenge
 export async function sendNewChallengeNotificationToAll(challengeId: string, challengeTitle: string) {
     const userIds = await getAllUserIds();
-    
+
     // Send notification to each user
-    const notifications = userIds.map(userId => 
+    const notifications = userIds.map(userId =>
         sendNewChallengeNotification(userId, challengeId, challengeTitle)
     );
-    
+
     await Promise.all(notifications);
 }
+
+// Send custom notification to specific users
+export async function sendCustomNotification(
+    title: string,
+    body: string,
+    userIds: string[]
+): Promise<{ sent: number; failed: number }> {
+    let sent = 0;
+    let failed = 0;
+
+    const notifications = userIds.map(async (userId) => {
+        const pushToken = await getPushToken(userId);
+        if (!pushToken) {
+            failed++;
+            return;
+        }
+        try {
+            await sendPushNotification(pushToken, title, body, {});
+            sent++;
+        } catch {
+            failed++;
+        }
+    });
+
+    await Promise.all(notifications);
+    return { sent, failed };
+}
+
+export { getAllUserIds };
