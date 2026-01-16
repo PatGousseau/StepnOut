@@ -204,4 +204,12 @@ export const translations = {
   "and (count) others joined the community!": "e (count) altri si sono uniti alla community!",
   "joined the community!": "si è unito alla community!",
   "Show less": "Mostra meno",
+  "An account with this email already exists":
+    "Esiste già un account con questa email",
+  "Username is already taken": "Questo nome utente è già in uso",
+  "Checking...": "Verifica...",
+  "Registration failed. Please try again.": "Registrazione fallita. Riprova.",
+  "Confirm Password*": "Conferma Password*",
+  "Passwords do not match": "Le password non corrispondono",
+  "Password*": "Password*",
 };

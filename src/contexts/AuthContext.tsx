@@ -6,17 +6,14 @@ import { captureEvent, identifyUser, resetPostHog, setUserProperties } from "../
 import { AUTH_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 type SignUpOptions = {
-  // Required for email/password signup, not needed for Google
-  email?: string;
-  password?: string;
   // Required for all signups
   username: string;
   displayName: string;
   // Optional for all signups
   profileMediaId?: number | null;
   instagram?: string;
-  // Flag to indicate Google signup
-  isGoogleUser?: boolean;
+  // Flag to indicate social (Google/Apple) signup
+  isSocialUser?: boolean;
 };
 
 type AuthContextType = {
@@ -145,6 +142,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: "",
       is_welcome: true,
     });
+  };
+
+  // Signup function for completing profile (user already authenticated)
+  const signUp = async (options: SignUpOptions): Promise<string> => {
+    const { username, displayName, profileMediaId, instagram, isSocialUser } = options;
+
+    // Get the already-authenticated user
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      throw new Error("No active session");
+    }
+    const userId = session.user.id;
+
+    // Check username availability (excluding current user)
+    await checkUsernameAvailable(username, userId);
+
+    // Build profile updates
+    const updates: Record<string, any> = {
+      id: userId,
+      username,
+      name: displayName,
+      first_login: true,
+    };
+
+    // Optional fields
+    if (profileMediaId) updates.profile_media_id = profileMediaId;
+    if (instagram) updates.instagram = instagram;
+
+    // Upsert profile
+    const { error: upsertError } = await supabase
+      .from("profiles")
+      .upsert(updates, { onConflict: 'id' });
+
+    if (upsertError) throw upsertError;
+
+    // Create welcome post
+    await createWelcomePost(userId);
 
     // Track sign up event
     captureEvent(AUTH_EVENTS.SIGNED_UP, {
@@ -153,87 +187,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       [USER_PROPERTIES.HAS_PROFILE_PICTURE]: !!profileMediaId,
       [USER_PROPERTIES.HAS_INSTAGRAM]: !!instagram,
     });
-  };
-
-  // Unified signup function for both email/password and Google users
-  const signUp = async (options: SignUpOptions): Promise<string> => {
-    const { email, password, username, displayName, profileMediaId, instagram, isGoogleUser } = options;
-
-    let userId: string;
-
-    if (isGoogleUser) {
-      // Google signup: user already authenticated, just need to complete profile
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error("No active session");
-      }
-      userId = session.user.id;
-
-      // Check username availability (excluding current user since profile exists)
-      await checkUsernameAvailable(username, userId);
-    } else {
-      // Email/password signup: need to create auth user first
-      if (!email || !password) {
-        throw new Error("Email and password are required");
-      }
-
-      // Check username availability (no exclusion since user doesn't exist yet)
-      await checkUsernameAvailable(username);
-
-      // Create auth user (triggers DB to create profile with username/displayName from metadata)
-      const { data: { user }, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username,
-            display_name: displayName,
-          },
-        },
-      });
-
-      if (error) throw error;
-      if (!user) throw new Error("No user returned after signup");
-      userId = user.id;
-    }
-
-    // Build profile updates
-    const updates: Record<string, any> = {};
-
-    // Google users need username/displayName set explicitly (not from DB trigger)
-    if (isGoogleUser) {
-      updates.id = userId; // Required for upsert
-      updates.username = username;
-      updates.name = displayName;
-      updates.first_login = true;
-    }
-
-    // Both flows can have optional profile picture and instagram
-    if (profileMediaId) updates.profile_media_id = profileMediaId;
-    if (instagram) updates.instagram = instagram;
-
-    // Update profile if there's anything to update
-    if (Object.keys(updates).length > 0) {
-      if (isGoogleUser) {
-        // Use upsert for Google users to ensure profile exists
-        const { error: upsertError } = await supabase
-          .from("profiles")
-          .upsert(updates, { onConflict: 'id' });
-
-        if (upsertError) throw upsertError;
-      } else {
-        // Regular update for email/password users (profile already created by DB trigger)
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update(updates)
-          .eq("id", userId);
-
-        if (updateError) throw updateError;
-      }
-    }
-
-    // Create welcome post
-    await createWelcomePost(userId);
 
     return userId;
   };
