@@ -1,23 +1,16 @@
 import { useLanguage } from "../contexts/LanguageContext";
 
 export const formatRelativeTime = (dateString: string) => {
-
   const { t } = useLanguage();
-  
-  if (!dateString) {
-    console.warn('Empty date string');
-    return t('just now');
-  }
 
-  // Handle ISO 8601 dates with timezone offset
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) {
-    console.warn('Invalid date:', dateString);
-    return t('just now');
-  }
+  if (!dateString) return t('just now');
 
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const hasTimezone = /Z|[+-]\d{2}:\d{2}$/.test(dateString);
+  const date = new Date(hasTimezone ? dateString : dateString + 'Z');
+
+  if (isNaN(date.getTime())) return t('just now');
+
+  const diffInSeconds = Math.floor((Date.now() - date.getTime()) / 1000);
 
   if (diffInSeconds < 60) return t("just now");
   if (diffInSeconds < 3600) return t("(count)m", { count: Math.floor(diffInSeconds / 60) });
