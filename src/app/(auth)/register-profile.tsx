@@ -22,9 +22,7 @@ import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
 
 export default function RegisterProfileScreen() {
-  const { email, password, isSocialUser } = useLocalSearchParams<{
-    email?: string;
-    password?: string;
+  const { isSocialUser } = useLocalSearchParams<{
     isSocialUser?: string;
   }>();
   const [username, setUsername] = useState("");
@@ -35,6 +33,7 @@ export default function RegisterProfileScreen() {
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [instagram, setInstagram] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
 
   const isSocialSignUp = isSocialUser === 'true';
@@ -91,60 +90,44 @@ export default function RegisterProfileScreen() {
   };
 
   const handleRegister = async () => {
+    setError(null);
+
     if (!username || !displayName) {
-      Alert.alert(t("Error"), t("Please fill in all required fields"));
+      setError(t("Please fill in all required fields"));
       return;
     }
 
     try {
       setLoading(true);
 
-      // Use unified signUp for both Google and email/password
+      // Complete profile setup
       const userId = await signUp({
-        email: isSocialSignUp ? undefined : email,
-        password: isSocialSignUp ? undefined : password,
         username,
         displayName,
         profileMediaId,
         instagram: instagram.replace(/@/g, ''),
-        isGoogleUser: isSocialSignUp,
+        isSocialUser: isSocialSignUp,
       });
 
-      if (isSocialSignUp) {
-        // Google signup: show EULA then go to onboarding
-        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          { text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', userId);
-            router.replace('/(auth)/onboarding');
-          }},
-          {
-            text: t('Decline'),
-            onPress: async () => {
-              await supabase.auth.signOut();
-              router.replace('/(auth)/login');
-            }
+      // Show EULA then go to onboarding
+      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+        { text: t('Accept'), onPress: async () => {
+          await supabase
+            .from('profiles')
+            .update({ eula_accepted: true })
+            .eq('id', userId);
+          router.replace('/(auth)/onboarding');
+        }},
+        {
+          text: t('Decline'),
+          onPress: async () => {
+            await supabase.auth.signOut();
+            router.replace('/(auth)/login');
           }
-        ]);
-      } else {
-        // Email/password signup: show verification message
-        Alert.alert(
-          t("Registration Successful"),
-          t(
-            "Please check your email to verify your account. After verification, you can log in to continue."
-          ),
-          [
-            {
-              text: t("OK"),
-              onPress: () => router.replace("/(auth)/login"),
-            },
-          ]
-        );
-      }
+        }
+      ]);
     } catch (error) {
-      Alert.alert(t("Error"), (error as Error).message);
+      setError(t((error as Error).message));
     } finally {
       setLoading(false);
     }
@@ -195,7 +178,7 @@ export default function RegisterProfileScreen() {
               placeholder={t("Username*")}
               placeholderTextColor="#666"
               value={username}
-              onChangeText={setUsername}
+              onChangeText={(text) => setUsername(text.replace(/\s/g, ''))}
               autoCapitalize="none"
             />
             <TextInput
@@ -215,6 +198,10 @@ export default function RegisterProfileScreen() {
             />
           </View>
         </View>
+
+        {error && (
+          <Text style={styles.errorText}>{error}</Text>
+        )}
 
         <TouchableOpacity
           style={[
@@ -255,6 +242,12 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.light.background,
     flex: 1,
+  },
+  errorText: {
+    color: "#dc2626",
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: "center",
   },
   form: {
     flex: 1,
