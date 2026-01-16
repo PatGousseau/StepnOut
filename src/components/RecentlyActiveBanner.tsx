@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors';
@@ -153,19 +154,27 @@ export const RecentlyActiveBanner = () => {
               : t('Recently active')}
           </Text>
           {!isExpanded && (
-            <View style={styles.smallAvatarsWrapper}>
-              {activeUsers.filter((user) => user.isActiveToday).map((user, index) => {
-                const totalCount = activeUsers.filter((u) => u.isActiveToday).length;
-                return (
-                  <UserAvatar
-                    key={user.id}
-                    user={user}
-                    onPress={() => handleUserPress(user.id)}
-                    variant="SMALL"
-                    zIndex={totalCount - index}
-                  />
-                );
-              })}
+            <View style={styles.smallAvatarsOuterWrapper}>
+              <View style={styles.smallAvatarsWrapper}>
+                {activeUsers
+                  .filter((user) => user.isActiveToday)
+                  .map((user, index) => (
+                    <UserAvatar
+                      key={user.id}
+                      user={user}
+                      onPress={() => handleUserPress(user.id)}
+                      variant="SMALL"
+                      zIndex={activeTodayCount - index}
+                    />
+                  ))}
+              </View>
+              <LinearGradient
+                colors={[`${colors.light.background}00`, colors.light.background]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.avatarFadeGradient}
+                pointerEvents="none"
+              />
             </View>
           )}
         </View>
@@ -225,6 +234,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   activeDotIndicator: {
     width: 8,
@@ -238,11 +248,23 @@ const styles = StyleSheet.create({
     color: colors.light.lightText,
     fontWeight: '500',
   },
+  smallAvatarsOuterWrapper: {
+    flex: 1,
+    marginLeft: 8,
+    position: 'relative',
+  },
   smallAvatarsWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: 4,
-    marginLeft: 8,
+    overflow: 'hidden',
+  },
+  avatarFadeGradient: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 32,
   },
   content: {
     paddingHorizontal: 8,
