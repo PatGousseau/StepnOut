@@ -90,9 +90,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   }, [fetchUserPosts, refetchProfile]);
 
   const handleUpdateProfilePicture = async () => {
+    if (!user?.id) return;
     try {
       setImageUploading(true);
-      const result = await profileService.updateProfilePicture(user?.id!);
+      const result = await profileService.updateProfilePicture(user.id);
 
       if (result.success) {
         // Optimistically update with preview URL if available
@@ -124,8 +125,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleSaveProfile = async () => {
+    if (!user?.id) return;
     try {
-      const result = await profileService.validateAndUpdateProfile(user?.id!, {
+      const result = await profileService.validateAndUpdateProfile(user.id, {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
         name: editedName !== userProfile?.name ? editedName : undefined,
@@ -173,8 +175,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleDeleteAccount = async () => {
+    if (!user?.id) return;
     try {
-      const result = await profileService.confirmAndDeleteAccount(user?.id!, t);
+      const result = await profileService.confirmAndDeleteAccount(user.id, t);
       if (result.success) {
         captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
         await signOut();
@@ -223,7 +226,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   if (progressLoading || profileLoading || !userProfile) {
     return (
-      <View style={[styles.container]}>
+      <View style={styles.container}>
         <Loader />
       </View>
     );
@@ -390,9 +393,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {userPosts.map((post) => (
           <Post
             key={post.id}
-            post={post} // Pass the entire post object
+            post={post}
             postUser={userProfile}
-            setPostCounts={() => {}}
             onPostDeleted={() => {}}
           />
         ))}
@@ -536,15 +538,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  menuItemContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
-  menuOptionText: {
-    color: colors.light.primary,
-    fontSize: 14,
-  },
   modalContainer: {
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.9)",
@@ -571,14 +564,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     alignItems: "center",
     flexDirection: "row",
-  },
-  input: {
-    borderColor: colors.light.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
   },
   userInfo: {
     alignItems: "center",
@@ -620,18 +605,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 0,
   },
-  websiteLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
   websiteText: {
     color: colors.light.primary,
     fontSize: 14,
-  },
-  inputWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   instagram: {
     flexDirection: "row",

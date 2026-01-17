@@ -4,10 +4,13 @@ import { translations } from '../constants/translations';
 
 const LANGUAGE_KEY = 'app_language';
 
+/** Valid types for translation interpolation values */
+type TranslationParamValue = string | number;
+
 type LanguageContextType = {
   language: 'it' | 'en';
   toggleLanguage: () => void;
-  t: (key: string, params?: Record<string, any>) => string;
+  t: (key: string, params?: Record<string, TranslationParamValue>) => string;
   isLoading: boolean;
 };
 
@@ -44,15 +47,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const t = (key: string, params?: Record<string, any>) => {
+  const t = (key: string, params?: Record<string, TranslationParamValue>) => {
     let translation = language === 'en' ? key : ((translations as Record<string, string>)[key] || key);
-    
+
     if (params) {
       Object.keys(params).forEach(param => {
-        translation = translation.replace(`(${param})`, params[param].toString());
+        translation = translation.replace(`(${param})`, String(params[param]));
       });
     }
-    
+
     return translation;
   };
 

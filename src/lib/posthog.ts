@@ -4,6 +4,8 @@ const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_API_KEY || '';
 const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
 const IS_DISABLED = process.env.EXPO_PUBLIC_POSTHOG_DISABLED === 'true' || !POSTHOG_API_KEY;
 
+type AnalyticsProperties = Record<string, string | number | boolean | null | undefined>;
+
 let posthogInstance: PostHog | null = null;
 
 if (!IS_DISABLED && POSTHOG_API_KEY) {
@@ -17,19 +19,19 @@ if (!IS_DISABLED && POSTHOG_API_KEY) {
   });
 }
 
-export const identifyUser = (userId: string, properties?: Record<string, any>) => {
+export const identifyUser = (userId: string, properties?: AnalyticsProperties) => {
   if (posthogInstance && !IS_DISABLED) {
     posthogInstance.identify(userId, properties);
   }
 };
 
-export const captureEvent = (eventName: string, properties?: Record<string, any>) => {
+export const captureEvent = (eventName: string, properties?: AnalyticsProperties) => {
   if (posthogInstance && !IS_DISABLED) {
     posthogInstance.capture(eventName, properties);
   }
 };
 
-export const captureScreen = (screenName: string, properties?: Record<string, any>) => {
+export const captureScreen = (screenName: string, properties?: AnalyticsProperties) => {
   if (posthogInstance && !IS_DISABLED) {
     posthogInstance.screen(screenName, properties);
   }
@@ -41,7 +43,7 @@ export const resetPostHog = () => {
   }
 };
 
-export const setUserProperties = (properties: Record<string, any>) => {
+export const setUserProperties = (properties: AnalyticsProperties) => {
   if (posthogInstance && !IS_DISABLED) {
     const distinctId = posthogInstance.getDistinctId();
     if (distinctId) {

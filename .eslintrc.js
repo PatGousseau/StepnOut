@@ -29,4 +29,21 @@ module.exports = {
   env: {
     'react-native/react-native': true,
   },
+  overrides: [
+    {
+      files: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
+      env: {
+        jest: true,
+      },
+      rules: {
+        'react-native/no-raw-text': 'off', // Test files often use raw text
+      },
+    },
+    {
+      files: ['tests/k6/**/*.js'],
+      rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+      },
+    },
+  ],
 }; 

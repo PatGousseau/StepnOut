@@ -217,12 +217,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  requiredText: {
-    color: '#666',
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
-  },
   stepnOut: {
     color: colors.light.primary,
     fontFamily: 'PingFangSC-Medium',

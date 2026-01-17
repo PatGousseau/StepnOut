@@ -20,6 +20,7 @@ import { imageService } from "../services/imageService";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
+import { Post } from "../types";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -76,7 +77,7 @@ interface PatrizioExampleProps {
 
 export const PatrizioExample: React.FC<PatrizioExampleProps> = ({ challenge }) => {
   const { t } = useLanguage();
-  const [patrizioSubmission, setPatrizioSubmission] = useState<any>(null);
+  const [patrizioSubmission, setPatrizioSubmission] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrls, setImageUrls] = useState<{ previewUrl: string; fullUrl: string }>({
     previewUrl: "",
@@ -171,8 +172,6 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const { user } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [showNotification, setShowNotification] = useState(false);
-  const notificationAnim = useRef(new Animated.Value(0)).current;
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -251,22 +250,6 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
   return (
     <>
-      {showNotification && (
-        <Animated.View
-          style={[
-            shareStyles.notification,
-            {
-              opacity: notificationAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 0.9],
-              }),
-            },
-          ]}
-        >
-          <Text style={shareStyles.notificationText}>{t("Your post has been submitted!")}</Text>
-        </Animated.View>
-      )}
-
       <TouchableOpacity style={shareStyles.button} onPress={fadeIn}>
         <Text style={shareStyles.buttonText}>{t("Mark as complete")}</Text>
       </TouchableOpacity>
@@ -648,21 +631,6 @@ const shareStyles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 4,
-  },
-  notification: {
-    backgroundColor: colors.light.accent,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    left: 0,
-    padding: 10,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  notificationText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   playIconOverlay: {
     alignItems: "center",

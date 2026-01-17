@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Modal,
@@ -41,14 +41,11 @@ import { translationService } from "../services/translationService";
 interface PostProps {
   post: PostType;
   postUser: User | UserProfile;
-  setPostCounts?: React.Dispatch<
-    React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>
-  >;
   isPostPage?: boolean;
   onPostDeleted?: () => void;
 }
 
-const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false }) => {
+const Post: React.FC<PostProps> = ({ post, postUser, isPostPage = false, onPostDeleted }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
   const { user, isAdmin } = useAuth();
@@ -95,30 +92,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     };
   }, []);
 
-  const updateParentCounts = useCallback(
-    (newCommentCount: number) => {
-      if (setPostCounts) {
-        setPostCounts((prevCounts) => ({
-          ...prevCounts,
-          [post.id]: {
-            likes: likeCounts[post.id] || 0,
-            comments: newCommentCount,
-          },
-        }));
-      }
-    },
-    [post.id, setPostCounts, likeCounts]
-  );
-
   const handleLikePress = async () => {
     if (!user) return;
     await togglePostLike(post.id, user.id, post.user_id);
   };
 
   const handleCommentAdded = (increment: number) => {
-    const newCommentCount = commentCount + increment;
-    setCommentCount(newCommentCount);
-    updateParentCounts(newCommentCount);
+    setCommentCount(commentCount + increment);
   };
 
   const handleTranslate = async () => {
@@ -391,6 +371,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             if (isPostPage) {
               router.back();
             }
+            onPostDeleted?.();
           }}
         >
           <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />

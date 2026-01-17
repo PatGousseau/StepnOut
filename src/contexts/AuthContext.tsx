@@ -12,9 +12,17 @@ type SignUpOptions = {
   // Optional for all signups
   profileMediaId?: number | null;
   instagram?: string;
-  // Flag to indicate social (Google/Apple) signup
-  isSocialUser?: boolean;
 };
+
+/** Profile data for upsert operations */
+interface ProfileUpdate {
+  id: string;
+  username: string;
+  name: string;
+  first_login: boolean;
+  profile_media_id?: number;
+  instagram?: string;
+}
 
 type AuthContextType = {
   session: Session | null;
@@ -146,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Signup function for completing profile (user already authenticated)
   const signUp = async (options: SignUpOptions): Promise<string> => {
-    const { username, displayName, profileMediaId, instagram, isSocialUser } = options;
+    const { username, displayName, profileMediaId, instagram } = options;
 
     // Get the already-authenticated user
     const { data: { session } } = await supabase.auth.getSession();
@@ -159,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await checkUsernameAvailable(username, userId);
 
     // Build profile updates
-    const updates: Record<string, any> = {
+    const updates: ProfileUpdate = {
       id: userId,
       username,
       name: displayName,

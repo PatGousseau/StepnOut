@@ -19,8 +19,8 @@ interface ShareChallengeProps {
   streakCount?: number;
 }
 
-const ShareChallenge: React.FC<ShareChallengeProps> = ({ 
-  title, 
+const ShareChallenge: React.FC<ShareChallengeProps> = ({
+  title,
   challengeId,
   onClose,
   mediaPreview,
@@ -28,7 +28,8 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   isVisible
 }) => {
   const { t } = useLanguage();
-  const confettiRef = useRef<any>(null);
+  // ConfettiCannon lacks proper TypeScript types
+  const confettiRef = useRef<InstanceType<typeof ConfettiCannon> | null>(null);
   const { completionCount } = useActiveChallenge();
 
   useEffect(() => {
@@ -101,7 +102,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
                 resizeMode="cover"
               />
             )}
-            <Text style={styles.challengeTitle}>"{title}"</Text>
+            <Text style={styles.challengeTitle}>&quot;{title}&quot;</Text>
           </View>
 
           <View style={styles.socialProofContainer}>

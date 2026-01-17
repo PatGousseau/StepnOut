@@ -187,10 +187,6 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 };
 
 const styles = StyleSheet.create({
-  commentText: {
-    color: '#666',
-    fontStyle: 'italic',
-  },
   divider: {
     backgroundColor: '#cfcbca',
     height: 1,

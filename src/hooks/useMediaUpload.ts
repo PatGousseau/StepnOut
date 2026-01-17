@@ -12,19 +12,25 @@ interface UseMediaUploadOptions {
   successMessage?: string;
 }
 
+/** Additional data to include when creating a post */
+interface PostAdditionalData {
+  user_id?: string;
+  challenge_id?: number;
+  [key: string]: string | number | boolean | null | undefined;
+}
+
 interface UseMediaUploadResult {
   selectedMedia: MediaSelectionResult | null;
   postText: string;
   isUploading: boolean;
-  isBackgroundUploading: boolean;
-  localUploadProgress: number;
+  uploadProgress: number | null;
   handleMediaUpload: () => Promise<void>;
   handleRemoveMedia: () => void;
   setPostText: (text: string) => void;
-  handleSubmit: (additionalData?: Record<string, any>, text?: string) => Promise<void>;
+  handleSubmit: (additionalData?: PostAdditionalData, text?: string) => Promise<void>;
 }
 
-export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
+export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUploadResult => {
   const { t } = useLanguage();
   const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
   const [postText, setPostText] = useState("");
@@ -48,11 +54,12 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
       if (result) {
         setSelectedMedia(result);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error selecting media:', error);
-      
+
       // Check if it's a permissions error
-      if (error?.message?.includes('permissions not granted')) {
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('permissions not granted')) {
         Alert.alert(
           t('Photo Access Required'),
           t('Please enable photo library access in Settings to share photos and videos.'),
@@ -82,7 +89,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     setSelectedMedia(null);
   };
 
-  const handleSubmit = async (additionalData: Record<string, any> = {}, text?: string) => {
+  const handleSubmit = async (additionalData: PostAdditionalData = {}, text?: string) => {
     const finalText = text !== undefined ? text : postText;
     
     if (!finalText.trim() && !selectedMedia) {
@@ -125,7 +132,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
             setLocalUploadProgress(progress);
             progressManagerRef.current.updateProgress(progress);
           },
-          (success, mediaUrl) => {
+          (success) => {
             setIsBackgroundUploading(false);
             setLocalUploadProgress(0);
             if (!success) {

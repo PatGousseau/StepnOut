@@ -3,6 +3,16 @@ import * as VideoThumbnails from "expo-video-thumbnails";
 import * as ImageManipulator from 'expo-image-manipulator';
 import { Video } from 'react-native-compressor';
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
+import { RNFormDataBlob } from "../types";
+
+/**
+ * Helper to append a file to FormData in React Native.
+ * RN's FormData.append() accepts {uri, name, type} objects but TS expects Blob.
+ */
+function appendFileToFormData(formData: FormData, fieldName: string, file: RNFormDataBlob): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData.append(fieldName, file as any);
+}
 
 interface MediaUploadResult {
   mediaId: number;
@@ -161,11 +171,11 @@ export const uploadMediaInBackground = async (
           );
 
           const thumbnailFormData = new FormData();
-          thumbnailFormData.append("file", {
+          appendFileToFormData(thumbnailFormData, "file", {
             uri: compressedThumbnail.uri,
-            name: pendingUpload.thumbnailFileName,
+            name: pendingUpload.thumbnailFileName!,
             type: "image/jpeg",
-          } as any);
+          });
 
           await supabase.storage
             .from("challenge-uploads")
@@ -218,11 +228,11 @@ export const uploadMediaInBackground = async (
     if (onProgress) onProgress(75);
 
     const formData = new FormData();
-    formData.append("file", {
+    appendFileToFormData(formData, "file", {
       uri: compressedUri,
       name: pendingUpload.fileName,
       type: pendingUpload.mediaType === "video" ? "video/mp4" : "image/jpeg",
-    } as any);
+    });
 
     if (onProgress) onProgress(80);
 
@@ -323,11 +333,11 @@ export const uploadMedia = async (
           );
 
           const thumbnailFormData = new FormData();
-          thumbnailFormData.append("file", {
+          appendFileToFormData(thumbnailFormData, "file", {
             uri: compressedThumbnail.uri,
-            name: thumbnailFileName,
+            name: thumbnailFileName!,
             type: "image/jpeg",
-          } as any);
+          });
 
           const { error: thumbnailError } = await supabase.storage
             .from("challenge-uploads")
@@ -371,11 +381,11 @@ export const uploadMedia = async (
     }
 
     const formData = new FormData();
-    formData.append("file", {
+    appendFileToFormData(formData, "file", {
       uri: fileUri,
       name: fileName,
       type: mediaType === "video" ? "video/mp4" : "image/jpeg",
-    } as any);
+    });
 
     // upload to supabase storage
     const { error: uploadError } = await supabase.storage

@@ -290,19 +290,19 @@ export const postService = {
       challengeQuery = challengeQuery.range(start, end);
       discussionQuery = discussionQuery.range(start, end);
 
-      // Execute queries
-      const queries: Promise<any>[] = [challengeQuery, discussionQuery];
-      if (welcomeQuery) queries.push(welcomeQuery);
-
-      const responses = await Promise.all(queries);
-      const [challengeResponse, discussionResponse, welcomeResponse] = responses;
+      // Execute queries in parallel
+      const [challengeResponse, discussionResponse, welcomeResponse] = await Promise.all([
+        challengeQuery,
+        discussionQuery,
+        welcomeQuery ?? Promise.resolve({ data: [], error: null }),
+      ]);
 
       if (challengeResponse.error) throw challengeResponse.error;
       if (discussionResponse.error) throw discussionResponse.error;
       if (welcomeResponse?.error) throw welcomeResponse.error;
 
       // Process challenge posts (attach title)
-      const challengePosts = (challengeResponse.data ?? []).map((post: any) => ({
+      const challengePosts: Post[] = (challengeResponse.data ?? []).map((post: Post) => ({
         ...post,
         challenge_title: post.challenges?.title,
       }));

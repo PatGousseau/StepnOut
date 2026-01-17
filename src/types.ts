@@ -15,6 +15,11 @@ export interface Challenge {
     daysRemaining: number;
   }
 
+  /**
+   * Post as used throughout the app.
+   * - Raw from Supabase: has `likes` array, `challenges` join
+   * - Formatted for UI: has `likes_count`, `comments_count`, `liked`
+   */
   export interface Post {
     id: number;
     user_id: string;
@@ -22,18 +27,21 @@ export interface Challenge {
     media_id?: number;
     media?: {
       file_path: string;
-    };
+      upload_status?: string;
+      thumbnail_path?: string;
+    } | null;
     created_at: string;
     featured: boolean;
     challenge_id?: number;
     challenge_title?: string;
-    likes_count: number;
-    comments_count: number;
-    liked: boolean;
-    likes?: {
-      count: number;
-    };
     is_welcome?: boolean;
+    // Supabase join/aggregate fields (present in raw response)
+    likes?: { count: number }[] | { count: number };
+    challenges?: { title: string } | null;
+    // Computed fields (added during formatting, optional until then)
+    likes_count?: number;
+    comments_count?: number;
+    liked?: boolean;
   }
 
   export interface ChallengeProgress {
@@ -87,3 +95,14 @@ export interface Challenge {
     type: "post" | "comment";
     parentId?: number; // for comments, this is the postId
   }
+
+  /**
+   * React Native FormData blob type for file uploads.
+   * RN's FormData.append() accepts this object format instead of web's Blob.
+   */
+  export interface RNFormDataBlob {
+    uri: string;
+    name: string;
+    type: string;
+  }
+

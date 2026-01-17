@@ -1,8 +1,8 @@
 import 'react-native-url-polyfill/auto';
 import * as SecureStore from 'expo-secure-store';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupportedStorage } from '@supabase/supabase-js';
 
-const ExpoSecureStoreAdapter = {
+const ExpoSecureStoreAdapter: SupportedStorage = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
   setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
@@ -14,7 +14,7 @@ export const supabaseStorageUrl = `${supabaseUrl}/storage/v1/object/public/chall
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: ExpoSecureStoreAdapter as any,
+    storage: ExpoSecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
@@ -24,7 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const initializeSupabase = async () => {
   try {
     return await supabase.auth.getSession();
-  } catch (error) {
+  } catch {
     return null;
   }
 };

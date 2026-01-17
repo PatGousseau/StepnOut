@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   ScrollView,
@@ -40,9 +40,6 @@ const groupWelcomePosts = (posts: PostType[]): (PostType | PostType[])[] =>
 const Home = () => {
   const { t } = useLanguage();
   const { posts, userMap, loading, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
-  const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
-    {}
-  );
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"discussion" | "submissions">("submissions");
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
@@ -88,20 +85,6 @@ const Home = () => {
     ]).start();
     setActiveTab(tab);
   };
-
-  useEffect(() => {
-    const counts = posts.reduce(
-      (acc, post) => ({
-        ...acc,
-        [post.id]: {
-          likes: post.likes_count || 0,
-          comments: post.comments_count || 0,
-        },
-      }),
-      {}
-    );
-    setPostCounts(counts);
-  }, [posts]);
 
   // Note: React Query handles initial fetch automatically, no need for useEffect
   // The useInfiniteQuery in useFetchHomeData will fetch on mount
@@ -189,13 +172,12 @@ const Home = () => {
             key={`${keyPrefix}-${item.id}-${index}`}
             post={item}
             postUser={postUser}
-            setPostCounts={setPostCounts}
             onPostDeleted={handlePostDeleted}
           />
         );
       });
     },
-    [userMap, setPostCounts, handlePostDeleted, expandedWelcomeGroups, toggleWelcomeGroup]
+    [userMap, handlePostDeleted, expandedWelcomeGroups, toggleWelcomeGroup]
   );
 
   // container width for tab indicator
