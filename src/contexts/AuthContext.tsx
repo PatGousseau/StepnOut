@@ -12,8 +12,6 @@ type SignUpOptions = {
   // Optional for all signups
   profileMediaId?: number | null;
   instagram?: string;
-  // Flag to indicate social (Google/Apple) signup
-  isSocialUser?: boolean;
 };
 
 type AuthContextType = {
@@ -146,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Signup function for completing profile (user already authenticated)
   const signUp = async (options: SignUpOptions): Promise<string> => {
-    const { username, displayName, profileMediaId, instagram, isSocialUser } = options;
+    const { username, displayName, profileMediaId, instagram } = options;
 
     // Get the already-authenticated user
     const { data: { session } } = await supabase.auth.getSession();

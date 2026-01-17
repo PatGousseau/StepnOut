@@ -13,10 +13,6 @@ interface UserMap {
   [key: string]: User | UserProfile;
 }
 
-interface PostLikes {
-  [postId: number]: boolean;
-}
-
 interface CommentCount {
   post_id: number;
   count: string;
@@ -27,7 +23,6 @@ export const useFetchHomeData = () => {
   const POSTS_PER_PAGE = 20;
   const [userMap, setUserMap] = useState<UserMap>({});
   const [loading, setLoading] = useState(true);
-  const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
   const { initializePostLikes } = useLikes();
 
@@ -89,19 +84,6 @@ export const useFetchHomeData = () => {
       staleTime: 30000,
     })),
   });
-
-  // Build userMap from query results
-  const userMapFromQueries = useMemo(() => {
-    const map: UserMap = {};
-    userQueries.forEach((query, index) => {
-      const userId = uniqueUserIds[index];
-      if (query.data && userId) {
-        // Store UserProfile directly - Post component accepts User | UserProfile
-        map[userId] = query.data;
-      }
-    });
-    return map;
-  }, [userQueries, uniqueUserIds]);
 
   // Track which user IDs we've already merged to prevent infinite loops
   const mergedUserIdsRef = useRef<Set<string>>(new Set());
@@ -220,7 +202,7 @@ export const useFetchHomeData = () => {
       ...(urls ? { media: { file_path: urls.fullUrl } } : {}),
       likes_count: post.likes?.count ?? 0,
       comments_count: commentCount ?? 0,
-      liked: likedPosts[post.id] ?? false,
+      liked: false, // Actual liked state is managed by LikesContext
       challenge_id: post.challenge_id,
       challenge_title: (post as any).challenge_title, // preserved when we add it below
     };
@@ -282,7 +264,6 @@ export const useFetchHomeData = () => {
     hasMore: hasNextPage ?? false, // Use React Query's hasNextPage
     isFetchingNextPage, // Expose for loading indicator when loading more
     fetchPost,
-    likedPosts,
     refetchPosts: refetchPosts, // Expose refetch for refresh
   };
 };

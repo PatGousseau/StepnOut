@@ -194,12 +194,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 6,
   },
-  streakCountText: {
-    color: colors.light.primary,
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 16,
-  },
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

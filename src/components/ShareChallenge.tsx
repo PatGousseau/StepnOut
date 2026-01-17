@@ -101,7 +101,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
                 resizeMode="cover"
               />
             )}
-            <Text style={styles.challengeTitle}>"{title}"</Text>
+            <Text style={styles.challengeTitle}>&quot;{title}&quot;</Text>
           </View>
 
           <View style={styles.socialProofContainer}>

@@ -10,7 +10,7 @@ const ChallengeScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={[styles.container]}>
+      <View style={styles.container}>
         <Loader />
       </View>
     );

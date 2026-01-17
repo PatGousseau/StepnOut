@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
-  FlatList,
+import {
+  View,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView
 } from 'react-native';
 import Post from './Post';
@@ -85,13 +84,6 @@ const styles = StyleSheet.create({
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  commentsSection: {
-    backgroundColor: colors.light.background,
-    borderTopColor: '#eee',
-    borderTopWidth: 1,
-    flex: 1,
-    paddingHorizontal: 16,
   },
   container: {
     backgroundColor: colors.light.background,

@@ -24,7 +24,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const initializeSupabase = async () => {
   try {
     return await supabase.auth.getSession();
-  } catch (error) {
+  } catch {
     return null;
   }
 };

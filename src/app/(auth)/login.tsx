@@ -32,7 +32,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
   const { signIn } = useAuth();
   const { t, language } = useLanguage();
 
@@ -122,8 +121,6 @@ export default function LoginScreen() {
 
   const handleAppleSignIn = async () => {
     try {
-      setAppleLoading(true);
-
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -142,8 +139,6 @@ export default function LoginScreen() {
         return;
       }
       Alert.alert(t('Error'), (error as Error).message);
-    } finally {
-      setAppleLoading(false);
     }
   };
 
