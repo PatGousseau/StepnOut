@@ -197,14 +197,19 @@ export const useFetchHomeData = () => {
       urls = await imageService.getPostImageUrl(post.media.file_path);
     }
 
+    // Handle likes - can be array (from aggregate) or object
+    const likesCount = Array.isArray(post.likes)
+      ? post.likes[0]?.count ?? 0
+      : post.likes?.count ?? 0;
+
     return {
       ...post,
       ...(urls ? { media: { file_path: urls.fullUrl } } : {}),
-      likes_count: post.likes?.count ?? 0,
+      likes_count: likesCount,
       comments_count: commentCount ?? 0,
       liked: false, // Actual liked state is managed by LikesContext
       challenge_id: post.challenge_id,
-      challenge_title: (post as any).challenge_title, // preserved when we add it below
+      challenge_title: post.challenge_title,
     };
   };
 
@@ -231,9 +236,10 @@ export const useFetchHomeData = () => {
 
       if (error) throw error;
 
-      const postWithChallenge = {
+      // Add challenge title from joined data
+      const postWithChallenge: Post = {
         ...post,
-        challenge_title: (post as any).challenges?.title,
+        challenge_title: (post as Post).challenges?.title,
       };
 
       const formattedPost = await formatPost(postWithChallenge);

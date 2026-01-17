@@ -14,6 +14,16 @@ type SignUpOptions = {
   instagram?: string;
 };
 
+/** Profile data for upsert operations */
+interface ProfileUpdate {
+  id: string;
+  username: string;
+  name: string;
+  first_login: boolean;
+  profile_media_id?: number;
+  instagram?: string;
+}
+
 type AuthContextType = {
   session: Session | null;
   user: Session["user"] | null;
@@ -157,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await checkUsernameAvailable(username, userId);
 
     // Build profile updates
-    const updates: Record<string, any> = {
+    const updates: ProfileUpdate = {
       id: userId,
       username,
       name: displayName,

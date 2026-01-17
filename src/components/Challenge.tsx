@@ -20,6 +20,7 @@ import { imageService } from "../services/imageService";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
+import { Post } from "../types";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -76,7 +77,7 @@ interface PatrizioExampleProps {
 
 export const PatrizioExample: React.FC<PatrizioExampleProps> = ({ challenge }) => {
   const { t } = useLanguage();
-  const [patrizioSubmission, setPatrizioSubmission] = useState<any>(null);
+  const [patrizioSubmission, setPatrizioSubmission] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrls, setImageUrls] = useState<{ previewUrl: string; fullUrl: string }>({
     previewUrl: "",

@@ -393,9 +393,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {userPosts.map((post) => (
           <Post
             key={post.id}
-            post={post} // Pass the entire post object
+            post={post}
             postUser={userProfile}
-            setPostCounts={() => {}}
             onPostDeleted={() => {}}
           />
         ))}

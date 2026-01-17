@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Modal, PanResponder, Text } from 'react-native';
-import { Audio, Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { Audio, Video, ResizeMode, AVPlaybackStatus, AVPlaybackStatusSuccess } from 'expo-av';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from '@react-native-community/slider';
+
+/**
+ * Type guard to check if playback status is loaded/successful.
+ */
+function isPlaybackStatusSuccess(status: AVPlaybackStatus): status is AVPlaybackStatusSuccess {
+  return status.isLoaded === true;
+}
 
 interface VideoPlayerProps {
   videoUri: string;
@@ -46,7 +53,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
   ).current;
 
   const togglePlayPause = async () => {
-    if (status.isLoaded && (status as any).isPlaying) {
+    if (isPlaybackStatusSuccess(status) && status.isPlaying) {
       await videoRef.current?.pauseAsync();
     } else {
       await videoRef.current?.playAsync();
@@ -122,14 +129,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
               
               <View style={styles.controls}>
                 <TouchableOpacity onPress={togglePlayPause} style={styles.playButton}>
-                  <Icon name={status.isLoaded && (status as any).isPlaying ? "pause" : "play"} size={32} color="white" />
+                  <Icon name={isPlaybackStatusSuccess(status) && status.isPlaying ? "pause" : "play"} size={32} color="white" />
                 </TouchableOpacity>
-                
+
                 <Slider
                   style={styles.slider}
-                  value={status.isLoaded ? (status as any).positionMillis || 0 : 0}
+                  value={isPlaybackStatusSuccess(status) ? status.positionMillis : 0}
                   minimumValue={0}
-                  maximumValue={status.isLoaded ? (status as any).durationMillis || 0 : 0}
+                  maximumValue={isPlaybackStatusSuccess(status) ? status.durationMillis ?? 0 : 0}
                   onSlidingStart={() => setIsSeeking(true)}
                   onSlidingComplete={async (value) => {
                     await videoRef.current?.setPositionAsync(value);
@@ -143,7 +150,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUri, visible, onClose })
 
               <View style={styles.timestampContainer}>
                 <Text style={styles.timestampText}>
-                  {formatTime(status.isLoaded ? (status as any).positionMillis || 0 : 0)} / {formatTime(status.isLoaded ? (status as any).durationMillis || 0 : 0)}
+                  {formatTime(isPlaybackStatusSuccess(status) ? status.positionMillis : 0)} / {formatTime(isPlaybackStatusSuccess(status) ? status.durationMillis ?? 0 : 0)}
                 </Text>
               </View>
             </>

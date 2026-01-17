@@ -20,6 +20,7 @@ import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
+import { RNFormDataBlob } from "../../types";
 
 export default function RegisterProfileScreen() {
   const { isSocialUser } = useLocalSearchParams<{
@@ -54,11 +55,13 @@ export default function RegisterProfileScreen() {
 
         // Create form data for upload
         const formData = new FormData();
-        formData.append("file", {
+        const fileBlob: RNFormDataBlob = {
           uri: file.uri,
           name: fileName,
           type: "image/jpeg",
-        } as any);
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        formData.append("file", fileBlob as any);
 
         // Upload to storage
         const { error: uploadError } = await supabase.storage
@@ -106,7 +109,6 @@ export default function RegisterProfileScreen() {
         displayName,
         profileMediaId,
         instagram: instagram.replace(/@/g, ''),
-        isSocialUser: isSocialSignUp,
       });
 
       // Show EULA then go to onboarding

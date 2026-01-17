@@ -72,7 +72,6 @@ const PostPage = () => {
         <Post
           post={post}
           postUser={userMap[post.user_id]}
-          setPostCounts={() => {}}
           isPostPage={true}
         />
       </ScrollView>
