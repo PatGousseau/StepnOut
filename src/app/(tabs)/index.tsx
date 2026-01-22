@@ -39,7 +39,7 @@ const groupWelcomePosts = (posts: PostType[]): (PostType | PostType[])[] =>
 
 const Home = () => {
   const { t } = useLanguage();
-  const { posts, userMap, loading, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
+  const { posts, userMap, loading, error, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
     {}
   );
@@ -309,6 +309,11 @@ const Home = () => {
           keyboardDismissMode="on-drag"
         >
           {renderPostsList(submissionPosts, "submission")}
+          {error && !loading && (
+            <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
+              <Text style={styles.errorText}>{t('Something went wrong. Tap to retry.')}</Text>
+            </TouchableOpacity>
+          )}
           {(loading || isFetchingNextPage) && (
             <View style={styles.loaderContainer}>
               <Loader />
@@ -329,6 +334,11 @@ const Home = () => {
         >
           <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
           {renderPostsList(discussionPosts, "discussion")}
+          {error && !loading && (
+            <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
+              <Text style={styles.errorText}>{t('Something went wrong. Tap to retry.')}</Text>
+            </TouchableOpacity>
+          )}
           {(loading || isFetchingNextPage) && (
             <View style={styles.loaderContainer}>
               <Loader />
@@ -382,6 +392,14 @@ const styles = StyleSheet.create({
   loaderContainer: {
     padding: 20,
     alignItems: "center",
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  errorText: {
+    color: colors.light.textSecondary,
+    textAlign: "center",
   },
 });
 
