@@ -8,8 +8,8 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
-export const supabaseUrl = 'https://kiplxlahalqyahstmmjg.supabase.co';
-export const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpcGx4bGFoYWxxeWFoc3RtbWpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjkzOTExNTEsImV4cCI6MjA0NDk2NzE1MX0.pgTmWgtFGiB3zpx-pFDEgytawrGi85lFiz1tGpgDckk';
+export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+export const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabaseStorageUrl = `${supabaseUrl}/storage/v1/object/public/challenge-uploads`;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
