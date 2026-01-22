@@ -54,7 +54,7 @@ Restart Expo after switching.
 
 ### Option 1: Write SQL manually
 ```bash
-supabase migration new my_feature_name
+npm run db:new -- my_feature_name
 # Edit the created file in supabase/migrations/
 ```
 
@@ -64,21 +64,25 @@ supabase migration new my_feature_name
 #    Add tables, columns, RLS policies, etc.
 
 # 2. Generate migration from your changes
-supabase db diff -f my_feature_name
+npm run db:diff -- my_feature_name
 ```
 
 ### Running migrations
 ```bash
-supabase migration up   # Run pending migrations (keeps data)
-supabase db reset       # Reset DB and run all migrations (loses data)
-supabase db push        # Push migrations to production
+npm run db:up           # Run pending migrations locally (keeps data)
+npm run db:reset        # Reset local DB + migrations + seed (loses data)
+npm run db:push         # Push migrations to production (careful!)
 ```
 
 ## Common Commands
 
 ```bash
-supabase start     # Start local Supabase
-supabase stop      # Stop local Supabase
+npm run db:start   # Start local Supabase
+npm run db:stop    # Stop local Supabase
+npm run db:reset   # Reset DB + migrations + seed
+npm run db:up      # Run pending migrations
+npm run db:new -- name   # Create new migration
+npm run db:diff -- name  # Generate migration from UI changes
+npm run db:push    # Push to production
 supabase status    # Show services and credentials
-supabase db diff   # Show schema differences
 ```

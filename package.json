@@ -10,9 +10,13 @@
     "test": "jest --watchAll",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "db:reset": "supabase db reset && ./supabase/seed-storage.sh",
     "db:start": "supabase start",
-    "db:stop": "supabase stop"
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset && ./supabase/seed-storage.sh",
+    "db:up": "supabase migration up",
+    "db:new": "supabase migration new",
+    "db:diff": "supabase db diff -f",
+    "db:push": "supabase db push"
   },
   "jest": {
     "preset": "jest-expo"
