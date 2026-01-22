@@ -21,6 +21,7 @@ type AuthContextType = {
   user: Session["user"] | null;
   loading: boolean;
   isAdmin: boolean;
+  username: string | null;
   signUp: (options: SignUpOptions) => Promise<string>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
@@ -45,10 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (session?.user) {
             const { data } = await supabase
               .from("profiles")
-              .select("is_admin")
+              .select("is_admin, username")
               .eq("id", session.user.id)
               .single();
             setIsAdmin(data?.is_admin || false);
+            setUsername(data?.username || null);
             // Identify user in PostHog when session is restored
             identifyUser(session.user.id, {
               [USER_PROPERTIES.EMAIL]: session.user.email,
@@ -71,10 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           const { data } = await supabase
             .from("profiles")
-            .select("is_admin")
+            .select("is_admin, username")
             .eq("id", session.user.id)
             .single();
           setIsAdmin(data?.is_admin || false);
+          setUsername(data?.username || null);
           // Identify user in PostHog on auth state change
           identifyUser(session.user.id, {
             [USER_PROPERTIES.EMAIL]: session.user.email,
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         } else {
           setIsAdmin(false);
+          setUsername(null);
           // Reset PostHog when user logs out
           resetPostHog();
         }
@@ -148,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Signup function for completing profile (user already authenticated)
   const signUp = async (options: SignUpOptions): Promise<string> => {
-    const { username, displayName, profileMediaId, instagram, isSocialUser } = options;
+    const { username, displayName, profileMediaId, instagram } = options;
 
     // Get the already-authenticated user
     const { data: { session } } = await supabase.auth.getSession();
@@ -161,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await checkUsernameAvailable(username, userId);
 
     // Build profile updates
-    const updates: Record<string, any> = {
+    const updates: Record<string, string | number | boolean | null> = {
       id: userId,
       username,
       name: displayName,
@@ -178,6 +183,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .upsert(updates, { onConflict: 'id' });
 
     if (upsertError) throw upsertError;
+
+    setUsername(username);
 
     // Create welcome post
     await createWelcomePost(userId);
@@ -227,6 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session?.user || null,
         loading,
         isAdmin,
+        username,
         signUp,
         signIn,
         signOut,

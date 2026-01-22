@@ -18,7 +18,6 @@ export async function registerForPushNotificationsAsync(userId: string) {
     }
 
     if (finalStatus !== 'granted') {
-        alert('Failed to get push token for notifications!');
         return null;
     }
 

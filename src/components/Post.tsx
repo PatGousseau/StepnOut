@@ -13,8 +13,10 @@ import {
   TextStyle,
   ImageStyle,
   Animated,
+  TextInput,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { AnimatedSendButton } from "./AnimatedSendButton";
 import { CommentsModal } from "./Comments";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
@@ -35,7 +37,8 @@ import { formatRelativeTime } from "../utils/time";
 import { imageService } from "../services/imageService";
 import { ActionsMenu } from "./ActionsMenu";
 import { captureEvent } from "../lib/posthog";
-import { POST_EVENTS } from "../constants/analyticsEvents";
+import { POST_EVENTS, COMMENT_EVENTS } from "../constants/analyticsEvents";
+import { sendCommentNotification } from "../lib/notificationsService";
 import { translationService } from "../services/translationService";
 
 interface PostProps {
@@ -51,7 +54,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, username: currentUserUsername } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -66,6 +69,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   } = useFetchComments(post.id);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [inlineComment, setInlineComment] = useState("");
+  const [localPreviews, setLocalPreviews] = useState(post.comment_previews || []);
   const lastTapTime = useRef<number>(0);
   const singleTapTimer = useRef<NodeJS.Timeout | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
@@ -228,6 +233,48 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       comment_count: commentCount,
       is_challenge_post: !!post.challenge_id,
     });
+  };
+
+  const handleInlineComment = async () => {
+    if (!inlineComment.trim() || !user) return;
+
+    const commentText = inlineComment.trim();
+    setInlineComment("");
+
+    try {
+      const newComment = await addCommentMutation(user.id, commentText);
+      if (newComment) {
+        setCommentCount(prev => prev + 1);
+        setLocalPreviews(prev => [...prev, {
+          username: currentUserUsername || "unknown",
+          text: commentText,
+        }]);
+
+        if (user.id !== post.user_id) {
+          sendCommentNotification(
+            user.id,
+            user.user_metadata?.username,
+            post.user_id,
+            post.id.toString(),
+            commentText,
+            newComment.id.toString(),
+            {
+              title: t("(username) commented"),
+              body: t("Check it out now."),
+            }
+          );
+        }
+
+        captureEvent(COMMENT_EVENTS.CREATED, {
+          post_id: post.id,
+          comment_id: newComment.id,
+          comment_length: commentText.length,
+          source: "inline",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding inline comment:", error);
+    }
   };
 
   const handleProfilePress = (e: GestureResponderEvent) => {
@@ -443,7 +490,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       <View>
         <View style={footerStyle}>
-          <TouchableOpacity onPress={handleLikePress}>
+          <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <View style={iconContainerStyle}>
               <Icon
                 name={likedPosts[post.id] ? "heart" : "heart-o"}
@@ -451,12 +498,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1}
               />
               <Text style={iconTextStyle}>{likeCounts[post.id] || 0}</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleOpenComments}>
-            <View style={iconContainerStyle}>
-              <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
-              <Text style={iconTextStyle}>{commentCount.toString()}</Text>
             </View>
           </TouchableOpacity>
           {isAdmin && post.body && (
@@ -473,6 +514,49 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               </View>
             </TouchableOpacity>
           )}
+        </View>
+
+        {localPreviews.length > 0 && (
+          <TouchableOpacity onPress={handleOpenComments} style={commentPreviewStyle}>
+            {localPreviews.map((preview, index) => {
+              const isLast = index === localPreviews.length - 1 && commentCount <= localPreviews.length;
+              return (
+                <View key={index} style={commentRowStyle}>
+                  <View style={[commentTrunkStyle, isLast && commentTrunkLastStyle]} />
+                  <View style={commentConnectorStyle} />
+                  <Text style={[commentPreviewTextStyle, { flex: 1 }]} numberOfLines={1}>
+                    <Text style={commentPreviewUsernameStyle}>@{preview.username}:</Text>
+                    {"  "}<Text style={commentPreviewBodyStyle}>{preview.text}</Text>
+                  </Text>
+                </View>
+              );
+            })}
+            {commentCount > localPreviews.length && (
+              <View style={commentRowStyle}>
+                <View style={[commentTrunkStyle, commentTrunkLastStyle]} />
+                <View style={commentConnectorStyle} />
+                <Text style={viewAllCommentsStyle}>{t("View all (count) comments").replace("(count)", commentCount.toString())}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+
+        <View style={inlineCommentContainer}>
+          <TextInput
+            style={inlineCommentInput}
+            placeholder={t("Add a comment...")}
+            placeholderTextColor={colors.neutral.grey1}
+            value={inlineComment}
+            onChangeText={setInlineComment}
+            onSubmitEditing={handleInlineComment}
+            returnKeyType="send"
+          />
+          <AnimatedSendButton
+            hasContent={inlineComment.trim().length > 0}
+            onPress={handleInlineComment}
+            disabled={isAddingComment}
+            size="small"
+          />
         </View>
 
         <Modal
@@ -587,6 +671,77 @@ const footerStyle: ViewStyle = {
   marginLeft: 5,
   marginTop: 10,
 };
+
+const commentPreviewStyle: ViewStyle = {
+  marginTop: 12,
+  marginLeft: 8,
+};
+
+const commentRowStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  minHeight: 18,
+};
+
+const commentTrunkStyle: ViewStyle = {
+  width: 2,
+  backgroundColor: colors.neutral.grey2,
+  alignSelf: "stretch",
+  marginBottom: -4,
+};
+
+const commentTrunkLastStyle: ViewStyle = {
+  height: "50%",
+  alignSelf: "flex-start",
+  marginBottom: 0,
+};
+
+const commentConnectorStyle: ViewStyle = {
+  width: 10,
+  height: 2,
+  backgroundColor: colors.neutral.grey2,
+  marginRight: 8,
+};
+
+const commentPreviewTextStyle: TextStyle = {
+  color: colors.light.lightText,
+  fontSize: 12,
+  lineHeight: 16,
+};
+
+const commentPreviewUsernameStyle: TextStyle = {
+  fontWeight: "600",
+  color: colors.light.text,
+};
+
+const commentPreviewBodyStyle: TextStyle = {
+  color: colors.neutral.darkGrey,
+};
+
+const viewAllCommentsStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontSize: 12,
+};
+
+const inlineCommentContainer: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 6,
+  paddingHorizontal: 8,
+  paddingVertical: 4,
+  backgroundColor: colors.neutral.white,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: colors.neutral.grey2,
+};
+
+const inlineCommentInput: TextStyle = {
+  flex: 1,
+  fontSize: 12,
+  color: colors.light.text,
+  paddingVertical: 2,
+};
+
 
 const fullScreenContainerStyle: ViewStyle = {
   alignItems: "center",
