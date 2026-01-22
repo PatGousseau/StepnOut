@@ -374,7 +374,7 @@ const Comment: React.FC<CommentProps> = ({
         <Text style={commentTextStyle}>{text}</Text>
       </View>
       <View style={commentFooterStyle}>
-        <TouchableOpacity onPress={handleLikePress}>
+        <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
           <View style={iconContainerStyle}>
             <Icon
               name={likedComments[id] ? "heart" : "heart-o"}

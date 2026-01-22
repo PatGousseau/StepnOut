@@ -443,7 +443,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       <View>
         <View style={footerStyle}>
-          <TouchableOpacity onPress={handleLikePress}>
+          <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <View style={iconContainerStyle}>
               <Icon
                 name={likedPosts[post.id] ? "heart" : "heart-o"}
@@ -453,7 +453,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               <Text style={iconTextStyle}>{likeCounts[post.id] || 0}</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleOpenComments}>
+          <TouchableOpacity onPress={handleOpenComments} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <View style={iconContainerStyle}>
               <Icon name="comment-o" size={16} color={colors.neutral.grey1} />
               <Text style={iconTextStyle}>{commentCount.toString()}</Text>
