@@ -158,6 +158,7 @@ export const useFetchHomeData = () => {
   useEffect(() => {
     if (rawPosts.length === 0) {
       setPosts([]);
+      setLoading(false);
       return;
     }
 
