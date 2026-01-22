@@ -402,6 +402,7 @@ const commentAvatarStyle: ImageStyle = {
   borderRadius: 15,
   height: 30,
   marginRight: 10,
+  marginTop: 2,
   width: 30,
 };
 
@@ -409,11 +410,12 @@ const defaultCommentAvatarStyle: ViewStyle = {
   borderRadius: 15,
   height: 30,
   marginRight: 10,
+  marginTop: 2,
   width: 30,
 };
 
 const commentContainerStyle: ViewStyle = {
-  alignItems: "center",
+  alignItems: "flex-start",
   flexDirection: "row",
   marginBottom: 10,
 };
@@ -551,9 +553,9 @@ const commentHeaderStyle: ViewStyle = {
 
 const commentFooterStyle: ViewStyle = {
   flexDirection: "row",
-  alignItems: "center",
-  marginTop: 8,
+  alignItems: "flex-start",
   paddingLeft: 4,
+  paddingTop: 2,
 };
 
 const iconContainerStyle: ViewStyle = {

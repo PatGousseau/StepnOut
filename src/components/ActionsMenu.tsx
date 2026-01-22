@@ -226,7 +226,8 @@ export const ProfileActions: React.FC<ProfileActionsProps> = ({
 };
 
 const menuContainer: ViewStyle = {
-  padding: 8,
+  paddingHorizontal: 8,
+  paddingVertical: 2,
 };
 
 const menuOptionContainer: ViewStyle = {
