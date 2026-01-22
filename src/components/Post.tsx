@@ -54,7 +54,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, username: currentUserUsername } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -246,7 +246,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       if (newComment) {
         setCommentCount(prev => prev + 1);
         setLocalPreviews(prev => [...prev, {
-          username: user.user_metadata?.username || "You",
+          username: currentUserUsername || "unknown",
           text: commentText,
         }]);
 
