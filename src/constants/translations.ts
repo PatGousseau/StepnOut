@@ -212,4 +212,5 @@ export const translations = {
   "Confirm Password*": "Conferma Password*",
   "Passwords do not match": "Le password non corrispondono",
   "Password*": "Password*",
+  "View all (count) comments": "Vedi tutti i (count) commenti",
 };

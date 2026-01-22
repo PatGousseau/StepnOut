@@ -229,7 +229,15 @@ export const postService = {
             file_path,
             upload_status
           ),
-          likes:likes(count)
+          likes:likes(count),
+          comments (
+            body,
+            created_at,
+            user_id,
+            profiles!comments_user_id_profiles_fkey (
+              username
+            )
+          )
         `
         )
         .not("challenge_id", "is", null)
@@ -246,7 +254,15 @@ export const postService = {
             file_path,
             upload_status
           ),
-          likes:likes(count)
+          likes:likes(count),
+          comments (
+            body,
+            created_at,
+            user_id,
+            profiles!comments_user_id_profiles_fkey (
+              username
+            )
+          )
         `
         )
         .is("challenge_id", null)
@@ -265,7 +281,14 @@ export const postService = {
                 file_path,
                 upload_status
               ),
-              likes:likes(count)
+              likes:likes(count),
+              comments (
+                body,
+                created_at,
+                profiles:user_id (
+                  username
+                )
+              )
             `
             )
             .is("challenge_id", null)
@@ -301,17 +324,46 @@ export const postService = {
       if (discussionResponse.error) throw discussionResponse.error;
       if (welcomeResponse?.error) throw welcomeResponse.error;
 
-      // Process challenge posts (attach title)
+      // Helper to extract up to 3 comment previews (oldest first)
+      const getCommentPreviews = (post: any) => {
+        if (post.comments && post.comments.length > 0) {
+          // Sort by created_at ascending to get oldest first
+          const sortedComments = [...post.comments].sort(
+            (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
+          const previews = sortedComments
+            .slice(0, 3)
+            .filter((c: any) => c?.body && c?.profiles?.username)
+            .map((c: any) => ({
+              username: c.profiles.username,
+              text: c.body,
+            }));
+          return previews.length > 0 ? previews : undefined;
+        }
+        return undefined;
+      };
+
+      // Process challenge posts (attach title and comment previews)
       const challengePosts = (challengeResponse.data ?? []).map((post: any) => ({
         ...post,
         challenge_title: post.challenges?.title,
+        comment_previews: getCommentPreviews(post),
+        comments: undefined, // Remove full comments array
       }));
 
       // Process discussion posts
-      const discussionPosts = discussionResponse.data ?? [];
+      const discussionPosts = (discussionResponse.data ?? []).map((post: any) => ({
+        ...post,
+        comment_previews: getCommentPreviews(post),
+        comments: undefined,
+      }));
 
       // Process welcome posts (only on first page)
-      const welcomePosts = welcomeResponse?.data ?? [];
+      const welcomePosts = (welcomeResponse?.data ?? []).map((post: any) => ({
+        ...post,
+        comment_previews: getCommentPreviews(post),
+        comments: undefined,
+      }));
 
       // Combine & enforce global ordering (newest first)
       const postData = [...challengePosts, ...discussionPosts, ...welcomePosts].sort(

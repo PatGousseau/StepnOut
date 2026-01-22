@@ -475,6 +475,31 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           )}
         </View>
 
+        {post.comment_previews && post.comment_previews.length > 0 && (
+          <TouchableOpacity onPress={handleOpenComments} style={commentPreviewStyle}>
+            {post.comment_previews.map((preview, index) => {
+              const isLast = index === post.comment_previews!.length - 1 && commentCount <= post.comment_previews!.length;
+              return (
+                <View key={index} style={commentRowStyle}>
+                  <View style={[commentTrunkStyle, isLast && commentTrunkLastStyle]} />
+                  <View style={commentConnectorStyle} />
+                  <Text style={[commentPreviewTextStyle, { flex: 1 }]} numberOfLines={1}>
+                    <Text style={commentPreviewUsernameStyle}>@{preview.username}:</Text>
+                    {"  "}<Text style={commentPreviewBodyStyle}>{preview.text}</Text>
+                  </Text>
+                </View>
+              );
+            })}
+            {commentCount > post.comment_previews.length && (
+              <View style={commentRowStyle}>
+                <View style={[commentTrunkStyle, commentTrunkLastStyle]} />
+                <View style={commentConnectorStyle} />
+                <Text style={viewAllCommentsStyle}>{t("View all (count) comments").replace("(count)", commentCount.toString())}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+
         <Modal
           animationType="fade"
           transparent
@@ -586,6 +611,57 @@ const footerStyle: ViewStyle = {
   flexDirection: "row",
   marginLeft: 5,
   marginTop: 10,
+};
+
+const commentPreviewStyle: ViewStyle = {
+  marginTop: 12,
+  marginLeft: 8,
+};
+
+const commentRowStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  minHeight: 18,
+};
+
+const commentTrunkStyle: ViewStyle = {
+  width: 2,
+  backgroundColor: colors.neutral.grey2,
+  alignSelf: "stretch",
+  marginBottom: -4,
+};
+
+const commentTrunkLastStyle: ViewStyle = {
+  height: "50%",
+  alignSelf: "flex-start",
+  marginBottom: 0,
+};
+
+const commentConnectorStyle: ViewStyle = {
+  width: 10,
+  height: 2,
+  backgroundColor: colors.neutral.grey2,
+  marginRight: 8,
+};
+
+const commentPreviewTextStyle: TextStyle = {
+  color: colors.light.lightText,
+  fontSize: 12,
+  lineHeight: 16,
+};
+
+const commentPreviewUsernameStyle: TextStyle = {
+  fontWeight: "600",
+  color: colors.light.text,
+};
+
+const commentPreviewBodyStyle: TextStyle = {
+  color: colors.neutral.darkGrey,
+};
+
+const viewAllCommentsStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontSize: 12,
 };
 
 const fullScreenContainerStyle: ViewStyle = {

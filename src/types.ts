@@ -34,6 +34,10 @@ export interface Challenge {
       count: number;
     };
     is_welcome?: boolean;
+    comment_previews?: {
+      username: string;
+      text: string;
+    }[];
   }
 
   export interface ChallengeProgress {
