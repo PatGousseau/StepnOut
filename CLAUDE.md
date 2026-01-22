@@ -75,7 +75,53 @@ src/
 - `blocks` / `reports` - Moderation
 
 ### Environment Variables
-Set in `eas.json` for builds. Key vars:
+Copy `.env.example` to `.env` and fill in values. Key vars:
+- `EXPO_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon/public key
 - `EXPO_PUBLIC_POSTHOG_API_KEY` - PostHog analytics
 - `EXPO_PUBLIC_POSTHOG_HOST` - PostHog host (EU instance)
 - `EXPO_PUBLIC_POSTHOG_DISABLED` - Disable analytics in dev
+
+## Local Supabase Development
+
+### Prerequisites
+- Docker (must be running)
+- Supabase CLI: `brew install supabase/tap/supabase`
+
+### Setup
+```bash
+# Start local Supabase (runs Postgres, Auth, Storage, etc.)
+supabase start
+
+# This outputs local credentials - use these in your .env:
+# API URL: http://127.0.0.1:54321
+# anon key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### Switch Between Local and Production
+Edit `.env` to toggle:
+```bash
+# Local development
+EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+
+# Production (get from Supabase dashboard)
+# EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+# EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Useful Commands
+```bash
+supabase start      # Start local Supabase
+supabase stop       # Stop local Supabase
+supabase status     # Show running services and credentials
+supabase db reset   # Reset DB and re-run all migrations
+
+# Migrations
+supabase migration new <name>    # Create new migration
+supabase db push                 # Push migrations to production (careful!)
+supabase db pull                 # Pull remote schema changes
+```
+
+### Local Dashboard
+When running locally, access Supabase Studio at: http://127.0.0.1:54323
