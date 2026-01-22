@@ -9,7 +9,10 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "db:reset": "supabase db reset && ./supabase/seed-storage.sh",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop"
   },
   "jest": {
     "preset": "jest-expo"

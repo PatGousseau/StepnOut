@@ -8,15 +8,29 @@
 
 ```bash
 # 1. Start local Supabase
-supabase start
+npm run db:start
 
-# 2. Copy env file and use local credentials
+# 2. Reset DB (runs migrations + seed data + uploads images)
+npm run db:reset
+
+# 3. Copy env file and use local credentials
 cp .env.example .env
 # Uncomment the LOCAL lines, comment out PRODUCTION lines
 
-# 3. Start the app
-npx expo start
+# 4. Start the app
+npm start
 ```
+
+## Test Accounts
+
+After running seed, these accounts are available (password: `password123`):
+
+| Email | Username | Role |
+|-------|----------|------|
+| alice@test.com | alice | User |
+| bob@test.com | bob | User |
+| charlie@test.com | charlie | User |
+| admin@test.com | admin | Admin |
 
 Local dashboard: http://127.0.0.1:54323
 
