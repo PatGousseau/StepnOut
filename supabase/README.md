@@ -38,8 +38,11 @@ Local dashboard: http://127.0.0.1:54323
 
 Edit `.env`:
 ```bash
-# Local
+# Local (iOS Simulator)
 EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+
+# Local (Android Emulator) - use 10.0.2.2 instead of localhost
+EXPO_PUBLIC_SUPABASE_URL=http://10.0.2.2:54321
 
 # Production
 EXPO_PUBLIC_SUPABASE_URL=https://kiplxlahalqyahstmmjg.supabase.co
