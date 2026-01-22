@@ -33,29 +33,37 @@ UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = t
 -- CHALLENGES
 -- =============================================================================
 
-INSERT INTO public.challenges (id, title, title_it, description, description_it, difficulty, created_by, is_active, created_at, updated_at)
-VALUES
-  (1, 'Talk to a stranger', 'Parla con uno sconosciuto', 'Start a conversation with someone you don''t know. It could be at a coffee shop, in line at the store, or anywhere else.', 'Inizia una conversazione con qualcuno che non conosci. Potrebbe essere in un bar, in fila al negozio o in qualsiasi altro posto.', 'easy', '44444444-4444-4444-4444-444444444444', false, now() - interval '21 days', now() - interval '14 days'),
-  (2, 'Try a new food', 'Prova un nuovo cibo', 'Order something you''ve never tried before at a restaurant. Step outside your comfort zone with your taste buds!', 'Ordina qualcosa che non hai mai provato prima al ristorante. Esci dalla tua zona di comfort con le tue papille gustative!', 'easy', '44444444-4444-4444-4444-444444444444', false, now() - interval '14 days', now() - interval '7 days'),
-  (3, 'Public speaking', 'Parlare in pubblico', 'Give a short speech or presentation in front of at least 3 people. Share something you''re passionate about!', 'Fai un breve discorso o presentazione davanti ad almeno 3 persone. Condividi qualcosa che ti appassiona!', 'hard', '44444444-4444-4444-4444-444444444444', true, now() - interval '7 days', now());
-
--- Reset the sequence
-SELECT setval('public.challenges_id_seq', (SELECT MAX(id) FROM public.challenges));
-
 -- =============================================================================
--- MEDIA (placeholder entries - no actual files)
+-- MEDIA (placeholder entries for posts and challenges)
 -- =============================================================================
 
 INSERT INTO public.media (id, file_path, thumbnail_path, upload_status, created_at)
 VALUES
+  -- Post images
   (1, 'image/seed_1.jpg', null, 'completed', now() - interval '20 days'),
   (2, 'image/seed_2.jpg', null, 'completed', now() - interval '18 days'),
   (3, 'image/seed_3.jpg', null, 'completed', now() - interval '15 days'),
   (4, 'image/seed_4.jpg', null, 'completed', now() - interval '10 days'),
   (5, 'image/seed_5.jpg', null, 'completed', now() - interval '5 days'),
-  (6, 'video/seed_6.mp4', 'thumbnails/video/seed_6.jpg', 'completed', now() - interval '3 days');
+  (6, 'video/seed_6.mp4', 'thumbnails/video/seed_6.jpg', 'completed', now() - interval '3 days'),
+  -- Challenge images (reuse some seed images)
+  (7, 'image/seed_1.jpg', null, 'completed', now() - interval '21 days'),
+  (8, 'image/seed_2.jpg', null, 'completed', now() - interval '14 days'),
+  (9, 'image/seed_3.jpg', null, 'completed', now() - interval '7 days');
 
 SELECT setval('public.media_id_seq', (SELECT MAX(id) FROM public.media));
+
+-- =============================================================================
+-- CHALLENGES
+-- =============================================================================
+
+INSERT INTO public.challenges (id, title, title_it, description, description_it, difficulty, created_by, is_active, image_media_id, created_at, updated_at)
+VALUES
+  (1, 'Talk to a stranger', 'Parla con uno sconosciuto', 'Start a conversation with someone you don''t know. It could be at a coffee shop, in line at the store, or anywhere else.', 'Inizia una conversazione con qualcuno che non conosci. Potrebbe essere in un bar, in fila al negozio o in qualsiasi altro posto.', 'easy', '44444444-4444-4444-4444-444444444444', false, 7, now() - interval '21 days', now() - interval '14 days'),
+  (2, 'Try a new food', 'Prova un nuovo cibo', 'Order something you''ve never tried before at a restaurant. Step outside your comfort zone with your taste buds!', 'Ordina qualcosa che non hai mai provato prima al ristorante. Esci dalla tua zona di comfort con le tue papille gustative!', 'easy', '44444444-4444-4444-4444-444444444444', false, 8, now() - interval '14 days', now() - interval '7 days'),
+  (3, 'Public speaking', 'Parlare in pubblico', 'Give a short speech or presentation in front of at least 3 people. Share something you''re passionate about!', 'Fai un breve discorso o presentazione davanti ad almeno 3 persone. Condividi qualcosa che ti appassiona!', 'hard', '44444444-4444-4444-4444-444444444444', true, 9, now() - interval '7 days', now());
+
+SELECT setval('public.challenges_id_seq', (SELECT MAX(id) FROM public.challenges));
 
 -- =============================================================================
 -- POSTS (challenge submissions and discussion posts)
