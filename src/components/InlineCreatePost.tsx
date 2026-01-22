@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   TextInput,
@@ -7,12 +7,12 @@ import {
   ViewStyle,
   TextStyle,
   ImageStyle,
-  Animated,
   Modal,
   Pressable,
 } from "react-native";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { AnimatedSendButton } from "./AnimatedSendButton";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Loader } from "./Loader";
@@ -86,32 +86,6 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
 
   const hasContent = inputText.trim().length > 0 || selectedMedia;
 
-  // Animated value for send button
-  const buttonAnimation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(buttonAnimation, {
-      toValue: hasContent ? 1 : 0,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  }, [hasContent, buttonAnimation]);
-
-  const animatedButtonStyle = {
-    backgroundColor: buttonAnimation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [colors.neutral.grey2, colors.light.accent],
-    }),
-    transform: [
-      {
-        scale: buttonAnimation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 1.05],
-        }),
-      },
-    ],
-  };
-
   return (
     <View style={containerStyle}>
       {/* Media preview if selected */}
@@ -162,19 +136,12 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
           <MaterialIcons name="add-photo-alternate" size={20} color={colors.light.primary} />
         </TouchableOpacity>
 
-        <TouchableOpacity
+        <AnimatedSendButton
+          hasContent={!!hasContent}
           onPress={onSubmit}
-          disabled={!hasContent || isUploading}
-          activeOpacity={0.8}
-        >
-          <Animated.View style={[sendButtonStyle, animatedButtonStyle]}>
-            <MaterialIcons
-              name="send"
-              size={16}
-              color={hasContent ? "white" : colors.light.lightText}
-            />
-          </Animated.View>
-        </TouchableOpacity>
+          disabled={isUploading}
+          size="medium"
+        />
       </View>
 
       {/* Full screen image modal */}
@@ -251,13 +218,6 @@ const mediaButtonStyle: ViewStyle = {
   padding: 2,
 };
 
-const sendButtonStyle: ViewStyle = {
-  backgroundColor: colors.light.accent,
-  borderRadius: 14,
-  padding: 6,
-  alignItems: "center",
-  justifyContent: "center",
-};
 
 const mediaPreviewContainerStyle: ViewStyle = {
   position: "relative",
