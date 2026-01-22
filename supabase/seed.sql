@@ -23,18 +23,8 @@ VALUES
   ('33333333-3333-3333-3333-333333333333', '33333333-3333-3333-3333-333333333333', '{"sub": "33333333-3333-3333-3333-333333333333", "email": "charlie@test.com"}', 'email', '33333333-3333-3333-3333-333333333333', now(), now()),
   ('44444444-4444-4444-4444-444444444444', '44444444-4444-4444-4444-444444444444', '{"sub": "44444444-4444-4444-4444-444444444444", "email": "admin@test.com"}', 'email', '44444444-4444-4444-4444-444444444444', now(), now());
 
--- Update profiles with full data (trigger created basic profiles)
-UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true WHERE id = '11111111-1111-1111-1111-111111111111';
-UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true WHERE id = '22222222-2222-2222-2222-222222222222';
-UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true WHERE id = '33333333-3333-3333-3333-333333333333';
-UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true WHERE id = '44444444-4444-4444-4444-444444444444';
-
 -- =============================================================================
--- CHALLENGES
--- =============================================================================
-
--- =============================================================================
--- MEDIA (placeholder entries for posts and challenges)
+-- MEDIA (placeholder entries for posts, challenges, and profiles)
 -- =============================================================================
 
 INSERT INTO public.media (id, file_path, thumbnail_path, upload_status, created_at)
@@ -46,12 +36,23 @@ VALUES
   (4, 'image/seed_4.jpg', null, 'completed', now() - interval '10 days'),
   (5, 'image/seed_5.jpg', null, 'completed', now() - interval '5 days'),
   (6, 'video/seed_6.mp4', 'thumbnails/video/seed_6.jpg', 'completed', now() - interval '3 days'),
-  -- Challenge images (reuse some seed images)
+  -- Challenge images
   (7, 'image/seed_1.jpg', null, 'completed', now() - interval '21 days'),
   (8, 'image/seed_2.jpg', null, 'completed', now() - interval '14 days'),
-  (9, 'image/seed_3.jpg', null, 'completed', now() - interval '7 days');
+  (9, 'image/seed_3.jpg', null, 'completed', now() - interval '7 days'),
+  -- Profile images
+  (10, 'image/seed_4.jpg', null, 'completed', now() - interval '30 days'),
+  (11, 'image/seed_5.jpg', null, 'completed', now() - interval '25 days'),
+  (12, 'image/seed_6.jpg', null, 'completed', now() - interval '20 days'),
+  (13, 'image/seed_1.jpg', null, 'completed', now() - interval '60 days');
 
 SELECT setval('public.media_id_seq', (SELECT MAX(id) FROM public.media));
+
+-- Update profiles with full data (trigger created basic profiles)
+UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10 WHERE id = '11111111-1111-1111-1111-111111111111';
+UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11 WHERE id = '22222222-2222-2222-2222-222222222222';
+UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12 WHERE id = '33333333-3333-3333-3333-333333333333';
+UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13 WHERE id = '44444444-4444-4444-4444-444444444444';
 
 -- =============================================================================
 -- CHALLENGES
