@@ -101,8 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nextAppState === "active"
       ) {
         // refresh the session
-        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-        if (refreshedSession) {
+        const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
+        if (error) {
+          console.log("Session refresh failed:", error.message);
+        } else if (refreshedSession) {
           setSession(refreshedSession);
         }
       }

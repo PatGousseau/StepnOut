@@ -56,6 +56,7 @@ export const useFetchHomeData = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading: postsLoading,
+    isError: postsError,
     refetch: refetchPosts,
   } = useInfiniteQuery({
     queryKey: ["home-posts", blockedUserIds],
@@ -68,6 +69,7 @@ export const useFetchHomeData = () => {
     initialPageParam: 1,
     enabled: !!user && blockedUserIds !== undefined, // Wait for blocked users to load
     staleTime: 30000,
+    retry: 2,
   });
 
   // Flatten pages into single posts array
@@ -279,6 +281,7 @@ export const useFetchHomeData = () => {
     posts,
     userMap,
     loading: loading || postsLoading || usersLoading, // Combine all loading states
+    error: postsError,
     loadMorePosts,
     hasMore: hasNextPage ?? false, // Use React Query's hasNextPage
     isFetchingNextPage, // Expose for loading indicator when loading more
