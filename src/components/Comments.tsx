@@ -331,7 +331,6 @@ const Comment: React.FC<CommentProps> = ({
     loadUser();
   }, [userId]);
 
-  // Don't render until user exists and profile is loaded
   if (!user || !user.profile) {
     return null;
   }
