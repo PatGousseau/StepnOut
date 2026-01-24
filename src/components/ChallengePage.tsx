@@ -7,7 +7,7 @@ import { ChallengeCard } from "./Challenge";
 import { PatrizioExample } from "./Challenge";
 import { ShareExperience } from "./Challenge";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Loader } from "./Loader";
+import { ChallengeSkeleton } from "./Skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { challengeService } from "../services/challengeService";
 
@@ -50,11 +50,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 
   // Loading state
   if (isLoading) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <Loader />
-      </View>
-    );
+    return <ChallengeSkeleton />;
   }
 
   // Error state

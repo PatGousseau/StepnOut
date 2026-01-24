@@ -7,6 +7,7 @@ interface SkeletonProps {
   height: number;
   borderRadius?: number;
   style?: ViewStyle;
+  backgroundColor?: string;
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({
@@ -14,6 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   borderRadius = 4,
   style,
+  backgroundColor = colors.neutral.grey2,
 }) => {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
@@ -48,7 +50,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           width,
           height,
           borderRadius,
-          backgroundColor: colors.neutral.grey2,
+          backgroundColor,
           opacity,
         },
         style,
@@ -166,4 +168,82 @@ const postSkeletonHeaderContent: ViewStyle = {
 const postSkeletonActions: ViewStyle = {
   flexDirection: "row",
   marginTop: 12,
+};
+
+// Skeleton for the challenge page
+export const ChallengeSkeleton: React.FC = () => {
+  const screenWidth = Dimensions.get("window").width;
+  const imageSize = screenWidth - 72; // Account for margins and padding
+
+  return (
+    <View style={challengeSkeletonContainer}>
+      <View style={challengeSkeletonContent}>
+        {/* Title */}
+        <View style={challengeSkeletonTitleContainer}>
+          <Skeleton width={120} height={28} borderRadius={6} />
+        </View>
+        
+        {/* Ends in subtitle */}
+        <View style={challengeSkeletonSubtitleContainer}>
+          <Skeleton width={100} height={14} borderRadius={4} />
+        </View>
+        
+        {/* Challenge image */}
+        <Skeleton 
+          width={imageSize} 
+          height={imageSize * 0.6} 
+          borderRadius={12} 
+          backgroundColor="#FFFFFF"
+          style={{ alignSelf: "center", marginBottom: 16 }} 
+        />
+        
+        {/* Challenge card */}
+        <View style={challengeSkeletonCard}>
+          {/* Challenge name */}
+          <Skeleton width="80%" height={20} borderRadius={4} />
+          <Skeleton width="60%" height={20} borderRadius={4} style={{ marginTop: 8 }} />
+          
+          {/* Description */}
+          <Skeleton width="100%" height={14} borderRadius={4} style={{ marginTop: 16 }} />
+          <Skeleton width="95%" height={14} borderRadius={4} style={{ marginTop: 6 }} />
+          <Skeleton width="70%" height={14} borderRadius={4} style={{ marginTop: 6 }} />
+        </View>
+        
+        {/* Share experience button */}
+        <Skeleton 
+          width="100%" 
+          height={48} 
+          borderRadius={24} 
+          style={{ marginTop: 20 }} 
+        />
+      </View>
+    </View>
+  );
+};
+
+const challengeSkeletonContainer: ViewStyle = {
+  backgroundColor: colors.light.background,
+  flex: 1,
+};
+
+const challengeSkeletonContent: ViewStyle = {
+  backgroundColor: colors.light.cardBg,
+  borderRadius: 12,
+  marginHorizontal: 16,
+  marginVertical: 24,
+  padding: 20,
+};
+
+const challengeSkeletonTitleContainer: ViewStyle = {
+  alignItems: "center",
+  marginBottom: 8,
+};
+
+const challengeSkeletonSubtitleContainer: ViewStyle = {
+  alignItems: "center",
+  marginBottom: 20,
+};
+
+const challengeSkeletonCard: ViewStyle = {
+  marginBottom: 16,
 };
