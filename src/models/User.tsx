@@ -21,8 +21,12 @@ export class User {
   static async getUser(userId: string, forceRefresh: boolean = false): Promise<User> {
     const cachedUser = this.userCache.get(userId);
 
-    if (!cachedUser || forceRefresh) {
-      const user = forceRefresh || !cachedUser ? new User(userId) : cachedUser;
+    // Need to load if: no cache, forcing refresh, or cached user failed to load (has error but no profile)
+    const needsLoad = !cachedUser || forceRefresh || (cachedUser.error && !cachedUser.profile);
+
+    if (needsLoad) {
+      // Create new user instance if forcing refresh, no cache, or previous attempt failed
+      const user = forceRefresh || !cachedUser || cachedUser.error ? new User(userId) : cachedUser;
       this.userCache.set(userId, user);
       await user.load();
     }
