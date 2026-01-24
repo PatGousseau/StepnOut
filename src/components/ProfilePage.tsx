@@ -20,6 +20,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
 import { colors } from "../constants/Colors";
 import { Loader } from "./Loader";
+import { ProfileSkeleton } from "./Skeleton";
 import { profileService } from "../services/profileService";
 import { UserProfile } from "../models/User";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -222,11 +223,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   }, [userProfile, targetUserId, isOwnProfile]);
 
   if (progressLoading || profileLoading || !userProfile) {
-    return (
-      <View style={[styles.container]}>
-        <Loader />
-      </View>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (error || profileError) {

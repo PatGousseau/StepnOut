@@ -247,3 +247,66 @@ const challengeSkeletonSubtitleContainer: ViewStyle = {
 const challengeSkeletonCard: ViewStyle = {
   marginBottom: 16,
 };
+
+// Skeleton for the profile page
+export const ProfileSkeleton: React.FC = () => {
+  return (
+    <View style={profileSkeletonContainer}>
+      {/* Profile header */}
+      <View style={profileSkeletonHeader}>
+        <View style={profileSkeletonHeaderLeft}>
+          {/* Avatar */}
+          <Skeleton width={80} height={80} borderRadius={40} />
+          
+          {/* User info */}
+          <View style={profileSkeletonUserInfo}>
+            <Skeleton width={140} height={24} borderRadius={4} />
+            <Skeleton width={100} height={16} borderRadius={4} style={{ marginTop: 6 }} />
+            <Skeleton width={80} height={14} borderRadius={4} style={{ marginTop: 8 }} />
+          </View>
+        </View>
+        
+        {/* Settings icon */}
+        <Skeleton width={24} height={24} borderRadius={12} />
+      </View>
+      
+      {/* Progress section */}
+      <View style={profileSkeletonProgress}>
+        <Skeleton width="100%" height={100} borderRadius={12} />
+      </View>
+      
+      {/* Posts title */}
+      <Skeleton width={120} height={20} borderRadius={4} style={{ marginVertical: 16 }} />
+      
+      {/* Posts */}
+      <PostSkeleton />
+      <PostSkeleton />
+    </View>
+  );
+};
+
+const profileSkeletonContainer: ViewStyle = {
+  backgroundColor: colors.light.background,
+  flex: 1,
+  padding: 16,
+};
+
+const profileSkeletonHeader: ViewStyle = {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 24,
+};
+
+const profileSkeletonHeaderLeft: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+};
+
+const profileSkeletonUserInfo: ViewStyle = {
+  marginLeft: 16,
+};
+
+const profileSkeletonProgress: ViewStyle = {
+  marginBottom: 8,
+};
