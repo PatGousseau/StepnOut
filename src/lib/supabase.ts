@@ -1,30 +1,43 @@
 import 'react-native-url-polyfill/auto';
-import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+const AsyncStorageAdapter = {
+  getItem: (key: string) => AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) => AsyncStorage.setItem(key, value),
+  removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
+
+// No-op lock to prevent auth deadlocks when app returns from background
+// See: https://github.com/supabase/supabase-js/issues/1594
+const noOpLock = async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn();
 
 export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 export const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabaseStorageUrl = `${supabaseUrl}/storage/v1/object/public/challenge-uploads`;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const createSupabaseClient = () => createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: ExpoSecureStoreAdapter as any,
+    storage: AsyncStorageAdapter,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    lock: noOpLock,
   },
 });
+
+// Use `let` so resetSupabaseClient can swap the instance (ES module bindings are live)
+export let supabase = createSupabaseClient();
+
+// Recreate client when app returns from background to clear stuck internal state
+export const resetSupabaseClient = () => {
+  supabase = createSupabaseClient();
+};
 
 export const initializeSupabase = async () => {
   try {
     return await supabase.auth.getSession();
-  } catch (error) {
+  } catch {
     return null;
   }
 };

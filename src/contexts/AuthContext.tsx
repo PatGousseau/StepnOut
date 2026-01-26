@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { Session } from "@supabase/supabase-js";
-import { supabase, initializeSupabase } from "../lib/supabase";
+import { supabase, initializeSupabase, resetSupabaseClient } from "../lib/supabase";
 import { captureEvent, identifyUser, resetPostHog, setUserProperties } from "../lib/posthog";
 import { AUTH_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
@@ -98,19 +98,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Refresh session when app comes to foreground after being backgrounded
+  // Handle app state changes - reset Supabase client when returning from background
+  // This fixes a bug where the GoTrue auth client's internal state gets stuck
+  // See: https://github.com/supabase/supabase-js/issues/1594
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        // refresh the session
-        const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
-        if (error) {
-          console.log("Session refresh failed:", error.message);
-        } else if (refreshedSession) {
-          setSession(refreshedSession);
+        // Reset the Supabase client to clear any stuck internal state
+        resetSupabaseClient();
+
+        // Restore session with the fresh client
+        try {
+          const result = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+          ]);
+
+          if (!result.error && result.data.session) {
+            setSession(result.data.session);
+          }
+        } catch {
+          // Timeout - session will be restored on next successful auth operation
         }
       }
       appState.current = nextAppState;
