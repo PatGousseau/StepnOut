@@ -16,7 +16,7 @@ export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 export const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabaseStorageUrl = `${supabaseUrl}/storage/v1/object/public/challenge-uploads`;
 
-const createSupabaseClient = () => createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorageAdapter,
     autoRefreshToken: true,
@@ -25,14 +25,6 @@ const createSupabaseClient = () => createClient(supabaseUrl, supabaseAnonKey, {
     lock: noOpLock,
   },
 });
-
-// Use `let` so resetSupabaseClient can swap the instance (ES module bindings are live)
-export let supabase = createSupabaseClient();
-
-// Recreate client when app returns from background to clear stuck internal state
-export const resetSupabaseClient = () => {
-  supabase = createSupabaseClient();
-};
 
 export const initializeSupabase = async () => {
   try {
