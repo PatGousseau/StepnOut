@@ -216,30 +216,41 @@ export const postService = {
     postsPerPage: number = 20
   ): Promise<{ posts: Post[]; hasMore: boolean }> {
     try {
+      // Base select includes user profile via foreign key - eliminates need for separate user queries
+      const baseSelect = `
+        *,
+        profiles!post_user_id_profiles_fkey (
+          id,
+          username,
+          name,
+          profile_media:media!profiles_profile_media_id_fkey (
+            file_path
+          )
+        ),
+        media (
+          file_path,
+          upload_status
+        ),
+        likes:likes(count),
+        comments (
+          body,
+          created_at,
+          user_id,
+          profiles!comments_user_id_profiles_fkey (
+            username
+          )
+        )
+      `;
+
       // Query for challenge posts
       let challengeQuery = supabase
         .from("post")
-        .select(
-          `
-          *,
+        .select(`
+          ${baseSelect},
           challenges!inner (
             title
-          ),
-          media (
-            file_path,
-            upload_status
-          ),
-          likes:likes(count),
-          comments (
-            body,
-            created_at,
-            user_id,
-            profiles!comments_user_id_profiles_fkey (
-              username
-            )
           )
-        `
-        )
+        `)
         .not("challenge_id", "is", null)
         .not("media.upload_status", "in", '("failed","pending")')
         .order("created_at", { ascending: false });
@@ -247,50 +258,18 @@ export const postService = {
       // Query for discussion posts (excluding welcome posts for proper pagination)
       let discussionQuery = supabase
         .from("post")
-        .select(
-          `
-          *,
-          media (
-            file_path,
-            upload_status
-          ),
-          likes:likes(count),
-          comments (
-            body,
-            created_at,
-            user_id,
-            profiles!comments_user_id_profiles_fkey (
-              username
-            )
-          )
-        `
-        )
+        .select(baseSelect)
         .is("challenge_id", null)
         .or("is_welcome.is.null,is_welcome.eq.false")
         .not("media.upload_status", "in", '("failed","pending")')
         .order("created_at", { ascending: false });
 
       // Query for welcome posts (only on first page, fetch all recent ones)
+      // Query for welcome posts (only on first page, fetch all recent ones)
       let welcomeQuery = pageParam === 1
         ? supabase
             .from("post")
-            .select(
-              `
-              *,
-              media (
-                file_path,
-                upload_status
-              ),
-              likes:likes(count),
-              comments (
-                body,
-                created_at,
-                profiles:user_id (
-                  username
-                )
-              )
-            `
-            )
+            .select(baseSelect)
             .is("challenge_id", null)
             .eq("is_welcome", true)
             .order("created_at", { ascending: false })
