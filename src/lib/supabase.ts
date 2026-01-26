@@ -8,10 +8,6 @@ const AsyncStorageAdapter = {
   removeItem: (key: string) => AsyncStorage.removeItem(key),
 };
 
-// No-op lock to prevent auth deadlocks when app returns from background
-// See: https://github.com/supabase/supabase-js/issues/1594
-const noOpLock = async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn();
-
 export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 export const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabaseStorageUrl = `${supabaseUrl}/storage/v1/object/public/challenge-uploads`;
@@ -22,7 +18,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
-    lock: noOpLock,
   },
 });
 
