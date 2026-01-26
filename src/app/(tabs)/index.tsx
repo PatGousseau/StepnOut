@@ -19,6 +19,7 @@ import { colors } from "../../constants/Colors";
 import InlineCreatePost from "../../components/InlineCreatePost";
 import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
+import { PostsListSkeleton } from "@/src/components/Skeleton";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { Post as PostType } from "../../types";
 
@@ -308,13 +309,17 @@ const Home = () => {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          {renderPostsList(submissionPosts, "submission")}
+          {loading && submissionPosts.length === 0 ? (
+            <PostsListSkeleton count={3} />
+          ) : (
+            renderPostsList(submissionPosts, "submission")
+          )}
           {error && !loading && (
             <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
               <Text style={styles.errorText}>{t('Something went wrong. Tap to retry.')}</Text>
             </TouchableOpacity>
           )}
-          {(loading || isFetchingNextPage) && (
+          {isFetchingNextPage && (
             <View style={styles.loaderContainer}>
               <Loader />
             </View>
@@ -333,13 +338,17 @@ const Home = () => {
           keyboardDismissMode="on-drag"
         >
           <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
-          {renderPostsList(discussionPosts, "discussion")}
+          {loading && discussionPosts.length === 0 ? (
+            <PostsListSkeleton count={3} />
+          ) : (
+            renderPostsList(discussionPosts, "discussion")
+          )}
           {error && !loading && (
             <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
               <Text style={styles.errorText}>{t('Something went wrong. Tap to retry.')}</Text>
             </TouchableOpacity>
           )}
-          {(loading || isFetchingNextPage) && (
+          {isFetchingNextPage && (
             <View style={styles.loaderContainer}>
               <Loader />
             </View>
