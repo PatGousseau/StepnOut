@@ -22,9 +22,9 @@ export class User {
     const cachedUser = this.userCache.get(userId);
 
     if (!cachedUser || forceRefresh) {
-      const user = forceRefresh || !cachedUser ? new User(userId) : cachedUser;
-      this.userCache.set(userId, user);
+      const user = new User(userId);
       await user.load();
+      this.userCache.set(userId, user);
     }
 
     return this.userCache.get(userId)!;

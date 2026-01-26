@@ -26,7 +26,7 @@ import { router } from "expo-router";
 import { useLanguage } from "../contexts/LanguageContext";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { formatRelativeTime } from "../utils/time";
-import { Loader } from "./Loader";
+import { CommentsListSkeleton, CommentSkeleton } from "./Skeleton";
 import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
 import { useLikes } from "../contexts/LikesContext";
 import { ActionsMenu } from "./ActionsMenu";
@@ -154,7 +154,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   if (loading) {
     return (
       <View style={loadingContainerStyle}>
-        <Loader />
+        <CommentsListSkeleton count={4} />
       </View>
     );
   }
@@ -331,8 +331,8 @@ const Comment: React.FC<CommentProps> = ({
     loadUser();
   }, [userId]);
 
-  if (!user) {
-    return null;
+  if (!user || !user.profile) {
+    return <CommentSkeleton />;
   }
 
   const handleProfilePress = () => {
@@ -497,9 +497,8 @@ const inputContainerStyle: ViewStyle = {
 };
 
 const loadingContainerStyle: ViewStyle = {
-  alignItems: "center",
   flex: 1,
-  justifyContent: "center",
+  paddingTop: 8,
 };
 
 const nameContainerStyle: ViewStyle = {
