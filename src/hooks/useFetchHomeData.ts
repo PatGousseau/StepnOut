@@ -1,13 +1,12 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { Post } from "../types";
 import { User, UserProfile } from "../models/User";
 import { useAuth } from "../contexts/AuthContext";
 import { useLikes } from "../contexts/LikesContext";
 import { imageService } from "../services/imageService";
-import { useQuery, useInfiniteQuery, useQueries } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { postService } from "../services/postService";
-import { profileService } from "../services/profileService";
 
 interface UserMap {
   [key: string]: User | UserProfile;
@@ -17,21 +16,13 @@ interface PostLikes {
   [postId: number]: boolean;
 }
 
-interface CommentCount {
-  post_id: number;
-  count: string;
-}
-
 export const useFetchHomeData = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const POSTS_PER_PAGE = 20;
-  const [userMap, setUserMap] = useState<UserMap>({});
-  const [loading, setLoading] = useState(true);
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
   const { initializePostLikes } = useLikes();
+  const POSTS_PER_PAGE = 20;
 
-  // Fetch blocked users with React Query
+  // Fetch blocked users
   const { data: blockedUsers } = useQuery({
     queryKey: ["blocked-users", user?.id],
     queryFn: async () => {
@@ -44,12 +35,14 @@ export const useFetchHomeData = () => {
       return data?.map((block) => block.blocked_id) || [];
     },
     enabled: !!user?.id,
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
-  const blockedUserIds = blockedUsers || [];
+  const blockedUserIds = blockedUsers ?? [];
 
-  // Fetch posts with React Query infinite query
+  // Fetch posts (now includes user profiles via foreign key join!)
   const {
     data: postsData,
     fetchNextPage,
@@ -67,167 +60,58 @@ export const useFetchHomeData = () => {
       return lastPage.hasMore ? allPages.length + 1 : undefined;
     },
     initialPageParam: 1,
-    enabled: !!user && blockedUserIds !== undefined, // Wait for blocked users to load
-    staleTime: 30000,
-    retry: 2,
+    enabled: !!user && blockedUsers !== undefined,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   });
 
-  // Flatten pages into single posts array
-  const rawPosts = useMemo(() => {
-    return postsData?.pages.flatMap((page) => page.posts) ?? [];
-  }, [postsData]);
+  // Flatten posts and extract user profiles from the joined data
+  const { posts, userMap } = useMemo(() => {
+    const rawPosts = postsData?.pages.flatMap((page) => page.posts) ?? [];
+    const extractedUserMap: UserMap = {};
 
-  // Extract unique user IDs from posts
-  const uniqueUserIds = useMemo(() => {
-    return [...new Set(rawPosts.map((post) => post.user_id))];
-  }, [rawPosts]);
-
-  // Fetch users in parallel using useQueries
-  const userQueries = useQueries({
-    queries: uniqueUserIds.map((userId) => ({
-      queryKey: ["user", userId],
-      queryFn: () => profileService.fetchProfileById(userId),
-      enabled: !!userId && rawPosts.length > 0,
-      staleTime: 30000,
-    })),
-  });
-
-  // Build userMap from query results
-  const userMapFromQueries = useMemo(() => {
-    const map: UserMap = {};
-    userQueries.forEach((query, index) => {
-      const userId = uniqueUserIds[index];
-      if (query.data && userId) {
-        // Store UserProfile directly - Post component accepts User | UserProfile
-        map[userId] = query.data;
+    const formattedPosts = rawPosts.map((post: any) => {
+      // Extract user profile from joined data
+      if (post.profiles) {
+        const profile = post.profiles;
+        extractedUserMap[post.user_id] = {
+          id: profile.id,
+          username: profile.username,
+          name: profile.name,
+          profileImageUrl: profile.profile_media?.file_path
+            ? imageService.getProfileImageUrlSync(profile.profile_media.file_path)
+            : null,
+        } as UserProfile;
       }
-    });
-    return map;
-  }, [userQueries, uniqueUserIds]);
 
-  // Track which user IDs we've already merged to prevent infinite loops
-  const mergedUserIdsRef = useRef<Set<string>>(new Set());
-
-  // Create a stable string representation of user IDs that have data
-  const loadedUserIds = useMemo(() => {
-    return userQueries
-      .map((query, index) => (query.data ? uniqueUserIds[index] : null))
-      .filter((id): id is string => id !== null)
-      .sort()
-      .join(',');
-  }, [userQueries, uniqueUserIds]);
-
-  // Update userMap state when queries complete (only when new users are loaded)
-  useEffect(() => {
-    if (!loadedUserIds) return;
-    
-    // Build userMap directly from queries
-    const newUserMap: UserMap = {};
-    const newUserIds = new Set<string>();
-    
-    userQueries.forEach((query, index) => {
-      const userId = uniqueUserIds[index];
-      if (query.data && userId) {
-        newUserMap[userId] = query.data;
-        newUserIds.add(userId);
+      // Format post with image URL
+      let mediaUrl = post.media?.file_path;
+      if (mediaUrl && !mediaUrl.startsWith('http')) {
+        mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
       }
+
+      return {
+        ...post,
+        media: mediaUrl ? { file_path: mediaUrl } : post.media,
+        likes_count: post.likes?.[0]?.count ?? 0,
+        comments_count: post.comments?.length ?? 0,
+        liked: likedPosts[post.id] ?? false,
+        challenge_title: post.challenges?.title,
+        profiles: undefined, // Remove joined profile data from post object -- TODO: make such that we don't do this.
+      } as Post;
     });
 
-    // Only update if there are users we haven't merged yet
-    const hasNewUsers = Array.from(newUserIds).some(
-      (userId) => !mergedUserIdsRef.current.has(userId)
-    );
+    return { posts: formattedPosts, userMap: extractedUserMap };
+  }, [postsData, likedPosts]);
 
-    if (hasNewUsers && Object.keys(newUserMap).length > 0) {
-      // Update the ref to track merged users
-      newUserIds.forEach((id) => mergedUserIdsRef.current.add(id));
-      
-      setUserMap((prev) => ({ ...prev, ...newUserMap }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadedUserIds]); // Only depend on loadedUserIds string, not the objects
-
-  // Reset merged users when uniqueUserIds change (new posts loaded)
+  // Initialize likes when posts change
   useEffect(() => {
-    mergedUserIdsRef.current.clear();
-  }, [uniqueUserIds.length]); // Reset when number of unique users changes
-
-  // Check if all users are loaded
-  const usersLoading = userQueries.some((query) => query.isLoading);
-  const allUsersLoaded = uniqueUserIds.length > 0 && userQueries.every((query) => !query.isLoading && (query.data || query.error));
-
-  // Format posts when rawPosts changes and users are loaded (add comment counts, image URLs, like state)
-  useEffect(() => {
-    if (rawPosts.length === 0) {
-      setPosts([]);
-      setLoading(false);
-      return;
+    if (posts.length > 0) {
+      initializePostLikes(posts);
     }
-
-    // Wait for users to load before formatting posts
-    if (!allUsersLoaded) {
-      return;
-    }
-
-    const formatPosts = async () => {
-      setLoading(true);
-      try {
-        // Batch comment counts
-        const postIds = rawPosts.map((post) => post.id.toString());
-        const commentCountsResponse = await supabase.rpc("get_comment_counts", {
-          post_ids: postIds,
-        });
-
-        const commentCountMap = new Map<number, number>();
-        commentCountsResponse.data?.forEach((row: CommentCount) => {
-          commentCountMap.set(row.post_id, parseInt(row.count, 10));
-        });
-
-        // Format posts (image URLs, counts, liked state)
-        const formattedPosts = await Promise.all(
-          rawPosts.map((post) => formatPost(post, commentCountMap))
-        );
-
-        // Initialize likes for all posts
-        initializePostLikes(formattedPosts);
-
-        setPosts(formattedPosts);
-      } catch (error) {
-        console.error("Error formatting posts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    formatPosts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawPosts, allUsersLoaded]); // Wait for users to load before formatting
-
-  const formatPost = async (post: Post, commentCountMap?: Map<number, number>): Promise<Post> => {
-    // If we don't have a pre-fetched comment count, fetch it individually
-    let commentCount = commentCountMap?.get(post.id);
-    if (commentCount === undefined) {
-      const commentCountResponse = await supabase.rpc("get_comment_counts", {
-        post_ids: [post.id.toString()],
-      });
-      commentCount = commentCountResponse.data?.[0]?.count ?? 0;
-    }
-
-    let urls = null;
-    if (post.media?.file_path) {
-      urls = await imageService.getPostImageUrl(post.media.file_path);
-    }
-
-    return {
-      ...post,
-      ...(urls ? { media: { file_path: urls.fullUrl } } : {}),
-      likes_count: post.likes?.count ?? 0,
-      comments_count: commentCount ?? 0,
-      liked: likedPosts[post.id] ?? false,
-      challenge_id: post.challenge_id,
-      challenge_title: (post as any).challenge_title, // preserved when we add it below
-    };
-  };
+  }, [posts.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMorePosts = useCallback(() => {
     if (!postsLoading && !isFetchingNextPage && hasNextPage) {
@@ -239,38 +123,24 @@ export const useFetchHomeData = () => {
     try {
       const { data: post, error } = await supabase
         .from("post")
-        .select(
-          `
+        .select(`
           *,
           challenges:challenge_id (title),
           media (file_path),
           likes:likes(count)
-        `
-        )
+        `)
         .eq("id", postId)
         .single();
 
       if (error) throw error;
 
-      const postWithChallenge = {
+      return {
         ...post,
         challenge_title: (post as any).challenges?.title,
-      };
-
-      const formattedPost = await formatPost(postWithChallenge);
-
-      // Fetch the user data if not already in userMap
-      if (post && !userMap[post.user_id]) {
-        const u = await User.getUser(post.user_id);
-        if (u) {
-          setUserMap((prev) => ({
-            ...prev,
-            [u.id]: u,
-          }));
-        }
-      }
-
-      return formattedPost;
+        likes_count: post.likes?.[0]?.count ?? 0,
+        comments_count: 0,
+        liked: likedPosts[post.id] ?? false,
+      } as Post;
     } catch (error) {
       console.error("Error fetching post:", error);
       return null;
@@ -280,13 +150,13 @@ export const useFetchHomeData = () => {
   return {
     posts,
     userMap,
-    loading: loading || postsLoading || usersLoading, // Combine all loading states
+    loading: postsLoading,
     error: postsError,
     loadMorePosts,
-    hasMore: hasNextPage ?? false, // Use React Query's hasNextPage
-    isFetchingNextPage, // Expose for loading indicator when loading more
+    hasMore: hasNextPage ?? false,
+    isFetchingNextPage,
     fetchPost,
     likedPosts,
-    refetchPosts: refetchPosts, // Expose refetch for refresh
+    refetchPosts,
   };
 };
