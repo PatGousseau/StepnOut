@@ -99,7 +99,7 @@ export const useFetchHomeData = () => {
         comments_count: post.comments?.length ?? 0,
         liked: likedPosts[post.id] ?? false,
         challenge_title: post.challenges?.title,
-        profiles: undefined, // Remove joined profile data from post object
+        profiles: undefined, // Remove joined profile data from post object -- TODO: make such that we don't do this.
       } as Post;
     });
 

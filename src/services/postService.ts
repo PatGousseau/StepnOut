@@ -216,7 +216,6 @@ export const postService = {
     postsPerPage: number = 20
   ): Promise<{ posts: Post[]; hasMore: boolean }> {
     try {
-      // Base select includes user profile via foreign key - eliminates need for separate user queries
       const baseSelect = `
         *,
         profiles!post_user_id_profiles_fkey (

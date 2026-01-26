@@ -12,7 +12,6 @@ interface ImageUrlResult {
   fullUrl: string;
 }
 
-// Extract relative path from full URL or return as-is
 const normalizePath = (filePath: string): string => {
   if (!filePath) return "";
   if (filePath.startsWith("http") && filePath.includes("challenge-uploads/")) {
@@ -21,7 +20,6 @@ const normalizePath = (filePath: string): string => {
   return filePath;
 };
 
-// Build transform URL synchronously
 const buildTransformUrl = (filePath: string, opts: ImageTransformOptions): string => {
   const path = normalizePath(filePath);
   if (!path) return "";
@@ -33,7 +31,6 @@ const buildTransformUrl = (filePath: string, opts: ImageTransformOptions): strin
 };
 
 export const imageService = {
-  // Sync URL builders for use in useMemo
   getProfileImageUrlSync(filePath: string, size: "small" | "medium" | "large" = "medium"): string {
     const sizes = {
       small: { quality: 80, width: 80, height: 80 },
@@ -48,7 +45,6 @@ export const imageService = {
     return buildTransformUrl(filePath, sizes[size]);
   },
 
-  // Async versions (used elsewhere in the app)
   async getImageUrl(filePath: string, options?: ImageTransformOptions): Promise<string> {
     const path = normalizePath(filePath);
     if (!path) return "";
