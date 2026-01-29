@@ -39,7 +39,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
       return challengeService.fetchChallengeById(challengeId);
     },
     enabled: !!challengeId,
-    staleTime: 30000,
+    staleTime: 120000,
   });
 
   const onRefresh = useCallback(async () => {

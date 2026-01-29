@@ -121,7 +121,7 @@ function RootLayoutNav() {
       queryClient.prefetchQuery({
         queryKey: ["profile", userId],
         queryFn: () => profileService.fetchProfileById(userId),
-        staleTime: 30_000,
+        staleTime: 120_000,
       });
 
       // 2) active challenge + challenge details
@@ -138,7 +138,7 @@ function RootLayoutNav() {
         queryClient.prefetchQuery({
           queryKey: ["challenge", data.id],
           queryFn: () => challengeService.fetchChallengeById(data.id),
-          staleTime: 30_000,
+          staleTime: 120_000,
         });
       } catch {
         // ignore – this is best-effort warmup
