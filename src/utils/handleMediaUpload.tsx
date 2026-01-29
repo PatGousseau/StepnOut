@@ -1,8 +1,30 @@
 import * as ImagePicker from "expo-image-picker";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Video } from 'react-native-compressor';
+import Constants from 'expo-constants';
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
+
+// Expo Go can't load custom native modules like `react-native-compressor`.
+// Keep uploads working by falling back to the original video when running in Expo Go.
+const canUseNativeCompressor = Constants.appOwnership !== 'expo';
+
+const compressVideoIfAvailable = async (
+  uri: string,
+  options: any,
+  onProgress?: (progress: number) => void
+): Promise<string> => {
+  if (!canUseNativeCompressor) return uri;
+
+  try {
+    // require() so Expo Go doesn't crash at import-time
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { Video } = require('react-native-compressor');
+    return await Video.compress(uri, options, onProgress);
+  } catch (e) {
+    console.warn('Video compressor unavailable, using original video:', e);
+    return uri;
+  }
+};
 
 interface MediaUploadResult {
   mediaId: number;
@@ -183,7 +205,7 @@ export const uploadMediaInBackground = async (
       try {
         if (onProgress) onProgress(10); // Report compression start
         
-        compressedUri = await Video.compress(
+        compressedUri = await compressVideoIfAvailable(
           pendingUpload.originalUri,
           {
             compressionMethod: "auto",
@@ -191,7 +213,7 @@ export const uploadMediaInBackground = async (
             maxSize: 50 * 1024 * 1024,
             bitrate: 500000,
           },
-          (progress) => {
+          (progress: number) => {
             if (onProgress) onProgress(10 + (progress * 0.6));
           }
         );
@@ -347,14 +369,14 @@ export const uploadMedia = async (
     if (isVideoFile) {
       try {
         // Compress video with absolute maximum compression
-        fileUri = await Video.compress(
+        fileUri = await compressVideoIfAvailable(
           file.uri,
           {
             compressionMethod: "auto",
             minimumFileSizeForCompress: 0,
             maxSize: 1 * 1024 * 1024,
             bitrate: 250000,
-          },
+          }
         );
       } catch (e) {
         console.warn("Video compression failed, using original:", e);

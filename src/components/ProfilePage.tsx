@@ -80,7 +80,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       return profileService.fetchProfileById(targetUserId);
     },
     enabled: !!targetUserId,
-    staleTime: 30000,
+    staleTime: 120000,
   });
 
   const onRefresh = useCallback(async () => {
