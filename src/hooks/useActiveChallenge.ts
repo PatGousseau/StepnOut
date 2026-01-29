@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import {  ChallengeWithCount } from '../types';
+import { ChallengeWithCount } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 export const useActiveChallenge = () => {
@@ -24,7 +24,16 @@ export const useActiveChallenge = () => {
       const { data: challengeData, error: challengeError } = await supabase
         .from('challenges')
         .select(`
-          *,
+          id,
+          title,
+          title_it,
+          description,
+          description_it,
+          difficulty,
+          created_by,
+          created_at,
+          updated_at,
+          is_active,
           media:image_media_id(
             file_path
           )
@@ -37,9 +46,10 @@ export const useActiveChallenge = () => {
         return;
       }
 
+      // just need the count – don't download rows
       const { count, error: countError } = await supabase
         .from('post')
-        .select('id', { count: 'exact' })
+        .select('id', { count: 'exact', head: true })
         .eq('challenge_id', challengeData.id);
 
       if (countError) {

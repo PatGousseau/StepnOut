@@ -18,10 +18,13 @@ import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
 import { UI_EVENTS } from '../constants/analyticsEvents';
+import { supabase } from '../lib/supabase';
+import { challengeService } from '../services/challengeService';
+import { profileService } from '../services/profileService';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -53,6 +56,7 @@ const queryClient = new QueryClient({
 function RootLayoutNav() {
   const { session, loading } = useAuth();
   const { markAllAsRead, notifications, unreadCount } = useNotifications();
+  const queryClient = useQueryClient();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -103,6 +107,50 @@ function RootLayoutNav() {
     };
     setupPushNotifications();
   }, [session]);
+
+  // lightweight prefetching: warm supabase-backed screens so taps feel instant.
+  // keep it simple: only prefetch the currently relevant user + active challenge.
+  useEffect(() => {
+    let cancelled = false;
+
+    const prefetch = async () => {
+      const userId = session?.user?.id;
+      if (!userId) return;
+
+      // 1) profile (react-query already powers this)
+      queryClient.prefetchQuery({
+        queryKey: ["profile", userId],
+        queryFn: () => profileService.fetchProfileById(userId),
+        staleTime: 30_000,
+      });
+
+      // 2) active challenge + challenge details
+      try {
+        const { data, error } = await supabase
+          .from('challenges')
+          .select('id')
+          .eq('is_active', true)
+          .single();
+
+        if (cancelled) return;
+        if (error || !data?.id) return;
+
+        queryClient.prefetchQuery({
+          queryKey: ["challenge", data.id],
+          queryFn: () => challengeService.fetchChallengeById(data.id),
+          staleTime: 30_000,
+        });
+      } catch {
+        // ignore – this is best-effort warmup
+      }
+    };
+
+    prefetch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id, queryClient]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
