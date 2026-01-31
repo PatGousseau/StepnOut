@@ -25,6 +25,12 @@ export default function ResetPasswordScreen() {
 
     try {
       setLoading(true);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error(t('Auth session missing. Open the reset link again from your email.'));
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
 

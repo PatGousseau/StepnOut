@@ -44,6 +44,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleIncomingUrl = async (url: string) => {
       try {
+        // supabase recovery links can include either a pkce "code" (query) or an implicit session
+        // in the url fragment (#access_token=...&refresh_token=...)
+        const fragment = url.split('#')[1];
+        if (fragment) {
+          const params = new URLSearchParams(fragment);
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            return;
+          }
+        }
+
         const { queryParams } = Linking.parse(url);
         const code = typeof queryParams?.code === 'string' ? queryParams.code : undefined;
         if (code) {
