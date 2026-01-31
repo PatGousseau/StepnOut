@@ -126,7 +126,12 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       const commentText = newComment.trim();
 
       try {
-        const parentCommentId = replyTo?.commentId ?? null;
+        const candidateParentId = replyTo?.commentId ?? null;
+        const parentComment = candidateParentId
+          ? comments.find((c) => c.id === candidateParentId)
+          : undefined;
+        const parentCommentId = parentComment && !parentComment.parent_comment_id ? parentComment.id : null;
+        if (replyTo && !parentCommentId) setReplyTo(null);
         const newCommentData = await addComment(user.id, commentText, parentCommentId);
 
         if (newCommentData) {
@@ -216,7 +221,11 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               created_at={item.created_at}
               post_id={item.post_id}
               indentLevel={item.indentLevel}
-              onReply={(username) => setReplyTo({ commentId: item.id, userId: item.userId, username })}
+              onReply={
+                item.indentLevel === 0
+                  ? (username) => setReplyTo({ commentId: item.id, userId: item.userId, username })
+                  : undefined
+              }
               onCommentDeleted={() => handleCommentDeleted(item.id)}
             />
           )}
@@ -441,14 +450,16 @@ const Comment: React.FC<CommentProps> = ({
             <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => (user?.username ? onReply?.(user.username) : null)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <View style={iconContainerStyle}>
-            <Icon name="reply" size={14} color={colors.neutral.grey1} />
-          </View>
-        </TouchableOpacity>
+        {onReply ? (
+          <TouchableOpacity
+            onPress={() => (user?.username ? onReply(user.username) : null)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <View style={iconContainerStyle}>
+              <Icon name="reply" size={14} color={colors.neutral.grey1} />
+            </View>
+          </TouchableOpacity>
+        ) : null}
         <ActionsMenu
           type="comment"
           contentId={id}
