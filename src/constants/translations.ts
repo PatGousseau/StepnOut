@@ -136,6 +136,7 @@ export const translations = {
   "Updating...": "Aggiornamento...",
   "Password updated": "Password aggiornata",
   "Auth session missing. Open the reset link again from your email.": "Sessione di autenticazione mancante. Apri di nuovo il link di reset dalla tua email.",
+  "Password update timed out. Please try opening the reset link again.": "Aggiornamento password scaduto. Prova ad aprire di nuovo il link di reset.",
   "Don't have an account? Register": "Non hai un account? Registrati",
   "Welcome to Stepn Out!": "Benvenuto su Stepn Out!", 
   "A community for people who want to step out of their comfort zone and challenge themselves.":
