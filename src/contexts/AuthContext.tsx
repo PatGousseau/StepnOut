@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
+import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
 import { Session } from "@supabase/supabase-js";
 import { supabase, initializeSupabase } from "../lib/supabase";
 import { captureEvent, identifyUser, resetPostHog, setUserProperties } from "../lib/posthog";
@@ -37,39 +39,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
-    // Initialize Supabase first
-    initializeSupabase().then(() => {
-      // Get initial session
-      supabase.auth
-        .getSession()
-        .then(async ({ data: { session } }) => {
-          setSession(session);
-          if (session?.user) {
-            const { data } = await supabase
-              .from("profiles")
-              .select("is_admin, username")
-              .eq("id", session.user.id)
-              .single();
-            setIsAdmin(data?.is_admin || false);
-            setUsername(data?.username || null);
-            // Identify user in PostHog when session is restored
-            identifyUser(session.user.id, {
-              [USER_PROPERTIES.EMAIL]: session.user.email,
-              [USER_PROPERTIES.USERNAME]: session.user.user_metadata?.username,
-              [USER_PROPERTIES.DISPLAY_NAME]: session.user.user_metadata?.display_name,
-              [USER_PROPERTIES.IS_ADMIN]: data?.is_admin || false,
-            });
-          }
-          setLoading(false);
-        })
-        .catch(() => {
-          setLoading(false);
-        });
+    let authSubscription: { unsubscribe: () => void } | null = null;
+    let urlSubscription: { remove: () => void } | null = null;
 
-      // Handle subsequent auth changes
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const handleIncomingUrl = async (url: string) => {
+      try {
+        const { queryParams } = Linking.parse(url);
+        const code = typeof queryParams?.code === 'string' ? queryParams.code : undefined;
+        if (code) {
+          await supabase.auth.exchangeCodeForSession(code);
+        }
+      } catch {
+        // ignore deep link parsing/auth errors here; surfaces will show auth errors if needed
+      }
+    };
+
+    const init = async () => {
+      await initializeSupabase();
+
+      // Deep link handling for auth flows (password reset, magic links)
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) await handleIncomingUrl(initialUrl);
+
+      urlSubscription = Linking.addEventListener('url', ({ url }) => {
+        handleIncomingUrl(url);
+      });
+
+      // Get initial session
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         if (session?.user) {
           const { data } = await supabase
@@ -79,7 +77,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .single();
           setIsAdmin(data?.is_admin || false);
           setUsername(data?.username || null);
-          // Identify user in PostHog on auth state change
+
+          identifyUser(session.user.id, {
+            [USER_PROPERTIES.EMAIL]: session.user.email,
+            [USER_PROPERTIES.USERNAME]: session.user.user_metadata?.username,
+            [USER_PROPERTIES.DISPLAY_NAME]: session.user.user_metadata?.display_name,
+            [USER_PROPERTIES.IS_ADMIN]: data?.is_admin || false,
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+
+      // Handle subsequent auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        setSession(session);
+
+        if (event === 'PASSWORD_RECOVERY') {
+          router.replace('/(auth)/reset-password');
+        }
+
+        if (session?.user) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("is_admin, username")
+            .eq("id", session.user.id)
+            .single();
+          setIsAdmin(data?.is_admin || false);
+          setUsername(data?.username || null);
+
           identifyUser(session.user.id, {
             [USER_PROPERTIES.EMAIL]: session.user.email,
             [USER_PROPERTIES.USERNAME]: session.user.user_metadata?.username,
@@ -89,13 +115,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setIsAdmin(false);
           setUsername(null);
-          // Reset PostHog when user logs out
           resetPostHog();
         }
       });
 
-      return () => subscription.unsubscribe();
-    });
+      authSubscription = subscription;
+    };
+
+    init();
+
+    return () => {
+      authSubscription?.unsubscribe();
+      urlSubscription?.remove();
+    };
   }, []);
 
   // Handle app state changes - refresh session when returning from background

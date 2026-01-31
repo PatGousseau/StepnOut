@@ -64,7 +64,7 @@ function RootLayoutNav() {
                       pathname.includes('/challenge/');
 
   // hide logo on auth screens
-  const hideLogo = pathname === '/login' || pathname === '/register';
+  const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
   
   // hide recently active banner on onboarding
   const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
