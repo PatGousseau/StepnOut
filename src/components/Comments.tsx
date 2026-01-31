@@ -59,7 +59,11 @@ interface CommentsListProps {
 
 const CommentsContext = React.createContext<{ onClose?: () => void }>({});
 
-type DisplayComment = CommentType & { indentLevel: number; isLastReply?: boolean };
+type DisplayComment = CommentType & {
+  indentLevel: number;
+  isLastReply?: boolean;
+  replyToUserId?: string;
+};
 
 const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
   const topLevel = comments
@@ -88,7 +92,12 @@ const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
     const replies = repliesByParent.get(c.id) || [];
     for (let i = 0; i < replies.length; i++) {
       const r = replies[i];
-      out.push({ ...r, indentLevel: 1, isLastReply: i === replies.length - 1 });
+      out.push({
+        ...r,
+        indentLevel: 1,
+        isLastReply: i === replies.length - 1,
+        replyToUserId: c.userId,
+      });
     }
   }
 
@@ -223,6 +232,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               post_id={item.post_id}
               indentLevel={item.indentLevel}
               isLastReply={item.isLastReply}
+              replyToUserId={item.replyToUserId}
               onReply={
                 item.indentLevel === 0
                   ? (username) => setReplyTo({ commentId: item.id, userId: item.userId, username })
@@ -371,6 +381,7 @@ interface CommentProps {
   post_id: number;
   indentLevel?: number;
   isLastReply?: boolean;
+  replyToUserId?: string;
   onReply?: (username: string) => void;
   onCommentDeleted?: () => void;
 }
@@ -383,6 +394,7 @@ const Comment: React.FC<CommentProps> = ({
   post_id,
   indentLevel = 0,
   isLastReply = false,
+  replyToUserId,
   onReply,
   onCommentDeleted,
 }) => {
@@ -391,6 +403,7 @@ const Comment: React.FC<CommentProps> = ({
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
 
   const [user, setUser] = useState<User | null>(null);
+  const [replyToUser, setReplyToUser] = useState<User | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -400,6 +413,19 @@ const Comment: React.FC<CommentProps> = ({
 
     loadUser();
   }, [userId]);
+
+  useEffect(() => {
+    const loadReplyToUser = async () => {
+      if (!replyToUserId) {
+        setReplyToUser(null);
+        return;
+      }
+      const userData = await User.getUser(replyToUserId);
+      setReplyToUser(userData);
+    };
+
+    loadReplyToUser();
+  }, [replyToUserId]);
 
   if (!user || !user.profile) {
     return <CommentSkeleton />;
@@ -447,7 +473,12 @@ const Comment: React.FC<CommentProps> = ({
             </View>
           </TouchableOpacity>
         </View>
-        <Text style={commentTextStyle}>{text}</Text>
+        <Text style={commentTextStyle}>
+          {indentLevel && replyToUser?.username ? (
+            <Text style={replyToUsernameStyle}>@{replyToUser.username} </Text>
+          ) : null}
+          {text}
+        </Text>
       </View>
       <View style={commentFooterStyle}>
         <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -540,6 +571,11 @@ const commentContentStyle: ViewStyle = {
 const commentTextStyle: TextStyle = {
   color: "#333",
   fontSize: 14,
+};
+
+const replyToUsernameStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontWeight: "600",
 };
 
 const commentsListStyle: ViewStyle = {
