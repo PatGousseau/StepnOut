@@ -417,7 +417,13 @@ const Comment: React.FC<CommentProps> = ({
   };
 
   return (
-    <View style={[commentContainerStyle, indentLevel ? { marginLeft: indentLevel * 18 } : null]}>
+    <View style={commentContainerStyle}>
+      {indentLevel ? (
+        <View style={replyBranchStyle}>
+          <View style={replyTrunkStyle} />
+          <View style={replyConnectorStyle} />
+        </View>
+      ) : null}
       <TouchableOpacity onPress={handleProfilePress}>
         {user.profileImageUrl ? (
           <Image source={{ uri: user.profileImageUrl }} style={commentAvatarStyle} />
@@ -494,6 +500,28 @@ const commentContainerStyle: ViewStyle = {
   alignItems: "flex-start",
   flexDirection: "row",
   marginBottom: 10,
+};
+
+const replyBranchStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  marginLeft: 6,
+  marginRight: 10,
+  alignSelf: "stretch",
+};
+
+const replyTrunkStyle: ViewStyle = {
+  width: 2,
+  backgroundColor: colors.neutral.grey2,
+  alignSelf: "stretch",
+};
+
+const replyConnectorStyle: ViewStyle = {
+  width: 12,
+  height: 2,
+  backgroundColor: colors.neutral.grey2,
+  marginLeft: 0,
+  marginRight: 0,
 };
 
 const commentContentStyle: ViewStyle = {
