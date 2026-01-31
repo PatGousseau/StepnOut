@@ -25,10 +25,12 @@ export const useFetchComments = (postId: number) => {
       userId,
       body,
       parentCommentId,
+      replyToCommentId,
     }: {
       userId: string;
       body: string;
       parentCommentId?: number | null;
+      replyToCommentId?: number | null;
     }) => {
       const { data, error } = await supabase
         .from("comments")
@@ -38,6 +40,7 @@ export const useFetchComments = (postId: number) => {
             user_id: userId,
             body,
             parent_comment_id: parentCommentId ?? null,
+            reply_to_comment_id: replyToCommentId ?? null,
           },
         ])
         .select(`
@@ -54,6 +57,7 @@ export const useFetchComments = (postId: number) => {
             userId: data[0].user_id,
             post_id: postId,
             parent_comment_id: data[0].parent_comment_id,
+            reply_to_comment_id: data[0].reply_to_comment_id,
             created_at: data[0].created_at,
             likes_count: data[0].likes?.count || 0,
             liked: false,
@@ -75,8 +79,13 @@ export const useFetchComments = (postId: number) => {
     },
   });
 
-  const addComment = async (userId: string, body: string, parentCommentId?: number | null) => {
-    return addCommentMutation.mutateAsync({ userId, body, parentCommentId });
+  const addComment = async (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    replyToCommentId?: number | null
+  ) => {
+    return addCommentMutation.mutateAsync({ userId, body, parentCommentId, replyToCommentId });
   };
 
   return {

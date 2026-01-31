@@ -41,7 +41,12 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    replyToCommentId?: number | null
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -53,7 +58,12 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    replyToCommentId?: number | null
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -65,10 +75,19 @@ type DisplayComment = CommentType & {
   replyToUserId?: string;
 };
 
+const getThreadRootId = (comments: CommentType[], commentId: number) => {
+  const c = comments.find((x) => x.id === commentId);
+  if (!c) return null;
+  return c.parent_comment_id ? c.parent_comment_id : c.id;
+};
+
 const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
   const topLevel = comments
     .filter((c) => !c.parent_comment_id)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  const commentsById = new Map<number, CommentType>();
+  for (const c of comments) commentsById.set(c.id, c);
 
   const repliesByParent = new Map<number, CommentType[]>();
   for (const c of comments) {
@@ -92,11 +111,12 @@ const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
     const replies = repliesByParent.get(c.id) || [];
     for (let i = 0; i < replies.length; i++) {
       const r = replies[i];
+      const replyToComment = r.reply_to_comment_id ? commentsById.get(r.reply_to_comment_id) : null;
       out.push({
         ...r,
         indentLevel: 1,
         isLastReply: i === replies.length - 1,
-        replyToUserId: c.userId,
+        replyToUserId: replyToComment?.userId || c.userId,
       });
     }
   }
@@ -136,13 +156,16 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       const commentText = newComment.trim();
 
       try {
-        const candidateParentId = replyTo?.commentId ?? null;
-        const parentComment = candidateParentId
-          ? comments.find((c) => c.id === candidateParentId)
-          : undefined;
-        const parentCommentId = parentComment && !parentComment.parent_comment_id ? parentComment.id : null;
-        if (replyTo && !parentCommentId) setReplyTo(null);
-        const newCommentData = await addComment(user.id, commentText, parentCommentId);
+        const replyToCommentId = replyTo?.commentId ?? null;
+        const threadRootId = replyToCommentId ? getThreadRootId(comments, replyToCommentId) : null;
+        const parentCommentId = threadRootId;
+
+        const newCommentData = await addComment(
+          user.id,
+          commentText,
+          parentCommentId,
+          replyToCommentId
+        );
 
         if (newCommentData) {
           setNewComment("");
@@ -155,11 +178,17 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           if (senderUsername) {
             const recipients = new Set<string>();
 
-            if (parentCommentId && replyTo?.userId && replyTo.userId !== user.id) {
-              recipients.add(replyTo.userId);
-            } else if (!parentCommentId && user.id !== postUserId) {
+            if (parentCommentId) {
+              const threadComments = comments.filter(
+                (c) => c.id === parentCommentId || c.parent_comment_id === parentCommentId
+              );
+              for (const c of threadComments) recipients.add(c.userId);
+              recipients.add(postUserId);
+            } else {
               recipients.add(postUserId);
             }
+
+            recipients.delete(user.id);
 
             await Promise.all(
               Array.from(recipients).map((recipientId) =>
@@ -233,11 +262,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               indentLevel={item.indentLevel}
               isLastReply={item.isLastReply}
               replyToUserId={item.replyToUserId}
-              onReply={
-                item.indentLevel === 0
-                  ? (username) => setReplyTo({ commentId: item.id, userId: item.userId, username })
-                  : undefined
-              }
+              onReply={(username) => setReplyTo({ commentId: item.id, userId: item.userId, username })}
               onCommentDeleted={() => handleCommentDeleted(item.id)}
             />
           )}

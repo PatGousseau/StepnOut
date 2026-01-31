@@ -81,6 +81,7 @@ export interface Challenge {
     created_at: string;
     post_id: number;
     parent_comment_id?: number | null;
+    reply_to_comment_id?: number | null;
     liked: boolean;
     likes?: {
       count: number;
