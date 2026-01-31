@@ -31,15 +31,24 @@ export default function ResetPasswordScreen() {
         throw new Error(t('Auth session missing. Open the reset link again from your email.'));
       }
 
-      // sometimes expo deep-link recovery sessions can be flaky; refresh first and fail fast
-      await supabase.auth.refreshSession();
-
-      const updatePromise = supabase.auth.updateUser({ password });
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(t('Password update timed out. Please try opening the reset link again.'))), 15000)
+        setTimeout(
+          () => reject(new Error(t('Password update timed out. Please try opening the reset link again.'))),
+          15000
+        )
       );
 
-      const { error } = await Promise.race([updatePromise, timeoutPromise]);
+      // sometimes expo deep-link recovery sessions can be flaky; refresh first (but don’t hang forever)
+      const { error: refreshError } = await Promise.race([
+        supabase.auth.refreshSession(),
+        timeoutPromise,
+      ]);
+      if (refreshError) throw refreshError;
+
+      const { error } = await Promise.race([
+        supabase.auth.updateUser({ password }),
+        timeoutPromise,
+      ]);
       if (error) throw error;
 
       Alert.alert(t('Success'), t('Password updated'), [
