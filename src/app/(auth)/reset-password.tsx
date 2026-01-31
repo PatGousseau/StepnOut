@@ -34,28 +34,10 @@ export default function ResetPasswordScreen() {
         throw new Error(t('Auth session missing. Open the reset link again from your email.'));
       }
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new Error(t('Password update timed out. Please try opening the reset link again.'))),
-          15000
-        )
-      );
-
-      console.log('[reset-password] refreshing session...');
-      const refreshResult = await Promise.race([
-        supabase.auth.refreshSession(),
-        timeoutPromise,
-      ]);
-      console.log('[reset-password] refresh done', refreshResult?.error?.message || null);
-      if (refreshResult?.error) throw refreshResult.error;
-
       console.log('[reset-password] updating user password...');
-      const updateResult = await Promise.race([
-        supabase.auth.updateUser({ password }),
-        timeoutPromise,
-      ]);
-      console.log('[reset-password] update done', updateResult?.error?.message || null);
-      if (updateResult?.error) throw updateResult.error;
+      const { error } = await supabase.auth.updateUser({ password });
+      console.log('[reset-password] update done', error?.message || null);
+      if (error) throw error;
 
       Alert.alert(t('Success'), t('Password updated'), [
         {
