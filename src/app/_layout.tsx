@@ -87,11 +87,20 @@ function RootLayoutNav() {
   }, [loading]);
 
   // Simplified auth check effect
+  // allow unauthenticated users to stay on auth-related routes (login/register/forgot/reset)
   useEffect(() => {
-    if (!loading && !session) {
+    const isAuthRoute =
+      pathname === '/login' ||
+      pathname === '/register' ||
+      pathname === '/forgot-password' ||
+      pathname === '/reset-password' ||
+      pathname === '/(auth)/onboarding' ||
+      pathname === '/onboarding';
+
+    if (!loading && !session && !isAuthRoute) {
       router.replace('/(auth)/login');
     }
-  }, [session, loading]);
+  }, [session, loading, pathname]);
 
   // Notification setup effects
   useEffect(() => {
