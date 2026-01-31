@@ -41,12 +41,7 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (
-    userId: string,
-    body: string,
-    parentCommentId?: number | null,
-    replyToCommentId?: number | null
-  ) => Promise<CommentType | null>;
+  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -58,12 +53,7 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (
-    userId: string,
-    body: string,
-    parentCommentId?: number | null,
-    replyToCommentId?: number | null
-  ) => Promise<CommentType | null>;
+  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -75,48 +65,56 @@ type DisplayComment = CommentType & {
   replyToUserId?: string;
 };
 
-const getThreadRootId = (comments: CommentType[], commentId: number) => {
-  const c = comments.find((x) => x.id === commentId);
-  if (!c) return null;
-  return c.parent_comment_id ? c.parent_comment_id : c.id;
+const getRootCommentId = (commentsById: Map<number, CommentType>, comment: CommentType) => {
+  const visited = new Set<number>();
+  let current: CommentType | undefined = comment;
+
+  while (current?.parent_comment_id) {
+    if (visited.has(current.id)) break;
+    visited.add(current.id);
+    current = commentsById.get(current.parent_comment_id);
+  }
+
+  return current?.id ?? comment.id;
 };
 
 const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
+  const commentsById = new Map<number, CommentType>();
+  for (const c of comments) commentsById.set(c.id, c);
+
   const topLevel = comments
     .filter((c) => !c.parent_comment_id)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-  const commentsById = new Map<number, CommentType>();
-  for (const c of comments) commentsById.set(c.id, c);
-
-  const repliesByParent = new Map<number, CommentType[]>();
+  const repliesByRoot = new Map<number, CommentType[]>();
   for (const c of comments) {
     if (!c.parent_comment_id) continue;
-    const parentId = c.parent_comment_id;
-    const existing = repliesByParent.get(parentId) || [];
+    const rootId = getRootCommentId(commentsById, c);
+    const existing = repliesByRoot.get(rootId) || [];
     existing.push(c);
-    repliesByParent.set(parentId, existing);
+    repliesByRoot.set(rootId, existing);
   }
 
-  for (const [parentId, replies] of repliesByParent.entries()) {
-    repliesByParent.set(
-      parentId,
+  for (const [rootId, replies] of repliesByRoot.entries()) {
+    repliesByRoot.set(
+      rootId,
       replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     );
   }
 
   const out: DisplayComment[] = [];
-  for (const c of topLevel) {
-    out.push({ ...c, indentLevel: 0 });
-    const replies = repliesByParent.get(c.id) || [];
+  for (const root of topLevel) {
+    out.push({ ...root, indentLevel: 0 });
+
+    const replies = repliesByRoot.get(root.id) || [];
     for (let i = 0; i < replies.length; i++) {
       const r = replies[i];
-      const replyToComment = r.reply_to_comment_id ? commentsById.get(r.reply_to_comment_id) : null;
+      const replyToComment = r.parent_comment_id ? commentsById.get(r.parent_comment_id) : null;
       out.push({
         ...r,
         indentLevel: 1,
         isLastReply: i === replies.length - 1,
-        replyToUserId: replyToComment?.userId || c.userId,
+        replyToUserId: replyToComment?.userId || root.userId,
       });
     }
   }
@@ -156,16 +154,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       const commentText = newComment.trim();
 
       try {
-        const replyToCommentId = replyTo?.commentId ?? null;
-        const threadRootId = replyToCommentId ? getThreadRootId(comments, replyToCommentId) : null;
-        const parentCommentId = threadRootId;
-
-        const newCommentData = await addComment(
-          user.id,
-          commentText,
-          parentCommentId,
-          replyToCommentId
-        );
+        const parentCommentId = replyTo?.commentId ?? null;
+        const newCommentData = await addComment(user.id, commentText, parentCommentId);
 
         if (newCommentData) {
           setNewComment("");
@@ -178,15 +168,21 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           if (senderUsername) {
             const recipients = new Set<string>();
 
-            if (parentCommentId) {
-              const threadComments = comments.filter(
-                (c) => c.id === parentCommentId || c.parent_comment_id === parentCommentId
-              );
-              for (const c of threadComments) recipients.add(c.userId);
-              recipients.add(postUserId);
-            } else {
-              recipients.add(postUserId);
-            }
+            const allComments = [...comments, newCommentData];
+            const commentsById = new Map<number, CommentType>();
+            for (const c of allComments) commentsById.set(c.id, c);
+
+            const rootId = parentCommentId
+              ? getRootCommentId(commentsById, { ...newCommentData, parent_comment_id: parentCommentId })
+              : newCommentData.id;
+
+            const threadComments = allComments.filter((c) => {
+              if (!c.parent_comment_id) return c.id === rootId;
+              return getRootCommentId(commentsById, c) === rootId;
+            });
+
+            for (const c of threadComments) recipients.add(c.userId);
+            recipients.add(postUserId);
 
             recipients.delete(user.id);
 
