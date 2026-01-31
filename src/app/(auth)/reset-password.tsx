@@ -18,6 +18,8 @@ export default function ResetPasswordScreen() {
       return;
     }
 
+    console.log('[reset-password] submit');
+
     if (password !== confirmPassword) {
       Alert.alert(t('Error'), t('Passwords do not match'));
       return;
@@ -27,6 +29,7 @@ export default function ResetPasswordScreen() {
       setLoading(true);
 
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[reset-password] session present?', !!session);
       if (!session) {
         throw new Error(t('Auth session missing. Open the reset link again from your email.'));
       }
@@ -38,18 +41,21 @@ export default function ResetPasswordScreen() {
         )
       );
 
-      // sometimes expo deep-link recovery sessions can be flaky; refresh first (but don’t hang forever)
-      const { error: refreshError } = await Promise.race([
+      console.log('[reset-password] refreshing session...');
+      const refreshResult = await Promise.race([
         supabase.auth.refreshSession(),
         timeoutPromise,
       ]);
-      if (refreshError) throw refreshError;
+      console.log('[reset-password] refresh done', refreshResult?.error?.message || null);
+      if (refreshResult?.error) throw refreshResult.error;
 
-      const { error } = await Promise.race([
+      console.log('[reset-password] updating user password...');
+      const updateResult = await Promise.race([
         supabase.auth.updateUser({ password }),
         timeoutPromise,
       ]);
-      if (error) throw error;
+      console.log('[reset-password] update done', updateResult?.error?.message || null);
+      if (updateResult?.error) throw updateResult.error;
 
       Alert.alert(t('Success'), t('Password updated'), [
         {

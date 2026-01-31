@@ -44,6 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleIncomingUrl = async (url: string) => {
       try {
+        console.log('[auth] incoming url', url);
+
         // supabase recovery links can include either a pkce "code" (query) or an implicit session
         // in the url fragment (#access_token=...&refresh_token=...)
         const fragment = url.split('#')[1];
@@ -53,10 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const refreshToken = params.get('refresh_token');
 
           if (accessToken && refreshToken) {
-            await supabase.auth.setSession({
+            const { error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
+            console.log('[auth] setSession', error?.message || null);
             return;
           }
         }
@@ -64,10 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { queryParams } = Linking.parse(url);
         const code = typeof queryParams?.code === 'string' ? queryParams.code : undefined;
         if (code) {
-          await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          console.log('[auth] exchangeCodeForSession', error?.message || null);
         }
-      } catch {
-        // ignore deep link parsing/auth errors here; surfaces will show auth errors if needed
+      } catch (e) {
+        console.log('[auth] incoming url error', (e as Error)?.message || e);
       }
     };
 
@@ -108,6 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Handle subsequent auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('[auth] state change', event, 'session?', !!session);
         setSession(session);
 
         if (event === 'PASSWORD_RECOVERY') {
