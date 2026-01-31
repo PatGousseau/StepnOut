@@ -59,7 +59,7 @@ interface CommentsListProps {
 
 const CommentsContext = React.createContext<{ onClose?: () => void }>({});
 
-type DisplayComment = CommentType & { indentLevel: number };
+type DisplayComment = CommentType & { indentLevel: number; isLastReply?: boolean };
 
 const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
   const topLevel = comments
@@ -86,8 +86,9 @@ const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
   for (const c of topLevel) {
     out.push({ ...c, indentLevel: 0 });
     const replies = repliesByParent.get(c.id) || [];
-    for (const r of replies) {
-      out.push({ ...r, indentLevel: 1 });
+    for (let i = 0; i < replies.length; i++) {
+      const r = replies[i];
+      out.push({ ...r, indentLevel: 1, isLastReply: i === replies.length - 1 });
     }
   }
 
@@ -221,6 +222,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               created_at={item.created_at}
               post_id={item.post_id}
               indentLevel={item.indentLevel}
+              isLastReply={item.isLastReply}
               onReply={
                 item.indentLevel === 0
                   ? (username) => setReplyTo({ commentId: item.id, userId: item.userId, username })
@@ -368,6 +370,7 @@ interface CommentProps {
   created_at: string;
   post_id: number;
   indentLevel?: number;
+  isLastReply?: boolean;
   onReply?: (username: string) => void;
   onCommentDeleted?: () => void;
 }
@@ -379,6 +382,7 @@ const Comment: React.FC<CommentProps> = ({
   created_at,
   post_id,
   indentLevel = 0,
+  isLastReply = false,
   onReply,
   onCommentDeleted,
 }) => {
@@ -420,7 +424,7 @@ const Comment: React.FC<CommentProps> = ({
     <View style={commentContainerStyle}>
       {indentLevel ? (
         <View style={replyBranchStyle}>
-          <View style={replyTrunkStyle} />
+          <View style={[replyTrunkStyle, isLastReply ? replyTrunkLastStyle : null]} />
           <View style={replyConnectorStyle} />
         </View>
       ) : null}
@@ -514,6 +518,11 @@ const replyTrunkStyle: ViewStyle = {
   width: 2,
   backgroundColor: colors.neutral.grey2,
   alignSelf: "stretch",
+};
+
+const replyTrunkLastStyle: ViewStyle = {
+  height: "50%",
+  alignSelf: "flex-start",
 };
 
 const replyConnectorStyle: ViewStyle = {
