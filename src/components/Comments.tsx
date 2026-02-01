@@ -276,8 +276,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             {replyTo ? (
               <View style={replyToContainerStyle}>
                 <Text style={replyToTextStyle}>{t("Replying to")} @{replyTo.username}</Text>
-                <TouchableOpacity onPress={() => setReplyTo(null)}>
-                  <Text style={replyToCancelStyle}>{t("Cancel")}</Text>
+                <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                  <Icon name="times" size={14} color={colors.neutral.grey1} />
                 </TouchableOpacity>
               </View>
             ) : null}
