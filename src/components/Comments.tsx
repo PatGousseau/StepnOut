@@ -12,6 +12,7 @@ import {
   TextStyle,
   ImageStyle,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -33,6 +34,7 @@ import { ActionsMenu } from "./ActionsMenu";
 import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
+import { translationService } from "../services/translationService";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -422,11 +424,13 @@ const Comment: React.FC<CommentProps> = ({
   onCommentDeleted,
 }) => {
   const { onClose } = useContext(CommentsContext);
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAdmin } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
 
   const [user, setUser] = useState<User | null>(null);
   const [replyToUser, setReplyToUser] = useState<User | null>(null);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -469,6 +473,20 @@ const Comment: React.FC<CommentProps> = ({
     await toggleCommentLike(id, post_id, currentUser.id, userId);
   };
 
+  const handleTranslate = async () => {
+    if (!text || isTranslating) return;
+
+    setIsTranslating(true);
+    const result = await translationService.translateToEnglish(text);
+    setIsTranslating(false);
+
+    if (result.translatedText) {
+      setTranslatedText(result.translatedText);
+    } else if (result.error) {
+      console.error('Translation error:', result.error);
+    }
+  };
+
   return (
     <View style={commentContainerStyle}>
       {indentLevel ? (
@@ -502,6 +520,12 @@ const Comment: React.FC<CommentProps> = ({
           ) : null}
           {text}
         </Text>
+        {translatedText && (
+          <View style={translationContainerStyle}>
+            <Text style={translationLabelStyle}>Translation:</Text>
+            <Text style={translationTextStyle}>{translatedText}</Text>
+          </View>
+        )}
       </View>
       <View style={commentFooterStyle}>
         <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -524,6 +548,19 @@ const Comment: React.FC<CommentProps> = ({
             </View>
           </TouchableOpacity>
         ) : null}
+        {isAdmin && text && (
+          <TouchableOpacity onPress={handleTranslate} disabled={isTranslating} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            {isTranslating ? (
+              <ActivityIndicator size={14} color={colors.neutral.grey1} />
+            ) : (
+              <Icon
+                name="language"
+                size={14}
+                color={translatedText ? colors.light.primary : colors.neutral.grey1}
+              />
+            )}
+          </TouchableOpacity>
+        )}
         <ActionsMenu
           type="comment"
           contentId={id}
@@ -762,4 +799,26 @@ const iconTextStyle: TextStyle = {
   fontSize: 12,
   color: colors.neutral.grey1,
   marginLeft: 4,
+};
+
+const translationContainerStyle: ViewStyle = {
+  backgroundColor: colors.light.accent2,
+  borderLeftWidth: 3,
+  borderLeftColor: colors.light.primary,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  marginTop: 6,
+  borderRadius: 4,
+};
+
+const translationLabelStyle: TextStyle = {
+  fontSize: 10,
+  color: colors.light.primary,
+  fontWeight: "600",
+  marginBottom: 2,
+};
+
+const translationTextStyle: TextStyle = {
+  fontSize: 13,
+  color: colors.light.text,
 };
