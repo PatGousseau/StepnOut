@@ -3,8 +3,8 @@ import { TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import { Text } from '../../components/StyledText';
-import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getRecoveryTokens, clearRecoveryTokens } from '../../contexts/AuthContext';
 
 export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
@@ -18,8 +18,6 @@ export default function ResetPasswordScreen() {
       return;
     }
 
-    console.log('[reset-password] submit');
-
     if (password !== confirmPassword) {
       Alert.alert(t('Error'), t('Passwords do not match'));
       return;
@@ -28,24 +26,34 @@ export default function ResetPasswordScreen() {
     try {
       setLoading(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('[reset-password] session present?', !!session);
-      if (!session) {
+      const tokens = getRecoveryTokens();
+      if (!tokens) {
         throw new Error(t('Auth session missing. Open the reset link again from your email.'));
       }
 
-      console.log('[reset-password] updating user password...');
-      const { error } = await supabase.auth.updateUser({ password });
-      console.log('[reset-password] update done', error?.message || null);
-      if (error) throw error;
+      // Use direct API call to avoid Supabase client state issues with recovery tokens
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokens.accessToken}`,
+          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error_description || result.message || 'Failed to update password');
+      }
+
+      clearRecoveryTokens();
 
       Alert.alert(t('Success'), t('Password updated'), [
         {
           text: t('OK'),
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/(auth)/login');
-          },
+          onPress: () => router.replace('/(auth)/login'),
         },
       ]);
     } catch (error) {

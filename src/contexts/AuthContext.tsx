@@ -31,6 +31,17 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Store recovery tokens separately to avoid Supabase client state issues
+let pendingRecoveryTokens: { accessToken: string; refreshToken: string } | null = null;
+
+export function getRecoveryTokens() {
+  return pendingRecoveryTokens;
+}
+
+export function clearRecoveryTokens() {
+  pendingRecoveryTokens = null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,34 +55,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const handleIncomingUrl = async (url: string) => {
       try {
-        console.log('[auth] incoming url', url);
-
-        // supabase recovery links can include either a pkce "code" (query) or an implicit session
-        // in the url fragment (#access_token=...&refresh_token=...)
+        // Handle auth deep links (password recovery, magic links, OAuth callbacks)
         const fragment = url.split('#')[1];
         if (fragment) {
           const params = new URLSearchParams(fragment);
           const accessToken = params.get('access_token');
           const refreshToken = params.get('refresh_token');
+          const type = params.get('type');
+
+          if (accessToken && refreshToken && type === 'recovery') {
+            // Store recovery tokens and navigate - don't use setSession to avoid client state issues
+            pendingRecoveryTokens = { accessToken, refreshToken };
+            router.replace('/(auth)/reset-password');
+            return;
+          }
 
           if (accessToken && refreshToken) {
-            const { error } = await supabase.auth.setSession({
+            await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
             });
-            console.log('[auth] setSession', error?.message || null);
             return;
           }
         }
 
+        // Handle PKCE code exchange
         const { queryParams } = Linking.parse(url);
         const code = typeof queryParams?.code === 'string' ? queryParams.code : undefined;
         if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          console.log('[auth] exchangeCodeForSession', error?.message || null);
+          await supabase.auth.exchangeCodeForSession(code);
         }
       } catch (e) {
-        console.log('[auth] incoming url error', (e as Error)?.message || e);
+        console.error('[auth] deep link error:', e);
       }
     };
 
@@ -111,13 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Handle subsequent auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('[auth] state change', event, 'session?', !!session);
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
         setSession(session);
-
-        if (event === 'PASSWORD_RECOVERY') {
-          router.replace('/(auth)/reset-password');
-        }
 
         if (session?.user) {
           const { data } = await supabase

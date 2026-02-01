@@ -86,8 +86,7 @@ function RootLayoutNav() {
     }
   }, [loading]);
 
-  // Simplified auth check effect
-  // allow unauthenticated users to stay on auth-related routes (login/register/forgot/reset)
+  // Allow unauthenticated users on auth-related routes, redirect others to login
   useEffect(() => {
     const isAuthRoute =
       pathname === '/login' ||
