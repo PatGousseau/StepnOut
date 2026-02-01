@@ -111,16 +111,20 @@ SELECT setval('public.post_id_seq', (SELECT MAX(id) FROM public.post));
 -- COMMENTS
 -- =============================================================================
 
-INSERT INTO public.comments (id, post_id, user_id, body, created_at)
+INSERT INTO public.comments (id, post_id, user_id, body, parent_comment_id, created_at)
 VALUES
-  (1, 1, '22222222-2222-2222-2222-222222222222', 'That''s awesome! I need to try this too.', now() - interval '19 days'),
-  (2, 1, '33333333-3333-3333-3333-333333333333', 'Love hearing these stories! ❤️', now() - interval '19 days'),
-  (3, 2, '11111111-1111-1111-1111-111111111111', 'That''s such a cool coincidence!', now() - interval '18 days'),
-  (4, 3, '22222222-2222-2222-2222-222222222222', 'Welcome to the sushi club! 🍣', now() - interval '11 days'),
-  (5, 5, '11111111-1111-1111-1111-111111111111', 'So proud of you! That takes courage.', now() - interval '2 days'),
-  (6, 5, '33333333-3333-3333-3333-333333333333', 'You''re inspiring me to try this challenge!', now() - interval '2 days'),
-  (7, 6, '11111111-1111-1111-1111-111111111111', 'The stranger challenge was my favorite - it really opened my eyes!', now() - interval '7 days'),
-  (8, 6, '22222222-2222-2222-2222-222222222222', 'Same here! Each one gets a little easier.', now() - interval '7 days');
+  (1, 1, '22222222-2222-2222-2222-222222222222', 'That''s awesome! I need to try this too.', null, now() - interval '19 days'),
+  (2, 1, '33333333-3333-3333-3333-333333333333', 'Love hearing these stories! ❤️', null, now() - interval '19 days'),
+  (3, 2, '11111111-1111-1111-1111-111111111111', 'That''s such a cool coincidence!', null, now() - interval '18 days'),
+  (4, 3, '22222222-2222-2222-2222-222222222222', 'Welcome to the sushi club! 🍣', null, now() - interval '11 days'),
+  (5, 5, '11111111-1111-1111-1111-111111111111', 'So proud of you! That takes courage.', null, now() - interval '2 days'),
+  (6, 5, '33333333-3333-3333-3333-333333333333', 'You''re inspiring me to try this challenge!', null, now() - interval '2 days'),
+  (7, 6, '11111111-1111-1111-1111-111111111111', 'The stranger challenge was my favorite - it really opened my eyes!', null, now() - interval '7 days'),
+  (8, 6, '22222222-2222-2222-2222-222222222222', 'Same here! Each one gets a little easier.', null, now() - interval '7 days'),
+  (9, 5, '22222222-2222-2222-2222-222222222222', 'facts. first time is always the scariest.', 5, now() - interval '2 days' + interval '5 minutes'),
+  (10, 5, '44444444-4444-4444-4444-444444444444', 'fr, and you nailed it.', 9, now() - interval '2 days' + interval '10 minutes'),
+  (11, 6, '33333333-3333-3333-3333-333333333333', 'same, it felt weirdly empowering.', 7, now() - interval '7 days' + interval '20 minutes'),
+  (12, 6, '11111111-1111-1111-1111-111111111111', 'lol yep, exposure therapy but wholesome', 11, now() - interval '7 days' + interval '30 minutes');
 
 SELECT setval('public.comments_id_seq', (SELECT MAX(id) FROM public.comments));
 

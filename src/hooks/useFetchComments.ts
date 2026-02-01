@@ -21,10 +21,25 @@ export const useFetchComments = (postId: number) => {
 
   // Add comment mutation
   const addCommentMutation = useMutation({
-    mutationFn: async ({ userId, body }: { userId: string; body: string }) => {
+    mutationFn: async ({
+      userId,
+      body,
+      parentCommentId,
+    }: {
+      userId: string;
+      body: string;
+      parentCommentId?: number | null;
+    }) => {
       const { data, error } = await supabase
         .from("comments")
-        .insert([{ post_id: postId, user_id: userId, body }])
+        .insert([
+          {
+            post_id: postId,
+            user_id: userId,
+            body,
+            parent_comment_id: parentCommentId ?? null,
+          },
+        ])
         .select(`
           *,
           likes:likes(count)
@@ -38,6 +53,7 @@ export const useFetchComments = (postId: number) => {
             text: data[0].body,
             userId: data[0].user_id,
             post_id: postId,
+            parent_comment_id: data[0].parent_comment_id,
             created_at: data[0].created_at,
             likes_count: data[0].likes?.count || 0,
             liked: false,
@@ -59,8 +75,8 @@ export const useFetchComments = (postId: number) => {
     },
   });
 
-  const addComment = async (userId: string, body: string) => {
-    return addCommentMutation.mutateAsync({ userId, body });
+  const addComment = async (userId: string, body: string, parentCommentId?: number | null) => {
+    return addCommentMutation.mutateAsync({ userId, body, parentCommentId });
   };
 
   return {

@@ -43,7 +43,7 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string) => Promise<CommentType | null>;
+  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -55,11 +55,74 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string) => Promise<CommentType | null>;
+  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
 const CommentsContext = React.createContext<{ onClose?: () => void }>({});
+
+type DisplayComment = CommentType & {
+  indentLevel: number;
+  isLastReply?: boolean;
+  replyToUserId?: string;
+};
+
+const getRootCommentId = (commentsById: Map<number, CommentType>, comment: CommentType) => {
+  const visited = new Set<number>();
+  let current: CommentType | undefined = comment;
+
+  while (current?.parent_comment_id) {
+    if (visited.has(current.id)) break;
+    visited.add(current.id);
+    current = commentsById.get(current.parent_comment_id);
+  }
+
+  return current?.id ?? comment.id;
+};
+
+const buildDisplayComments = (comments: CommentType[]): DisplayComment[] => {
+  const commentsById = new Map<number, CommentType>();
+  for (const c of comments) commentsById.set(c.id, c);
+
+  const topLevel = comments
+    .filter((c) => !c.parent_comment_id)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  const repliesByRoot = new Map<number, CommentType[]>();
+  for (const c of comments) {
+    if (!c.parent_comment_id) continue;
+    const rootId = getRootCommentId(commentsById, c);
+    const existing = repliesByRoot.get(rootId) || [];
+    existing.push(c);
+    repliesByRoot.set(rootId, existing);
+  }
+
+  for (const [rootId, replies] of repliesByRoot.entries()) {
+    repliesByRoot.set(
+      rootId,
+      replies.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    );
+  }
+
+  const out: DisplayComment[] = [];
+  for (const root of topLevel) {
+    out.push({ ...root, indentLevel: 0 });
+
+    const replies = repliesByRoot.get(root.id) || [];
+    for (let i = 0; i < replies.length; i++) {
+      const r = replies[i];
+      const replyToComment = r.parent_comment_id ? commentsById.get(r.parent_comment_id) : null;
+      out.push({
+        ...r,
+        indentLevel: 1,
+        isLastReply: i === replies.length - 1,
+        replyToUserId: replyToComment?.userId || root.userId,
+      });
+    }
+  }
+
+  return out;
+};
 
 export const CommentsList: React.FC<CommentsListProps> = ({
   comments: initialComments,
@@ -77,6 +140,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const { initializeCommentLikes } = useLikes();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
 
   useEffect(() => {
@@ -92,50 +156,67 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       const commentText = newComment.trim();
 
       try {
-        // Use the mutation from useFetchComments hook
-        const newCommentData = await addComment(user.id, commentText);
+        const parentCommentId = replyTo?.commentId ?? null;
+        const newCommentData = await addComment(user.id, commentText, parentCommentId);
 
         if (newCommentData) {
-          // Clear input immediately for better UX
           setNewComment("");
+          setReplyTo(null);
 
-          // Update local state for immediate UI feedback
-          // (React Query already does optimistic update, but this ensures local state is in sync)
           setComments((prevComments) => [...prevComments, newCommentData]);
 
-          // Send notification if needed
-          if (user.id !== postUserId) {
-            try {
-              await sendCommentNotification(
-                user.id,
-                user.user_metadata?.username,
-                postUserId,
-                postId.toString(),
-                commentText,
-                newCommentData.id.toString(),
-                {
-                  title: t("(username) commented"),
-                  body: t("Check it out now."),
-                }
-              );
-            } catch (error) {
-              console.error("Failed to send comment notification:", error);
-            }
+          const senderUsername = user.user_metadata?.username;
+
+          if (senderUsername) {
+            const recipients = new Set<string>();
+
+            const allComments = [...comments, newCommentData];
+            const commentsById = new Map<number, CommentType>();
+            for (const c of allComments) commentsById.set(c.id, c);
+
+            const rootId = parentCommentId
+              ? getRootCommentId(commentsById, { ...newCommentData, parent_comment_id: parentCommentId })
+              : newCommentData.id;
+
+            const threadComments = allComments.filter((c) => {
+              if (!c.parent_comment_id) return c.id === rootId;
+              return getRootCommentId(commentsById, c) === rootId;
+            });
+
+            for (const c of threadComments) recipients.add(c.userId);
+            recipients.add(postUserId);
+
+            recipients.delete(user.id);
+
+            await Promise.all(
+              Array.from(recipients).map((recipientId) =>
+                sendCommentNotification(
+                  user.id,
+                  senderUsername,
+                  recipientId,
+                  postId.toString(),
+                  commentText,
+                  newCommentData.id.toString(),
+                  {
+                    title: t("(username) commented"),
+                    body: t("Check it out now."),
+                  }
+                )
+              )
+            );
           }
 
-          // Notify parent component about comment count change
           onCommentAdded?.(1);
 
-          // Track comment created event
           captureEvent(COMMENT_EVENTS.CREATED, {
             post_id: postId,
             comment_id: newCommentData.id,
             comment_length: commentText.length,
+            is_reply: !!parentCommentId,
           });
         }
       } catch (error) {
         console.error("Error adding comment:", error);
-        // Optionally show error to user
       }
     }
   };
@@ -167,7 +248,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
         <FlatList
           ref={flatListRef}
           style={commentsListStyle}
-          data={comments}
+          data={buildDisplayComments(comments)}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <Comment
@@ -176,6 +257,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               text={item.text}
               created_at={item.created_at}
               post_id={item.post_id}
+              indentLevel={item.indentLevel}
+              isLastReply={item.isLastReply}
+              replyToUserId={item.replyToUserId}
+              onReply={(username) => setReplyTo({ commentId: item.id, userId: item.userId, username })}
               onCommentDeleted={() => handleCommentDeleted(item.id)}
             />
           )}
@@ -188,29 +273,41 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           keyboardDismissMode="on-drag"
         />
 
-        <View style={inputContainerStyle}>
-          <TextInput
-            value={newComment}
-            onChangeText={setNewComment}
-            placeholder={t("Add a comment...")}
-            placeholderTextColor="#888"
-            style={inputStyle}
-            multiline
-            textAlignVertical="top"
-          />
-          <Pressable
-            onPress={handleAddComment}
-            style={({ pressed }) => [
-              postButtonStyle,
-              (!user || isAddingComment) && postButtonDisabledStyle,
-              pressed && postButtonPressedStyle,
-            ]}
-            disabled={!user || isAddingComment}
-          >
-            <Text style={postButtonTextStyle}>
-              {isAddingComment ? t("Posting...") : t("Post")}
-            </Text>
-          </Pressable>
+        <View style={inputWrapperStyle}>
+          {replyTo ? (
+            <View style={replyToContainerStyle}>
+              <Text style={replyToTextStyle}>{t("Replying to")} @{replyTo.username}</Text>
+              <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Icon name="times" size={14} color={colors.neutral.grey1} />
+              </TouchableOpacity>
+            </View>
+          ) : null}
+          <View style={inputContainerStyle}>
+            <View style={inputInnerContainerStyle}>
+              <TextInput
+                value={newComment}
+                onChangeText={setNewComment}
+                placeholder={replyTo ? `${t("Reply to")} @${replyTo.username}...` : t("Add a comment...")}
+                placeholderTextColor="#888"
+                style={inputStyle}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+            <Pressable
+              onPress={handleAddComment}
+              style={({ pressed }) => [
+                postButtonStyle,
+                (!user || isAddingComment) && postButtonDisabledStyle,
+                pressed && postButtonPressedStyle,
+              ]}
+              disabled={!user || isAddingComment}
+            >
+              <Text style={postButtonTextStyle}>
+                {isAddingComment ? t("Posting...") : t("Post")}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
     </CommentsContext.Provider>
@@ -306,8 +403,12 @@ interface CommentProps {
   userId: string;
   text: string;
   created_at: string;
-  onCommentDeleted?: () => void;
   post_id: number;
+  indentLevel?: number;
+  isLastReply?: boolean;
+  replyToUserId?: string;
+  onReply?: (username: string) => void;
+  onCommentDeleted?: () => void;
 }
 
 const Comment: React.FC<CommentProps> = ({
@@ -315,14 +416,19 @@ const Comment: React.FC<CommentProps> = ({
   userId,
   text,
   created_at,
-  onCommentDeleted,
   post_id,
+  indentLevel = 0,
+  isLastReply = false,
+  replyToUserId,
+  onReply,
+  onCommentDeleted,
 }) => {
   const { onClose } = useContext(CommentsContext);
   const { user: currentUser, isAdmin } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
 
   const [user, setUser] = useState<User | null>(null);
+  const [replyToUser, setReplyToUser] = useState<User | null>(null);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -334,6 +440,19 @@ const Comment: React.FC<CommentProps> = ({
 
     loadUser();
   }, [userId]);
+
+  useEffect(() => {
+    const loadReplyToUser = async () => {
+      if (!replyToUserId) {
+        setReplyToUser(null);
+        return;
+      }
+      const userData = await User.getUser(replyToUserId);
+      setReplyToUser(userData);
+    };
+
+    loadReplyToUser();
+  }, [replyToUserId]);
 
   if (!user || !user.profile) {
     return <CommentSkeleton />;
@@ -370,6 +489,12 @@ const Comment: React.FC<CommentProps> = ({
 
   return (
     <View style={commentContainerStyle}>
+      {indentLevel ? (
+        <View style={replyBranchStyle}>
+          <View style={[replyTrunkStyle, isLastReply ? replyTrunkLastStyle : null]} />
+          <View style={replyConnectorStyle} />
+        </View>
+      ) : null}
       <TouchableOpacity onPress={handleProfilePress}>
         {user.profileImageUrl ? (
           <Image source={{ uri: user.profileImageUrl }} style={commentAvatarStyle} />
@@ -389,7 +514,12 @@ const Comment: React.FC<CommentProps> = ({
             </View>
           </TouchableOpacity>
         </View>
-        <Text style={commentTextStyle}>{text}</Text>
+        <Text style={commentTextStyle}>
+          {indentLevel && replyToUser?.username ? (
+            <Text style={replyToUsernameStyle}>@{replyToUser.username} </Text>
+          ) : null}
+          {text}
+        </Text>
         {translatedText && (
           <View style={translationContainerStyle}>
             <Text style={translationLabelStyle}>Translation:</Text>
@@ -408,6 +538,16 @@ const Comment: React.FC<CommentProps> = ({
             <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
           </View>
         </TouchableOpacity>
+        {onReply ? (
+          <TouchableOpacity
+            onPress={() => (user?.username ? onReply(user.username) : null)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <View style={iconContainerStyle}>
+              <Icon name="reply" size={14} color={colors.neutral.grey1} />
+            </View>
+          </TouchableOpacity>
+        ) : null}
         {isAdmin && text && (
           <TouchableOpacity onPress={handleTranslate} disabled={isTranslating} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             {isTranslating ? (
@@ -457,6 +597,35 @@ const commentContainerStyle: ViewStyle = {
   marginBottom: 10,
 };
 
+const replyBranchStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  marginLeft: 6,
+  marginRight: 10,
+  alignSelf: "stretch",
+};
+
+const replyTrunkStyle: ViewStyle = {
+  width: 2,
+  backgroundColor: colors.neutral.grey2,
+  alignSelf: "stretch",
+  marginBottom: -10, // Extend through the gap to next reply
+};
+
+const replyTrunkLastStyle: ViewStyle = {
+  height: "50%",
+  alignSelf: "flex-start",
+  marginBottom: 0, // Don't extend past the last reply
+};
+
+const replyConnectorStyle: ViewStyle = {
+  width: 12,
+  height: 2,
+  backgroundColor: colors.neutral.grey2,
+  marginLeft: 0,
+  marginRight: 0,
+};
+
 const commentContentStyle: ViewStyle = {
   flex: 1,
 };
@@ -464,6 +633,11 @@ const commentContentStyle: ViewStyle = {
 const commentTextStyle: TextStyle = {
   color: "#333",
   fontSize: 14,
+};
+
+const replyToUsernameStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontWeight: "600",
 };
 
 const commentsListStyle: ViewStyle = {
@@ -525,12 +699,33 @@ const inputStyle: TextStyle = {
   maxHeight: 100,
 };
 
-const inputContainerStyle: ViewStyle = {
-  alignItems: "center",
-  flexDirection: "row",
+const inputWrapperStyle: ViewStyle = {
   marginBottom: 8,
   marginTop: 10,
   paddingHorizontal: 8,
+};
+
+const inputContainerStyle: ViewStyle = {
+  display: "flex",
+  alignItems: "flex-end",
+  flexDirection: "row",
+};
+
+const inputInnerContainerStyle: ViewStyle = {
+  flex: 1,
+  marginRight: 10,
+};
+
+const replyToContainerStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: 6,
+};
+
+const replyToTextStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontSize: 12,
 };
 
 const loadingContainerStyle: ViewStyle = {
@@ -549,7 +744,7 @@ const postButtonStyle: ViewStyle = {
   borderRadius: 5,
   paddingHorizontal: 15,
   paddingVertical: 10,
-  alignSelf: "flex-start",
+  alignSelf: "flex-end",
 };
 
 const postButtonDisabledStyle: ViewStyle = {

@@ -37,6 +37,7 @@ export interface Challenge {
     comment_previews?: {
       username: string;
       text: string;
+      replyToUsername?: string;
     }[];
   }
 
@@ -80,6 +81,7 @@ export interface Challenge {
     userId: string;
     created_at: string;
     post_id: number;
+    parent_comment_id?: number | null;
     liked: boolean;
     likes?: {
       count: number;
