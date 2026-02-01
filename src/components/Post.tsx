@@ -526,7 +526,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                   <View style={commentConnectorStyle} />
                   <Text style={[commentPreviewTextStyle, { flex: 1 }]} numberOfLines={1}>
                     <Text style={commentPreviewUsernameStyle}>@{preview.username}:</Text>
-                    {"  "}<Text style={commentPreviewBodyStyle}>{preview.text}</Text>
+                    {"  "}{preview.replyToUsername && (
+                      <Text style={commentPreviewBodyStyle}>@{preview.replyToUsername} </Text>
+                    )}<Text style={commentPreviewBodyStyle}>{preview.text}</Text>
                   </Text>
                 </View>
               );

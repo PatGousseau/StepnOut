@@ -271,39 +271,41 @@ export const CommentsList: React.FC<CommentsListProps> = ({
           keyboardDismissMode="on-drag"
         />
 
-        <View style={inputContainerStyle}>
-          <View style={inputInnerContainerStyle}>
-            {replyTo ? (
-              <View style={replyToContainerStyle}>
-                <Text style={replyToTextStyle}>{t("Replying to")} @{replyTo.username}</Text>
-                <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Icon name="times" size={14} color={colors.neutral.grey1} />
-                </TouchableOpacity>
-              </View>
-            ) : null}
-            <TextInput
-              value={newComment}
-              onChangeText={setNewComment}
-              placeholder={replyTo ? `${t("Reply to")} @${replyTo.username}...` : t("Add a comment...")}
-              placeholderTextColor="#888"
-              style={inputStyle}
-              multiline
-              textAlignVertical="top"
-            />
+        <View style={inputWrapperStyle}>
+          {replyTo ? (
+            <View style={replyToContainerStyle}>
+              <Text style={replyToTextStyle}>{t("Replying to")} @{replyTo.username}</Text>
+              <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Icon name="times" size={14} color={colors.neutral.grey1} />
+              </TouchableOpacity>
+            </View>
+          ) : null}
+          <View style={inputContainerStyle}>
+            <View style={inputInnerContainerStyle}>
+              <TextInput
+                value={newComment}
+                onChangeText={setNewComment}
+                placeholder={replyTo ? `${t("Reply to")} @${replyTo.username}...` : t("Add a comment...")}
+                placeholderTextColor="#888"
+                style={inputStyle}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+            <Pressable
+              onPress={handleAddComment}
+              style={({ pressed }) => [
+                postButtonStyle,
+                (!user || isAddingComment) && postButtonDisabledStyle,
+                pressed && postButtonPressedStyle,
+              ]}
+              disabled={!user || isAddingComment}
+            >
+              <Text style={postButtonTextStyle}>
+                {isAddingComment ? t("Posting...") : t("Post")}
+              </Text>
+            </Pressable>
           </View>
-          <Pressable
-            onPress={handleAddComment}
-            style={({ pressed }) => [
-              postButtonStyle,
-              (!user || isAddingComment) && postButtonDisabledStyle,
-              pressed && postButtonPressedStyle,
-            ]}
-            disabled={!user || isAddingComment}
-          >
-            <Text style={postButtonTextStyle}>
-              {isAddingComment ? t("Posting...") : t("Post")}
-            </Text>
-          </Pressable>
         </View>
       </View>
     </CommentsContext.Provider>
@@ -570,11 +572,13 @@ const replyTrunkStyle: ViewStyle = {
   width: 2,
   backgroundColor: colors.neutral.grey2,
   alignSelf: "stretch",
+  marginBottom: -10, // Extend through the gap to next reply
 };
 
 const replyTrunkLastStyle: ViewStyle = {
   height: "50%",
   alignSelf: "flex-start",
+  marginBottom: 0, // Don't extend past the last reply
 };
 
 const replyConnectorStyle: ViewStyle = {
@@ -658,12 +662,16 @@ const inputStyle: TextStyle = {
   maxHeight: 100,
 };
 
-const inputContainerStyle: ViewStyle = {
-  alignItems: "center",
-  flexDirection: "row",
+const inputWrapperStyle: ViewStyle = {
   marginBottom: 8,
   marginTop: 10,
   paddingHorizontal: 8,
+};
+
+const inputContainerStyle: ViewStyle = {
+  display: "flex",
+  alignItems: "flex-end",
+  flexDirection: "row",
 };
 
 const inputInnerContainerStyle: ViewStyle = {
@@ -683,12 +691,6 @@ const replyToTextStyle: TextStyle = {
   fontSize: 12,
 };
 
-const replyToCancelStyle: TextStyle = {
-  color: colors.light.primary,
-  fontSize: 12,
-  fontWeight: "bold",
-};
-
 const loadingContainerStyle: ViewStyle = {
   flex: 1,
   paddingTop: 8,
@@ -705,7 +707,7 @@ const postButtonStyle: ViewStyle = {
   borderRadius: 5,
   paddingHorizontal: 15,
   paddingVertical: 10,
-  alignSelf: "flex-start",
+  alignSelf: "flex-end",
 };
 
 const postButtonDisabledStyle: ViewStyle = {

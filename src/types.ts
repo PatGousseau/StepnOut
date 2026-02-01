@@ -37,6 +37,7 @@ export interface Challenge {
     comment_previews?: {
       username: string;
       text: string;
+      replyToUsername?: string;
     }[];
   }
 
