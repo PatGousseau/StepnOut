@@ -74,7 +74,9 @@ export const PROFILE_EVENTS = {
 // ============================================
 // FEED EVENTS
 // ============================================
-export const FEED_EVENTS = {} as const;
+export const FEED_EVENTS = {
+  LOADING_SLOW: 'feed_loading_slow', // Fired when feed takes >10s to load
+} as const;
 
 // ============================================
 // UI EVENTS
