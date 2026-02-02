@@ -72,7 +72,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const [inlineComment, setInlineComment] = useState("");
   const [localPreviews, setLocalPreviews] = useState(post.comment_previews || []);
   const lastTapTime = useRef<number>(0);
-  const singleTapTimer = useRef<NodeJS.Timeout | null>(null);
+  const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
 
@@ -115,8 +115,11 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     [post.id, setPostCounts, likeCounts]
   );
 
-  const handleLikePress = async () => {
+  const handleLikePress = async (disallowUnlike: boolean) => {
     if (!user) return;
+    if (disallowUnlike && likedPosts[post.id]) {
+      return;
+    }
     await togglePostLike(post.id, user.id, post.user_id);
   };
 
@@ -195,7 +198,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         clearTimeout(singleTapTimer.current);
         singleTapTimer.current = null;
       }
-      handleLikePress();
+      handleLikePress(true);
       showHeartAnimation();
       lastTapTime.current = 0;
     } else {
@@ -490,7 +493,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       <View>
         <View style={footerStyle}>
-          <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={() => handleLikePress(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <View style={iconContainerStyle}>
               <Icon
                 name={likedPosts[post.id] ? "heart" : "heart-o"}
