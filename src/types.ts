@@ -65,6 +65,7 @@ export interface Challenge {
     created_at: string;
     is_read: boolean;
     post_id: string;
+    comment_id?: string;
     trigger_profile?: {
       username: string;
       name: string;

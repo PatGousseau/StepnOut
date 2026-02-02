@@ -105,7 +105,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
     
     let notificationText = '';
     if (item.action_type === 'like') {
-      notificationText = t('liked your post');
+      notificationText = item.comment_id ? t('liked your comment') : t('liked your post');
     } else if (item.action_type === 'comment') {
       const commentText = item.comment?.body || '';
       notificationText = t('commented: "(comment)"', { comment: commentText });
