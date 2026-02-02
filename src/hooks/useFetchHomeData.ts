@@ -16,6 +16,11 @@ interface PostLikes {
   [postId: number]: boolean;
 }
 
+interface CommentRow {
+  body: string;
+  profiles: { username: string } | null;
+}
+
 export const useFetchHomeData = () => {
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
@@ -121,25 +126,39 @@ export const useFetchHomeData = () => {
 
   const fetchPost = async (postId: number): Promise<Post | null> => {
     try {
-      const { data: post, error } = await supabase
+      const { data, error } = await supabase
         .from("post")
         .select(`
           *,
           challenges:challenge_id (title),
           media (file_path),
-          likes:likes(count)
+          likes:likes(count),
+          comments (id, body, profiles:user_id (username))
         `)
         .eq("id", postId)
         .single();
 
       if (error) throw error;
 
+      const comments = (data.comments ?? []) as CommentRow[];
+      const commentPreviews = comments
+        .slice(0, 3)
+        .filter((c) => c.profiles?.username && c.body)
+        .map((c) => ({ username: c.profiles!.username, text: c.body }));
+
+      let mediaUrl = data.media?.file_path;
+      if (mediaUrl && !mediaUrl.startsWith('http')) {
+        mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
+      }
+
       return {
-        ...post,
-        challenge_title: (post as any).challenges?.title,
-        likes_count: post.likes?.[0]?.count ?? 0,
-        comments_count: 0,
-        liked: likedPosts[post.id] ?? false,
+        ...data,
+        media: mediaUrl ? { file_path: mediaUrl } : data.media,
+        challenge_title: data.challenges?.title,
+        likes_count: data.likes?.[0]?.count ?? 0,
+        comments_count: comments.length,
+        liked: likedPosts[data.id] ?? false,
+        comment_previews: commentPreviews.length > 0 ? commentPreviews : undefined,
       } as Post;
     } catch (error) {
       console.error("Error fetching post:", error);

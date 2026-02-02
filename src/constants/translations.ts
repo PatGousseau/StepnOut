@@ -37,6 +37,7 @@ export const translations = {
   Posts: "Post",
   "Unknown User": "Utente Sconosciuto",
   "liked your post": "ha messo mi piace al tuo post",
+  "liked your comment": "ha messo mi piace al tuo commento",
   'commented: "(comment)"': 'ha commentato: "(comment)"',
   Notifications: "Notifiche",
   "No notifications yet": "Nessuna notifica",
@@ -176,6 +177,10 @@ export const translations = {
   "How did it make you feel?\nWhat did you find difficult?":
     "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
   "Share how you completed the challenge": "Condividi come hai completato la sfida",
+  "Add photo/video (optional)": "Aggiungi foto/video (opzionale)",
+  "Video attached": "Video allegato",
+  "Photo attached": "Foto allegata",
+  "Tap to change": "Tocca per cambiare",
   "Report Submitted": "Segnalazione Inviata",
   "Thank you for your report.": "Grazie per la tua segnalazione.",
   "End User License Agreement": "Accettazione Accordo Utente",

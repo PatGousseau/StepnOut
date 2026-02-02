@@ -105,25 +105,37 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
     
     let notificationText = '';
     if (item.action_type === 'like') {
-      notificationText = t('liked your post');
+      notificationText = item.comment_id ? t('liked your comment') : t('liked your post');
     } else if (item.action_type === 'comment') {
       const commentText = item.comment?.body || '';
       notificationText = t('commented: "(comment)"', { comment: commentText });
     }
     
-    const handleNotificationPress = () => {
+    const handlePostPress = () => {
       handleClose();
       router.push(`/post/${item.post_id}`);
+    };
+
+    const handleProfilePress = () => {
+      handleClose();
+      router.push(`/profile/${item.trigger_user_id}`);
     };
     
     return (
       <TouchableOpacity 
         style={styles.notificationItem} 
-        onPress={handleNotificationPress}
+        onPress={handlePostPress}
+        activeOpacity={0.7}
       >
         <View style={styles.notificationContent}>
           <Text style={styles.notificationText}>
-            <Text style={styles.userName}>{triggerUserName}</Text>
+            <Text 
+              style={styles.userName} 
+              onPress={handleProfilePress}
+              suppressHighlighting={false}
+            >
+              {triggerUserName}
+            </Text>
             {' '}
             {notificationText}
           </Text>
@@ -187,10 +199,6 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 };
 
 const styles = StyleSheet.create({
-  commentText: {
-    color: '#666',
-    fontStyle: 'italic',
-  },
   divider: {
     backgroundColor: '#cfcbca',
     height: 1,
@@ -267,6 +275,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   userName: {
+    color: colors.light.primary,
     fontWeight: 'bold',
   },
 });

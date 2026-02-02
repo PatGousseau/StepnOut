@@ -48,7 +48,8 @@ export async function sendLikeNotification(
     senderUsername: string, 
     recipientId: string, 
     postId: string,
-    translations: { title: string; body: string }
+    translations: { title: string; body: string },
+    commentId?: string
 ) {
     // Save notification to database
     const { error: dbError } = await supabase
@@ -58,7 +59,8 @@ export async function sendLikeNotification(
             trigger_user_id: senderId,
             post_id: postId,
             action_type: 'like',
-            is_read: false
+            is_read: false,
+            ...(commentId && { comment_id: commentId })
         }]);
 
     if (dbError) {

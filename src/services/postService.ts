@@ -70,7 +70,8 @@ export const postService = {
             userData?.username || "Someone",
             targetUserId,
             (parentId || id).toString(), // use parentId for comments, id for posts
-            translations
+            translations,
+            type === "comment" ? id.toString() : undefined // pass comment_id for comment likes
           );
         }
         return true; // liked

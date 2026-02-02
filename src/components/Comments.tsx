@@ -513,63 +513,65 @@ const Comment: React.FC<CommentProps> = ({
               <Text style={timestampStyle}>{formatRelativeTime(created_at)}</Text>
             </View>
           </TouchableOpacity>
-        </View>
-        <Text style={commentTextStyle}>
-          {indentLevel && replyToUser?.username ? (
-            <Text style={replyToUsernameStyle}>@{replyToUser.username} </Text>
-          ) : null}
-          {text}
-        </Text>
-        {translatedText && (
-          <View style={translationContainerStyle}>
-            <Text style={translationLabelStyle}>Translation:</Text>
-            <Text style={translationTextStyle}>{translatedText}</Text>
-          </View>
-        )}
-      </View>
-      <View style={commentFooterStyle}>
-        <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <View style={iconContainerStyle}>
-            <Icon
-              name={likedComments[id] ? "heart" : "heart-o"}
-              size={14}
-              color={likedComments[id] ? "#eb656b" : colors.neutral.grey1}
-            />
-            <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
-          </View>
-        </TouchableOpacity>
-        {onReply ? (
-          <TouchableOpacity
-            onPress={() => (user?.username ? onReply(user.username) : null)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View style={iconContainerStyle}>
-              <Icon name="reply" size={14} color={colors.neutral.grey1} />
-            </View>
-          </TouchableOpacity>
-        ) : null}
-        {isAdmin && text && (
-          <TouchableOpacity onPress={handleTranslate} disabled={isTranslating} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            {isTranslating ? (
-              <ActivityIndicator size={14} color={colors.neutral.grey1} />
-            ) : (
-              <Icon
-                name="language"
-                size={14}
-                color={translatedText ? colors.light.primary : colors.neutral.grey1}
-              />
+          <View style={commentFooterStyle}>
+            <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <View style={iconContainerStyle}>
+                <Icon
+                  name={likedComments[id] ? "heart" : "heart-o"}
+                  size={14}
+                  color={likedComments[id] ? "#eb656b" : colors.neutral.grey1}
+                />
+                <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
+              </View>
+            </TouchableOpacity>
+            {onReply ? (
+              <TouchableOpacity
+                onPress={() => (user?.username ? onReply(user.username) : null)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={iconContainerStyle}>
+                  <Icon name="reply" size={14} color={colors.neutral.grey1} />
+                </View>
+              </TouchableOpacity>
+            ) : null}
+            {isAdmin && text && (
+              <TouchableOpacity onPress={handleTranslate} disabled={isTranslating} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                {isTranslating ? (
+                  <ActivityIndicator size={14} color={colors.neutral.grey1} />
+                ) : (
+                  <Icon
+                    name="language"
+                    size={14}
+                    color={translatedText ? colors.light.primary : colors.neutral.grey1}
+                  />
+                )}
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-        )}
-        <ActionsMenu
-          type="comment"
-          contentId={id}
-          contentUserId={userId}
-          onDelete={onCommentDeleted}
-          menuOffset={-Dimensions.get("window").height * 0.25 + 20}
-        >
-          <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
-        </ActionsMenu>
+            <ActionsMenu
+              type="comment"
+              contentId={id}
+              contentUserId={userId}
+              onDelete={onCommentDeleted}
+              menuOffset={-Dimensions.get("window").height * 0.25 + 20}
+            >
+              <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
+            </ActionsMenu>
+          </View>
+        </View>
+        <View style={commentTextContainerStyle}>
+          <Text style={commentTextStyle}>
+            {indentLevel && replyToUser?.username ? (
+              <Text style={replyToUsernameStyle}>@{replyToUser.username} </Text>
+            ) : null}
+            {text}
+          </Text>
+          {translatedText && (
+            <View style={translationContainerStyle}>
+              <Text style={translationLabelStyle}>Translation:</Text>
+              <Text style={translationTextStyle}>{translatedText}</Text>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -784,9 +786,11 @@ const commentHeaderStyle: ViewStyle = {
 
 const commentFooterStyle: ViewStyle = {
   flexDirection: "row",
-  alignItems: "flex-start",
-  paddingLeft: 4,
-  paddingTop: 2,
+  alignItems: "center",
+};
+
+const commentTextContainerStyle: ViewStyle = {
+  width: "100%",
 };
 
 const iconContainerStyle: ViewStyle = {
