@@ -306,65 +306,64 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
                 <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
                   {selectedMedia ? (
-                    <View style={shareStyles.mediaPreviewContainer}>
-                      {isUploading && (
-                        <View style={shareStyles.uploadingOverlay}>
-                          <Loader />
-                        </View>
-                      )}
+                    <View style={shareStyles.mediaSelectedRow}>
                       <TouchableOpacity
-                        style={shareStyles.removeButton}
+                        style={shareStyles.thumbnailWrapper}
+                        onPress={() => setFullScreenPreview(true)}
+                        disabled={isUploading}
+                      >
+                        <Image
+                          source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
+                          style={shareStyles.thumbnail}
+                          resizeMode="cover"
+                        />
+                        {selectedMedia.isVideo && (
+                          <View style={shareStyles.thumbnailPlayOverlay}>
+                            <MaterialIcons name="play-circle-filled" size={26} color="white" />
+                          </View>
+                        )}
+                        {isUploading && (
+                          <View style={shareStyles.uploadingOverlay}>
+                            <Loader />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+
+                      <View style={shareStyles.mediaSelectedTextContainer}>
+                        <Text style={shareStyles.mediaSelectedTitle}>
+                          {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
+                        </Text>
+                        <Text style={shareStyles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={shareStyles.removeButtonInline}
                         onPress={handleRemoveMedia}
                         disabled={isUploading}
                       >
-                        <MaterialIcons name="close" size={12} color="white" />
+                        <MaterialIcons name="close" size={18} color={colors.neutral.darkGrey} />
                       </TouchableOpacity>
-
-                      {selectedMedia.isVideo ? (
-                        <View style={shareStyles.videoPreviewContainer}>
-                          <TouchableOpacity onPress={() => setFullScreenPreview(true)}>
-                            <Image
-                              source={{ 
-                                uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl 
-                              }}
-                              style={shareStyles.mediaPreview}
-                              resizeMode="cover"
-                            />
-                            <View style={shareStyles.playIconOverlay}>
-                              <MaterialIcons name="play-circle-filled" size={40} color="white" />
-                            </View>
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <TouchableOpacity onPress={() => setFullScreenPreview(true)}>
-                          <Image
-                            source={{ uri: selectedMedia.previewUrl }}
-                            style={shareStyles.mediaPreview}
-                            resizeMode="cover"
-                          />
-                        </TouchableOpacity>
-                      )}
                     </View>
                   ) : (
-                    <>
+                    <View style={shareStyles.mediaEmptyRow}>
                       {isUploading ? (
                         <Loader />
                       ) : (
                         <>
                           <View style={shareStyles.mediaIconsContainer}>
-                            <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
+                            <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
                             <MaterialCommunityIcons
                               name="video"
-                              size={24}
+                              size={18}
                               color={colors.neutral.darkGrey}
                             />
                           </View>
                           <Text style={shareStyles.uploadButtonText}>
-                            {t("Tap to upload photo or video")}
+                            {t("Add photo/video (optional)")}
                           </Text>
                         </>
                       )}
-                    </>
+                    </View>
                   )}
                 </TouchableOpacity>
 
@@ -580,34 +579,65 @@ const shareStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  mediaIconsContainer: {
+  mediaEmptyRow: {
+    alignItems: "center",
     flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  mediaPreview: {
-    height: "100%",
-    resizeMode: "cover",
+    gap: 10,
+    justifyContent: "flex-start",
     width: "100%",
   },
-  mediaPreviewContainer: {
-    borderRadius: 8,
+  mediaIconsContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  mediaSelectedRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  mediaSelectedTextContainer: {
+    flex: 1,
+  },
+  mediaSelectedTitle: {
+    color: colors.neutral.black,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  mediaSelectedSubtitle: {
+    color: colors.neutral.darkGrey,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  mediaUploadButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.grey2,
+    borderRadius: 12,
+    flexDirection: "row",
+    minHeight: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    width: "100%",
+  },
+  thumbnail: {
+    borderRadius: 10,
+    height: 44,
+    width: 44,
+  },
+  thumbnailPlayOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 10,
     bottom: 0,
+    justifyContent: "center",
     left: 0,
-    overflow: "hidden",
     position: "absolute",
     right: 0,
     top: 0,
   },
-  mediaUploadButton: {
-    alignItems: "center",
-    aspectRatio: 2,
-    backgroundColor: colors.neutral.grey2,
-    borderRadius: 8,
-    justifyContent: "center",
-    overflow: "hidden",
-    width: "100%",
+  thumbnailWrapper: {
+    borderRadius: 10,
+    position: "relative",
   },
   modalButton: {
     alignItems: "center",
@@ -675,14 +705,13 @@ const shareStyles = StyleSheet.create({
     right: 0,
     top: 0,
   },
-  removeButton: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 12,
-    left: 6,
-    padding: 2,
-    position: "absolute",
-    top: 6,
-    zIndex: 1,
+  removeButtonInline: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.grey2,
+    borderRadius: 999,
+    height: 32,
+    justifyContent: "center",
+    width: 32,
   },
   submitButton: {
     backgroundColor: colors.light.accent,
@@ -703,12 +732,13 @@ const shareStyles = StyleSheet.create({
   },
   uploadButtonText: {
     color: colors.neutral.darkGrey,
+    flex: 1,
     fontSize: 14,
-    textAlign: "center",
   },
   uploadingOverlay: {
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 10,
     bottom: 0,
     justifyContent: "center",
     left: 0,
