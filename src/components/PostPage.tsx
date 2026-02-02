@@ -4,7 +4,6 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform, 
-  FlatList,
   ScrollView
 } from 'react-native';
 import Post from './Post';
@@ -16,33 +15,42 @@ import { Post as PostType } from '../types';  // todo: rename one of the Post ty
 import { Loader } from './Loader';
 const PostPage = () => {
   const params = useLocalSearchParams();
-  const postId = typeof params.id === 'string' ? parseInt(params.id) : params.id;
+  const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
+  const postId = idParam ? parseInt(idParam) : null;
   
-  const { userMap, fetchPost } = useFetchHomeData();
+  const { posts, userMap, loading, fetchPost } = useFetchHomeData();
   const [post, setPost] = useState<PostType | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [fetchingPost, setFetchingPost] = useState(false);
 
   useEffect(() => {
+    if (!postId) {
+      console.error('No id available:', params);
+      return;
+    }
+
+    const cachedPost = posts.find(p => p.id === postId);
+    if (cachedPost) {
+      setPost(cachedPost);
+      return;
+    }
+
+    // if not already loaded, load it.
     const loadPost = async () => {
-      setLoading(true);
+      setFetchingPost(true);
       try {
-        if (!postId) {
-          console.error('No id available:', params);
-          return;
-        }
         const fetchedPost = await fetchPost(postId);
         setPost(fetchedPost);
       } catch (error) {
         console.error('Error loading post:', error);
       } finally {
-        setLoading(false);
+        setFetchingPost(false);
       }
     };
 
     loadPost();
-  }, [postId]);
+  }, [postId, posts]);
 
-  if (loading) {
+  if (loading || fetchingPost) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Loader />
@@ -85,13 +93,6 @@ const styles = StyleSheet.create({
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  commentsSection: {
-    backgroundColor: colors.light.background,
-    borderTopColor: '#eee',
-    borderTopWidth: 1,
-    flex: 1,
-    paddingHorizontal: 16,
   },
   container: {
     backgroundColor: colors.light.background,
