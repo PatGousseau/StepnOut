@@ -11,7 +11,7 @@ import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
 import { Loader } from "../components/Loader";
 import ShareChallenge from "../components/ShareChallenge";
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
@@ -387,6 +387,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
                   multiline
                   scrollEnabled
+                  autoFocus
                   placeholder={t("Just completed this week's challenge!")}
                   placeholderTextColor="#999"
                   onChangeText={setPostText}
@@ -650,16 +651,17 @@ const shareStyles = StyleSheet.create({
   modalContainer: {
     alignItems: "center",
     flex: 1,
-    justifyContent: "center",
-    padding: 20,
+    justifyContent: "flex-end",
     width: "100%",
   },
   modalContent: {
     backgroundColor: "white",
-    borderRadius: 10,
-    maxHeight: "90%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    flex: 1,
+    marginTop: 60,
     padding: 20,
-    width: "90%",
+    width: "100%",
   },
   modalHeader: {
     position: "relative",
@@ -723,10 +725,8 @@ const shareStyles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     color: colors.neutral.black,
+    flex: 1,
     marginVertical: 10,
-    minHeight: 80,
-    maxHeight: Dimensions.get("window").height * 0.15,
-    minWidth: "100%",
     padding: 10,
     textAlignVertical: "top",
   },
