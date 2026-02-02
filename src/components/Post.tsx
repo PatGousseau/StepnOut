@@ -552,6 +552,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             onChangeText={setInlineComment}
             onSubmitEditing={handleInlineComment}
             returnKeyType="send"
+            multiline
+            textAlignVertical="top"
           />
           <AnimatedSendButton
             hasContent={inlineComment.trim().length > 0}
@@ -727,7 +729,7 @@ const viewAllCommentsStyle: TextStyle = {
 
 const inlineCommentContainer: ViewStyle = {
   flexDirection: "row",
-  alignItems: "center",
+  alignItems: "flex-end",
   marginTop: 6,
   paddingHorizontal: 8,
   gap: 4,
@@ -743,6 +745,8 @@ const inlineCommentInput: TextStyle = {
   fontSize: 12,
   color: colors.light.text,
   paddingVertical: 2,
+  minHeight: 20,
+  maxHeight: 100,
 };
 
 
