@@ -689,9 +689,11 @@ const shareStyles = StyleSheet.create({
     marginTop: 16,
   },
   textInput: {
+    backgroundColor: colors.neutral.white,
     borderColor: "#ccc",
     borderRadius: 8,
     borderWidth: 1,
+    color: colors.neutral.black,
     marginVertical: 10,
     minHeight: 80,
     maxHeight: Dimensions.get("window").height * 0.15,
