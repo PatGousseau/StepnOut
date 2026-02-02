@@ -349,7 +349,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                       {isUploading ? (
                         <Loader />
                       ) : (
-                        <>
+                        <View style={shareStyles.uploadMediaContainer}>
                           <View style={shareStyles.mediaIconsContainer}>
                             <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
                             <MaterialCommunityIcons
@@ -361,7 +361,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                           <Text style={shareStyles.uploadButtonText}>
                             {t("Add photo/video (optional)")}
                           </Text>
-                        </>
+                        </View>
                       )}
                     </View>
                   )}
@@ -620,6 +620,13 @@ const shareStyles = StyleSheet.create({
     paddingVertical: 10,
     width: "100%",
   },
+  uploadMediaContainer: {
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   thumbnail: {
     borderRadius: 10,
     height: 44,
@@ -696,17 +703,6 @@ const shareStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  playIconOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 12,
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
   removeButtonInline: {
     alignItems: "center",
     backgroundColor: colors.neutral.grey2,
@@ -746,15 +742,6 @@ const shareStyles = StyleSheet.create({
     right: 0,
     top: 0,
     zIndex: 2,
-  },
-  videoPreviewContainer: {
-    bottom: 0,
-    height: "100%",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: "100%",
   },
   fullScreenImageWrapper: {
     alignItems: "center",
