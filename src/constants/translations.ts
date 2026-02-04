@@ -49,6 +49,7 @@ export const translations = {
   "Tap to upload photo or video": "Tocca per caricare foto o video",
   "Write about your experience...": "Scrivi della tua esperienza...",
   "Uploading...": "Caricamento...",
+  "Submitting...": "Invio in corso...",
   Submit: "Invia",
   "You must be logged in to submit a challenge.": "Devi essere loggato per inviare una sfida.",
   "Please wait for media upload to complete.":
@@ -190,6 +191,7 @@ export const translations = {
   "active today": "attivi oggi",
   "Recently active": "Attivi di recente",
   "Mark as complete": "Segna come completato",
+  "Challenge completed!": "Sfida completata!",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
   "Share your thoughts...": "Condividi i tuoi pensieri...",
   "You must be logged in to submit a post.": "Devi essere loggato per pubblicare un post.",

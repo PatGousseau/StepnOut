@@ -12,6 +12,7 @@ import {
   PanResponder,
   StyleSheet,
 } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import Post from "../../components/Post";
 import WelcomePostGroup from "../../components/WelcomePostGroup";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
@@ -40,6 +41,7 @@ const groupWelcomePosts = (posts: PostType[]): (PostType | PostType[])[] =>
 
 const Home = () => {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const { posts, userMap, loading, error, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
     {}
@@ -118,10 +120,28 @@ const Home = () => {
     }
   }, [refetchPosts, activeTab]);
 
-  const handlePostDeleted = useCallback(() => {
-    // Refresh the posts list using React Query
-    refetchPosts();
-  }, [refetchPosts]);
+  const handlePostDeleted = useCallback((postId: number) => {
+    // Optimistically remove the deleted post from the cache
+    type HomePostsPage = { posts: PostType[]; hasMore: boolean };
+    type HomePostsData = { pages: HomePostsPage[]; pageParams: number[] };
+
+    queryClient.setQueriesData<HomePostsData>(
+      { queryKey: ["home-posts"] },
+      (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            posts: page.posts.filter((post) => post.id !== postId),
+          })),
+        };
+      }
+    );
+
+    // Invalidate challenge completion queries so the challenge page reflects the deletion
+    queryClient.invalidateQueries({ queryKey: ["challenge-completion"] });
+  }, [queryClient]);
 
   const handlePostCreated = useCallback(() => {
     // Refresh the posts list when a new post is created
@@ -308,6 +328,7 @@ const Home = () => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={true}
         >
           {loading && submissionPosts.length === 0 ? (
             <PostsListSkeleton count={3} />
@@ -336,6 +357,7 @@ const Home = () => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={true}
         >
           <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
           {loading && discussionPosts.length === 0 ? (
@@ -397,6 +419,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   loaderContainer: {
     padding: 20,

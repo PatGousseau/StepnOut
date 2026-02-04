@@ -16,6 +16,7 @@ interface UseMediaUploadResult {
   selectedMedia: MediaSelectionResult | null;
   postText: string;
   isUploading: boolean;
+  isSubmitting: boolean;
   isBackgroundUploading: boolean;
   localUploadProgress: number;
   handleMediaUpload: () => Promise<void>;
@@ -29,6 +30,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
   const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
   const [postText, setPostText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBackgroundUploading, setIsBackgroundUploading] = useState(false);
   const [localUploadProgress, setLocalUploadProgress] = useState(0);
   const { setUploadProgress, setUploadMessage } = useUploadProgress();
@@ -84,7 +86,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   const handleSubmit = async (additionalData: Record<string, any> = {}, text?: string) => {
     const finalText = text !== undefined ? text : postText;
-    
+
     if (!finalText.trim() && !selectedMedia) {
       setUploadMessage(t('Please add either a description or media'));
       return;
@@ -94,6 +96,12 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
       setUploadMessage(t('Please wait for media selection to complete'));
       return;
     }
+
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       // Create post with media preview
@@ -166,6 +174,8 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     } catch (error) {
       console.error('Error submitting:', error);
       setUploadMessage(t('Error submitting'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -174,6 +184,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     postText,
     setPostText,
     isUploading,
+    isSubmitting,
     uploadProgress: isBackgroundUploading ? localUploadProgress : null,
     handleMediaUpload,
     handleRemoveMedia,

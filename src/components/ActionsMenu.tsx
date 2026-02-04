@@ -22,7 +22,7 @@ interface MenuProps {
   type: ContentType;
   contentId: number;
   contentUserId: string;
-  onDelete?: () => void;
+  onDelete?: (id: number) => void;
   menuOffset?: number;
 }
 
@@ -60,7 +60,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
               : await postService.deleteComment(contentId);
 
           if (success) {
-            onDelete?.();
+            onDelete?.(contentId);
           }
         },
       },

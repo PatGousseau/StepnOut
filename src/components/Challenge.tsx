@@ -20,6 +20,7 @@ import { imageService } from "../services/imageService";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -169,6 +170,7 @@ interface ShareExperienceProps {
 export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [modalVisible, setModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showNotification, setShowNotification] = useState(false);
@@ -176,11 +178,31 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
+  // Use React Query to check if user has completed the challenge
+  const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
+    queryKey: ["challenge-completion", challenge.id, user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+
+      const { data, error } = await supabase
+        .from("post")
+        .select("id")
+        .eq("challenge_id", challenge.id)
+        .eq("user_id", user.id)
+        .limit(1);
+
+      return !error && data && data.length > 0;
+    },
+    enabled: !!user,
+    staleTime: 30000,
+  });
+
   const {
     selectedMedia,
     postText,
     setPostText,
     isUploading,
+    isSubmitting,
     uploadProgress,
     handleMediaUpload,
     handleRemoveMedia,
@@ -188,6 +210,8 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   } = useMediaUpload({
     onUploadComplete: () => {
       setModalVisible(false);
+      // Mark challenge as completed in the cache
+      queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
       // Track challenge completed
       captureEvent(CHALLENGE_EVENTS.COMPLETED, {
         challenge_id: challenge.id,
@@ -267,8 +291,19 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         </Animated.View>
       )}
 
-      <TouchableOpacity style={shareStyles.button} onPress={fadeIn}>
-        <Text style={shareStyles.buttonText}>{t("Mark as complete")}</Text>
+      <TouchableOpacity
+        style={[shareStyles.button, hasCompleted && shareStyles.completedButton]}
+        onPress={fadeIn}
+        disabled={hasCompleted || checkingCompletion}
+      >
+        <View style={shareStyles.buttonContent}>
+          {hasCompleted && (
+            <MaterialIcons name="check-circle" size={20} color="#2D5016" style={shareStyles.checkIcon} />
+          )}
+          <Text style={[shareStyles.buttonText, hasCompleted && shareStyles.completedButtonText]}>
+            {hasCompleted ? t("Challenge completed!") : t("Mark as complete")}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       <Modal
@@ -397,15 +432,15 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   style={[
                     shareStyles.modalButton,
                     shareStyles.submitButton,
-                    isUploading && shareStyles.disabledButton,
+                    (isUploading || isSubmitting) && shareStyles.disabledButton,
                   ]}
                   onPress={onSubmit}
-                  disabled={isUploading}
+                  disabled={isUploading || isSubmitting}
                 >
                   <Text
-                    style={[shareStyles.buttonText, isUploading && shareStyles.disabledButtonText]}
+                    style={[shareStyles.buttonText, (isUploading || isSubmitting) && shareStyles.disabledButtonText]}
                   >
-                    {t(isUploading ? "Uploading..." : "Submit")}
+                    {t(isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -547,10 +582,25 @@ const shareStyles = StyleSheet.create({
     padding: 14,
     width: "100%",
   },
+  buttonContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+  },
   buttonText: {
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  checkIcon: {
+    marginRight: 8,
+  },
+  completedButton: {
+    backgroundColor: colors.light.easyGreen,
+  },
+  completedButtonText: {
+    color: "#2D5016",
+    fontWeight: '600',
   },
   closeButton: {
     padding: 8,
