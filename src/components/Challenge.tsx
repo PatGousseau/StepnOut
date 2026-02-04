@@ -20,6 +20,7 @@ import { imageService } from "../services/imageService";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -169,21 +170,19 @@ interface ShareExperienceProps {
 export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [modalVisible, setModalVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showNotification, setShowNotification] = useState(false);
   const notificationAnim = useRef(new Animated.Value(0)).current;
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [hasCompleted, setHasCompleted] = useState(false);
-  const [checkingCompletion, setCheckingCompletion] = useState(true);
 
-  useEffect(() => {
-    const checkUserCompletion = async () => {
-      if (!user) {
-        setCheckingCompletion(false);
-        return;
-      }
+  // Use React Query to check if user has completed the challenge
+  const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
+    queryKey: ["challenge-completion", challenge.id, user?.id],
+    queryFn: async () => {
+      if (!user) return false;
 
       const { data, error } = await supabase
         .from("post")
@@ -192,14 +191,11 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         .eq("user_id", user.id)
         .limit(1);
 
-      if (!error && data && data.length > 0) {
-        setHasCompleted(true);
-      }
-      setCheckingCompletion(false);
-    };
-
-    checkUserCompletion();
-  }, [user, challenge.id]);
+      return !error && data && data.length > 0;
+    },
+    enabled: !!user,
+    staleTime: 30000,
+  });
 
   const {
     selectedMedia,
@@ -214,7 +210,8 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   } = useMediaUpload({
     onUploadComplete: () => {
       setModalVisible(false);
-      setHasCompleted(true);
+      // Mark challenge as completed in the cache
+      queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
       // Track challenge completed
       captureEvent(CHALLENGE_EVENTS.COMPLETED, {
         challenge_id: challenge.id,
