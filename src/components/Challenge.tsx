@@ -181,6 +181,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
     postText,
     setPostText,
     isUploading,
+    isSubmitting,
     uploadProgress,
     handleMediaUpload,
     handleRemoveMedia,
@@ -397,15 +398,15 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   style={[
                     shareStyles.modalButton,
                     shareStyles.submitButton,
-                    isUploading && shareStyles.disabledButton,
+                    (isUploading || isSubmitting) && shareStyles.disabledButton,
                   ]}
                   onPress={onSubmit}
-                  disabled={isUploading}
+                  disabled={isUploading || isSubmitting}
                 >
                   <Text
-                    style={[shareStyles.buttonText, isUploading && shareStyles.disabledButtonText]}
+                    style={[shareStyles.buttonText, (isUploading || isSubmitting) && shareStyles.disabledButtonText]}
                   >
-                    {t(isUploading ? "Uploading..." : "Submit")}
+                    {t(isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit")}
                   </Text>
                 </TouchableOpacity>
               </View>

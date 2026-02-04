@@ -49,6 +49,7 @@ export const translations = {
   "Tap to upload photo or video": "Tocca per caricare foto o video",
   "Write about your experience...": "Scrivi della tua esperienza...",
   "Uploading...": "Caricamento...",
+  "Submitting...": "Invio in corso...",
   Submit: "Invia",
   "You must be logged in to submit a challenge.": "Devi essere loggato per inviare una sfida.",
   "Please wait for media upload to complete.":
