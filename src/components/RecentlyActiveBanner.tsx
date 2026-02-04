@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   Animated,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -91,7 +92,7 @@ const UserAvatar = ({ user, onPress, variant, zIndex }: UserAvatarProps) => {
 
 export const RecentlyActiveBanner = () => {
   const { t } = useLanguage();
-  const { activeUsers, loading, fetchUsers } = useRecentlyActiveUsers();
+  const { activeUsers, activeTodayCount, loading, loadingMore, hasMore, fetchUsers, loadMore } = useRecentlyActiveUsers();
   const [isExpanded, setIsExpanded] = useState(false);
   const heightAnimation = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
   const rotateAnimation = useRef(new Animated.Value(0)).current;
@@ -125,15 +126,14 @@ export const RecentlyActiveBanner = () => {
     outputRange: ['0deg', '180deg'],
   });
 
-  // Count active today users
-  const activeTodayCount = useMemo(
-    () => activeUsers.filter((u) => u.isActiveToday).length,
-    [activeUsers]
-  );
-
   const handleUserPress = useCallback((userId: string) => {
     router.push(`/profile/${userId}`);
   }, []);
+
+  const handleScrollEnd = useCallback(({ nativeEvent: e }: any) => {
+    const nearEnd = e.layoutMeasurement.width + e.contentOffset.x >= e.contentSize.width - 100;
+    if (nearEnd && hasMore && !loadingMore) loadMore();
+  }, [hasMore, loadingMore, loadMore]);
 
   if (loading || activeUsers.length === 0) {
     return null;
@@ -202,6 +202,8 @@ export const RecentlyActiveBanner = () => {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.avatarList}
+          onScroll={handleScrollEnd}
+          scrollEventThrottle={200}
         >
           {activeUsers.map((user) => (
             <UserAvatar
@@ -211,6 +213,11 @@ export const RecentlyActiveBanner = () => {
               variant="LARGE"
             />
           ))}
+          {loadingMore && (
+            <View style={styles.loadingMore}>
+              <ActivityIndicator size="small" color={colors.light.lightText} />
+            </View>
+          )}
         </ScrollView>
       </Animated.View>
     </Animated.View>
@@ -320,6 +327,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
     width: '100%',
+  },
+  loadingMore: {
+    width: AVATAR_SIZE + 10,
+    height: AVATAR_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
