@@ -1,8 +1,15 @@
 import * as ImagePicker from "expo-image-picker";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Video } from 'react-native-compressor';
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
+
+// react-native-compressor requires a dev build, won't work in Expo Go
+let Video: { compress: (uri: string, options: any, onProgress?: (progress: number) => void) => Promise<string> } | null = null;
+try {
+  Video = require('react-native-compressor').Video;
+} catch (e) {
+  console.warn('react-native-compressor not available (likely running in Expo Go)');
+}
 
 interface MediaUploadResult {
   mediaId: number;
@@ -180,27 +187,32 @@ export const uploadMediaInBackground = async (
 
     // Compress media in background
     if (isVideoFile) {
-      try {
-        if (onProgress) onProgress(10); // Report compression start
-        
-        compressedUri = await Video.compress(
-          pendingUpload.originalUri,
-          {
-            compressionMethod: "auto",
-            minimumFileSizeForCompress: 0,
-            maxSize: 50 * 1024 * 1024,
-            bitrate: 500000,
-          },
-          (progress) => {
-            if (onProgress) onProgress(10 + (progress * 0.6));
-          }
-        );
-        
-        if (onProgress) onProgress(70);
-      } catch (e) {
-        console.warn("Video compression failed, using original:", e);
+      if (onProgress) onProgress(10); // Report compression start
+
+      if (Video) {
+        try {
+          compressedUri = await Video.compress(
+            pendingUpload.originalUri,
+            {
+              compressionMethod: "auto",
+              minimumFileSizeForCompress: 0,
+              maxSize: 50 * 1024 * 1024,
+              bitrate: 500000,
+            },
+            (progress) => {
+              if (onProgress) onProgress(10 + (progress * 0.6));
+            }
+          );
+        } catch (e) {
+          console.warn("Video compression failed, using original:", e);
+          compressedUri = pendingUpload.originalUri;
+        }
+      } else {
+        // No compressor available (Expo Go), use original
         compressedUri = pendingUpload.originalUri;
       }
+
+      if (onProgress) onProgress(70);
     } else {
       if (onProgress) onProgress(10);
       
@@ -345,19 +357,24 @@ export const uploadMedia = async (
     // Compress media before upload
     let fileUri;
     if (isVideoFile) {
-      try {
-        // Compress video with absolute maximum compression
-        fileUri = await Video.compress(
-          file.uri,
-          {
-            compressionMethod: "auto",
-            minimumFileSizeForCompress: 0,
-            maxSize: 1 * 1024 * 1024,
-            bitrate: 250000,
-          },
-        );
-      } catch (e) {
-        console.warn("Video compression failed, using original:", e);
+      if (Video) {
+        try {
+          // Compress video with absolute maximum compression
+          fileUri = await Video.compress(
+            file.uri,
+            {
+              compressionMethod: "auto",
+              minimumFileSizeForCompress: 0,
+              maxSize: 1 * 1024 * 1024,
+              bitrate: 250000,
+            },
+          );
+        } catch (e) {
+          console.warn("Video compression failed, using original:", e);
+          fileUri = file.uri;
+        }
+      } else {
+        // No compressor available (Expo Go), use original
         fileUri = file.uri;
       }
     } else {
