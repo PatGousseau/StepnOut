@@ -68,7 +68,7 @@ function RootLayoutNav() {
                       pathname.includes('/challenge/');
 
   // hide logo on auth screens
-  const hideLogo = pathname === '/login' || pathname === '/register';
+  const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
   
   // hide recently active banner on onboarding
   const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
@@ -90,12 +90,20 @@ function RootLayoutNav() {
     }
   }, [loading]);
 
-  // Simplified auth check effect
+  // Allow unauthenticated users on auth-related routes, redirect others to login
   useEffect(() => {
-    if (!loading && !session) {
+    const isAuthRoute =
+      pathname === '/login' ||
+      pathname === '/register' ||
+      pathname === '/forgot-password' ||
+      pathname === '/reset-password' ||
+      pathname === '/(auth)/onboarding' ||
+      pathname === '/onboarding';
+
+    if (!loading && !session && !isAuthRoute) {
       router.replace('/(auth)/login');
     }
-  }, [session, loading]);
+  }, [session, loading, pathname]);
 
   // Notification setup effects
   useEffect(() => {

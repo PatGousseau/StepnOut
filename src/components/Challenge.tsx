@@ -11,7 +11,7 @@ import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
 import { Loader } from "../components/Loader";
 import ShareChallenge from "../components/ShareChallenge";
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
 import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
@@ -306,65 +306,64 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
                 <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
                   {selectedMedia ? (
-                    <View style={shareStyles.mediaPreviewContainer}>
-                      {isUploading && (
-                        <View style={shareStyles.uploadingOverlay}>
-                          <Loader />
-                        </View>
-                      )}
+                    <View style={shareStyles.mediaSelectedRow}>
                       <TouchableOpacity
-                        style={shareStyles.removeButton}
+                        style={shareStyles.thumbnailWrapper}
+                        onPress={() => setFullScreenPreview(true)}
+                        disabled={isUploading}
+                      >
+                        <Image
+                          source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
+                          style={shareStyles.thumbnail}
+                          resizeMode="cover"
+                        />
+                        {selectedMedia.isVideo && (
+                          <View style={shareStyles.thumbnailPlayOverlay}>
+                            <MaterialIcons name="play-circle-filled" size={26} color="white" />
+                          </View>
+                        )}
+                        {isUploading && (
+                          <View style={shareStyles.uploadingOverlay}>
+                            <Loader />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+
+                      <View style={shareStyles.mediaSelectedTextContainer}>
+                        <Text style={shareStyles.mediaSelectedTitle}>
+                          {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
+                        </Text>
+                        <Text style={shareStyles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
+                      </View>
+
+                      <TouchableOpacity
+                        style={shareStyles.removeButtonInline}
                         onPress={handleRemoveMedia}
                         disabled={isUploading}
                       >
-                        <MaterialIcons name="close" size={12} color="white" />
+                        <MaterialIcons name="close" size={18} color={colors.neutral.darkGrey} />
                       </TouchableOpacity>
-
-                      {selectedMedia.isVideo ? (
-                        <View style={shareStyles.videoPreviewContainer}>
-                          <TouchableOpacity onPress={() => setFullScreenPreview(true)}>
-                            <Image
-                              source={{ 
-                                uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl 
-                              }}
-                              style={shareStyles.mediaPreview}
-                              resizeMode="cover"
-                            />
-                            <View style={shareStyles.playIconOverlay}>
-                              <MaterialIcons name="play-circle-filled" size={40} color="white" />
-                            </View>
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <TouchableOpacity onPress={() => setFullScreenPreview(true)}>
-                          <Image
-                            source={{ uri: selectedMedia.previewUrl }}
-                            style={shareStyles.mediaPreview}
-                            resizeMode="cover"
-                          />
-                        </TouchableOpacity>
-                      )}
                     </View>
                   ) : (
-                    <>
+                    <View style={shareStyles.mediaEmptyRow}>
                       {isUploading ? (
                         <Loader />
                       ) : (
-                        <>
+                        <View style={shareStyles.uploadMediaContainer}>
                           <View style={shareStyles.mediaIconsContainer}>
-                            <MaterialIcons name="image" size={24} color={colors.neutral.darkGrey} />
+                            <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
                             <MaterialCommunityIcons
                               name="video"
-                              size={24}
+                              size={18}
                               color={colors.neutral.darkGrey}
                             />
                           </View>
                           <Text style={shareStyles.uploadButtonText}>
-                            {t("Tap to upload photo or video")}
+                            {t("Add photo/video (optional)")}
                           </Text>
-                        </>
+                        </View>
                       )}
-                    </>
+                    </View>
                   )}
                 </TouchableOpacity>
 
@@ -388,6 +387,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
                   multiline
                   scrollEnabled
+                  autoFocus
                   placeholder={t("Just completed this week's challenge!")}
                   placeholderTextColor="#999"
                   onChangeText={setPostText}
@@ -580,34 +580,72 @@ const shareStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  mediaIconsContainer: {
+  mediaEmptyRow: {
+    alignItems: "center",
     flexDirection: "row",
-    gap: 12,
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  mediaPreview: {
-    height: "100%",
-    resizeMode: "cover",
+    gap: 10,
+    justifyContent: "flex-start",
     width: "100%",
   },
-  mediaPreviewContainer: {
-    borderRadius: 8,
+  mediaIconsContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  mediaSelectedRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  mediaSelectedTextContainer: {
+    flex: 1,
+  },
+  mediaSelectedTitle: {
+    color: colors.neutral.black,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  mediaSelectedSubtitle: {
+    color: colors.neutral.darkGrey,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  mediaUploadButton: {
+    alignItems: "center",
+    backgroundColor: colors.neutral.grey2,
+    borderRadius: 12,
+    flexDirection: "row",
+    minHeight: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    width: "100%",
+  },
+  uploadMediaContainer: {
+    flexDirection: "column",
+    gap: 8,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  thumbnail: {
+    borderRadius: 10,
+    height: 44,
+    width: 44,
+  },
+  thumbnailPlayOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 10,
     bottom: 0,
+    justifyContent: "center",
     left: 0,
-    overflow: "hidden",
     position: "absolute",
     right: 0,
     top: 0,
   },
-  mediaUploadButton: {
-    alignItems: "center",
-    aspectRatio: 2,
-    backgroundColor: colors.neutral.grey2,
-    borderRadius: 8,
-    justifyContent: "center",
-    overflow: "hidden",
-    width: "100%",
+  thumbnailWrapper: {
+    borderRadius: 10,
+    position: "relative",
   },
   modalButton: {
     alignItems: "center",
@@ -620,16 +658,17 @@ const shareStyles = StyleSheet.create({
   modalContainer: {
     alignItems: "center",
     flex: 1,
-    justifyContent: "center",
-    padding: 20,
+    justifyContent: "flex-end",
     width: "100%",
   },
   modalContent: {
     backgroundColor: "white",
-    borderRadius: 10,
-    maxHeight: "90%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    flex: 1,
+    marginTop: 60,
     padding: 20,
-    width: "90%",
+    width: "100%",
   },
   modalHeader: {
     position: "relative",
@@ -664,49 +703,38 @@ const shareStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  playIconOverlay: {
+  removeButtonInline: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 12,
-    bottom: 0,
+    backgroundColor: colors.neutral.grey2,
+    borderRadius: 999,
+    height: 32,
     justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  removeButton: {
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 12,
-    left: 6,
-    padding: 2,
-    position: "absolute",
-    top: 6,
-    zIndex: 1,
+    width: 32,
   },
   submitButton: {
     backgroundColor: colors.light.accent,
     marginTop: 16,
   },
   textInput: {
+    backgroundColor: colors.neutral.white,
     borderColor: "#ccc",
     borderRadius: 8,
     borderWidth: 1,
+    color: colors.neutral.black,
+    flex: 1,
     marginVertical: 10,
-    minHeight: 80,
-    maxHeight: Dimensions.get("window").height * 0.15,
-    minWidth: "100%",
     padding: 10,
     textAlignVertical: "top",
   },
   uploadButtonText: {
     color: colors.neutral.darkGrey,
+    flex: 1,
     fontSize: 14,
-    textAlign: "center",
   },
   uploadingOverlay: {
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 10,
     bottom: 0,
     justifyContent: "center",
     left: 0,
@@ -714,15 +742,6 @@ const shareStyles = StyleSheet.create({
     right: 0,
     top: 0,
     zIndex: 2,
-  },
-  videoPreviewContainer: {
-    bottom: 0,
-    height: "100%",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: "100%",
   },
   fullScreenImageWrapper: {
     alignItems: "center",

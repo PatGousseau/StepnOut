@@ -70,7 +70,8 @@ export const postService = {
             userData?.username || "Someone",
             targetUserId,
             (parentId || id).toString(), // use parentId for comments, id for posts
-            translations
+            translations,
+            type === "comment" ? id.toString() : undefined // pass comment_id for comment likes
           );
         }
         return true; // liked
@@ -232,9 +233,11 @@ export const postService = {
         ),
         likes:likes(count),
         comments (
+          id,
           body,
           created_at,
           user_id,
+          parent_comment_id,
           profiles!comments_user_id_profiles_fkey (
             username
           )
@@ -309,12 +312,20 @@ export const postService = {
           const sortedComments = [...post.comments].sort(
             (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
           );
+          // Create a map of comment id to username for reply lookups
+          const commentUserMap = new Map<number, string>();
+          for (const c of post.comments) {
+            if (c?.id && c?.profiles?.username) {
+              commentUserMap.set(c.id, c.profiles.username);
+            }
+          }
           const previews = sortedComments
             .slice(0, 3)
             .filter((c: any) => c?.body && c?.profiles?.username)
             .map((c: any) => ({
               username: c.profiles.username,
               text: c.body,
+              replyToUsername: c.parent_comment_id ? commentUserMap.get(c.parent_comment_id) : undefined,
             }));
           return previews.length > 0 ? previews : undefined;
         }

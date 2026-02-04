@@ -16,6 +16,7 @@ export const commentService = {
           user_id,
           body,
           created_at,
+          parent_comment_id,
           likes:likes(count)
         `
         )
@@ -31,6 +32,7 @@ export const commentService = {
           text: comment.body,
           userId: comment.user_id,
           post_id: postId,
+          parent_comment_id: comment.parent_comment_id,
           created_at: comment.created_at,
           likes_count: comment.likes?.count || 0,
           liked: false, // This will be updated by initializeCommentLikes
