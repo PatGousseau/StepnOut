@@ -31,8 +31,9 @@ const buildTransformUrl = (filePath: string, opts: ImageTransformOptions): strin
 };
 
 export const imageService = {
-  getProfileImageUrlSync(filePath: string, size: "small" | "medium" | "large" = "medium"): string {
+  getProfileImageUrlSync(filePath: string, size: "tiny" | "small" | "medium" | "large" = "medium"): string {
     const sizes = {
+      tiny: { quality: 60, width: 50, height: 50 },
       small: { quality: 80, width: 80, height: 80 },
       medium: { quality: 80, width: 200, height: 200 },
       large: { quality: 100, width: 600, height: 600 },
