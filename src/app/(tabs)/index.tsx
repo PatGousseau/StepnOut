@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   View,
-  ScrollView,
+  FlatList,
   RefreshControl,
   KeyboardAvoidingView,
   Platform,
@@ -9,10 +9,10 @@ import {
   Text,
   Animated,
   LayoutChangeEvent,
-  PanResponder,
   StyleSheet,
 } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
+import PagerView from "react-native-pager-view";
 import Post from "../../components/Post";
 import WelcomePostGroup from "../../components/WelcomePostGroup";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
@@ -24,20 +24,41 @@ import { PostsListSkeleton } from "@/src/components/Skeleton";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { Post as PostType } from "../../types";
 
-const groupWelcomePosts = (posts: PostType[]): (PostType | PostType[])[] =>
-  posts.reduce<(PostType | PostType[])[]>((acc, post) => {
-    if (!post.is_welcome) {
-      acc.push(post);
+// Discriminated union for FlatList items
+type FeedItem =
+  | { type: "post"; post: PostType; key: string }
+  | { type: "welcome-group"; posts: PostType[]; key: string };
+
+// Prepare posts into FeedItem array, grouping consecutive welcome posts
+const prepareFeedItems = (posts: PostType[], keyPrefix: string): FeedItem[] => {
+  const items: FeedItem[] = [];
+  let welcomeGroup: PostType[] = [];
+
+  for (const post of posts) {
+    if (post.is_welcome) {
+      welcomeGroup.push(post);
     } else {
-      const last = acc[acc.length - 1];
-      if (Array.isArray(last)) {
-        last.push(post);
-      } else {
-        acc.push([post]);
+      if (welcomeGroup.length > 0) {
+        items.push({
+          type: "welcome-group",
+          posts: welcomeGroup,
+          key: `${keyPrefix}-welcome-${items.length}`,
+        });
+        welcomeGroup = [];
       }
+      items.push({ type: "post", post, key: `${keyPrefix}-${post.id}` });
     }
-    return acc;
-  }, []);
+  }
+  // Flush remaining welcome posts
+  if (welcomeGroup.length > 0) {
+    items.push({
+      type: "welcome-group",
+      posts: welcomeGroup,
+      key: `${keyPrefix}-welcome-${items.length}`,
+    });
+  }
+  return items;
+};
 
 const Home = () => {
   const { t } = useLanguage();
@@ -47,50 +68,33 @@ const Home = () => {
     {}
   );
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"discussion" | "submissions">("submissions");
+  const [activeTab, setActiveTab] = useState(0); // 0 = submissions, 1 = discussion
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
 
-  // tab indicator and content positions
-  const tabIndicatorPosition = useMemo(() => new Animated.Value(0), []);
-  const slideAnimation = useMemo(() => new Animated.Value(0), []);
+  const pagerRef = useRef<PagerView>(null);
+  const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
 
-  // states for locking vertical/horizontal scrolling
-  const [scrollEnabled, setScrollEnabled] = useState(true);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimer = useRef<NodeJS.Timeout | null>(null);
+  // Animate tab indicator when activeTab changes
+  useEffect(() => {
+    Animated.spring(tabIndicatorPosition, {
+      toValue: activeTab,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 12,
+    }).start();
+  }, [activeTab, tabIndicatorPosition]);
 
-  const handleScroll = () => {
-    setIsScrolling(true);
+  // Handle tab button press
+  const handleTabPress = useCallback((index: number) => {
+    pagerRef.current?.setPage(index);
+  }, []);
 
-    if (scrollTimer.current) {
-      clearTimeout(scrollTimer.current);
-    }
-
-    scrollTimer.current = setTimeout(() => {
-      setIsScrolling(false);
-    }, 150);
-  };
-
-  const handleTabChange = (tab: "discussion" | "submissions") => {
-    // animations for tab indicator and content sliding
-    Animated.parallel([
-      Animated.spring(tabIndicatorPosition, {
-        toValue: tab === "submissions" ? 0 : 1,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 12,
-      }),
-      Animated.spring(slideAnimation, {
-        toValue: tab === "submissions" ? 0 : -tabContainerWidth,
-        useNativeDriver: true,
-        tension: 120,
-        friction: 20,
-      }),
-    ]).start();
-    setActiveTab(tab);
-  };
+  // Handle swipe between pages
+  const handlePageSelected = useCallback((e: { nativeEvent: { position: number } }) => {
+    setActiveTab(e.nativeEvent.position);
+  }, []);
 
   useEffect(() => {
     const counts = posts.reduce(
@@ -106,19 +110,15 @@ const Home = () => {
     setPostCounts(counts);
   }, [posts]);
 
-  // Note: React Query handles initial fetch automatically, no need for useEffect
-  // The useInfiniteQuery in useFetchHomeData will fetch on mount
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      // Refetch posts using React Query
       await refetchPosts();
       setPromptRefreshKey((prev) => prev + 1);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchPosts, activeTab]);
+  }, [refetchPosts]);
 
   const handlePostDeleted = useCallback((postId: number) => {
     // Optimistically remove the deleted post from the cache
@@ -144,12 +144,11 @@ const Home = () => {
   }, [queryClient]);
 
   const handlePostCreated = useCallback(() => {
-    // Refresh the posts list when a new post is created
     refetchPosts();
     setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
-  // Memoize filtered posts for each tab independently (not dependent on activeTab)
+  // Memoize filtered posts for each tab
   const submissionPosts = useMemo(() => {
     return posts.filter((post) => post.challenge_id != null);
   }, [posts]);
@@ -158,17 +157,14 @@ const Home = () => {
     return posts.filter((post) => post.challenge_id == null);
   }, [posts]);
 
-  // Shared scroll handler for infinite loading
-  const handleScrollEvent = useCallback(
-    ({ nativeEvent }: { nativeEvent: { layoutMeasurement: { height: number }; contentOffset: { y: number }; contentSize: { height: number } } }) => {
-      handleScroll();
-      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-      const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-      if (isCloseToBottom && !loading && hasMore) {
-        loadMorePosts();
-      }
-    },
-    [loading, hasMore, loadMorePosts]
+  // Prepare feed items for FlatList
+  const submissionFeedItems = useMemo(
+    () => prepareFeedItems(submissionPosts, "sub"),
+    [submissionPosts]
+  );
+  const discussionFeedItems = useMemo(
+    () => prepareFeedItems(discussionPosts, "disc"),
+    [discussionPosts]
   );
 
   // Toggle welcome group expansion
@@ -184,111 +180,103 @@ const Home = () => {
     });
   }, []);
 
-  // Render posts list for a tab
-  const renderPostsList = useCallback(
-    (tabPosts: typeof posts, keyPrefix: string) => {
-      return groupWelcomePosts(tabPosts).map((item, index) => {
-        // Welcome post group
-        if (Array.isArray(item)) {
-          const groupKey = `${keyPrefix}-welcome-${index}`;
-          return (
-            <WelcomePostGroup
-              key={groupKey}
-              posts={item}
-              userMap={userMap}
-              isExpanded={expandedWelcomeGroups.has(groupKey)}
-              onToggle={() => toggleWelcomeGroup(groupKey)}
-            />
-          );
-        }
-
-        // Regular post
-        const postUser = userMap[item.user_id] as User;
-        if (!postUser) return null;
+  // Render item for FlatList
+  const renderItem = useCallback(
+    ({ item }: { item: FeedItem }) => {
+      if (item.type === "welcome-group") {
         return (
-          <Post
-            key={`${keyPrefix}-${item.id}-${index}`}
-            post={item}
-            postUser={postUser}
-            setPostCounts={setPostCounts}
-            onPostDeleted={handlePostDeleted}
+          <WelcomePostGroup
+            posts={item.posts}
+            userMap={userMap}
+            isExpanded={expandedWelcomeGroups.has(item.key)}
+            onToggle={() => toggleWelcomeGroup(item.key)}
           />
         );
-      });
+      }
+      const postUser = userMap[item.post.user_id] as User;
+      if (!postUser) return null;
+      return (
+        <Post
+          post={item.post}
+          postUser={postUser}
+          setPostCounts={setPostCounts}
+          onPostDeleted={handlePostDeleted}
+        />
+      );
     },
-    [userMap, setPostCounts, handlePostDeleted, expandedWelcomeGroups, toggleWelcomeGroup]
+    [userMap, expandedWelcomeGroups, toggleWelcomeGroup, setPostCounts, handlePostDeleted]
   );
 
-  // container width for tab indicator
+  const keyExtractor = useCallback((item: FeedItem) => item.key, []);
+
+  // Container width for tab indicator positioning
   const onTabContainerLayout = (event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
     setTabContainerWidth(width);
   };
 
-  // pan responder for horizontal swipe
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
-          // lock scrolling if we're swiping horizontally
-          if (isHorizontalSwipe && !isScrolling) {
-            setScrollEnabled(false);
-            return true;
-          }
-          return false;
-        },
-        onPanResponderMove: (_, gestureState) => {
-          if (!isScrolling) {
-            const basePosition = activeTab === "submissions" ? 0 : -tabContainerWidth;
-            const newPosition = basePosition + gestureState.dx;
-            const constrainedPosition = Math.max(-tabContainerWidth, Math.min(0, newPosition));
-            slideAnimation.setValue(constrainedPosition);
-          }
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          setScrollEnabled(true);
+  // Load more posts when reaching end of list
+  const handleEndReached = useCallback(() => {
+    if (!loading && hasMore) {
+      loadMorePosts();
+    }
+  }, [loading, hasMore, loadMorePosts]);
 
-          const SWIPE_THRESHOLD = 10;
-          if (gestureState.dx > SWIPE_THRESHOLD && activeTab === "discussion" && !isScrolling) {
-            handleTabChange("submissions");
-          } else if (
-            gestureState.dx < -SWIPE_THRESHOLD &&
-            activeTab === "submissions" &&
-            !isScrolling
-          ) {
-            handleTabChange("discussion");
-          } else {
-            Animated.spring(slideAnimation, {
-              toValue: activeTab === "submissions" ? 0 : -tabContainerWidth,
-              useNativeDriver: true,
-              tension: 120,
-              friction: 20,
-            }).start();
-          }
-        },
-        onPanResponderTerminate: () => {
-          setScrollEnabled(true);
-        },
-      }),
-    [activeTab, tabContainerWidth, slideAnimation, isScrolling]
-  );
+  // Render loading footer
+  const renderFooter = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.loaderContainer}>
+        <Loader />
+      </View>
+    );
+  }, [isFetchingNextPage]);
+
+  // Render empty state (skeleton or empty)
+  const renderEmptySubmissions = useCallback(() => {
+    if (loading) {
+      return <PostsListSkeleton count={3} />;
+    }
+    return null;
+  }, [loading]);
+
+  const renderEmptyDiscussion = useCallback(() => {
+    if (loading) {
+      return <PostsListSkeleton count={3} />;
+    }
+    return null;
+  }, [loading]);
+
+  // Discussion list header (InlineCreatePost)
+  const renderDiscussionHeader = useCallback(() => {
+    return <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />;
+  }, [handlePostCreated, promptRefreshKey]);
+
+  // Error component
+  const renderError = useCallback(() => {
+    if (!error || loading) return null;
+    return (
+      <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
+        <Text style={styles.errorText}>{t("Something went wrong. Tap to retry.")}</Text>
+      </TouchableOpacity>
+    );
+  }, [error, loading, onRefresh, t]);
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={styles.container}
       keyboardVerticalOffset={Platform.OS === "ios" ? 120 : 0}
     >
-      {/* Add tab buttons */}
+      {/* Tab buttons */}
       <View style={styles.tabContainer} onLayout={onTabContainerLayout}>
-        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange("submissions")}>
-          <Text style={[styles.tabText, activeTab === "submissions" && styles.activeTabText]}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabPress(0)}>
+          <Text style={[styles.tabText, activeTab === 0 && styles.activeTabText]}>
             {t("Submissions")}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabChange("discussion")}>
-          <Text style={[styles.tabText, activeTab === "discussion" && styles.activeTabText]}>
+        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabPress(1)}>
+          <Text style={[styles.tabText, activeTab === 1 && styles.activeTabText]}>
             {t("Discussion")}
           </Text>
         </TouchableOpacity>
@@ -300,7 +288,7 @@ const Home = () => {
                 {
                   translateX: tabIndicatorPosition.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [styles.tabContainer.paddingHorizontal, tabContainerWidth / 2],
+                    outputRange: [16, tabContainerWidth / 2],
                   }),
                 },
               ],
@@ -309,80 +297,60 @@ const Home = () => {
         />
       </View>
 
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={{
-          flex: 1,
-          flexDirection: "row",
-          width: "200%",
-          transform: [{ translateX: slideAnimation }],
-        }}
+      {/* PagerView for horizontal tab swiping */}
+      <PagerView
+        ref={pagerRef}
+        style={styles.pagerView}
+        initialPage={0}
+        onPageSelected={handlePageSelected}
       >
-        {/* Submissions tab content */}
-        <ScrollView
-          scrollEnabled={scrollEnabled}
-          onScroll={handleScrollEvent}
-          scrollEventThrottle={16}
-          style={styles.tabScrollView}
-          contentContainerStyle={styles.tabContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets={true}
-        >
-          {loading && submissionPosts.length === 0 ? (
-            <PostsListSkeleton count={3} />
-          ) : (
-            renderPostsList(submissionPosts, "submission")
-          )}
-          {error && !loading && (
-            <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
-              <Text style={styles.errorText}>{t('Something went wrong. Tap to retry.')}</Text>
-            </TouchableOpacity>
-          )}
-          {isFetchingNextPage && (
-            <View style={styles.loaderContainer}>
-              <Loader />
-            </View>
-          )}
-        </ScrollView>
+        {/* Page 0: Submissions */}
+        <View key="submissions" style={styles.page}>
+          <FlatList
+            data={submissionFeedItems}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.5}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmptySubmissions}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={true}
+          />
+          {renderError()}
+        </View>
 
-        {/* Discussion tab content */}
-        <ScrollView
-          scrollEnabled={scrollEnabled}
-          onScroll={handleScrollEvent}
-          scrollEventThrottle={16}
-          style={styles.tabScrollView}
-          contentContainerStyle={styles.tabContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          automaticallyAdjustKeyboardInsets={true}
-        >
-          <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
-          {loading && discussionPosts.length === 0 ? (
-            <PostsListSkeleton count={3} />
-          ) : (
-            renderPostsList(discussionPosts, "discussion")
-          )}
-          {error && !loading && (
-            <TouchableOpacity style={styles.errorContainer} onPress={onRefresh}>
-              <Text style={styles.errorText}>{t('Something went wrong. Tap to retry.')}</Text>
-            </TouchableOpacity>
-          )}
-          {isFetchingNextPage && (
-            <View style={styles.loaderContainer}>
-              <Loader />
-            </View>
-          )}
-        </ScrollView>
-      </Animated.View>
+        {/* Page 1: Discussion */}
+        <View key="discussion" style={styles.page}>
+          <FlatList
+            data={discussionFeedItems}
+            renderItem={renderItem}
+            keyExtractor={keyExtractor}
+            onEndReached={handleEndReached}
+            onEndReachedThreshold={0.5}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListHeaderComponent={renderDiscussionHeader}
+            ListFooterComponent={renderFooter}
+            ListEmptyComponent={renderEmptyDiscussion}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={true}
+          />
+          {renderError()}
+        </View>
+      </PagerView>
     </KeyboardAvoidingView>
   );
 };
 
-// Add new styles
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   tabContainer: {
     flexDirection: "row",
     backgroundColor: colors.light.background,
@@ -413,13 +381,16 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: colors.light.primary,
   },
-  tabScrollView: {
-    width: "50%",
+  pagerView: {
+    flex: 1,
+  },
+  page: {
+    flex: 1,
     backgroundColor: colors.light.background,
   },
-  tabContent: {
+  listContent: {
     padding: 16,
-    paddingBottom: 40,
+    flexGrow: 1,
   },
   loaderContainer: {
     padding: 20,
@@ -430,7 +401,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   errorText: {
-    color: colors.light.textSecondary,
+    color: colors.light.lightText,
     textAlign: "center",
   },
 });
