@@ -1,6 +1,24 @@
 import { supabase } from "../lib/supabase";
 import { Challenge } from "../types";
 
+// keep these selects tight – challenge rows can pick up extra columns over time,
+// and pulling `*` makes every request heavier than it needs to be.
+const CHALLENGE_SELECT = `
+  id,
+  title,
+  title_it,
+  description,
+  description_it,
+  difficulty,
+  created_by,
+  created_at,
+  updated_at,
+  is_active,
+  media:image_media_id(
+    file_path
+  )
+`;
+
 export const challengeService = {
   async fetchChallengeById(challengeId: number): Promise<Challenge | null> {
     if (!challengeId) {
@@ -10,14 +28,7 @@ export const challengeService = {
     try {
       const { data, error } = await supabase
         .from("challenges")
-        .select(
-          `
-          *,
-          media:image_media_id(
-            file_path
-          )
-        `
-        )
+        .select(CHALLENGE_SELECT)
         .eq("id", challengeId)
         .single();
 
