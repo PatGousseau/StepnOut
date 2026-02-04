@@ -25,6 +25,7 @@ import { profileService } from "../services/profileService";
 import { UserProfile } from "../models/User";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useLikes } from "../contexts/LikesContext";
+import { useReactions } from "../contexts/ReactionsContext";
 import { ProfileActions } from "./ActionsMenu";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { imageService } from "../services/imageService";
@@ -41,6 +42,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { initializePostLikes } = useLikes();
+  const { initializePostReactions } = useReactions();
   const {
     data,
     loading: progressLoading,
@@ -227,6 +229,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   useEffect(() => {
     if (userPosts.length > 0) {
       initializePostLikes(userPosts);
+      initializePostReactions(userPosts);
     }
   }, [userPosts]);
 

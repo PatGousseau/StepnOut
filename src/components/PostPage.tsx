@@ -9,6 +9,7 @@ import {
 import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
+import { useReactions } from '../contexts/ReactionsContext';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
@@ -19,6 +20,7 @@ const PostPage = () => {
   const postId = idParam ? parseInt(idParam) : null;
   
   const { posts, userMap, loading, fetchPost } = useFetchHomeData();
+  const { initializePostReactions } = useReactions();
   const [post, setPost] = useState<PostType | null>(null);
   const [fetchingPost, setFetchingPost] = useState(false);
 
@@ -31,6 +33,7 @@ const PostPage = () => {
     const cachedPost = posts.find(p => p.id === postId);
     if (cachedPost) {
       setPost(cachedPost);
+      initializePostReactions([cachedPost]);
       return;
     }
 
@@ -40,6 +43,7 @@ const PostPage = () => {
       try {
         const fetchedPost = await fetchPost(postId);
         setPost(fetchedPost);
+        if (fetchedPost) initializePostReactions([fetchedPost]);
       } catch (error) {
         console.error('Error loading post:', error);
       } finally {
