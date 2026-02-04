@@ -28,6 +28,7 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [likedComments, setLikedComments] = useState<{ [commentId: number]: boolean }>({});
   const [postLikeCounts, setPostLikeCounts] = useState<{ [postId: number]: number }>({});
   const [commentLikeCounts, setCommentLikeCounts] = useState<{ [commentId: number]: number }>({});
+  const [pendingLikes, setPendingLikes] = useState<{ [id: number]: boolean }>({});
   const { user } = useAuth();
 
   const initializeLikes = async (items: (Post | Comment)[], type: "post" | "comment") => {
@@ -60,6 +61,11 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const { id, type, parentId } = item;
     const isPost = type === "post";
 
+    // Prevent double-tap race conditions
+    if (pendingLikes[id]) {
+      return;
+    }
+
     const likedItems = isPost ? likedPosts : likedComments;
     const setLikedItems = isPost ? setLikedPosts : setLikedComments;
     const setItemCounts = isPost ? setPostLikeCounts : setCommentLikeCounts;
@@ -67,7 +73,8 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const isCurrentlyLiked = likedItems[id];
     const notificationBody = isPost ? "liked your post" : "liked your comment";
 
-    // Optimistic update
+    // Mark as pending and do optimistic update
+    setPendingLikes((prev) => ({ ...prev, [id]: true }));
     setLikedItems((prev) => ({ ...prev, [id]: !isCurrentlyLiked }));
     setItemCounts((prev) => ({
       ...prev,
@@ -97,7 +104,7 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const eventName = isPost
           ? (isCurrentlyLiked ? POST_EVENTS.UNLIKED : POST_EVENTS.LIKED)
           : (isCurrentlyLiked ? COMMENT_EVENTS.UNLIKED : COMMENT_EVENTS.LIKED);
-        
+
         captureEvent(eventName, {
           [`${type}_id`]: id,
           target_user_id: targetUserId,
@@ -112,6 +119,9 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ...prev,
         [id]: (prev[id] || 0) + (isCurrentlyLiked ? 1 : -1),
       }));
+    } finally {
+      // Clear pending state
+      setPendingLikes((prev) => ({ ...prev, [id]: false }));
     }
   };
 

@@ -35,8 +35,11 @@ export const postService = {
     likeData: LikeableItem,
     userId: string,
     targetUserId: string,
-    translations: { title: string; body: string }
-  ) {
+    translations: { title: string; body: string },
+    retryCount = 0
+  ): Promise<boolean | null> {
+    const MAX_RETRIES = 2;
+
     try {
       const { id, type, parentId } = likeData;
       const idField = `${type}_id` as const;
@@ -77,7 +80,13 @@ export const postService = {
         return true; // liked
       }
     } catch (error) {
-      console.error(`Error toggling ${likeData.type} like:`, error);
+      console.error(`Error toggling ${likeData.type} like (attempt ${retryCount + 1}):`, error);
+
+      if (retryCount < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+        return this.toggleLike(likeData, userId, targetUserId, translations, retryCount + 1);
+      }
+
       return null;
     }
   },

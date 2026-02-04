@@ -26,19 +26,24 @@ async function sendPushNotification(token: string, title: string, body: string, 
         data,
     };
 
-    const response = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(message),
-    });
+    try {
+        const response = await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(message),
+        });
 
-    const result = await response.json();
-    
-    if (result.errors) {
-        console.error('Error sending notification:', result.errors);
+        const result = await response.json();
+
+        if (result.errors) {
+            console.error('Error sending notification:', result.errors);
+        }
+    } catch (error) {
+        // Don't let push notification failures bubble up and break other operations
+        console.error('Error sending push notification:', error);
     }
 }
 
