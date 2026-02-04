@@ -308,6 +308,7 @@ const Home = () => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={true}
         >
           {loading && submissionPosts.length === 0 ? (
             <PostsListSkeleton count={3} />
@@ -336,6 +337,7 @@ const Home = () => {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={true}
         >
           <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
           {loading && discussionPosts.length === 0 ? (
@@ -397,6 +399,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     padding: 16,
+    paddingBottom: 40,
   },
   loaderContainer: {
     padding: 20,

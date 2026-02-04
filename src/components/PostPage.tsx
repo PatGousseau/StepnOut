@@ -77,6 +77,7 @@ const PostPage = () => {
         contentContainerStyle={styles.scrollViewContent}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets={true}
       >
         <Post
           post={post}
@@ -103,6 +104,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     flexGrow: 1,
+    paddingBottom: 40,
   },
 });
 
