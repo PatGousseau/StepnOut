@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, ViewStyle, TextStyle, View } from "react-native";
+import { Alert, Share, ViewStyle, TextStyle, View } from "react-native";
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
@@ -7,6 +7,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { postService } from "../services/postService";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 
 type ContentType = "post" | "comment";
 
@@ -110,11 +111,37 @@ export const ActionsMenu: React.FC<MenuProps> = ({
     ]);
   };
 
+  const handleShare = async () => {
+    if (type !== "post") return;
+
+    const url = Linking.createURL(`post/${contentId}`);
+
+    try {
+      await Share.share({
+        message: url,
+        url,
+      });
+    } catch {
+      return;
+    }
+  };
+
   const getActions = (): MenuOptionItem[] => {
     if (!user) return [];
 
+    const baseActions: MenuOptionItem[] = [];
+
+    if (type === "post") {
+      baseActions.push({
+        text: t("Share"),
+        onSelect: handleShare,
+        icon: "share",
+      });
+    }
+
     if (user.id === contentUserId) {
       return [
+        ...baseActions,
         {
           text: t(`Delete ${type}`),
           onSelect: handleDelete,
@@ -125,6 +152,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
     }
 
     return [
+      ...baseActions,
       {
         text: t(`Report ${type}`),
         onSelect: handleReport,
