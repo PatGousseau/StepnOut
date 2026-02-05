@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import PagerView from "react-native-pager-view";
 import Post from "../../components/Post";
 import WelcomePostGroup from "../../components/WelcomePostGroup";
+import FeedSortToggle from "../../components/FeedSortToggle";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
 import { colors } from "../../constants/Colors";
 import InlineCreatePost from "../../components/InlineCreatePost";
@@ -23,6 +24,7 @@ import { Loader } from "@/src/components/Loader";
 import { PostsListSkeleton } from "@/src/components/Skeleton";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { Post as PostType } from "../../types";
+import { FeedSort, sortFeedPosts } from "../../lib/feedSort";
 
 // Discriminated union for FlatList items
 type FeedItem =
@@ -69,6 +71,8 @@ const Home = () => {
   );
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState(0); // 0 = submissions, 1 = discussion
+  const [submissionSort, setSubmissionSort] = useState<FeedSort>("recent");
+  const [discussionSort, setDiscussionSort] = useState<FeedSort>("recent");
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
@@ -148,14 +152,16 @@ const Home = () => {
     setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
-  // Memoize filtered posts for each tab
+  // Memoize filtered + sorted posts for each tab
   const submissionPosts = useMemo(() => {
-    return posts.filter((post) => post.challenge_id != null);
-  }, [posts]);
+    const filtered = posts.filter((post) => post.challenge_id != null);
+    return sortFeedPosts(filtered, submissionSort);
+  }, [posts, submissionSort]);
 
   const discussionPosts = useMemo(() => {
-    return posts.filter((post) => post.challenge_id == null);
-  }, [posts]);
+    const filtered = posts.filter((post) => post.challenge_id == null);
+    return sortFeedPosts(filtered, discussionSort);
+  }, [posts, discussionSort]);
 
   // Prepare feed items for FlatList
   const submissionFeedItems = useMemo(
@@ -247,10 +253,31 @@ const Home = () => {
     return null;
   }, [loading]);
 
-  // Discussion list header (InlineCreatePost)
+  const renderSubmissionsHeader = useCallback(() => {
+    return (
+      <FeedSortToggle
+        value={submissionSort}
+        onChange={setSubmissionSort}
+        recentLabel={t("Most recent")}
+        popularLabel={t("Popular")}
+      />
+    );
+  }, [submissionSort, t]);
+
+  // Discussion list header (sort toggle + InlineCreatePost)
   const renderDiscussionHeader = useCallback(() => {
-    return <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />;
-  }, [handlePostCreated, promptRefreshKey]);
+    return (
+      <View>
+        <FeedSortToggle
+          value={discussionSort}
+          onChange={setDiscussionSort}
+          recentLabel={t("Most recent")}
+          popularLabel={t("Popular")}
+        />
+        <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
+      </View>
+    );
+  }, [discussionSort, handlePostCreated, promptRefreshKey, t]);
 
   // Error component
   const renderError = useCallback(() => {
@@ -313,6 +340,7 @@ const Home = () => {
             onEndReached={handleEndReached}
             onEndReachedThreshold={0.5}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListHeaderComponent={renderSubmissionsHeader}
             ListFooterComponent={renderFooter}
             ListEmptyComponent={renderEmptySubmissions}
             contentContainerStyle={styles.listContent}
