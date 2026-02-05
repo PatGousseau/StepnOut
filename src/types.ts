@@ -94,3 +94,9 @@ export interface Challenge {
     type: "post" | "comment";
     parentId?: number; // for comments, this is the postId
   }
+
+  export interface ReactionSummary {
+    emoji: string;
+    count: number;
+    reacted: boolean;
+  }

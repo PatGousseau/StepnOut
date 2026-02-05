@@ -30,6 +30,8 @@ import { formatRelativeTime } from "../utils/time";
 import { CommentsListSkeleton, CommentSkeleton } from "./Skeleton";
 import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
 import { useLikes } from "../contexts/LikesContext";
+import { useReactions } from "../contexts/ReactionsContext";
+import { ReactionsBar } from "./ReactionsBar";
 import { ActionsMenu } from "./ActionsMenu";
 import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
@@ -138,6 +140,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { initializeCommentLikes } = useLikes();
+  const { initializeCommentReactions } = useReactions();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
@@ -148,6 +151,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     // Initialize likes for the comments
     if (initialComments.length > 0) {
       initializeCommentLikes(initialComments);
+      initializeCommentReactions(initialComments);
     }
   }, [initialComments]);
 
@@ -426,6 +430,7 @@ const Comment: React.FC<CommentProps> = ({
   const { onClose } = useContext(CommentsContext);
   const { user: currentUser, isAdmin } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
+  const { commentReactions, toggleCommentReaction } = useReactions();
 
   const [user, setUser] = useState<User | null>(null);
   const [replyToUser, setReplyToUser] = useState<User | null>(null);
@@ -571,6 +576,15 @@ const Comment: React.FC<CommentProps> = ({
               <Text style={translationTextStyle}>{translatedText}</Text>
             </View>
           )}
+
+          <ReactionsBar
+            reactions={commentReactions[id] || []}
+            compact
+            onToggle={(emoji) => {
+              if (!currentUser) return;
+              toggleCommentReaction(id, post_id, currentUser.id, userId, emoji);
+            }}
+          />
         </View>
       </View>
     </View>

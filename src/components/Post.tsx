@@ -29,6 +29,8 @@ import { Post as PostType } from "../types";
 import { useLanguage } from "../contexts/LanguageContext";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useLikes } from "../contexts/LikesContext";
+import { useReactions } from "../contexts/ReactionsContext";
+import { ReactionsBar } from "./ReactionsBar";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
 import VideoPlayer from "./VideoPlayer";
@@ -54,6 +56,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false, onPostDeleted }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
+  const { postReactions, togglePostReaction } = useReactions();
   const { user, isAdmin, username: currentUserUsername } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -519,6 +522,14 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </TouchableOpacity>
           )}
         </View>
+
+        <ReactionsBar
+          reactions={postReactions[post.id] || []}
+          onToggle={(emoji) => {
+            if (!user) return;
+            togglePostReaction(post.id, user.id, post.user_id, emoji);
+          }}
+        />
 
         {localPreviews.length > 0 && (
           <TouchableOpacity onPress={handleOpenComments} style={commentPreviewStyle}>
