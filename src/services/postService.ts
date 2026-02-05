@@ -240,7 +240,9 @@ export const postService = {
           file_path,
           upload_status
         ),
-        likes:likes(count),
+        likes (
+          created_at
+        ),
         comments (
           id,
           body,
@@ -304,11 +306,9 @@ export const postService = {
       discussionQuery = discussionQuery.range(start, end);
 
       // Execute queries
-      const queries: Promise<any>[] = [challengeQuery, discussionQuery];
-      if (welcomeQuery) queries.push(welcomeQuery);
-
-      const responses = await Promise.all(queries);
-      const [challengeResponse, discussionResponse, welcomeResponse] = responses;
+      const challengeResponse = await challengeQuery;
+      const discussionResponse = await discussionQuery;
+      const welcomeResponse = welcomeQuery ? await welcomeQuery : undefined;
 
       if (challengeResponse.error) throw challengeResponse.error;
       if (discussionResponse.error) throw discussionResponse.error;
@@ -341,9 +341,27 @@ export const postService = {
         return undefined;
       };
 
+      const nowMs = Date.now();
+      const windowMs = 48 * 60 * 60 * 1000;
+
+      const getRecentCounts = (post: any) => {
+        const recentLikes = (post.likes ?? []).filter((l: any) => {
+          const ms = Date.parse(l.created_at);
+          return Number.isFinite(ms) && nowMs - ms <= windowMs;
+        }).length;
+
+        const recentComments = (post.comments ?? []).filter((c: any) => {
+          const ms = Date.parse(c.created_at);
+          return Number.isFinite(ms) && nowMs - ms <= windowMs;
+        }).length;
+
+        return { recent_likes_count: recentLikes, recent_comments_count: recentComments };
+      };
+
       // Process challenge posts (attach title and comment previews)
       const challengePosts = (challengeResponse.data ?? []).map((post: any) => ({
         ...post,
+        ...getRecentCounts(post),
         challenge_title: post.challenges?.title,
         comment_previews: getCommentPreviews(post),
         comments: undefined, // Remove full comments array
@@ -352,6 +370,7 @@ export const postService = {
       // Process discussion posts
       const discussionPosts = (discussionResponse.data ?? []).map((post: any) => ({
         ...post,
+        ...getRecentCounts(post),
         comment_previews: getCommentPreviews(post),
         comments: undefined,
       }));
@@ -359,6 +378,7 @@ export const postService = {
       // Process welcome posts (only on first page)
       const welcomePosts = (welcomeResponse?.data ?? []).map((post: any) => ({
         ...post,
+        ...getRecentCounts(post),
         comment_previews: getCommentPreviews(post),
         comments: undefined,
       }));

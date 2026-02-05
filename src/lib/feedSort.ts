@@ -2,9 +2,10 @@ import { Post } from "../types";
 
 export type FeedSort = "recent" | "popular";
 
-const WEIGHT_LIKE = 1;
-const WEIGHT_COMMENT = 2;
-const GRAVITY = 1.5;
+type PostWithRecent = Post & {
+  recent_likes_count?: number;
+  recent_comments_count?: number;
+};
 
 function safeParseDateMs(iso: string | undefined): number {
   if (!iso) return 0;
@@ -12,28 +13,26 @@ function safeParseDateMs(iso: string | undefined): number {
   return Number.isFinite(ms) ? ms : 0;
 }
 
-export function popularScore(post: Post, nowMs: number = Date.now()): number {
-  const createdMs = safeParseDateMs(post.created_at);
-  const ageHours = Math.max(0, (nowMs - createdMs) / 36e5);
+export function popularScore(post: PostWithRecent): number {
+  const recentLikes = post.recent_likes_count ?? 0;
+  const recentComments = post.recent_comments_count ?? 0;
 
-  const likes = post.likes_count || 0;
-  const comments = post.comments_count || 0;
-  const engagement = likes * WEIGHT_LIKE + comments * WEIGHT_COMMENT;
+  // real "popular" = recent velocity (timestamps), not just total counts.
+  // fall back to total counts if recent counts aren't present.
+  const likes = recentLikes || post.likes_count || 0;
+  const comments = recentComments || post.comments_count || 0;
 
-  // higher engagement helps, but decays fast with age so "popular" feels like "trending"
-  return engagement / Math.pow(ageHours + 2, GRAVITY);
+  return likes + 2 * comments;
 }
 
 export function sortFeedPosts(posts: Post[], sort: FeedSort): Post[] {
-  const nowMs = Date.now();
-
   const sorted = [...posts].sort((a, b) => {
     const aWelcome = !!a.is_welcome;
     const bWelcome = !!b.is_welcome;
     if (aWelcome !== bWelcome) return aWelcome ? -1 : 1;
 
     if (sort === "popular") {
-      const diff = popularScore(b, nowMs) - popularScore(a, nowMs);
+      const diff = popularScore(b as PostWithRecent) - popularScore(a as PostWithRecent);
       if (diff !== 0) return diff;
     }
 
