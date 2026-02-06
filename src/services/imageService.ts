@@ -42,7 +42,11 @@ export const imageService = {
   },
 
   getPostImageUrlSync(filePath: string, size: "small" | "medium" | "large" = "medium"): string {
-    const sizes = { small: { quality: 60 }, medium: { quality: 70 }, large: { quality: 80 } };
+    const sizes = {
+      small: { quality: 60, width: 400 },
+      medium: { quality: 70, width: 800 },
+      large: { quality: 80, width: 1200 },
+    };
     return buildTransformUrl(filePath, sizes[size]);
   },
 
@@ -108,9 +112,13 @@ export const imageService = {
       return { previewUrl, fullUrl };
     }
 
-    const sizes = { small: { quality: 60 }, medium: { quality: 70 }, large: { quality: 80 } };
+    const sizes = {
+      small: { quality: 60, width: 400 },
+      medium: { quality: 70, width: 800 },
+      large: { quality: 80, width: 1200 },
+    };
     const [previewUrl, fullUrl] = await Promise.all([
-      this.getImageUrl(filePath, { quality: 10 }),
+      this.getImageUrl(filePath, { quality: 10, width: 100 }),
       this.getImageUrl(filePath, sizes[size]),
     ]);
     return { previewUrl, fullUrl };
