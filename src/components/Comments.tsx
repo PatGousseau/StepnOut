@@ -411,7 +411,7 @@ interface CommentProps {
   onCommentDeleted?: () => void;
 }
 
-const Comment: React.FC<CommentProps> = ({
+const CommentInner: React.FC<CommentProps> = ({
   id,
   userId,
   text,
@@ -576,6 +576,17 @@ const Comment: React.FC<CommentProps> = ({
     </View>
   );
 };
+
+const Comment = React.memo(CommentInner, (prev, next) => {
+  return (
+    prev.id === next.id &&
+    prev.text === next.text &&
+    prev.userId === next.userId &&
+    prev.indentLevel === next.indentLevel &&
+    prev.isLastReply === next.isLastReply &&
+    prev.replyToUserId === next.replyToUserId
+  );
+});
 
 const commentAvatarStyle: ImageStyle = {
   borderRadius: 15,

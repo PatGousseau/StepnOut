@@ -928,4 +928,12 @@ const translationTextStyle: TextStyle = {
   color: colors.light.text,
 };
 
-export default Post;
+export default React.memo(Post, (prev, next) => {
+  return (
+    prev.post.id === next.post.id &&
+    prev.post.likes_count === next.post.likes_count &&
+    prev.post.comments_count === next.post.comments_count &&
+    prev.postUser?.id === next.postUser?.id &&
+    prev.isPostPage === next.isPostPage
+  );
+});
