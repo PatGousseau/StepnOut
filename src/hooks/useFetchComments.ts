@@ -15,7 +15,7 @@ export const useFetchComments = (postId: number) => {
   } = useQuery({
     queryKey: ["comments", postId],
     queryFn: () => commentService.fetchComments(postId),
-    enabled: !!postId,
+    enabled: false, // Lazy-loaded: fetched on demand when comments modal opens
     staleTime: 30000, // Cache for 30 seconds
   });
 
