@@ -1,3 +1,5 @@
+export type FeedSort = "recent" | "popular";
+
 export interface Challenge {
     id: number;
     title: string;
