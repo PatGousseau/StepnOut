@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { isUsernameValidProfile } from "../utils/validation";
 import {
   View,
   Text,
@@ -128,6 +129,26 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleSaveProfile = async () => {
     try {
+      if (editedInstagram && editedInstagram !== userProfile?.instagram) {
+        const instagramRegex = /^[a-zA-Z0-9._]+$/;
+        if (!instagramRegex.test(editedInstagram)) {
+          Alert.alert(t("Error"), t("Instagram usernames can only use letters, numbers, underscores and periods."));
+          return;
+        }
+
+        try {
+          const isValid = await isUsernameValidProfile(editedInstagram);
+          if (!isValid) {
+            Alert.alert(t("Error"), t("Instagram profile not found. Check your username"));
+            return;
+          }
+        } catch (err) {
+          console.log('Error checking instagram:', err);
+          // If fetch fails (e.g. network or calls restrictions), we typically let it pass or show a warning.
+          // For now, proceeding as we only want to block if we explicitly know it's invalid.
+        }
+      }
+
       const result = await profileService.validateAndUpdateProfile(user?.id!, {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
@@ -323,7 +344,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                         style={[styles.editInput, styles.usernameInput]}
                         placeholder={t("Username")}
                         value={editedInstagram}
-                        onChangeText={setEditedInstagram}
+                        //onChangeText={setEditedInstagram}
+                        onChangeText={(text) => setEditedInstagram(text.replace(/[@\s]+/g, ''))}
                         autoCapitalize="none"
                         keyboardType="default"
                       />
@@ -397,8 +419,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             key={post.id}
             post={post} // Pass the entire post object
             postUser={userProfile}
-            setPostCounts={() => {}}
-            onPostDeleted={() => {}}
+            setPostCounts={() => { }}
+            onPostDeleted={() => { }}
           />
         ))}
         {postsLoading && (

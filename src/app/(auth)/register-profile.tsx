@@ -20,6 +20,7 @@ import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
+import { isUsernameValidProfile } from "../../utils/validation";
 
 export default function RegisterProfileScreen() {
   const { isSocialUser } = useLocalSearchParams<{
@@ -100,24 +101,50 @@ export default function RegisterProfileScreen() {
     try {
       setLoading(true);
 
+      if (instagram) {
+        const instagramRegex = /^[a-zA-Z0-9._]+$/;
+        if (!instagramRegex.test(instagram)) {
+          setError(t("Instagram usernames can only use letters, numbers, underscores and periods."));
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const isValid = await isUsernameValidProfile(instagram);
+          if (!isValid) {
+            setError(t("Instagram profile not found. Check your username"));
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.log('Error checking instagram:', err);
+          // If fetch fails (e.g. network or calls restrictions), we typically let it pass or show a warning.
+          // For now, proceeding as we only want to block if we explicitly know it's invalid.
+        }
+      }
+
+      setLoading(true); // Ensure loading is still true if we passed the check
+
       // Complete profile setup
       const userId = await signUp({
         username,
         displayName,
         profileMediaId,
-        instagram: instagram.replace(/@/g, ''),
+        instagram: instagram,
         isSocialUser: isSocialSignUp,
       });
 
       // Show EULA then go to onboarding
       Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-        { text: t('Accept'), onPress: async () => {
-          await supabase
-            .from('profiles')
-            .update({ eula_accepted: true })
-            .eq('id', userId);
-          router.replace('/(auth)/onboarding');
-        }},
+        {
+          text: t('Accept'), onPress: async () => {
+            await supabase
+              .from('profiles')
+              .update({ eula_accepted: true })
+              .eq('id', userId);
+            router.replace('/(auth)/onboarding');
+          }
+        },
         {
           text: t('Decline'),
           onPress: async () => {
@@ -192,7 +219,7 @@ export default function RegisterProfileScreen() {
               placeholder={t("Instagram (Optional)")}
               placeholderTextColor="#666"
               value={instagram}
-              onChangeText={(text) => setInstagram(text.replace(/@/g, ''))}
+              onChangeText={(text) => setInstagram(text.replace(/[@\s]+/g, ''))}
               style={styles.input}
               autoCapitalize="none"
             />
@@ -212,9 +239,9 @@ export default function RegisterProfileScreen() {
           disabled={loading || imageUploading}
         >
           <Text style={styles.buttonText}>
-            {loading 
-              ? t("Creating Account...") 
-              : isSocialSignUp 
+            {loading
+              ? t("Creating Account...")
+              : isSocialSignUp
                 ? t("Complete Setup")
                 : t("Complete Registration")}
           </Text>
