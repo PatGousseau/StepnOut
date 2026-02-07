@@ -1,7 +1,8 @@
-import React from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import React, { useState, useRef } from "react";
+import { View, TouchableOpacity, Text, StyleSheet, Modal, TouchableWithoutFeedback } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { colors } from "../constants/Colors";
-import { FeedSort } from "../lib/feedSort";
+import { FeedSort } from "../types";
 
 type Props = {
   value: FeedSort;
@@ -11,49 +12,109 @@ type Props = {
 };
 
 export const FeedSortToggle = ({ value, onChange, recentLabel, popularLabel }: Props) => {
+  const [open, setOpen] = useState(false);
+  const [anchorY, setAnchorY] = useState(0);
+  const [anchorX, setAnchorX] = useState(0);
+  const triggerRef = useRef<View>(null);
+
+  const label = value === "recent" ? recentLabel : popularLabel;
+  const options: { value: FeedSort; label: string }[] = [
+    { value: "recent", label: recentLabel },
+    { value: "popular", label: popularLabel },
+  ];
+
+  const handleOpen = () => {
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setAnchorX(x);
+      setAnchorY(y + height + 4);
+      setOpen(true);
+    });
+  };
+
+  const handleSelect = (sort: FeedSort) => {
+    setOpen(false);
+    if (sort !== value) onChange(sort);
+  };
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        style={[styles.button, value === "recent" && styles.buttonActive]}
-        onPress={() => onChange("recent")}
-      >
-        <Text style={[styles.text, value === "recent" && styles.textActive]}>{recentLabel}</Text>
+    <View style={styles.wrapper}>
+      <TouchableOpacity ref={triggerRef} style={styles.trigger} onPress={handleOpen} activeOpacity={0.7}>
+        <Text style={styles.triggerText}>{label}</Text>
+        <MaterialIcons
+          name={open ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+          size={18}
+          color={colors.light.primary}
+        />
       </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.button, value === "popular" && styles.buttonActive]}
-        onPress={() => onChange("popular")}
-      >
-        <Text style={[styles.text, value === "popular" && styles.textActive]}>{popularLabel}</Text>
-      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <TouchableWithoutFeedback onPress={() => setOpen(false)}>
+          <View style={styles.overlay}>
+            <View style={[styles.dropdown, { top: anchorY, left: anchorX }]}>
+              {options.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.option, opt.value === value && styles.optionActive]}
+                  onPress={() => handleSelect(opt.value)}
+                >
+                  <Text style={[styles.optionText, opt.value === value && styles.optionTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.neutral.grey1 + "90",
-    overflow: "hidden",
+  wrapper: {
     alignSelf: "flex-start",
     marginBottom: 12,
   },
-  button: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.light.background,
+  trigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
   },
-  buttonActive: {
+  triggerText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.light.primary,
+  },
+  overlay: {
+    flex: 1,
+  },
+  dropdown: {
+    position: "absolute",
+    backgroundColor: colors.light.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.neutral.grey1 + "60",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    minWidth: 120,
+  },
+  option: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  optionActive: {
     backgroundColor: colors.light.primary + "14",
   },
-  text: {
-    fontSize: 13,
+  optionText: {
+    fontSize: 14,
     color: colors.light.lightText,
-    fontWeight: "600",
   },
-  textActive: {
+  optionTextActive: {
     color: colors.light.primary,
+    fontWeight: "600",
   },
 });
 
