@@ -23,8 +23,7 @@ import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
 import { PostsListSkeleton } from "@/src/components/Skeleton";
 import { useLanguage } from "../../contexts/LanguageContext";
-import { Post as PostType } from "../../types";
-import { FeedSort, sortFeedPosts } from "../../lib/feedSort";
+import { Post as PostType, FeedSort } from "../../types";
 
 // Discriminated union for FlatList items
 type FeedItem =
@@ -65,7 +64,6 @@ const prepareFeedItems = (posts: PostType[], keyPrefix: string): FeedItem[] => {
 const Home = () => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { posts, userMap, loading, error, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
     {}
   );
@@ -73,6 +71,18 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState(0); // 0 = submissions, 1 = discussion
   const [submissionSort, setSubmissionSort] = useState<FeedSort>("recent");
   const [discussionSort, setDiscussionSort] = useState<FeedSort>("recent");
+  const {
+    challengePosts: submissionPosts,
+    discussionPosts,
+    userMap,
+    loading,
+    error,
+    loadMoreChallenges,
+    loadMoreDiscussions,
+    isFetchingNextChallengePage,
+    isFetchingNextDiscussionPage,
+    refetchPosts,
+  } = useFetchHomeData(submissionSort, discussionSort);
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
@@ -101,7 +111,8 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const counts = posts.reduce(
+    const allPosts = [...submissionPosts, ...discussionPosts];
+    const counts = allPosts.reduce(
       (acc, post) => ({
         ...acc,
         [post.id]: {
@@ -112,7 +123,7 @@ const Home = () => {
       {}
     );
     setPostCounts(counts);
-  }, [posts]);
+  }, [submissionPosts, discussionPosts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -152,18 +163,6 @@ const Home = () => {
     setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
-  // Memoize filtered + sorted posts for each tab
-  const submissionPosts = useMemo(() => {
-    const filtered = posts.filter((post) => post.challenge_id != null);
-    return sortFeedPosts(filtered, submissionSort);
-  }, [posts, submissionSort]);
-
-  const discussionPosts = useMemo(() => {
-    const filtered = posts.filter((post) => post.challenge_id == null);
-    return sortFeedPosts(filtered, discussionSort);
-  }, [posts, discussionSort]);
-
-  // Prepare feed items for FlatList
   const submissionFeedItems = useMemo(
     () => prepareFeedItems(submissionPosts, "sub"),
     [submissionPosts]
@@ -221,37 +220,16 @@ const Home = () => {
     setTabContainerWidth(width);
   };
 
-  // Load more posts when reaching end of list
-  const handleEndReached = useCallback(() => {
-    if (!loading && hasMore) {
-      loadMorePosts();
-    }
-  }, [loading, hasMore, loadMorePosts]);
-
-  // Render loading footer
-  const renderFooter = useCallback(() => {
-    if (!isFetchingNextPage) return null;
-    return (
-      <View style={styles.loaderContainer}>
-        <Loader />
-      </View>
-    );
-  }, [isFetchingNextPage]);
-
-  // Render empty state (skeleton or empty)
-  const renderEmptySubmissions = useCallback(() => {
-    if (loading) {
-      return <PostsListSkeleton count={3} />;
-    }
+  const renderEmpty = useCallback(() => {
+    if (loading) return <PostsListSkeleton count={3} />;
     return null;
   }, [loading]);
 
-  const renderEmptyDiscussion = useCallback(() => {
-    if (loading) {
-      return <PostsListSkeleton count={3} />;
-    }
-    return null;
-  }, [loading]);
+  const renderFooter = () => (
+    <View style={styles.loaderContainer}>
+      <Loader />
+    </View>
+  );
 
   const renderSubmissionsHeader = useCallback(() => {
     return (
@@ -337,12 +315,12 @@ const Home = () => {
             data={submissionFeedItems}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            onEndReached={handleEndReached}
+            onEndReached={loadMoreChallenges}
             onEndReachedThreshold={0.5}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={renderSubmissionsHeader}
-            ListFooterComponent={renderFooter}
-            ListEmptyComponent={renderEmptySubmissions}
+            ListFooterComponent={isFetchingNextChallengePage ? renderFooter : null}
+            ListEmptyComponent={renderEmpty}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -357,12 +335,12 @@ const Home = () => {
             data={discussionFeedItems}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            onEndReached={handleEndReached}
+            onEndReached={loadMoreDiscussions}
             onEndReachedThreshold={0.5}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={renderDiscussionHeader}
-            ListFooterComponent={renderFooter}
-            ListEmptyComponent={renderEmptyDiscussion}
+            ListFooterComponent={isFetchingNextDiscussionPage ? renderFooter : null}
+            ListEmptyComponent={renderEmpty}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
