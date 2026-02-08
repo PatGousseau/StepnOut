@@ -244,4 +244,5 @@ export const translations = {
   "View all (count) comments": "Vedi tutti i (count) commenti",
   "Instagram profile not found. Check your username": "Profilo Instagram non trovato. Controlla il tuo nome utente",
   "Instagram usernames can only use letters, numbers, underscores and periods.": "I nomi utente di Instagram possono contenere solo lettere, numeri, trattini bassi e punti.",
+  "Join me on StepnOut!": "Unisciti a me su StepnOut!",
 };

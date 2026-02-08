@@ -53,6 +53,13 @@
         }
       ],
       "expo-localization",
+      [
+        "react-native-share",
+        {
+          "ios": ["instagram", "instagram-stories"],
+          "android": ["com.instagram.android"]
+        }
+      ],
       "expo-apple-authentication",
       [
         "expo-av",
@@ -94,7 +101,8 @@
         "backgroundColor": "#FFFFFF"
       },
       "usesApnsToken": true,
-      "usesAppleSignIn": true
+      "usesAppleSignIn": true,
+      "infoPlist": {}
     }
   }
 }
