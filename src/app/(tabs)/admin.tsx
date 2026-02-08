@@ -120,7 +120,8 @@ const ChallengeCreation: React.FC = () => {
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
-        supabase.from('submission').select('user_id').gte('created_at', since7d),
+        // note: challenge completions are represented by posts with a challenge_id
+        supabase.from('post').select('user_id').not('challenge_id', 'is', null).gte('created_at', since7d),
         supabase.from('challenges').select('id, title').eq('is_active', true).limit(1).maybeSingle(),
         supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
@@ -145,8 +146,8 @@ const ChallengeCreation: React.FC = () => {
 
       if (activeChallenge) {
         const [uniqueRes, totalRes] = await Promise.all([
-          supabase.from('submission').select('user_id').eq('challenge_id', activeChallenge.id),
-          supabase.from('submission').select('id', { count: 'exact', head: true }).eq('challenge_id', activeChallenge.id),
+          supabase.from('post').select('user_id').eq('challenge_id', activeChallenge.id),
+          supabase.from('post').select('id', { count: 'exact', head: true }).eq('challenge_id', activeChallenge.id),
         ]);
 
         if (uniqueRes.error) throw uniqueRes.error;
