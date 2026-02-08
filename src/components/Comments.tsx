@@ -36,10 +36,9 @@ import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
-import { Audio } from "expo-av";
-import { createVoiceMemoForPreview } from "../utils/handleMediaUpload";
 import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
 import { backgroundUploadService } from "../services/backgroundUploadService";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -160,70 +159,12 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const [translateOutgoing, setTranslateOutgoing] = useState(true);
 
   const [voiceMemo, setVoiceMemo] = useState<import("../utils/handleMediaUpload").MediaSelectionResult | null>(null);
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   const [voiceUploadProgress, setVoiceUploadProgress] = useState<number | null>(null);
   const [isVoiceUploading, setIsVoiceUploading] = useState(false);
 
-  useEffect(() => {
-    setComments(initialComments);
-    // Initialize likes for the comments
-    if (initialComments.length > 0) {
-      initializeCommentLikes(initialComments);
-    }
-  }, [initialComments]);
-
-  const startVoiceRecording = async () => {
-    const { status } = await Audio.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(t("Microphone access required"), t("Please enable microphone permissions to record a voice memo."));
-      return;
-    }
-
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording: rec } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      setRecording(rec);
-      setIsRecording(true);
-    } catch (e) {
-      console.error("Error starting voice recording:", e);
-      Alert.alert(t("Recording error"), t("Couldn't start recording"));
-    }
-  };
-
-  const stopVoiceRecording = async () => {
-    if (!recording) return;
-
-    try {
-      setIsRecording(false);
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setRecording(null);
-
-      if (!uri) return;
-
-      const memo = await createVoiceMemoForPreview({ uri });
-      setVoiceMemo(memo);
-    } catch (e) {
-      console.error("Error stopping voice recording:", e);
-      Alert.alert(t("Recording error"), t("Couldn't save recording"));
-    }
-  };
-
-  const handleVoiceMemoPress = async () => {
-    if (isRecording) {
-      await stopVoiceRecording();
-    } else {
-      await startVoiceRecording();
-    }
-  };
+  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => setVoiceMemo(memo),
+  });
 
   const handleAddComment = async () => {
     if ((newComment.trim() || voiceMemo) && user) {

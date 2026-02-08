@@ -21,9 +21,8 @@ import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
-import { Audio } from "expo-av";
-import { createVoiceMemoForPreview } from "../utils/handleMediaUpload";
 import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -35,8 +34,12 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const { t } = useLanguage();
   const inputAccessoryViewID = "uniqueID";
 
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => {
+      setSelectedMedia(memo);
+      captureEvent(POST_EVENTS.MEDIA_ATTACHED, { kind: "audio" });
+    },
+  });
 
   const {
     selectedMedia,
@@ -52,7 +55,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       setModalVisible(false);
       captureEvent(POST_EVENTS.CREATED, {
         has_media: !!selectedMedia,
-        is_video: selectedMedia?.isVideo || false,
+        is_video: selectedMedia?.pendingUpload.mediaType === 'video',
       });
       if (onPostCreated) {
         onPostCreated();
@@ -72,60 +75,6 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
     // Note: This tracks the attempt, actual success is handled in the hook
     captureEvent(POST_EVENTS.MEDIA_ATTACHED);
   };
-
-  const startVoiceRecording = async () => {
-    const { status } = await Audio.requestPermissionsAsync();
-    if (status !== "granted") {
-      alert(t("Microphone permissions not granted"));
-      return;
-    }
-
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording: rec } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      setRecording(rec);
-      setIsRecording(true);
-    } catch (e) {
-      console.error("Error starting voice recording:", e);
-      alert(t("Couldn't start recording"));
-    }
-  };
-
-  const stopVoiceRecording = async () => {
-    if (!recording) return;
-
-    try {
-      setIsRecording(false);
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setRecording(null);
-
-      if (!uri) return;
-
-      const voiceMemo = await createVoiceMemoForPreview({ uri });
-      setSelectedMedia(voiceMemo);
-      captureEvent(POST_EVENTS.MEDIA_ATTACHED, { kind: "audio" });
-    } catch (e) {
-      console.error("Error stopping voice recording:", e);
-      alert(t("Couldn't save recording"));
-    }
-  };
-
-  const handleVoiceMemoPress = async () => {
-    if (isRecording) {
-      await stopVoiceRecording();
-    } else {
-      await startVoiceRecording();
-    }
-  };
-
   const onSubmit = async () => {
     if (!user) {
       alert(t("You must be logged in to submit a post."));
@@ -172,14 +121,14 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   </View>
                 ) : selectedMedia ? (
                   <View style={mediaPreviewContainerStyle}>
-                    {selectedMedia.kind === 'audio' ? (
+                    {selectedMedia.pendingUpload.mediaType === 'audio' ? (
                       <View style={{ padding: 12 }}>
                         <VoiceMemoPlayer uri={selectedMedia.previewUrl} />
                       </View>
                     ) : (
                       <Image
                         source={{
-                          uri: selectedMedia.isVideo
+                          uri: selectedMedia.pendingUpload.mediaType === 'video'
                             ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
                             : selectedMedia.previewUrl,
                         }}
@@ -190,7 +139,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                     <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
                       <MaterialIcons name="close" size={12} color="white" />
                     </TouchableOpacity>
-                    {selectedMedia.isVideo && (
+                    {selectedMedia.pendingUpload.mediaType === 'video' && (
                       <View style={videoIndicatorStyle}>
                         <MaterialIcons name="play-circle-filled" size={24} color="white" />
                       </View>

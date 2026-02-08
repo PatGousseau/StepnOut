@@ -19,10 +19,8 @@ interface MediaUploadResult {
 
 export interface MediaSelectionResult {
   mediaId: number;
-  kind: 'image' | 'video' | 'audio';
   previewUrl: string;
   thumbnailUri: string | null;
-  isVideo: boolean;
   pendingUpload: {
     originalUri: string;
     fileName: string;
@@ -93,8 +91,8 @@ export const selectMediaForPreview = async (
           // Use local thumbnail immediately, upload later in background
           previewUrl = thumbnailUri;
         }
-      } catch {
-        console.warn("❌ [VIDEO THUMBNAIL] Couldn't generate or upload thumbnail", e);
+      } catch (err) {
+        console.warn("❌ [VIDEO THUMBNAIL] Couldn't generate or upload thumbnail", err);
       }
     } else {
       // For images, use original file as preview initially
@@ -117,19 +115,17 @@ export const selectMediaForPreview = async (
 
     if (dbError) throw dbError;
 
-    const kind: MediaSelectionResult['kind'] = isVideoFile ? 'video' : 'image';
+    const mediaUploadType: MediaSelectionResult['pendingUpload']['mediaType'] = isVideoFile ? 'video' : 'image';
     const contentType = isVideoFile ? 'video/mp4' : 'image/jpeg';
 
     return {
       mediaId: mediaData.id,
-      kind,
       previewUrl,
       thumbnailUri,
-      isVideo: isVideoFile,
       pendingUpload: {
         originalUri,
         fileName,
-        mediaType: kind,
+        mediaType: mediaUploadType,
         contentType,
         thumbnailFileName,
       },
@@ -188,8 +184,8 @@ export const uploadMediaInBackground = async (
               contentType: "multipart/form-data",
             });
         }
-      } catch {
-        console.warn("Failed to upload thumbnail in background:", e);
+      } catch (err) {
+        console.warn("Failed to upload thumbnail in background:", err);
       }
     }
 
@@ -216,8 +212,8 @@ export const uploadMediaInBackground = async (
               if (onProgress) onProgress(10 + (progress * 0.6));
             }
           );
-        } catch {
-          console.warn("Video compression failed, using original:", e);
+        } catch (err) {
+          console.warn("Video compression failed, using original:", err);
           compressedUri = pendingUpload.originalUri;
         }
       } else {
@@ -362,8 +358,8 @@ export const uploadMedia = async (
 
           if (thumbnailError) console.error("Error uploading thumbnail:", thumbnailError);
         }
-      } catch {
-        console.warn("Couldn't generate or upload thumbnail", e);
+      } catch (err) {
+        console.warn("Couldn't generate or upload thumbnail", err);
       }
     }
 
@@ -382,8 +378,8 @@ export const uploadMedia = async (
               bitrate: 250000,
             },
           );
-        } catch {
-          console.warn("Video compression failed, using original:", e);
+        } catch (err) {
+          console.warn("Video compression failed, using original:", err);
           fileUri = file.uri;
         }
       } else {
@@ -470,10 +466,8 @@ export const createVoiceMemoForPreview = async (options: {
 
   return {
     mediaId: mediaData.id,
-    kind: "audio",
     previewUrl: options.uri,
     thumbnailUri: null,
-    isVideo: false,
     pendingUpload: {
       originalUri: options.uri,
       fileName,
