@@ -33,9 +33,6 @@ export default function TabsLayout() {
             case 'profile':
               iconName = 'person';
               break;
-            case 'community':
-              iconName = 'people';
-              break;
             case 'admin':
               iconName = 'settings';
               break;
@@ -69,12 +66,6 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: t('Profile'),
-        }}
-      />
-      <Tabs.Screen
-        name="community"
-        options={{
-          title: t('Community'),
         }}
       />
       <Tabs.Screen
