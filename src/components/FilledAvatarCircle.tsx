@@ -85,8 +85,10 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
 
   return (
     <View style={styles.container} onLayout={onLayout}>
-      {size > 0 &&
-        users.map((u, i) => {
+      <View style={styles.circleClip} pointerEvents="none" />
+      <View style={styles.circleClip}>
+        {size > 0 &&
+          users.map((u, i) => {
           const p = positions[i];
           const left = center + p.x - avatarSize / 2;
           const top = center + p.y - avatarSize / 2;
@@ -152,7 +154,8 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
               </Animated.View>
             </View>
           );
-        })}
+          })}
+      </View>
     </View>
   );
 }
@@ -161,6 +164,17 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     aspectRatio: 1,
+  },
+  circleClip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 9999,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.neutral.grey1,
   },
   avatarContainer: {
     position: 'absolute',
