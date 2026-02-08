@@ -55,6 +55,8 @@ type AdminAnalytics = {
   completions14d: AdminTimeseriesPoint[];
   newUsers14d: AdminTimeseriesPoint[];
 
+  completionBuckets: { label: string; percent: number; count: number }[];
+
   posts7d: number;
   comments7d: number;
   feedback7d: number;
@@ -136,6 +138,7 @@ const ChallengeCreation: React.FC = () => {
         newUsers14dRes,
         profiles30dRes,
         completions30dRes,
+        userProgressRes,
         posts7dRes,
         comments7dRes,
         feedback7dRes,
@@ -172,6 +175,8 @@ const ChallengeCreation: React.FC = () => {
           .not('challenge_id', 'is', null)
           .gte('created_at', since30d),
 
+        supabase.from('user_progress').select('user_id, total_challenges_completed'),
+
         supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('feedback').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
@@ -187,6 +192,7 @@ const ChallengeCreation: React.FC = () => {
       if (newUsers14dRes.error) throw newUsers14dRes.error;
       if (profiles30dRes.error) throw profiles30dRes.error;
       if (completions30dRes.error) throw completions30dRes.error;
+      if (userProgressRes.error) throw userProgressRes.error;
       if (posts7dRes.error) throw posts7dRes.error;
       if (comments7dRes.error) throw comments7dRes.error;
       if (feedback7dRes.error) throw feedback7dRes.error;
@@ -240,6 +246,32 @@ const ChallengeCreation: React.FC = () => {
       newUsers14d.forEach((p) => {
         p.count = newUsersByDay.get(p.date) || 0;
       });
+
+      const completionBuckets = (() => {
+        const rows = (userProgressRes.data || []) as { user_id: string; total_challenges_completed: number | null }[];
+        const totalUsers = rows.length;
+        const buckets = [
+          { label: '0', min: 0, max: 0 },
+          { label: '1', min: 1, max: 1 },
+          { label: '2', min: 2, max: 2 },
+          { label: '3', min: 3, max: 3 },
+          { label: '4', min: 4, max: 4 },
+          { label: '5+', min: 5, max: Infinity },
+        ];
+
+        const counts = buckets.map(() => 0);
+        rows.forEach((r) => {
+          const v = r.total_challenges_completed ?? 0;
+          const i = buckets.findIndex((b) => v >= b.min && v <= b.max);
+          if (i >= 0) counts[i] += 1;
+        });
+
+        return buckets.map((b, i) => ({
+          label: b.label,
+          count: counts[i],
+          percent: totalUsers ? Math.round((counts[i] / totalUsers) * 1000) / 10 : 0,
+        }));
+      })();
 
       // median time to first completion for users created in last 30d (rough but useful)
       const profileCreatedAt = new Map<string, string>();
@@ -300,6 +332,8 @@ const ChallengeCreation: React.FC = () => {
 
         completions14d,
         newUsers14d,
+
+        completionBuckets,
 
         posts7d: posts7dRes.count || 0,
         comments7d: comments7dRes.count || 0,
@@ -559,6 +593,7 @@ const ChallengeCreation: React.FC = () => {
         <View style={styles.chartsRow}>
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>new users (14d)</Text>
+            <Text style={styles.axisLabel}>y: count · x: last 14 days</Text>
             <View style={styles.barChart}>
               {newUsers14d.map((p) => (
                 <View
@@ -577,6 +612,7 @@ const ChallengeCreation: React.FC = () => {
 
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>challenge completions (14d)</Text>
+            <Text style={styles.axisLabel}>y: count · x: last 14 days</Text>
             <View style={styles.barChart}>
               {completions14d.map((p) => (
                 <View
@@ -591,6 +627,29 @@ const ChallengeCreation: React.FC = () => {
                 />
               ))}
             </View>
+          </View>
+        </View>
+
+        <View style={styles.chartWideCard}>
+          <Text style={styles.chartTitle}>users by total challenges completed</Text>
+          <Text style={styles.axisLabel}>y: % of users · x: total completions</Text>
+          <View style={styles.bucketRow}>
+            {(analytics?.completionBuckets || []).map((b) => (
+              <View key={b.label} style={styles.bucketItem}>
+                <Text style={styles.bucketPercent}>{analyticsLoading ? '…' : `${b.percent}%`}</Text>
+                <View style={styles.bucketBarWrap}>
+                  <View
+                    style={[
+                      styles.bucketBar,
+                      {
+                        width: `${Math.min(100, Math.round((b.percent / 100) * 100))}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.bucketLabel}>{b.label}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -1036,7 +1095,58 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     fontWeight: '700',
+    marginBottom: 4,
+  },
+  axisLabel: {
+    color: '#999',
+    fontSize: 11,
     marginBottom: 8,
+    fontWeight: '600',
+  },
+  chartWideCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  bucketRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  bucketItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  bucketPercent: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.light.text,
+    marginBottom: 6,
+  },
+  bucketBarWrap: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#eee',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  bucketBar: {
+    height: '100%',
+    backgroundColor: colors.light.primary,
+    borderRadius: 4,
+  },
+  bucketLabel: {
+    marginTop: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#666',
   },
   barChart: {
     height: 72,
