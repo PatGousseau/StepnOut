@@ -6,6 +6,7 @@ export type ChallengeCompleter = {
   id: string;
   username: string | null;
   profileImageUrl: string | null;
+  latestPostBody: string | null;
 };
 
 export function useChallengeCompleters() {
@@ -36,6 +37,7 @@ export function useChallengeCompleters() {
           `
           user_id,
           created_at,
+          body,
           profiles:user_id (
             id,
             username,
@@ -73,6 +75,7 @@ export function useChallengeCompleters() {
           id,
           username: profile?.username ?? null,
           profileImageUrl,
+          latestPostBody: (row as any)?.body ?? null,
         });
       }
 

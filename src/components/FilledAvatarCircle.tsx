@@ -15,6 +15,7 @@ export type FilledAvatarCircleUser = {
 type Props = {
   users: FilledAvatarCircleUser[];
   intervalMs?: number;
+  onHighlightChange?: (user: FilledAvatarCircleUser, index: number) => void;
 };
 
 function clamp(min: number, value: number, max: number) {
@@ -41,7 +42,7 @@ function computePositions(n: number, radius: number) {
   return positions as Array<{ x: number; y: number }>;
 }
 
-export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
+export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange }: Props) {
   const [size, setSize] = useState(0);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
 
@@ -76,6 +77,10 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
     const prevScale = scalesRef.current[prev];
     const nextScale = scalesRef.current[next];
 
+    if (onHighlightChange && users[next]) {
+      onHighlightChange(users[next], next);
+    }
+
     Animated.parallel([
       prevScale
         ? Animated.spring(prevScale, {
@@ -94,7 +99,7 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
           })
         : Animated.delay(0),
     ]).start();
-  }, [highlightedIndex, users.length]);
+  }, [highlightedIndex, users, onHighlightChange]);
 
   useEffect(() => {
     if (users.length <= 1) return;
