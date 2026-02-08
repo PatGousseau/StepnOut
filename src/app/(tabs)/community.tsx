@@ -12,41 +12,60 @@ export default function CommunityScreen() {
     return completers as FilledAvatarCircleUser[];
   }, [completers]);
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>this week</Text>
-      <Text style={styles.subtitle}>completed challenge</Text>
+  const countLabel = loading ? 'Loading…' : `${users.length} Completed`;
 
-      <View style={styles.circleWrap}>
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator />
-          </View>
-        ) : (
-          <FilledAvatarCircle users={users} intervalMs={2200} />
-        )}
+  return (
+    <View style={styles.screen}>
+      <View style={styles.card}>
+        <Text style={styles.title}>This Week</Text>
+        <Text style={styles.subtitle}>Challenge Finishers</Text>
+        <Text style={styles.meta}>{countLabel}</Text>
+
+        <View style={styles.circleWrap}>
+          {loading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator />
+            </View>
+          ) : (
+            <FilledAvatarCircle users={users} intervalMs={2200} />
+          )}
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.light.background,
-    paddingTop: 72,
     paddingHorizontal: 16,
+    paddingTop: 56,
+  },
+  card: {
+    backgroundColor: colors.light.cardBg,
+    borderRadius: 12,
+    marginVertical: 24,
+    padding: 20,
   },
   title: {
+    color: colors.light.primary,
     fontSize: 28,
-    fontWeight: '700',
-    color: colors.light.text,
-    marginBottom: 4,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   subtitle: {
+    color: colors.light.text,
     fontSize: 16,
-    fontWeight: '500',
-    color: colors.neutral.grey3,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 6,
+  },
+  meta: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
     marginBottom: 18,
   },
   circleWrap: {
