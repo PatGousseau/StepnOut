@@ -1,141 +1,153 @@
-import React, { useMemo, useState } from "react";
-import { Modal, Pressable, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { Modal, Pressable, TouchableOpacity, View, ViewStyle, TextStyle } from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { ReactionSummary } from "../types";
 
-const QUICK_EMOJIS = ["❤️", "👍", "😂", "🔥", "😮", "🎉", "🙏", "😢", "😡"];
+const EMOJIS = ["😂", "😭", "🫶", "🔝", "💯", "🥺", "🤗", "🫠", "😢"];
 
 interface ReactionsBarProps {
   reactions: ReactionSummary[];
   onToggle: (emoji: string) => void;
-  compact?: boolean;
+  isLiked: boolean;
+  likeCount: number;
+  onLikeToggle: () => void;
 }
 
-export const ReactionsBar: React.FC<ReactionsBarProps> = ({ reactions, onToggle, compact }) => {
+export const ReactionsBar: React.FC<ReactionsBarProps> = ({
+  reactions,
+  onToggle,
+  isLiked,
+  likeCount,
+  onLikeToggle,
+}) => {
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
+  const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
+  const buttonRef = useRef<View>(null);
 
-  const pills = useMemo(() => reactions.slice(0, compact ? 6 : 10), [reactions, compact]);
+  const handleOpen = () => {
+    buttonRef.current?.measureInWindow((x, y) => {
+      setPopoverPos({ x, y });
+      setOpen(true);
+    });
+  };
 
-  const submit = () => {
-    const emoji = value.trim();
-    if (!emoji) return;
+  const selectEmoji = (emoji: string) => {
     onToggle(emoji);
-    setValue("");
     setOpen(false);
   };
 
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-      {pills.map((r) => (
+    <View style={containerStyle}>
+      <TouchableOpacity onPress={onLikeToggle} style={pillStyle}>
+        <Icon
+          name={isLiked ? "heart" : "heart-o"}
+          size={14}
+          color={isLiked ? "#eb656b" : colors.neutral.grey1}
+        />
+        <Text style={countStyle}>{likeCount}</Text>
+      </TouchableOpacity>
+
+      {reactions.map((r) => (
         <TouchableOpacity
           key={r.emoji}
           onPress={() => onToggle(r.emoji)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: r.reacted ? colors.light.tint : colors.light.border,
-            backgroundColor: r.reacted ? "rgba(0, 122, 255, 0.10)" : colors.light.background,
-          }}
+          style={pillStyle}
         >
-          <Text style={{ fontSize: 14 }}>{r.emoji}</Text>
-          <Text style={{ marginLeft: 6, fontSize: 12, color: colors.light.text }}>{r.count}</Text>
+          <Text style={emojiStyle}>{r.emoji}</Text>
+          <Text style={countStyle}>{r.count}</Text>
         </TouchableOpacity>
       ))}
 
-      <TouchableOpacity
-        onPress={() => setOpen(true)}
-        style={{
-          paddingHorizontal: 10,
-          paddingVertical: 6,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: colors.light.border,
-          backgroundColor: colors.light.background,
-        }}
-      >
-        <Text style={{ fontSize: 14, color: colors.light.text }}>+</Text>
-      </TouchableOpacity>
+      <View ref={buttonRef} collapsable={false}>
+        <TouchableOpacity onPress={handleOpen} style={addButtonStyle}>
+          <MaterialCommunityIcons name="emoticon-happy-outline" size={16} color={"#888"} />
+          <Text style={addPlusStyle}>+</Text>
+        </TouchableOpacity>
+      </View>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable
-          onPress={() => setOpen(false)}
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center" }}
-        >
-          <Pressable
-            onPress={(e) => e.stopPropagation()}
-            style={{
-              marginHorizontal: 20,
-              backgroundColor: colors.light.background,
-              borderRadius: 12,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: colors.light.border,
-            }}
+      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
+        <Pressable onPress={() => setOpen(false)} style={modalBackdropStyle}>
+          <View
+            style={[
+              popoverStyle,
+              { top: popoverPos.y - 52, left: Math.max(8, popoverPos.x - 160) },
+            ]}
           >
-            <Text style={{ fontSize: 16, marginBottom: 10, fontWeight: "600" }}>add reaction</Text>
-
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
-              {QUICK_EMOJIS.map((e) => (
-                <TouchableOpacity
-                  key={e}
-                  onPress={() => {
-                    onToggle(e);
-                    setOpen(false);
-                  }}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 8,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: colors.light.border,
-                  }}
-                >
-                  <Text style={{ fontSize: 18 }}>{e}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <TextInput
-                value={value}
-                onChangeText={setValue}
-                placeholder="type or paste any emoji"
-                placeholderTextColor={colors.light.text + "80"}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={{
-                  flex: 1,
-                  borderWidth: 1,
-                  borderColor: colors.light.border,
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 10,
-                  color: colors.light.text,
-                }}
-                onSubmitEditing={submit}
-                returnKeyType="done"
-              />
-              <TouchableOpacity
-                onPress={submit}
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 10,
-                  borderRadius: 10,
-                  backgroundColor: colors.light.tint,
-                }}
-              >
-                <Text style={{ color: "white", fontWeight: "600" }}>add</Text>
+            {EMOJIS.map((e) => (
+              <TouchableOpacity key={e} onPress={() => selectEmoji(e)} style={emojiOptionStyle}>
+                <Text style={emojiOptionText}>{e}</Text>
               </TouchableOpacity>
-            </View>
-          </Pressable>
+            ))}
+          </View>
         </Pressable>
       </Modal>
     </View>
   );
+};
+
+const containerStyle: ViewStyle = {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: 4,
+};
+
+const pillStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 2,
+  paddingVertical: 2,
+};
+
+const emojiStyle: TextStyle = {
+  fontSize: 12,
+};
+
+const countStyle: TextStyle = {
+  marginLeft: 3,
+  fontSize: 11,
+  color: colors.light.text,
+};
+
+const addButtonStyle: ViewStyle = {
+  paddingHorizontal: 4,
+  paddingVertical: 2,
+};
+
+const addPlusStyle: TextStyle = {
+  position: "absolute",
+  top: -1,
+  right: 0,
+  fontSize: 9,
+  color: "#888",
+  fontWeight: "700",
+};
+
+const modalBackdropStyle: ViewStyle = {
+  flex: 1,
+};
+
+const popoverStyle: ViewStyle = {
+  position: "absolute",
+  flexDirection: "row",
+  backgroundColor: "#fff",
+  borderRadius: 20,
+  paddingHorizontal: 4,
+  paddingVertical: 4,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 8,
+  elevation: 5,
+};
+
+const emojiOptionStyle: ViewStyle = {
+  padding: 4,
+};
+
+const emojiOptionText: TextStyle = {
+  fontSize: 22,
 };
