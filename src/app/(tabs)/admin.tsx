@@ -36,13 +36,25 @@ type UserProfile = {
   name: string;
 };
 
+type AdminTimeseriesPoint = { date: string; count: number };
+
 type AdminAnalytics = {
   userCount: number;
   newUsers7d: number;
+
   weeklyActiveUsers7d: number;
+  newCompleters7d: number;
+  returningCompleters7d: number;
+
+  medianDaysToFirstCompletion30d: number | null;
+
   activeChallenge: { id: number; title: string } | null;
   activeChallengeUniqueCompletions: number;
   activeChallengeTotalCompletions: number;
+
+  completions14d: AdminTimeseriesPoint[];
+  newUsers14d: AdminTimeseriesPoint[];
+
   posts7d: number;
   comments7d: number;
   feedback7d: number;
@@ -106,13 +118,24 @@ const ChallengeCreation: React.FC = () => {
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const since7dDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const since14dDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+      const since30dDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+      const since7d = since7dDate.toISOString();
+      const since14d = since14dDate.toISOString();
+      const since30d = since30dDate.toISOString();
 
       const [
         usersRes,
         newUsersRes,
-        weeklyActiveUsersRes,
+        completers7dRes,
+        completersBefore7dRes,
         activeChallengeRes,
+        completions14dRes,
+        newUsers14dRes,
+        profiles30dRes,
+        completions30dRes,
         posts7dRes,
         comments7dRes,
         feedback7dRes,
@@ -120,9 +143,35 @@ const ChallengeCreation: React.FC = () => {
       ] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
+
         // note: challenge completions are represented by posts with a challenge_id
-        supabase.from('post').select('user_id').not('challenge_id', 'is', null).gte('created_at', since7d),
+        supabase
+          .from('post')
+          .select('user_id')
+          .not('challenge_id', 'is', null)
+          .gte('created_at', since7d),
+        supabase
+          .from('post')
+          .select('user_id')
+          .not('challenge_id', 'is', null)
+          .lt('created_at', since7d),
+
         supabase.from('challenges').select('id, title').eq('is_active', true).limit(1).maybeSingle(),
+
+        supabase
+          .from('post')
+          .select('created_at')
+          .not('challenge_id', 'is', null)
+          .gte('created_at', since14d),
+        supabase.from('profiles').select('created_at').gte('created_at', since14d),
+
+        supabase.from('profiles').select('id, created_at').gte('created_at', since30d),
+        supabase
+          .from('post')
+          .select('user_id, created_at')
+          .not('challenge_id', 'is', null)
+          .gte('created_at', since30d),
+
         supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('feedback').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
@@ -131,14 +180,92 @@ const ChallengeCreation: React.FC = () => {
 
       if (usersRes.error) throw usersRes.error;
       if (newUsersRes.error) throw newUsersRes.error;
-      if (weeklyActiveUsersRes.error) throw weeklyActiveUsersRes.error;
+      if (completers7dRes.error) throw completers7dRes.error;
+      if (completersBefore7dRes.error) throw completersBefore7dRes.error;
       if (activeChallengeRes.error) throw activeChallengeRes.error;
+      if (completions14dRes.error) throw completions14dRes.error;
+      if (newUsers14dRes.error) throw newUsers14dRes.error;
+      if (profiles30dRes.error) throw profiles30dRes.error;
+      if (completions30dRes.error) throw completions30dRes.error;
       if (posts7dRes.error) throw posts7dRes.error;
       if (comments7dRes.error) throw comments7dRes.error;
       if (feedback7dRes.error) throw feedback7dRes.error;
       if (pendingReportsRes.error) throw pendingReportsRes.error;
 
-      const weeklyActiveUsers7d = new Set((weeklyActiveUsersRes.data || []).map((r) => r.user_id)).size;
+      const completers7d = new Set((completers7dRes.data || []).map((r) => r.user_id));
+      const completersBefore7d = new Set((completersBefore7dRes.data || []).map((r) => r.user_id));
+
+      let returningCompleters7d = 0;
+      let newCompleters7d = 0;
+      completers7d.forEach((uid) => {
+        if (completersBefore7d.has(uid)) returningCompleters7d += 1;
+        else newCompleters7d += 1;
+      });
+
+      const weeklyActiveUsers7d = completers7d.size;
+
+      const toDayKey = (iso: string) => {
+        const d = new Date(iso);
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      };
+
+      const buildEmptySeries = (days: number) => {
+        const series: AdminTimeseriesPoint[] = [];
+        for (let i = days - 1; i >= 0; i -= 1) {
+          const d = new Date();
+          d.setUTCHours(0, 0, 0, 0);
+          d.setUTCDate(d.getUTCDate() - i);
+          series.push({ date: toDayKey(d.toISOString()), count: 0 });
+        }
+        return series;
+      };
+
+      const completions14d = buildEmptySeries(14);
+      const newUsers14d = buildEmptySeries(14);
+
+      const completionsByDay = new Map<string, number>();
+      (completions14dRes.data || []).forEach((r) => {
+        const k = toDayKey(r.created_at);
+        completionsByDay.set(k, (completionsByDay.get(k) || 0) + 1);
+      });
+      completions14d.forEach((p) => {
+        p.count = completionsByDay.get(p.date) || 0;
+      });
+
+      const newUsersByDay = new Map<string, number>();
+      (newUsers14dRes.data || []).forEach((r) => {
+        const k = toDayKey(r.created_at);
+        newUsersByDay.set(k, (newUsersByDay.get(k) || 0) + 1);
+      });
+      newUsers14d.forEach((p) => {
+        p.count = newUsersByDay.get(p.date) || 0;
+      });
+
+      // median time to first completion for users created in last 30d (rough but useful)
+      const profileCreatedAt = new Map<string, string>();
+      (profiles30dRes.data || []).forEach((p) => {
+        profileCreatedAt.set(p.id, p.created_at);
+      });
+
+      const firstCompletionAt = new Map<string, string>();
+      (completions30dRes.data || []).forEach((c) => {
+        const prev = firstCompletionAt.get(c.user_id);
+        if (!prev || new Date(c.created_at).getTime() < new Date(prev).getTime()) {
+          firstCompletionAt.set(c.user_id, c.created_at);
+        }
+      });
+
+      const deltas: number[] = [];
+      firstCompletionAt.forEach((completedAt, uid) => {
+        const createdAt = profileCreatedAt.get(uid);
+        if (!createdAt) return;
+        const deltaDays = (new Date(completedAt).getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (Number.isFinite(deltaDays) && deltaDays >= 0) deltas.push(deltaDays);
+      });
+      deltas.sort((a, b) => a - b);
+      const medianDaysToFirstCompletion30d = deltas.length
+        ? Math.round(deltas[Math.floor(deltas.length / 2)] * 10) / 10
+        : null;
 
       let activeChallengeUniqueCompletions = 0;
       let activeChallengeTotalCompletions = 0;
@@ -160,10 +287,20 @@ const ChallengeCreation: React.FC = () => {
       setAnalytics({
         userCount: usersRes.count || 0,
         newUsers7d: newUsersRes.count || 0,
+
         weeklyActiveUsers7d,
+        newCompleters7d,
+        returningCompleters7d,
+
+        medianDaysToFirstCompletion30d,
+
         activeChallenge,
         activeChallengeUniqueCompletions,
         activeChallengeTotalCompletions,
+
+        completions14d,
+        newUsers14d,
+
         posts7d: posts7dRes.count || 0,
         comments7d: comments7dRes.count || 0,
         feedback7d: feedback7dRes.count || 0,
@@ -328,6 +465,11 @@ const ChallengeCreation: React.FC = () => {
     }
   };
 
+  const newUsers14d = analytics?.newUsers14d || [];
+  const completions14d = analytics?.completions14d || [];
+  const maxNewUsers14d = Math.max(...newUsers14d.map((p) => p.count), 1);
+  const maxCompletions14d = Math.max(...completions14d.map((p) => p.count), 1);
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -355,7 +497,11 @@ const ChallengeCreation: React.FC = () => {
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.weeklyActiveUsers7d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>active submitters (7d)</Text>
+            <Text style={styles.analyticsLabel}>active completers (7d)</Text>
+            <Text style={styles.analyticsHint}>
+              new: {analyticsLoading ? '…' : analytics?.newCompleters7d ?? '—'} · returning:{' '}
+              {analyticsLoading ? '…' : analytics?.returningCompleters7d ?? '—'}
+            </Text>
           </View>
 
           <View style={styles.analyticsCard}>
@@ -372,6 +518,13 @@ const ChallengeCreation: React.FC = () => {
                 {analytics.activeChallenge.title}
               </Text>
             ) : null}
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.medianDaysToFirstCompletion30d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>median days to 1st completion (30d)</Text>
           </View>
 
           <View style={styles.analyticsCard}>
@@ -400,6 +553,44 @@ const ChallengeCreation: React.FC = () => {
               {analyticsLoading ? '…' : analytics?.pendingReports ?? '—'}
             </Text>
             <Text style={styles.analyticsLabel}>pending reports</Text>
+          </View>
+        </View>
+
+        <View style={styles.chartsRow}>
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>new users (14d)</Text>
+            <View style={styles.barChart}>
+              {newUsers14d.map((p) => (
+                <View
+                  key={p.date}
+                  style={[
+                    styles.bar,
+                    {
+                      height: Math.max(3, Math.round((p.count / maxNewUsers14d) * 70)),
+                      backgroundColor: colors.light.secondary,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>challenge completions (14d)</Text>
+            <View style={styles.barChart}>
+              {completions14d.map((p) => (
+                <View
+                  key={p.date}
+                  style={[
+                    styles.bar,
+                    {
+                      height: Math.max(3, Math.round((p.count / maxCompletions14d) * 70)),
+                      backgroundColor: colors.light.primary,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
           </View>
         </View>
 
@@ -823,6 +1014,40 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#888',
     fontSize: 11,
+  },
+  chartsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  chartCard: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartTitle: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  barChart: {
+    height: 72,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  bar: {
+    flex: 1,
+    borderRadius: 3,
+    opacity: 0.9,
   },
   uploadButtonText: {
     color: "#666",
