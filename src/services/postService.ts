@@ -100,6 +100,7 @@ function applyBlockedFilter(query: any, blockedUserIds: string[]) {
 
 export const postService = {
   async fetchUserLikedIds(ids: number[], type: LikeableItem["type"], userId: string): Promise<Set<number>> {
+    if (ids.length === 0) return new Set();
     try {
       const idField = `${type}_id` as const;
       const { data, error } = await supabase

@@ -54,8 +54,11 @@ export class User {
       for (const profile of data || []) {
         const user = new User(profile.id);
         let profileImageUrl: string | null = null;
-        if (profile.profile_media?.file_path) {
-          profileImageUrl = imageService.getProfileImageUrlSync(profile.profile_media.file_path);
+        const profileMedia = Array.isArray(profile.profile_media)
+          ? profile.profile_media[0]
+          : profile.profile_media;
+        if (profileMedia?.file_path) {
+          profileImageUrl = imageService.getProfileImageUrlSync(profileMedia.file_path);
         }
         user._profile = {
           id: profile.id,

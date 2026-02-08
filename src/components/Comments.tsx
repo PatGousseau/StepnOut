@@ -147,6 +147,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   useEffect(() => {
     setComments(initialComments);
     if (initialComments.length > 0) {
+      setUsersLoaded(false);
       initializeCommentLikes(initialComments);
       const userIds = [...new Set(initialComments.map(c => c.userId))];
       User.prefetchUsers(userIds).then(() => setUsersLoaded(true));
