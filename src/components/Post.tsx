@@ -67,7 +67,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     addComment: addCommentMutation,
     isAddingComment,
   } = useFetchComments(post.id);
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [inlineComment, setInlineComment] = useState("");
   const [localPreviews, setLocalPreviews] = useState(post.comment_previews || []);
@@ -75,21 +74,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loadProfileImage = async () => {
-      if (postUser?.profileImageUrl) {
-        try {
-          const urls = await imageService.getProfileImageUrl(postUser.profileImageUrl, "small");
-          setProfileImageUrl(urls.fullUrl);
-        } catch (error) {
-          console.error("Error loading profile image:", error);
-        }
-      }
-    };
-
-    loadProfileImage();
-  }, [postUser?.profileImageUrl]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -418,8 +402,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     >
       <View style={headerStyle}>
         <TouchableOpacity onPress={handleProfilePress}>
-          {profileImageUrl ? (
-            <Image source={{ uri: profileImageUrl }} style={profilePictureStyle} />
+          {postUser?.profileImageUrl ? (
+            <Image source={{ uri: postUser.profileImageUrl }} style={profilePictureStyle} />
           ) : (
             <View style={defaultProfilePictureStyle}>
               <MaterialCommunityIcons name="account-circle" size={40} color="#e1e1e1" />
@@ -432,7 +416,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             <Text style={usernameStyle}>@{postUser?.username || t("unknown")}</Text>
           </View>
         </TouchableOpacity>
-        <Text style={timestampStyle}>{formatRelativeTime(post.created_at)}</Text>
+        <Text style={timestampStyle}>{formatRelativeTime(post.created_at, t)}</Text>
         <ActionsMenu
           type="post"
           contentId={post.id}
@@ -944,4 +928,4 @@ const translationTextStyle: TextStyle = {
   color: colors.light.text,
 };
 
-export default Post;
+export default React.memo(Post);

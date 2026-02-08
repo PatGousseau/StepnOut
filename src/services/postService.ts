@@ -99,6 +99,25 @@ function applyBlockedFilter(query: any, blockedUserIds: string[]) {
 }
 
 export const postService = {
+  async fetchUserLikedIds(ids: number[], type: LikeableItem["type"], userId: string): Promise<Set<number>> {
+    if (ids.length === 0) return new Set();
+    try {
+      const idField = `${type}_id` as const;
+      const { data, error } = await supabase
+        .from("likes")
+        .select(idField)
+        .eq("user_id", userId)
+        .in(idField, ids);
+
+      if (error) throw error;
+
+      return new Set(data?.map((like: Record<string, number>) => like[idField]) ?? []);
+    } catch (error) {
+      console.error(`Error fetching user ${type} likes:`, error);
+      return new Set();
+    }
+  },
+
   async fetchLikes(ids: number[], type: LikeableItem["type"], userId?: string) {
     try {
       const idField = `${type}_id` as const;
