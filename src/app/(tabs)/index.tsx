@@ -269,9 +269,9 @@ const Home = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={"padding"}
       style={styles.container}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 120 : 0}
+      keyboardVerticalOffset={120}
     >
       {/* Tab buttons */}
       <View style={styles.tabContainer} onLayout={onTabContainerLayout}>
