@@ -54,17 +54,47 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
 
   const positions = useMemo(() => computePositions(users.length, radius), [users.length, radius]);
 
-  const scale = useRef(new Animated.Value(1)).current;
+  const scalesRef = useRef<Animated.Value[]>([]);
+  const prevHighlightedRef = useRef(0);
 
   useEffect(() => {
-    scale.setValue(1);
-    Animated.spring(scale, {
-      toValue: 1.85,
-      useNativeDriver: true,
-      tension: 120,
-      friction: 10,
-    }).start();
-  }, [highlightedIndex, scale]);
+    // keep one animated value per user
+    if (scalesRef.current.length !== users.length) {
+      scalesRef.current = new Array(users.length)
+        .fill(0)
+        .map((_, i) => scalesRef.current[i] ?? new Animated.Value(1));
+    }
+  }, [users.length]);
+
+  useEffect(() => {
+    if (users.length === 0) return;
+
+    const prev = prevHighlightedRef.current;
+    const next = highlightedIndex;
+    prevHighlightedRef.current = next;
+
+    const prevScale = scalesRef.current[prev];
+    const nextScale = scalesRef.current[next];
+
+    Animated.parallel([
+      prevScale
+        ? Animated.spring(prevScale, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 120,
+            friction: 12,
+          })
+        : Animated.delay(0),
+      nextScale
+        ? Animated.spring(nextScale, {
+            toValue: 1.85,
+            useNativeDriver: true,
+            tension: 120,
+            friction: 10,
+          })
+        : Animated.delay(0),
+    ]).start();
+  }, [highlightedIndex, users.length]);
 
   useEffect(() => {
     if (users.length <= 1) return;
@@ -85,7 +115,6 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
 
   return (
     <View style={styles.container} onLayout={onLayout}>
-      <View style={styles.circleClip} pointerEvents="none" />
       <View style={styles.circleClip}>
         {size > 0 &&
           users.map((u, i) => {
@@ -109,7 +138,7 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
               ]}
             >
               <Animated.View
-                style={isHighlighted ? { transform: [{ scale }] } : undefined}
+                style={{ transform: [{ scale: scalesRef.current[i] ?? 1 }] }}
               >
                 {u.profileImageUrl ? (
                   <Image
