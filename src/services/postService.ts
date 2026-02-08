@@ -61,6 +61,7 @@ export const postService = {
       const { data, error } = await supabase
         .from("likes")
         .select(`${idField}, user_id, emoji`)
+        .neq("emoji", "❤️")
         .in(idField, ids);
 
       if (error) throw error;
@@ -122,16 +123,15 @@ export const postService = {
       const { id, type, parentId } = item;
       const idField = `${type}_id` as const;
 
-      const { data: existing } = await supabase
+      const { data: existingRows } = await supabase
         .from("likes")
         .select("id")
         .eq(idField, id)
         .eq("user_id", userId)
-        .eq("emoji", emoji)
-        .single();
+        .eq("emoji", emoji);
 
-      if (existing) {
-        const { error } = await supabase.from("likes").delete().eq("id", existing.id);
+      if (existingRows && existingRows.length > 0) {
+        const { error } = await supabase.from("likes").delete().eq("id", existingRows[0].id);
         if (error) throw error;
         return false;
       }
