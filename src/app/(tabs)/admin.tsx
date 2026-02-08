@@ -138,7 +138,7 @@ const ChallengeCreation: React.FC = () => {
         newUsers14dRes,
         profiles30dRes,
         completions30dRes,
-        completionDistributionRes,
+        completionPostsRes,
         posts7dRes,
         comments7dRes,
         feedback7dRes,
@@ -175,7 +175,13 @@ const ChallengeCreation: React.FC = () => {
           .not('challenge_id', 'is', null)
           .gte('created_at', since30d),
 
-        supabase.rpc('admin_completion_distribution'),
+        // for completion distribution: fetch all completion posts (user_id only)
+        supabase
+          .from('post')
+          .select('user_id')
+          .not('challenge_id', 'is', null)
+          .order('id', { ascending: true })
+          .range(0, 999),
 
         supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
@@ -192,7 +198,7 @@ const ChallengeCreation: React.FC = () => {
       if (newUsers14dRes.error) throw newUsers14dRes.error;
       if (profiles30dRes.error) throw profiles30dRes.error;
       if (completions30dRes.error) throw completions30dRes.error;
-      if (completionDistributionRes.error) throw completionDistributionRes.error;
+      if (completionPostsRes.error) throw completionPostsRes.error;
       if (posts7dRes.error) throw posts7dRes.error;
       if (comments7dRes.error) throw comments7dRes.error;
       if (feedback7dRes.error) throw feedback7dRes.error;
@@ -247,17 +253,73 @@ const ChallengeCreation: React.FC = () => {
         p.count = newUsersByDay.get(p.date) || 0;
       });
 
-      const completionBuckets = (() => {
-        const rows = (completionDistributionRes.data || []) as { bucket: string; user_count: number }[];
+      const fetchAllCompletionPostUserIds = async () => {
+        const pageSize = 1000;
+        const userIds: string[] = [];
+
+        let from = 0;
+        // start with the first page we already fetched
+        userIds.push(...((completionPostsRes.data || []).map((r) => r.user_id) as string[]));
+
+        let lastPageLen = (completionPostsRes.data || []).length;
+
+        while (lastPageLen === pageSize) {
+          from += pageSize;
+          const { data, error } = await supabase
+            .from('post')
+            .select('user_id')
+            .not('challenge_id', 'is', null)
+            .order('id', { ascending: true })
+            .range(from, from + pageSize - 1);
+
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+
+          userIds.push(...(data.map((r) => r.user_id) as string[]));
+          lastPageLen = data.length;
+          if (data.length < pageSize) break;
+        }
+
+        return userIds;
+      };
+
+      const completionBuckets = await (async () => {
         const totalUsers = usersRes.count || 0;
+        const userIds = await fetchAllCompletionPostUserIds();
+
+        const completionsPerUser = new Map<string, number>();
+        userIds.forEach((uid) => {
+          completionsPerUser.set(uid, (completionsPerUser.get(uid) || 0) + 1);
+        });
+
+        const bucketCounts = new Map<string, number>([
+          ['0', Math.max(0, totalUsers - completionsPerUser.size)],
+          ['1', 0],
+          ['2', 0],
+          ['3', 0],
+          ['4', 0],
+          ['5+', 0],
+        ]);
+
+        completionsPerUser.forEach((count) => {
+          const b =
+            count === 1
+              ? '1'
+              : count === 2
+                ? '2'
+                : count === 3
+                  ? '3'
+                  : count === 4
+                    ? '4'
+                    : '5+';
+          bucketCounts.set(b, (bucketCounts.get(b) || 0) + 1);
+        });
 
         const order = ['0', '1', '2', '3', '4', '5+'] as const;
-        const countsByBucket = new Map(rows.map((r) => [r.bucket, r.user_count]));
-
         return order.map((b) => {
-          const count = countsByBucket.get(b) || 0;
-          const percent = totalUsers ? Math.round((count / totalUsers) * 1000) / 10 : 0;
-          return { label: b, count, percent };
+          const c = bucketCounts.get(b) || 0;
+          const percent = totalUsers ? Math.round((c / totalUsers) * 1000) / 10 : 0;
+          return { label: b, count: c, percent };
         });
       })();
 
