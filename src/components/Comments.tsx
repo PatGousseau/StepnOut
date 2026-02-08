@@ -39,7 +39,6 @@ import { translationService } from "../services/translationService";
 import { Audio } from "expo-av";
 import { createVoiceMemoForPreview } from "../utils/handleMediaUpload";
 import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
-import { toPublicMediaUrl, isAudioUrl } from "../utils/mediaUrl";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -226,7 +225,6 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const handleAddComment = async () => {
     if ((newComment.trim() || voiceMemo) && user) {
       let commentText = newComment.trim();
-      const hasVoiceMemo = !!voiceMemo;
 
       try {
         if (isAdmin && translateOutgoing) {

@@ -7,7 +7,7 @@ import { supabase, supabaseStorageUrl } from "../lib/supabase";
 let Video: { compress: (uri: string, options: any, onProgress?: (progress: number) => void) => Promise<string> } | null = null;
 try {
   Video = require('react-native-compressor').Video;
-} catch (e) {
+} catch {
   console.warn('react-native-compressor not available (likely running in Expo Go)');
 }
 
@@ -93,7 +93,7 @@ export const selectMediaForPreview = async (
           // Use local thumbnail immediately, upload later in background
           previewUrl = thumbnailUri;
         }
-      } catch (e) {
+      } catch {
         console.warn("❌ [VIDEO THUMBNAIL] Couldn't generate or upload thumbnail", e);
       }
     } else {
@@ -188,7 +188,7 @@ export const uploadMediaInBackground = async (
               contentType: "multipart/form-data",
             });
         }
-      } catch (e) {
+      } catch {
         console.warn("Failed to upload thumbnail in background:", e);
       }
     }
@@ -216,7 +216,7 @@ export const uploadMediaInBackground = async (
               if (onProgress) onProgress(10 + (progress * 0.6));
             }
           );
-        } catch (e) {
+        } catch {
           console.warn("Video compression failed, using original:", e);
           compressedUri = pendingUpload.originalUri;
         }
@@ -362,7 +362,7 @@ export const uploadMedia = async (
 
           if (thumbnailError) console.error("Error uploading thumbnail:", thumbnailError);
         }
-      } catch (e) {
+      } catch {
         console.warn("Couldn't generate or upload thumbnail", e);
       }
     }
@@ -382,7 +382,7 @@ export const uploadMedia = async (
               bitrate: 250000,
             },
           );
-        } catch (e) {
+        } catch {
           console.warn("Video compression failed, using original:", e);
           fileUri = file.uri;
         }

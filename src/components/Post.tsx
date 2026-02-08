@@ -145,8 +145,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
   };
 
-  const _deprecated_isVideo = undefined as any;
-
   const showHeartAnimation = () => {
     // Reset animation values
     heartScale.setValue(0);
