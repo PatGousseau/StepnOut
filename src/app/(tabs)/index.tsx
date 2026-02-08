@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import PagerView from "react-native-pager-view";
 import Post from "../../components/Post";
 import WelcomePostGroup from "../../components/WelcomePostGroup";
+import FeedSortToggle from "../../components/FeedSortToggle";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
 import { colors } from "../../constants/Colors";
 import InlineCreatePost from "../../components/InlineCreatePost";
@@ -22,7 +23,7 @@ import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
 import { PostsListSkeleton } from "@/src/components/Skeleton";
 import { useLanguage } from "../../contexts/LanguageContext";
-import { Post as PostType } from "../../types";
+import { Post as PostType, FeedSort } from "../../types";
 
 // Discriminated union for FlatList items
 type FeedItem =
@@ -63,12 +64,25 @@ const prepareFeedItems = (posts: PostType[], keyPrefix: string): FeedItem[] => {
 const Home = () => {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { posts, userMap, loading, error, loadMorePosts, hasMore, refetchPosts, isFetchingNextPage } = useFetchHomeData();
   const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
     {}
   );
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState(0); // 0 = submissions, 1 = discussion
+  const [submissionSort, setSubmissionSort] = useState<FeedSort>("recent");
+  const [discussionSort, setDiscussionSort] = useState<FeedSort>("recent");
+  const {
+    challengePosts: submissionPosts,
+    discussionPosts,
+    userMap,
+    loading,
+    error,
+    loadMoreChallenges,
+    loadMoreDiscussions,
+    isFetchingNextChallengePage,
+    isFetchingNextDiscussionPage,
+    refetchPosts,
+  } = useFetchHomeData(submissionSort, discussionSort);
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
@@ -97,7 +111,8 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const counts = posts.reduce(
+    const allPosts = [...submissionPosts, ...discussionPosts];
+    const counts = allPosts.reduce(
       (acc, post) => ({
         ...acc,
         [post.id]: {
@@ -108,7 +123,7 @@ const Home = () => {
       {}
     );
     setPostCounts(counts);
-  }, [posts]);
+  }, [submissionPosts, discussionPosts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -148,16 +163,6 @@ const Home = () => {
     setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
-  // Memoize filtered posts for each tab
-  const submissionPosts = useMemo(() => {
-    return posts.filter((post) => post.challenge_id != null);
-  }, [posts]);
-
-  const discussionPosts = useMemo(() => {
-    return posts.filter((post) => post.challenge_id == null);
-  }, [posts]);
-
-  // Prepare feed items for FlatList
   const submissionFeedItems = useMemo(
     () => prepareFeedItems(submissionPosts, "sub"),
     [submissionPosts]
@@ -215,42 +220,42 @@ const Home = () => {
     setTabContainerWidth(width);
   };
 
-  // Load more posts when reaching end of list
-  const handleEndReached = useCallback(() => {
-    if (!loading && hasMore) {
-      loadMorePosts();
-    }
-  }, [loading, hasMore, loadMorePosts]);
+  const renderEmpty = useCallback(() => {
+    if (loading) return <PostsListSkeleton count={3} />;
+    return null;
+  }, [loading]);
 
-  // Render loading footer
-  const renderFooter = useCallback(() => {
-    if (!isFetchingNextPage) return null;
+  const renderFooter = () => (
+    <View style={styles.loaderContainer}>
+      <Loader />
+    </View>
+  );
+
+  const renderSubmissionsHeader = useCallback(() => {
     return (
-      <View style={styles.loaderContainer}>
-        <Loader />
+      <FeedSortToggle
+        value={submissionSort}
+        onChange={setSubmissionSort}
+        recentLabel={t("Most recent")}
+        popularLabel={t("Popular")}
+      />
+    );
+  }, [submissionSort, t]);
+
+  // Discussion list header (sort toggle + InlineCreatePost)
+  const renderDiscussionHeader = useCallback(() => {
+    return (
+      <View>
+        <FeedSortToggle
+          value={discussionSort}
+          onChange={setDiscussionSort}
+          recentLabel={t("Most recent")}
+          popularLabel={t("Popular")}
+        />
+        <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
       </View>
     );
-  }, [isFetchingNextPage]);
-
-  // Render empty state (skeleton or empty)
-  const renderEmptySubmissions = useCallback(() => {
-    if (loading) {
-      return <PostsListSkeleton count={3} />;
-    }
-    return null;
-  }, [loading]);
-
-  const renderEmptyDiscussion = useCallback(() => {
-    if (loading) {
-      return <PostsListSkeleton count={3} />;
-    }
-    return null;
-  }, [loading]);
-
-  // Discussion list header (InlineCreatePost)
-  const renderDiscussionHeader = useCallback(() => {
-    return <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />;
-  }, [handlePostCreated, promptRefreshKey]);
+  }, [discussionSort, handlePostCreated, promptRefreshKey, t]);
 
   // Error component
   const renderError = useCallback(() => {
@@ -310,11 +315,12 @@ const Home = () => {
             data={submissionFeedItems}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            onEndReached={handleEndReached}
+            onEndReached={loadMoreChallenges}
             onEndReachedThreshold={0.5}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            ListFooterComponent={renderFooter}
-            ListEmptyComponent={renderEmptySubmissions}
+            ListHeaderComponent={renderSubmissionsHeader}
+            ListFooterComponent={isFetchingNextChallengePage ? renderFooter : null}
+            ListEmptyComponent={renderEmpty}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -329,12 +335,12 @@ const Home = () => {
             data={discussionFeedItems}
             renderItem={renderItem}
             keyExtractor={keyExtractor}
-            onEndReached={handleEndReached}
+            onEndReached={loadMoreDiscussions}
             onEndReachedThreshold={0.5}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={renderDiscussionHeader}
-            ListFooterComponent={renderFooter}
-            ListEmptyComponent={renderEmptyDiscussion}
+            ListFooterComponent={isFetchingNextDiscussionPage ? renderFooter : null}
+            ListEmptyComponent={renderEmpty}
             contentContainerStyle={styles.listContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
