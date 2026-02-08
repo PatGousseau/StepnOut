@@ -98,22 +98,6 @@ function applyBlockedFilter(query: any, blockedUserIds: string[]) {
   return query.not("user_id", "in", quotedList);
 }
 
-async function fetchWelcomePosts(blockedUserIds: string[]) {
-  let query = supabase
-    .from("post")
-    .select(BASE_SELECT)
-    .is("challenge_id", null)
-    .eq("is_welcome", true)
-    .order("created_at", { ascending: false })
-    .limit(100);
-
-  query = applyBlockedFilter(query, blockedUserIds);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return ((data ?? []) as PostData[]).map((post) => processPost(post, false));
-}
-
 export const postService = {
   async fetchLikes(ids: number[], type: LikeableItem["type"], userId?: string) {
     try {
@@ -352,7 +336,7 @@ export const postService = {
     if (isChallenge) {
       query = query.not("challenge_id", "is", null);
     } else {
-      query = query.is("challenge_id", null).or("is_welcome.is.null,is_welcome.eq.false");
+      query = query.is("challenge_id", null);
     }
 
     query = applyBlockedFilter(query, blockedUserIds);
@@ -365,11 +349,6 @@ export const postService = {
 
     const rows = (data ?? []) as PostData[];
     const posts = rows.map((p) => processPost(p, isChallenge));
-
-    if (!isChallenge && pageParam === 1) {
-      const welcome = await fetchWelcomePosts(blockedUserIds);
-      return { posts: [...welcome, ...posts] as Post[], hasMore: posts.length === postsPerPage };
-    }
 
     return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
   },
@@ -413,11 +392,6 @@ export const postService = {
       .map((id) => postMap.get(id))
       .filter((p): p is PostData => !!p)
       .map((p) => processPost(p, isChallenge));
-
-    if (!isChallenge && pageParam === 1) {
-      const welcome = await fetchWelcomePosts(blockedUserIds);
-      return { posts: [...welcome, ...posts] as Post[], hasMore: orderedIds.length === postsPerPage };
-    }
 
     return { posts: posts as Post[], hasMore: orderedIds.length === postsPerPage };
   },
