@@ -682,17 +682,18 @@ const ChallengeCreation: React.FC = () => {
 
         <View style={styles.chartWideCard}>
           <Text style={styles.chartTitle}>users by total challenges completed</Text>
-          <Text style={styles.axisLabel}>y: % of users · x: total completions</Text>
+          <Text style={styles.axisLabel}>y: users · x: total completions</Text>
           <View style={styles.bucketRow}>
             {(analytics?.completionBuckets || []).map((b) => (
               <View key={b.label} style={styles.bucketItem}>
-                <Text style={styles.bucketPercent}>{analyticsLoading ? '…' : `${b.percent}%`}</Text>
+                <Text style={styles.bucketPercent}>{analyticsLoading ? '…' : b.count}</Text>
                 <View style={styles.bucketBarWrap}>
                   <View
                     style={[
                       styles.bucketBar,
                       {
-                        width: `${Math.min(100, Math.round((b.percent / 100) * 100))}%`,
+                        width: `${Math.min(100, Math.round((b.count / Math.max(...(analytics?.completionBuckets || []).map((x) => x.count), 1)) * 100))}%`,
+                        backgroundColor: colors.light.primary,
                       },
                     ]}
                   />
