@@ -39,6 +39,7 @@ import { translationService } from "../services/translationService";
 import { Audio } from "expo-av";
 import { createVoiceMemoForPreview } from "../utils/handleMediaUpload";
 import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { backgroundUploadService } from "../services/backgroundUploadService";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -161,6 +162,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const [voiceMemo, setVoiceMemo] = useState<import("../utils/handleMediaUpload").MediaSelectionResult | null>(null);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [voiceUploadProgress, setVoiceUploadProgress] = useState<number | null>(null);
+  const [isVoiceUploading, setIsVoiceUploading] = useState(false);
 
   useEffect(() => {
     setComments(initialComments);
@@ -237,12 +240,35 @@ export const CommentsList: React.FC<CommentsListProps> = ({
         }
 
         const parentCommentId = replyTo?.commentId ?? null;
-        const newCommentData = await addComment(user.id, commentText, parentCommentId, voiceMemo);
+        const memo = voiceMemo;
+        const newCommentData = await addComment(user.id, commentText, parentCommentId, memo);
 
         if (newCommentData) {
           setNewComment("");
           setReplyTo(null);
           setVoiceMemo(null);
+
+          if (memo) {
+            setIsVoiceUploading(true);
+            setVoiceUploadProgress(0);
+
+            backgroundUploadService.addToQueue(
+              memo.mediaId,
+              memo.pendingUpload,
+              undefined,
+              (p) => setVoiceUploadProgress(p),
+              (success) => {
+                setIsVoiceUploading(false);
+                setVoiceUploadProgress(null);
+                if (!success) {
+                  Alert.alert(t("Upload failed"), t("Voice memo upload failed"));
+                  return;
+                }
+                queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+                queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+              }
+            );
+          }
 
           setComments((prevComments) => [...prevComments, newCommentData]);
 
@@ -381,9 +407,17 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             {voiceMemo ? (
               <View style={{ width: "100%", paddingTop: 8, paddingRight: 52 }}>
                 <VoiceMemoPlayer uri={voiceMemo.previewUrl} compact />
+
+                {isVoiceUploading && voiceUploadProgress !== null ? (
+                  <Text style={{ marginTop: 6, fontSize: 12, color: colors.neutral.grey1 }}>
+                    {t("Uploading")} {Math.round(voiceUploadProgress)}%
+                  </Text>
+                ) : null}
+
                 <TouchableOpacity
                   onPress={() => setVoiceMemo(null)}
                   style={{ position: "absolute", right: 0, top: 8, padding: 8 }}
+                  disabled={isVoiceUploading}
                 >
                   <Icon name="times" size={14} color={colors.neutral.grey1} />
                 </TouchableOpacity>

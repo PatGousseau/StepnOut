@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabase";
 import { Comment } from "../types";
 import { commentService } from "../services/commentService";
 import { MediaSelectionResult } from "../utils/handleMediaUpload";
-import { backgroundUploadService } from "../services/backgroundUploadService";
 
 export const useFetchComments = (postId: number) => {
   const queryClient = useQueryClient();
@@ -74,10 +73,6 @@ export const useFetchComments = (postId: number) => {
             liked: false,
           }
         : null;
-
-      if (newComment && media) {
-        backgroundUploadService.addToQueue(media.mediaId, media.pendingUpload);
-      }
 
       return newComment;
     },
