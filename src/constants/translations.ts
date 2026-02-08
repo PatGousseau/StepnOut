@@ -238,4 +238,5 @@ export const translations = {
   "Passwords do not match": "Le password non corrispondono",
   "Password*": "Password*",
   "View all (count) comments": "Vedi tutti i (count) commenti",
+  "Join me on StepnOut!": "Unisciti a me su StepnOut!",
 };

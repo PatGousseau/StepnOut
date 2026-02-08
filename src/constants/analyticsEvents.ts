@@ -27,6 +27,7 @@ export const POST_EVENTS = {
   LIKED: 'post_liked',
   UNLIKED: 'post_unliked',
   SHARED: 'post_shared',
+  SHARED_TO_INSTAGRAM: 'post_shared_to_instagram',
   DELETED: 'post_deleted',
   MEDIA_VIEWED: 'post_media_viewed',
   VIDEO_PLAYED: 'post_video_played',
