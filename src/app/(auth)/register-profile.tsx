@@ -20,7 +20,7 @@ import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
 import { EULA_IT, EULA } from "../../constants/EULA";
-import { isUsernameValidProfile } from "../../utils/validation";
+import { isInstagramUsernameValidProfile } from "../../utils/validation";
 
 export default function RegisterProfileScreen() {
   const { isSocialUser } = useLocalSearchParams<{
@@ -110,7 +110,7 @@ export default function RegisterProfileScreen() {
         }
 
         try {
-          const isValid = await isUsernameValidProfile(instagram);
+          const isValid = await isInstagramUsernameValidProfile(instagram);
           if (!isValid) {
             setError(t("Instagram profile not found. Check your username"));
             setLoading(false);

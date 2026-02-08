@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { isUsernameValidProfile } from "../utils/validation";
+import { isInstagramUsernameValidProfile } from "../utils/validation";
 import {
   View,
   Text,
@@ -137,7 +137,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         }
 
         try {
-          const isValid = await isUsernameValidProfile(editedInstagram);
+          const isValid = await isInstagramUsernameValidProfile(editedInstagram);
           if (!isValid) {
             Alert.alert(t("Error"), t("Instagram profile not found. Check your username"));
             return;
