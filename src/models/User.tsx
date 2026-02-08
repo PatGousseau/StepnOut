@@ -30,6 +30,49 @@ export class User {
     return this.userCache.get(userId)!;
   }
 
+  static async prefetchUsers(userIds: string[]): Promise<void> {
+    const uncachedIds = userIds.filter(id => !this.userCache.has(id));
+    if (uncachedIds.length === 0) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(`
+          id,
+          username,
+          name,
+          created_at,
+          instagram,
+          profile_media:media!profiles_profile_media_id_fkey (
+            file_path
+          )
+        `)
+        .in("id", uncachedIds);
+
+      if (error) throw error;
+
+      for (const profile of data || []) {
+        const user = new User(profile.id);
+        let profileImageUrl: string | null = null;
+        if (profile.profile_media?.file_path) {
+          profileImageUrl = imageService.getProfileImageUrlSync(profile.profile_media.file_path);
+        }
+        user._profile = {
+          id: profile.id,
+          username: profile.username || "Unknown",
+          name: profile.name || "Unknown",
+          profileImageUrl,
+          created_at: profile.created_at,
+          instagram: profile.instagram || undefined,
+        };
+        user._loading = false;
+        this.userCache.set(profile.id, user);
+      }
+    } catch (err) {
+      console.error("Error batch fetching users:", err);
+    }
+  }
+
   static invalidate(userId?: string) {
     if (userId) {
       this.userCache.delete(userId);

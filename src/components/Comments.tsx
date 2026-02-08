@@ -142,12 +142,16 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
+  const [usersLoaded, setUsersLoaded] = useState(initialComments.length === 0);
 
   useEffect(() => {
     setComments(initialComments);
-    // Initialize likes for the comments
     if (initialComments.length > 0) {
       initializeCommentLikes(initialComments);
+      const userIds = [...new Set(initialComments.map(c => c.userId))];
+      User.prefetchUsers(userIds).then(() => setUsersLoaded(true));
+    } else {
+      setUsersLoaded(true);
     }
   }, [initialComments]);
 
@@ -234,7 +238,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     });
   };
 
-  if (loading) {
+  if (loading || !usersLoaded) {
     return (
       <View style={loadingContainerStyle}>
         <CommentsListSkeleton count={4} />
