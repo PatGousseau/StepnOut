@@ -120,9 +120,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleLikePress = async (disallowUnlike: boolean) => {
     if (!user) return;
-    if (disallowUnlike && likedPosts[post.id]) {
-      return;
-    }
+    if (disallowUnlike && likedPosts[post.id]) return;
     await togglePostLike(post.id, user.id, post.user_id);
   };
 
@@ -497,16 +495,18 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       <View>
         <View style={footerStyle}>
-          <TouchableOpacity onPress={() => handleLikePress(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <View style={iconContainerStyle}>
-              <Icon
-                name={likedPosts[post.id] ? "heart" : "heart-o"}
-                size={16}
-                color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1}
-              />
-              <Text style={iconTextStyle}>{likeCounts[post.id] || 0}</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <ReactionsBar
+              reactions={postReactions[post.id] || []}
+              onToggle={(emoji) => {
+                if (!user) return;
+                togglePostReaction(post.id, user.id, post.user_id, emoji);
+              }}
+              isLiked={!!likedPosts[post.id]}
+              likeCount={likeCounts[post.id] || 0}
+              onLikeToggle={() => handleLikePress(false)}
+            />
+          </View>
           {isAdmin && post.body && (
             <TouchableOpacity onPress={handleTranslate} disabled={isTranslating}>
               <View style={iconContainerStyle}>
@@ -522,14 +522,6 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </TouchableOpacity>
           )}
         </View>
-
-        <ReactionsBar
-          reactions={postReactions[post.id] || []}
-          onToggle={(emoji) => {
-            if (!user) return;
-            togglePostReaction(post.id, user.id, post.user_id, emoji);
-          }}
-        />
 
         {localPreviews.length > 0 && (
           <TouchableOpacity onPress={handleOpenComments} style={commentPreviewStyle}>

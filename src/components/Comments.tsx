@@ -473,11 +473,6 @@ const Comment: React.FC<CommentProps> = ({
     });
   };
 
-  const handleLikePress = async () => {
-    if (!currentUser) return;
-    await toggleCommentLike(id, post_id, currentUser.id, userId);
-  };
-
   const handleTranslate = async () => {
     if (!text || isTranslating) return;
 
@@ -519,16 +514,6 @@ const Comment: React.FC<CommentProps> = ({
             </View>
           </TouchableOpacity>
           <View style={commentFooterStyle}>
-            <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <View style={iconContainerStyle}>
-                <Icon
-                  name={likedComments[id] ? "heart" : "heart-o"}
-                  size={14}
-                  color={likedComments[id] ? "#eb656b" : colors.neutral.grey1}
-                />
-                <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
-              </View>
-            </TouchableOpacity>
             {onReply ? (
               <TouchableOpacity
                 onPress={() => (user?.username ? onReply(user.username) : null)}
@@ -579,10 +564,15 @@ const Comment: React.FC<CommentProps> = ({
 
           <ReactionsBar
             reactions={commentReactions[id] || []}
-            compact
             onToggle={(emoji) => {
               if (!currentUser) return;
               toggleCommentReaction(id, post_id, currentUser.id, userId, emoji);
+            }}
+            isLiked={!!likedComments[id]}
+            likeCount={commentLikeCounts[id] || 0}
+            onLikeToggle={() => {
+              if (!currentUser) return;
+              toggleCommentLike(id, post_id, currentUser.id, userId);
             }}
           />
         </View>
