@@ -138,7 +138,7 @@ const ChallengeCreation: React.FC = () => {
         newUsers14dRes,
         profiles30dRes,
         completions30dRes,
-        userProgressRes,
+        completionDistributionRes,
         posts7dRes,
         comments7dRes,
         feedback7dRes,
@@ -175,7 +175,7 @@ const ChallengeCreation: React.FC = () => {
           .not('challenge_id', 'is', null)
           .gte('created_at', since30d),
 
-        supabase.from('user_progress').select('user_id, total_challenges_completed'),
+        supabase.rpc('admin_completion_distribution'),
 
         supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
@@ -192,7 +192,7 @@ const ChallengeCreation: React.FC = () => {
       if (newUsers14dRes.error) throw newUsers14dRes.error;
       if (profiles30dRes.error) throw profiles30dRes.error;
       if (completions30dRes.error) throw completions30dRes.error;
-      if (userProgressRes.error) throw userProgressRes.error;
+      if (completionDistributionRes.error) throw completionDistributionRes.error;
       if (posts7dRes.error) throw posts7dRes.error;
       if (comments7dRes.error) throw comments7dRes.error;
       if (feedback7dRes.error) throw feedback7dRes.error;
@@ -248,29 +248,17 @@ const ChallengeCreation: React.FC = () => {
       });
 
       const completionBuckets = (() => {
-        const rows = (userProgressRes.data || []) as { user_id: string; total_challenges_completed: number | null }[];
-        const totalUsers = rows.length;
-        const buckets = [
-          { label: '0', min: 0, max: 0 },
-          { label: '1', min: 1, max: 1 },
-          { label: '2', min: 2, max: 2 },
-          { label: '3', min: 3, max: 3 },
-          { label: '4', min: 4, max: 4 },
-          { label: '5+', min: 5, max: Infinity },
-        ];
+        const rows = (completionDistributionRes.data || []) as { bucket: string; user_count: number }[];
+        const totalUsers = usersRes.count || 0;
 
-        const counts = buckets.map(() => 0);
-        rows.forEach((r) => {
-          const v = r.total_challenges_completed ?? 0;
-          const i = buckets.findIndex((b) => v >= b.min && v <= b.max);
-          if (i >= 0) counts[i] += 1;
+        const order = ['0', '1', '2', '3', '4', '5+'] as const;
+        const countsByBucket = new Map(rows.map((r) => [r.bucket, r.user_count]));
+
+        return order.map((b) => {
+          const count = countsByBucket.get(b) || 0;
+          const percent = totalUsers ? Math.round((count / totalUsers) * 1000) / 10 : 0;
+          return { label: b, count, percent };
         });
-
-        return buckets.map((b, i) => ({
-          label: b.label,
-          count: counts[i],
-          percent: totalUsers ? Math.round((counts[i] / totalUsers) * 1000) / 10 : 0,
-        }));
       })();
 
       // median time to first completion for users created in last 30d (rough but useful)
