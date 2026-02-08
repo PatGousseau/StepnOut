@@ -32,12 +32,14 @@ import { useLikes } from "../contexts/LikesContext";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
 import VideoPlayer from "./VideoPlayer";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
 import { Video, ResizeMode } from "expo-av";
 import { formatRelativeTime } from "../utils/time";
 import { imageService } from "../services/imageService";
 import { ActionsMenu } from "./ActionsMenu";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS, COMMENT_EVENTS } from "../constants/analyticsEvents";
+import { toPublicMediaUrl, isVideoUrl, isAudioUrl } from "../utils/mediaUrl";
 import { sendCommentNotification } from "../lib/notificationsService";
 import { translationService } from "../services/translationService";
 
@@ -143,9 +145,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
   };
 
-  const isVideo = (source: string) => {
-    return source.match(/\.(mp4|mov|avi|wmv)$/i);
-  };
+  const _deprecated_isVideo = undefined as any;
 
   const showHeartAnimation = () => {
     // Reset animation values
@@ -206,14 +206,15 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       lastTapTime.current = now;
       singleTapTimer.current = setTimeout(() => {
         // Single tap - open fullscreen/modal only if there's media
-        if (post.media?.file_path) {
-          if (isVideo(post.media.file_path)) {
+        const mediaUrl = toPublicMediaUrl(post.media?.file_path);
+        if (mediaUrl) {
+          if (isVideoUrl(mediaUrl)) {
             setShowVideoModal(true);
             captureEvent(POST_EVENTS.VIDEO_PLAYED, {
               post_id: post.id,
               is_challenge_post: !!post.challenge_id,
             });
-          } else {
+          } else if (!isAudioUrl(mediaUrl)) {
             setShowFullScreenImage(true);
             captureEvent(POST_EVENTS.MEDIA_VIEWED, {
               post_id: post.id,
@@ -336,26 +337,27 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   };
 
   const renderMedia = () => {
-    if (!post.media?.file_path) return null;
+    const mediaUrl = toPublicMediaUrl(post.media?.file_path);
+    if (!mediaUrl) return null;
 
     const heartAnimationStyle = {
       transform: [{ scale: heartScale }],
       opacity: heartOpacity,
     };
 
-    if (isVideo(post.media?.file_path)) {
+    if (isVideoUrl(mediaUrl)) {
       return (
         <>
           <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
             <Video
-              source={{ uri: post.media?.file_path }}
+              source={{ uri: mediaUrl }}
               style={contentStyle}
               resizeMode={ResizeMode.COVER}
               shouldPlay={false}
               isMuted={true}
               isLooping={false}
               useNativeControls={false}
-              posterSource={{ uri: post.media?.file_path }}
+              posterSource={{ uri: mediaUrl }}
               posterStyle={mediaContentStyle}
             />
             <View style={videoOverlayStyle}>
@@ -366,17 +368,26 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </Animated.View>
           </Pressable>
           <VideoPlayer
-            videoUri={post.media?.file_path}
+            videoUri={mediaUrl}
             visible={showVideoModal}
             onClose={() => setShowVideoModal(false)}
           />
         </>
       );
     }
+
+    if (isAudioUrl(mediaUrl)) {
+      return (
+        <View style={{ marginTop: 10 }}>
+          <VoiceMemoPlayer uri={mediaUrl} />
+        </View>
+      );
+    }
+
     return (
       <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
         <Image
-          source={{ uri: post.media?.file_path }}
+          source={{ uri: mediaUrl }}
           style={mediaContentStyle}
           cachePolicy="memory-disk"
           contentFit="cover"
@@ -621,7 +632,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               </TouchableOpacity>
             </View>
             <ImageViewer
-              imageUrls={[{ url: post.media?.file_path || "" }]}
+              imageUrls={[{ url: toPublicMediaUrl(post.media?.file_path) || "" }]}
               enableSwipeDown
               onSwipeDown={() => setShowFullScreenImage(false)}
               renderIndicator={() => <></>}

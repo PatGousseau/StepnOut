@@ -13,6 +13,7 @@ import {
   ImageStyle,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -35,6 +36,10 @@ import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
+import { Audio } from "expo-av";
+import { createVoiceMemoForPreview } from "../utils/handleMediaUpload";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { toPublicMediaUrl, isAudioUrl } from "../utils/mediaUrl";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -43,7 +48,12 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    media?: import("../utils/handleMediaUpload").MediaSelectionResult | null
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -55,7 +65,12 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    media?: import("../utils/handleMediaUpload").MediaSelectionResult | null
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -136,12 +151,17 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   isAddingComment = false,
 }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { initializeCommentLikes } = useLikes();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
+  const [translateOutgoing, setTranslateOutgoing] = useState(true);
+
+  const [voiceMemo, setVoiceMemo] = useState<import("../utils/handleMediaUpload").MediaSelectionResult | null>(null);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
 
   useEffect(() => {
     setComments(initialComments);
@@ -151,17 +171,80 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     }
   }, [initialComments]);
 
+  const startVoiceRecording = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(t("Microphone access required"), t("Please enable microphone permissions to record a voice memo."));
+      return;
+    }
+
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(rec);
+      setIsRecording(true);
+    } catch (e) {
+      console.error("Error starting voice recording:", e);
+      Alert.alert(t("Recording error"), t("Couldn't start recording"));
+    }
+  };
+
+  const stopVoiceRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (!uri) return;
+
+      const memo = await createVoiceMemoForPreview({ uri });
+      setVoiceMemo(memo);
+    } catch (e) {
+      console.error("Error stopping voice recording:", e);
+      Alert.alert(t("Recording error"), t("Couldn't save recording"));
+    }
+  };
+
+  const handleVoiceMemoPress = async () => {
+    if (isRecording) {
+      await stopVoiceRecording();
+    } else {
+      await startVoiceRecording();
+    }
+  };
+
   const handleAddComment = async () => {
-    if (newComment.trim() && user) {
-      const commentText = newComment.trim();
+    if ((newComment.trim() || voiceMemo) && user) {
+      let commentText = newComment.trim();
+      const hasVoiceMemo = !!voiceMemo;
 
       try {
+        if (isAdmin && translateOutgoing) {
+          const result = await translationService.translateToItalian(commentText);
+          if (!result.translatedText) {
+            Alert.alert('Translation failed', result.error || 'Could not translate');
+            return;
+          }
+          commentText = result.translatedText;
+        }
+
         const parentCommentId = replyTo?.commentId ?? null;
-        const newCommentData = await addComment(user.id, commentText, parentCommentId);
+        const newCommentData = await addComment(user.id, commentText, parentCommentId, voiceMemo);
 
         if (newCommentData) {
           setNewComment("");
           setReplyTo(null);
+          setVoiceMemo(null);
 
           setComments((prevComments) => [...prevComments, newCommentData]);
 
@@ -188,6 +271,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
             recipients.delete(user.id);
 
+            const notificationText = commentText || t("sent a voice memo");
+
             await Promise.all(
               Array.from(recipients).map((recipientId) =>
                 sendCommentNotification(
@@ -195,7 +280,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                   senderUsername,
                   recipientId,
                   postId.toString(),
-                  commentText,
+                  notificationText,
                   newCommentData.id.toString(),
                   {
                     title: t("(username) commented"),
@@ -294,6 +379,43 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 textAlignVertical="top"
               />
             </View>
+
+            {voiceMemo ? (
+              <View style={{ width: "100%", paddingTop: 8, paddingRight: 52 }}>
+                <VoiceMemoPlayer uri={voiceMemo.previewUrl} compact />
+                <TouchableOpacity
+                  onPress={() => setVoiceMemo(null)}
+                  style={{ position: "absolute", right: 0, top: 8, padding: 8 }}
+                >
+                  <Icon name="times" size={14} color={colors.neutral.grey1} />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              onPress={handleVoiceMemoPress}
+              style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons
+                name={isRecording ? "stop-circle" : "microphone"}
+                size={22}
+                color={isRecording ? colors.light.accent : colors.neutral.grey1}
+              />
+            </TouchableOpacity>
+
+            {isAdmin ? (
+              <TouchableOpacity
+                onPress={() => setTranslateOutgoing((v) => !v)}
+                style={[translatePillStyle, translateOutgoing ? translatePillOnStyle : null]}
+                activeOpacity={0.8}
+              >
+                <Text style={[translatePillTextStyle, translateOutgoing ? translatePillTextOnStyle : null]}>
+                  EN→IT
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
             <Pressable
               onPress={handleAddComment}
               style={({ pressed }) => [
@@ -747,6 +869,31 @@ const postButtonStyle: ViewStyle = {
   paddingHorizontal: 15,
   paddingVertical: 10,
   alignSelf: "flex-end",
+};
+
+const translatePillStyle: ViewStyle = {
+  borderWidth: 1,
+  borderColor: colors.neutral.grey2,
+  borderRadius: 999,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  marginRight: 10,
+  alignSelf: "flex-end",
+};
+
+const translatePillOnStyle: ViewStyle = {
+  backgroundColor: colors.light.primary,
+  borderColor: colors.light.primary,
+};
+
+const translatePillTextStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontSize: 12,
+  fontWeight: "700",
+};
+
+const translatePillTextOnStyle: TextStyle = {
+  color: "#ffffff",
 };
 
 const postButtonDisabledStyle: ViewStyle = {

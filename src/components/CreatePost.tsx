@@ -22,6 +22,9 @@ import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { Audio } from "expo-av";
+import { createVoiceMemoForPreview } from "../utils/handleMediaUpload";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -33,8 +36,12 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const { t } = useLanguage();
   const inputAccessoryViewID = "uniqueID";
 
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+
   const {
     selectedMedia,
+    setSelectedMedia,
     setPostText,
     isUploading,
     uploadProgress,
@@ -65,6 +72,59 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
     // Track media attached only if media was successfully selected
     // Note: This tracks the attempt, actual success is handled in the hook
     captureEvent(POST_EVENTS.MEDIA_ATTACHED);
+  };
+
+  const startVoiceRecording = async () => {
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== "granted") {
+      alert(t("Microphone permissions not granted"));
+      return;
+    }
+
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+
+      setRecording(rec);
+      setIsRecording(true);
+    } catch (e) {
+      console.error("Error starting voice recording:", e);
+      alert(t("Couldn't start recording"));
+    }
+  };
+
+  const stopVoiceRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (!uri) return;
+
+      const voiceMemo = await createVoiceMemoForPreview({ uri });
+      setSelectedMedia(voiceMemo);
+      captureEvent(POST_EVENTS.MEDIA_ATTACHED, { kind: "audio" });
+    } catch (e) {
+      console.error("Error stopping voice recording:", e);
+      alert(t("Couldn't save recording"));
+    }
+  };
+
+  const handleVoiceMemoPress = async () => {
+    if (isRecording) {
+      await stopVoiceRecording();
+    } else {
+      await startVoiceRecording();
+    }
   };
 
   const onSubmit = async () => {
@@ -113,15 +173,21 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   </View>
                 ) : selectedMedia ? (
                   <View style={mediaPreviewContainerStyle}>
-                    <Image
-                      source={{ 
-                        uri: selectedMedia.isVideo 
-                          ? selectedMedia.thumbnailUri || selectedMedia.previewUrl 
-                          : selectedMedia.previewUrl 
-                      }}
-                      style={mediaPreviewStyle}
-                      resizeMode="contain"
-                    />
+                    {selectedMedia.kind === 'audio' ? (
+                      <View style={{ padding: 12 }}>
+                        <VoiceMemoPlayer uri={selectedMedia.previewUrl} />
+                      </View>
+                    ) : (
+                      <Image
+                        source={{
+                          uri: selectedMedia.isVideo
+                            ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
+                            : selectedMedia.previewUrl,
+                        }}
+                        style={mediaPreviewStyle}
+                        resizeMode="contain"
+                      />
+                    )}
                     <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
                       <MaterialIcons name="close" size={12} color="white" />
                     </TouchableOpacity>
@@ -147,13 +213,23 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                 />
 
                 <View style={mediaUploadContainerStyle}>
-                  <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
-                    <MaterialIcons
-                      name="add-photo-alternate"
-                      size={24}
-                      color={colors.light.primary}
-                    />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
+                      <MaterialIcons
+                        name="add-photo-alternate"
+                        size={24}
+                        color={colors.light.primary}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
+                      <MaterialIcons
+                        name={isRecording ? "stop-circle" : "keyboard-voice"}
+                        size={24}
+                        color={isRecording ? colors.light.accent : colors.light.primary}
+                      />
+                    </TouchableOpacity>
+                  </View>
 
                   <TouchableOpacity
                     style={[submitButtonStyle, isUploading && disabledButtonStyle]}

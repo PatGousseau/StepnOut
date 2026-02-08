@@ -14,6 +14,7 @@ interface UseMediaUploadOptions {
 
 interface UseMediaUploadResult {
   selectedMedia: MediaSelectionResult | null;
+  setSelectedMedia: (media: MediaSelectionResult | null) => void;
   postText: string;
   isUploading: boolean;
   isSubmitting: boolean;
@@ -181,6 +182,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   return {
     selectedMedia,
+    setSelectedMedia,
     postText,
     setPostText,
     isUploading,
