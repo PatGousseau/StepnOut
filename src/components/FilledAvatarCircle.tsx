@@ -124,11 +124,11 @@ export function FilledAvatarCircle({ users, intervalMs = 2000 }: Props) {
                       width: avatarSize,
                       height: avatarSize,
                       borderRadius: avatarSize / 2,
-                      backgroundColor: colors.neutral.grey2,
+                      backgroundColor: colors.neutral.grey5,
                       alignItems: 'center',
                       justifyContent: 'center',
                       borderWidth: 1,
-                      borderColor: colors.neutral.grey1,
+                      borderColor: colors.neutral.grey4,
                     }}
                   >
                     <Ionicons name="person" size={Math.round(avatarSize * 0.5)} color={colors.neutral.grey2} />

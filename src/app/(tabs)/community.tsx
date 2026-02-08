@@ -1,16 +1,18 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { colors } from '../../constants/Colors';
 import { Text } from '../../components/StyledText';
 import { FilledAvatarCircle, FilledAvatarCircleUser } from '../../components/FilledAvatarCircle';
-import { useChallengeCompleters } from '../../hooks/useChallengeCompleters';
 
 export default function CommunityScreen() {
-  const { users: completers, loading } = useChallengeCompleters();
-
   const users = useMemo(() => {
-    return completers as FilledAvatarCircleUser[];
-  }, [completers]);
+    // placeholder for now — next commit wires this to supabase for the active challenge
+    return new Array(90).fill(0).map((_, i) => ({
+      id: String(i),
+      username: `user${i}`,
+      profileImageUrl: null,
+    })) as FilledAvatarCircleUser[];
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -18,13 +20,7 @@ export default function CommunityScreen() {
       <Text style={styles.subtitle}>completed challenge</Text>
 
       <View style={styles.circleWrap}>
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator />
-          </View>
-        ) : (
-          <FilledAvatarCircle users={users} intervalMs={2200} />
-        )}
+        <FilledAvatarCircle users={users} intervalMs={2200} />
       </View>
     </View>
   );
@@ -53,11 +49,5 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 420,
     alignSelf: 'center',
-  },
-  loadingWrap: {
-    width: '100%',
-    aspectRatio: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
