@@ -36,6 +36,19 @@ type UserProfile = {
   name: string;
 };
 
+type AdminAnalytics = {
+  userCount: number;
+  newUsers7d: number;
+  weeklyActiveUsers7d: number;
+  activeChallenge: { id: number; title: string } | null;
+  activeChallengeUniqueCompletions: number;
+  activeChallengeTotalCompletions: number;
+  posts7d: number;
+  comments7d: number;
+  feedback7d: number;
+  pendingReports: number;
+};
+
 const ChallengeCreation: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -55,6 +68,9 @@ const ChallengeCreation: React.FC = () => {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [sendingNotification, setSendingNotification] = useState<boolean>(false);
   const [userSearch, setUserSearch] = useState<string>("");
+
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState<boolean>(false);
 
   const { user } = useAuth();
 
@@ -87,15 +103,88 @@ const ChallengeCreation: React.FC = () => {
     }
   };
 
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const [
+        usersRes,
+        newUsersRes,
+        weeklyActiveUsersRes,
+        activeChallengeRes,
+        posts7dRes,
+        comments7dRes,
+        feedback7dRes,
+        pendingReportsRes,
+      ] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
+        supabase.from('submission').select('user_id').gte('created_at', since7d),
+        supabase.from('challenges').select('id, title').eq('is_active', true).limit(1).maybeSingle(),
+        supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
+        supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
+        supabase.from('feedback').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
+        supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      ]);
+
+      if (usersRes.error) throw usersRes.error;
+      if (newUsersRes.error) throw newUsersRes.error;
+      if (weeklyActiveUsersRes.error) throw weeklyActiveUsersRes.error;
+      if (activeChallengeRes.error) throw activeChallengeRes.error;
+      if (posts7dRes.error) throw posts7dRes.error;
+      if (comments7dRes.error) throw comments7dRes.error;
+      if (feedback7dRes.error) throw feedback7dRes.error;
+      if (pendingReportsRes.error) throw pendingReportsRes.error;
+
+      const weeklyActiveUsers7d = new Set((weeklyActiveUsersRes.data || []).map((r) => r.user_id)).size;
+
+      let activeChallengeUniqueCompletions = 0;
+      let activeChallengeTotalCompletions = 0;
+      const activeChallenge = activeChallengeRes.data ?? null;
+
+      if (activeChallenge) {
+        const [uniqueRes, totalRes] = await Promise.all([
+          supabase.from('submission').select('user_id').eq('challenge_id', activeChallenge.id),
+          supabase.from('submission').select('id', { count: 'exact', head: true }).eq('challenge_id', activeChallenge.id),
+        ]);
+
+        if (uniqueRes.error) throw uniqueRes.error;
+        if (totalRes.error) throw totalRes.error;
+
+        activeChallengeUniqueCompletions = new Set((uniqueRes.data || []).map((r) => r.user_id)).size;
+        activeChallengeTotalCompletions = totalRes.count || 0;
+      }
+
+      setAnalytics({
+        userCount: usersRes.count || 0,
+        newUsers7d: newUsersRes.count || 0,
+        weeklyActiveUsers7d,
+        activeChallenge,
+        activeChallengeUniqueCompletions,
+        activeChallengeTotalCompletions,
+        posts7d: posts7dRes.count || 0,
+        comments7d: comments7dRes.count || 0,
+        feedback7d: feedback7dRes.count || 0,
+        pendingReports: pendingReportsRes.count || 0,
+      });
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchChallenges(), fetchUsers()]);
+    await Promise.all([fetchChallenges(), fetchUsers(), fetchAnalytics()]);
     setRefreshing(false);
   }, []);
 
   useEffect(() => {
     fetchChallenges();
     fetchUsers();
+    fetchAnalytics();
   }, []);
 
   const handleMediaUpload = async () => {
@@ -244,6 +333,75 @@ const ChallengeCreation: React.FC = () => {
         style={styles.scrollView}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        <Text style={styles.sectionTitle}>Analytics</Text>
+
+        <View style={styles.analyticsGrid}>
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.userCount ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>total users</Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.newUsers7d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>new users (7d)</Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.weeklyActiveUsers7d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>active submitters (7d)</Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading
+                ? '…'
+                : analytics?.activeChallenge
+                  ? analytics.activeChallengeUniqueCompletions
+                  : '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>completed current challenge</Text>
+            {analytics?.activeChallenge?.title ? (
+              <Text style={styles.analyticsHint} numberOfLines={1}>
+                {analytics.activeChallenge.title}
+              </Text>
+            ) : null}
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.posts7d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>posts (7d)</Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.comments7d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>comments (7d)</Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.feedback7d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>feedback (7d)</Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.pendingReports ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>pending reports</Text>
+          </View>
+        </View>
+
         <Text style={styles.sectionTitle}>Create New Challenge</Text>
 
         <Text style={styles.label}>Title</Text>
@@ -631,6 +789,39 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginVertical: 16,
+  },
+  analyticsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 8,
+  },
+  analyticsCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    width: '48%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  analyticsValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.light.text,
+  },
+  analyticsLabel: {
+    marginTop: 4,
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  analyticsHint: {
+    marginTop: 4,
+    color: '#888',
+    fontSize: 11,
   },
   uploadButtonText: {
     color: "#666",
