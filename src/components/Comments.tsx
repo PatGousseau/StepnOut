@@ -13,6 +13,7 @@ import {
   ImageStyle,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -35,6 +36,9 @@ import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { backgroundUploadService } from "../services/backgroundUploadService";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -43,7 +47,12 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    media?: import("../utils/handleMediaUpload").MediaSelectionResult | null
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -55,7 +64,12 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    media?: import("../utils/handleMediaUpload").MediaSelectionResult | null
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -136,32 +150,66 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   isAddingComment = false,
 }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { initializeCommentLikes } = useLikes();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
+  const [translateOutgoing, setTranslateOutgoing] = useState(true);
 
-  useEffect(() => {
-    setComments(initialComments);
-    // Initialize likes for the comments
-    if (initialComments.length > 0) {
-      initializeCommentLikes(initialComments);
-    }
-  }, [initialComments]);
+  const [voiceMemo, setVoiceMemo] = useState<import("../utils/handleMediaUpload").MediaSelectionResult | null>(null);
+  const [voiceUploadProgress, setVoiceUploadProgress] = useState<number | null>(null);
+  const [isVoiceUploading, setIsVoiceUploading] = useState(false);
+
+  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => setVoiceMemo(memo),
+  });
 
   const handleAddComment = async () => {
-    if (newComment.trim() && user) {
-      const commentText = newComment.trim();
+    if ((newComment.trim() || voiceMemo) && user) {
+      let commentText = newComment.trim();
 
       try {
+        if (isAdmin && translateOutgoing) {
+          const result = await translationService.translateToItalian(commentText);
+          if (!result.translatedText) {
+            Alert.alert('Translation failed', result.error || 'Could not translate');
+            return;
+          }
+          commentText = result.translatedText;
+        }
+
         const parentCommentId = replyTo?.commentId ?? null;
-        const newCommentData = await addComment(user.id, commentText, parentCommentId);
+        const memo = voiceMemo;
+        const newCommentData = await addComment(user.id, commentText, parentCommentId, memo);
 
         if (newCommentData) {
           setNewComment("");
           setReplyTo(null);
+          setVoiceMemo(null);
+
+          if (memo) {
+            setIsVoiceUploading(true);
+            setVoiceUploadProgress(0);
+
+            backgroundUploadService.addToQueue(
+              memo.mediaId,
+              memo.pendingUpload,
+              undefined,
+              (p) => setVoiceUploadProgress(p),
+              (success) => {
+                setIsVoiceUploading(false);
+                setVoiceUploadProgress(null);
+                if (!success) {
+                  Alert.alert(t("Upload failed"), t("Voice memo upload failed"));
+                  return;
+                }
+                queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+                queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+              }
+            );
+          }
 
           setComments((prevComments) => [...prevComments, newCommentData]);
 
@@ -188,6 +236,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
             recipients.delete(user.id);
 
+            const notificationText = commentText || t("sent a voice memo");
+
             await Promise.all(
               Array.from(recipients).map((recipientId) =>
                 sendCommentNotification(
@@ -195,7 +245,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                   senderUsername,
                   recipientId,
                   postId.toString(),
-                  commentText,
+                  notificationText,
                   newCommentData.id.toString(),
                   {
                     title: t("(username) commented"),
@@ -294,6 +344,51 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 textAlignVertical="top"
               />
             </View>
+
+            {voiceMemo ? (
+              <View style={{ width: "100%", paddingTop: 8, paddingRight: 52 }}>
+                <VoiceMemoPlayer uri={voiceMemo.previewUrl} compact />
+
+                {isVoiceUploading && voiceUploadProgress !== null ? (
+                  <Text style={{ marginTop: 6, fontSize: 12, color: colors.neutral.grey1 }}>
+                    {t("Uploading")} {Math.round(voiceUploadProgress)}%
+                  </Text>
+                ) : null}
+
+                <TouchableOpacity
+                  onPress={() => setVoiceMemo(null)}
+                  style={{ position: "absolute", right: 0, top: 8, padding: 8 }}
+                  disabled={isVoiceUploading}
+                >
+                  <Icon name="times" size={14} color={colors.neutral.grey1} />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              onPress={handleVoiceMemoPress}
+              style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons
+                name={isRecording ? "stop-circle" : "microphone"}
+                size={22}
+                color={isRecording ? colors.light.accent : colors.neutral.grey1}
+              />
+            </TouchableOpacity>
+
+            {isAdmin ? (
+              <TouchableOpacity
+                onPress={() => setTranslateOutgoing((v) => !v)}
+                style={[translatePillStyle, translateOutgoing ? translatePillOnStyle : null]}
+                activeOpacity={0.8}
+              >
+                <Text style={[translatePillTextStyle, translateOutgoing ? translatePillTextOnStyle : null]}>
+                  EN→IT
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
             <Pressable
               onPress={handleAddComment}
               style={({ pressed }) => [
@@ -747,6 +842,31 @@ const postButtonStyle: ViewStyle = {
   paddingHorizontal: 15,
   paddingVertical: 10,
   alignSelf: "flex-end",
+};
+
+const translatePillStyle: ViewStyle = {
+  borderWidth: 1,
+  borderColor: colors.neutral.grey2,
+  borderRadius: 999,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  marginRight: 10,
+  alignSelf: "flex-end",
+};
+
+const translatePillOnStyle: ViewStyle = {
+  backgroundColor: colors.light.primary,
+  borderColor: colors.light.primary,
+};
+
+const translatePillTextStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontSize: 12,
+  fontWeight: "700",
+};
+
+const translatePillTextOnStyle: TextStyle = {
+  color: "#ffffff",
 };
 
 const postButtonDisabledStyle: ViewStyle = {

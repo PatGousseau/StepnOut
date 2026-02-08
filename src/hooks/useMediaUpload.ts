@@ -12,19 +12,6 @@ interface UseMediaUploadOptions {
   successMessage?: string;
 }
 
-interface UseMediaUploadResult {
-  selectedMedia: MediaSelectionResult | null;
-  postText: string;
-  isUploading: boolean;
-  isSubmitting: boolean;
-  isBackgroundUploading: boolean;
-  localUploadProgress: number;
-  handleMediaUpload: () => Promise<void>;
-  handleRemoveMedia: () => void;
-  setPostText: (text: string) => void;
-  handleSubmit: (additionalData?: Record<string, any>, text?: string) => Promise<void>;
-}
-
 export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
   const { t } = useLanguage();
   const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
@@ -133,7 +120,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
             setLocalUploadProgress(progress);
             progressManagerRef.current.updateProgress(progress);
           },
-          (success, mediaUrl) => {
+           (success) => {
             setIsBackgroundUploading(false);
             setLocalUploadProgress(0);
             if (!success) {
@@ -181,6 +168,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   return {
     selectedMedia,
+    setSelectedMedia,
     postText,
     setPostText,
     isUploading,

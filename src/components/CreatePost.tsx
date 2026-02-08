@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   View,
-  StyleSheet,
   TouchableOpacity,
   Modal,
   TextInput,
@@ -22,6 +21,8 @@ import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -33,8 +34,16 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
   const { t } = useLanguage();
   const inputAccessoryViewID = "uniqueID";
 
+  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => {
+      setSelectedMedia(memo);
+      captureEvent(POST_EVENTS.MEDIA_ATTACHED, { kind: "audio" });
+    },
+  });
+
   const {
     selectedMedia,
+    setSelectedMedia,
     setPostText,
     isUploading,
     uploadProgress,
@@ -46,7 +55,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       setModalVisible(false);
       captureEvent(POST_EVENTS.CREATED, {
         has_media: !!selectedMedia,
-        is_video: selectedMedia?.isVideo || false,
+        is_video: selectedMedia?.pendingUpload.mediaType === 'video',
       });
       if (onPostCreated) {
         onPostCreated();
@@ -66,7 +75,6 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
     // Note: This tracks the attempt, actual success is handled in the hook
     captureEvent(POST_EVENTS.MEDIA_ATTACHED);
   };
-
   const onSubmit = async () => {
     if (!user) {
       alert(t("You must be logged in to submit a post."));
@@ -113,19 +121,25 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   </View>
                 ) : selectedMedia ? (
                   <View style={mediaPreviewContainerStyle}>
-                    <Image
-                      source={{ 
-                        uri: selectedMedia.isVideo 
-                          ? selectedMedia.thumbnailUri || selectedMedia.previewUrl 
-                          : selectedMedia.previewUrl 
-                      }}
-                      style={mediaPreviewStyle}
-                      resizeMode="contain"
-                    />
+                    {selectedMedia.pendingUpload.mediaType === 'audio' ? (
+                      <View style={{ padding: 12 }}>
+                        <VoiceMemoPlayer uri={selectedMedia.previewUrl} />
+                      </View>
+                    ) : (
+                      <Image
+                        source={{
+                          uri: selectedMedia.pendingUpload.mediaType === 'video'
+                            ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
+                            : selectedMedia.previewUrl,
+                        }}
+                        style={mediaPreviewStyle}
+                        resizeMode="contain"
+                      />
+                    )}
                     <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
                       <MaterialIcons name="close" size={12} color="white" />
                     </TouchableOpacity>
-                    {selectedMedia.isVideo && (
+                    {selectedMedia.pendingUpload.mediaType === 'video' && (
                       <View style={videoIndicatorStyle}>
                         <MaterialIcons name="play-circle-filled" size={24} color="white" />
                       </View>
@@ -147,13 +161,23 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                 />
 
                 <View style={mediaUploadContainerStyle}>
-                  <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
-                    <MaterialIcons
-                      name="add-photo-alternate"
-                      size={24}
-                      color={colors.light.primary}
-                    />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
+                      <MaterialIcons
+                        name="add-photo-alternate"
+                        size={24}
+                        color={colors.light.primary}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
+                      <MaterialIcons
+                        name={isRecording ? "stop-circle" : "keyboard-voice"}
+                        size={24}
+                        color={isRecording ? colors.light.accent : colors.light.primary}
+                      />
+                    </TouchableOpacity>
+                  </View>
 
                   <TouchableOpacity
                     style={[submitButtonStyle, isUploading && disabledButtonStyle]}

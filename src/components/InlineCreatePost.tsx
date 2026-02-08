@@ -40,14 +40,14 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
   const { user } = useAuth();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState("");
-  
+
   // Pick a random prompt when refreshKey changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const placeholderKey = useMemo(() => {
     const randomIndex = Math.floor(Math.random() * POST_PROMPT_KEYS.length);
     return POST_PROMPT_KEYS[randomIndex];
   }, [refreshKey]);
-  
+
   const placeholder = t(placeholderKey);
   const [isFocused, setIsFocused] = useState(false);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
@@ -97,9 +97,9 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
         <Pressable style={mediaPreviewContainerStyle} onPress={() => setShowFullScreenImage(true)}>
           <Image
             source={{
-              uri: selectedMedia.isVideo
+              uri: selectedMedia.pendingUpload.mediaType === 'video'
                 ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
-                : selectedMedia.previewUrl,
+                : selectedMedia.previewUrl ,
             }}
             style={mediaPreviewStyle}
             resizeMode="cover"
@@ -107,7 +107,7 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
           <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
             <MaterialIcons name="close" size={12} color="white" />
           </TouchableOpacity>
-          {selectedMedia.isVideo && (
+          {selectedMedia.pendingUpload.mediaType === 'video' && (
             <View style={videoIndicatorStyle}>
               <MaterialIcons name="play-circle-filled" size={20} color="white" />
             </View>

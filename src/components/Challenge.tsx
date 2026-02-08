@@ -218,7 +218,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         challenge_title: challenge.title,
         challenge_difficulty: challenge.difficulty,
         has_media: !!selectedMedia,
-        is_video: selectedMedia?.isVideo || false,
+        is_video: selectedMedia?.pendingUpload.mediaType === 'video',
       });
       // Update user properties
       setUserProperties({
@@ -352,7 +352,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                           style={shareStyles.thumbnail}
                           resizeMode="cover"
                         />
-                        {selectedMedia.isVideo && (
+                        {selectedMedia.pendingUpload.mediaType === 'video' && (
                           <View style={shareStyles.thumbnailPlayOverlay}>
                             <MaterialIcons name="play-circle-filled" size={26} color="white" />
                           </View>
@@ -366,7 +366,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
                       <View style={shareStyles.mediaSelectedTextContainer}>
                         <Text style={shareStyles.mediaSelectedTitle}>
-                          {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
+                          {t(selectedMedia.pendingUpload.mediaType === 'video' ? "Video attached" : "Photo attached")}
                         </Text>
                         <Text style={shareStyles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
                       </View>
