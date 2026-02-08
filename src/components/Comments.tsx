@@ -431,6 +431,7 @@ const CommentInner: React.FC<CommentProps> = ({
   const { onClose } = useContext(CommentsContext);
   const { user: currentUser, isAdmin } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
+  const { t } = useLanguage();
 
   const [user, setUser] = useState<User | null>(null);
   const [replyToUser, setReplyToUser] = useState<User | null>(null);
@@ -515,7 +516,7 @@ const CommentInner: React.FC<CommentProps> = ({
             <View style={nameContainerStyle}>
               <Text style={displayNameStyle}>{user.name}</Text>
               <Text style={usernameStyle}>@{user.username}</Text>
-              <Text style={timestampStyle}>{formatRelativeTime(created_at)}</Text>
+              <Text style={timestampStyle}>{formatRelativeTime(created_at, t)}</Text>
             </View>
           </TouchableOpacity>
           <View style={commentFooterStyle}>
@@ -582,16 +583,7 @@ const CommentInner: React.FC<CommentProps> = ({
   );
 };
 
-const Comment = React.memo(CommentInner, (prev, next) => {
-  return (
-    prev.id === next.id &&
-    prev.text === next.text &&
-    prev.userId === next.userId &&
-    prev.indentLevel === next.indentLevel &&
-    prev.isLastReply === next.isLastReply &&
-    prev.replyToUserId === next.replyToUserId
-  );
-});
+const Comment = React.memo(CommentInner);
 
 const commentAvatarStyle: ImageStyle = {
   borderRadius: 15,

@@ -416,7 +416,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             <Text style={usernameStyle}>@{postUser?.username || t("unknown")}</Text>
           </View>
         </TouchableOpacity>
-        <Text style={timestampStyle}>{formatRelativeTime(post.created_at)}</Text>
+        <Text style={timestampStyle}>{formatRelativeTime(post.created_at, t)}</Text>
         <ActionsMenu
           type="post"
           contentId={post.id}
@@ -928,12 +928,4 @@ const translationTextStyle: TextStyle = {
   color: colors.light.text,
 };
 
-export default React.memo(Post, (prev, next) => {
-  return (
-    prev.post.id === next.post.id &&
-    prev.post.likes_count === next.post.likes_count &&
-    prev.post.comments_count === next.post.comments_count &&
-    prev.postUser?.id === next.postUser?.id &&
-    prev.isPostPage === next.isPostPage
-  );
-});
+export default React.memo(Post);
