@@ -63,6 +63,54 @@ type AdminAnalytics = {
   pendingReports: number;
 };
 
+const dayKeyUtc = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+};
+
+const utcDaySeries = (days: number): AdminTimeseriesPoint[] => {
+  const out: AdminTimeseriesPoint[] = [];
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const dd = new Date(d);
+    dd.setUTCDate(dd.getUTCDate() - i);
+    out.push({ date: dayKeyUtc(dd.toISOString()), count: 0 });
+  }
+
+  return out;
+};
+
+const fillSeries = (series: AdminTimeseriesPoint[], rows: { created_at: string }[]) => {
+  const byDay = new Map<string, number>();
+  rows.forEach((r) => {
+    const k = dayKeyUtc(r.created_at);
+    byDay.set(k, (byDay.get(k) || 0) + 1);
+  });
+  series.forEach((p) => {
+    p.count = byDay.get(p.date) || 0;
+  });
+};
+
+const median = (xs: number[]) => {
+  if (xs.length === 0) return null;
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+};
+
+const fetchAll = async <T,>(fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>, pageSize = 1000) => {
+  const out: T[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await fetchPage(from, from + pageSize - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    out.push(...data);
+    if (data.length < pageSize) break;
+  }
+  return out;
+};
+
 const ChallengeCreation: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -120,13 +168,38 @@ const ChallengeCreation: React.FC = () => {
   const fetchAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
-      const since7dDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const since14dDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-      const since30dDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const isoDaysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const since7d = isoDaysAgo(7);
+      const since14d = isoDaysAgo(14);
+      const since30d = isoDaysAgo(30);
 
-      const since7d = since7dDate.toISOString();
-      const since14d = since14dDate.toISOString();
-      const since30d = since30dDate.toISOString();
+      const results = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", since7d),
+
+        supabase.from("post").select("user_id").not("challenge_id", "is", null).gte("created_at", since7d),
+        supabase.from("post").select("user_id").not("challenge_id", "is", null).lt("created_at", since7d),
+
+        supabase.from("challenges").select("id, title").eq("is_active", true).limit(1).maybeSingle(),
+
+        supabase.from("post").select("created_at").not("challenge_id", "is", null).gte("created_at", since14d),
+        supabase.from("profiles").select("created_at").gte("created_at", since14d),
+
+        supabase.from("profiles").select("id, created_at").gte("created_at", since30d),
+        supabase.from("post").select("user_id, created_at").not("challenge_id", "is", null).gte("created_at", since30d),
+
+        supabase
+          .from("post")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since7d)
+          .eq("is_welcome", false),
+        supabase.from("comments").select("id", { count: "exact", head: true }).gte("created_at", since7d),
+        supabase.from("feedback").select("id", { count: "exact", head: true }).gte("created_at", since7d),
+        supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      ]);
+
+      const err = results.map((r) => r.error).find(Boolean);
+      if (err) throw err;
 
       const [
         usersRes,
@@ -138,240 +211,102 @@ const ChallengeCreation: React.FC = () => {
         newUsers14dRes,
         profiles30dRes,
         completions30dRes,
-        completionPostsRes,
         posts7dRes,
         comments7dRes,
         feedback7dRes,
         pendingReportsRes,
-      ] = await Promise.all([
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
-
-        // note: challenge completions are represented by posts with a challenge_id
-        supabase
-          .from('post')
-          .select('user_id')
-          .not('challenge_id', 'is', null)
-          .gte('created_at', since7d),
-        supabase
-          .from('post')
-          .select('user_id')
-          .not('challenge_id', 'is', null)
-          .lt('created_at', since7d),
-
-        supabase.from('challenges').select('id, title').eq('is_active', true).limit(1).maybeSingle(),
-
-        supabase
-          .from('post')
-          .select('created_at')
-          .not('challenge_id', 'is', null)
-          .gte('created_at', since14d),
-        supabase.from('profiles').select('created_at').gte('created_at', since14d),
-
-        supabase.from('profiles').select('id, created_at').gte('created_at', since30d),
-        supabase
-          .from('post')
-          .select('user_id, created_at')
-          .not('challenge_id', 'is', null)
-          .gte('created_at', since30d),
-
-        // for completion distribution: fetch all completion posts (user_id only)
-        supabase
-          .from('post')
-          .select('user_id')
-          .not('challenge_id', 'is', null)
-          .order('id', { ascending: true })
-          .range(0, 999),
-
-        supabase
-          .from('post')
-          .select('id', { count: 'exact', head: true })
-          .gte('created_at', since7d)
-          .eq('is_welcome', false),
-        supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
-        supabase.from('feedback').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
-        supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      ]);
-
-      if (usersRes.error) throw usersRes.error;
-      if (newUsersRes.error) throw newUsersRes.error;
-      if (completers7dRes.error) throw completers7dRes.error;
-      if (completersBefore7dRes.error) throw completersBefore7dRes.error;
-      if (activeChallengeRes.error) throw activeChallengeRes.error;
-      if (completions14dRes.error) throw completions14dRes.error;
-      if (newUsers14dRes.error) throw newUsers14dRes.error;
-      if (profiles30dRes.error) throw profiles30dRes.error;
-      if (completions30dRes.error) throw completions30dRes.error;
-      if (completionPostsRes.error) throw completionPostsRes.error;
-      if (posts7dRes.error) throw posts7dRes.error;
-      if (comments7dRes.error) throw comments7dRes.error;
-      if (feedback7dRes.error) throw feedback7dRes.error;
-      if (pendingReportsRes.error) throw pendingReportsRes.error;
+      ] = results;
 
       const completers7d = new Set((completers7dRes.data || []).map((r) => r.user_id));
       const completersBefore7d = new Set((completersBefore7dRes.data || []).map((r) => r.user_id));
 
       let returningCompleters7d = 0;
-      let newCompleters7d = 0;
       completers7d.forEach((uid) => {
         if (completersBefore7d.has(uid)) returningCompleters7d += 1;
-        else newCompleters7d += 1;
       });
 
       const weeklyActiveUsers7d = completers7d.size;
+      const newCompleters7d = weeklyActiveUsers7d - returningCompleters7d;
 
-      const toDayKey = (iso: string) => {
-        const d = new Date(iso);
-        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-      };
+      const completions14d = utcDaySeries(14);
+      const newUsers14d = utcDaySeries(14);
+      fillSeries(completions14d, completions14dRes.data || []);
+      fillSeries(newUsers14d, newUsers14dRes.data || []);
 
-      const buildEmptySeries = (days: number) => {
-        const series: AdminTimeseriesPoint[] = [];
-        for (let i = days - 1; i >= 0; i -= 1) {
-          const d = new Date();
-          d.setUTCHours(0, 0, 0, 0);
-          d.setUTCDate(d.getUTCDate() - i);
-          series.push({ date: toDayKey(d.toISOString()), count: 0 });
-        }
-        return series;
-      };
+      const completionPosts = await fetchAll(
+        (from, to) =>
+          supabase
+            .from("post")
+            .select("user_id")
+            .not("challenge_id", "is", null)
+            .order("id", { ascending: true })
+            .range(from, to),
+        1000
+      );
 
-      const completions14d = buildEmptySeries(14);
-      const newUsers14d = buildEmptySeries(14);
-
-      const completionsByDay = new Map<string, number>();
-      (completions14dRes.data || []).forEach((r) => {
-        const k = toDayKey(r.created_at);
-        completionsByDay.set(k, (completionsByDay.get(k) || 0) + 1);
-      });
-      completions14d.forEach((p) => {
-        p.count = completionsByDay.get(p.date) || 0;
+      const completionsPerUser = new Map<string, number>();
+      (completionPosts as { user_id: string }[]).forEach((r) => {
+        completionsPerUser.set(r.user_id, (completionsPerUser.get(r.user_id) || 0) + 1);
       });
 
-      const newUsersByDay = new Map<string, number>();
-      (newUsers14dRes.data || []).forEach((r) => {
-        const k = toDayKey(r.created_at);
-        newUsersByDay.set(k, (newUsersByDay.get(k) || 0) + 1);
+      const totalUsers = usersRes.count || 0;
+      const bucketCounts = new Map<string, number>([
+        ["1", 0],
+        ["2", 0],
+        ["3", 0],
+        ["4", 0],
+        ["5+", 0],
+      ]);
+
+      completionsPerUser.forEach((n) => {
+        const b = n >= 5 ? "5+" : String(n);
+        if (bucketCounts.has(b)) bucketCounts.set(b, (bucketCounts.get(b) || 0) + 1);
       });
-      newUsers14d.forEach((p) => {
-        p.count = newUsersByDay.get(p.date) || 0;
+
+      const completionBuckets = (["1", "2", "3", "4", "5+"] as const).map((label) => {
+        const count = bucketCounts.get(label) || 0;
+        const percent = totalUsers ? Math.round((count / totalUsers) * 1000) / 10 : 0;
+        return { label, count, percent };
       });
 
-      const fetchAllCompletionPostUserIds = async () => {
-        const pageSize = 1000;
-        const userIds: string[] = [];
-
-        let from = 0;
-        // start with the first page we already fetched
-        userIds.push(...((completionPostsRes.data || []).map((r) => r.user_id) as string[]));
-
-        let lastPageLen = (completionPostsRes.data || []).length;
-
-        while (lastPageLen === pageSize) {
-          from += pageSize;
-          const { data, error } = await supabase
-            .from('post')
-            .select('user_id')
-            .not('challenge_id', 'is', null)
-            .order('id', { ascending: true })
-            .range(from, from + pageSize - 1);
-
-          if (error) throw error;
-          if (!data || data.length === 0) break;
-
-          userIds.push(...(data.map((r) => r.user_id) as string[]));
-          lastPageLen = data.length;
-          if (data.length < pageSize) break;
-        }
-
-        return userIds;
-      };
-
-      const completionBuckets = await (async () => {
-        const totalUsers = usersRes.count || 0;
-        const userIds = await fetchAllCompletionPostUserIds();
-
-        const completionsPerUser = new Map<string, number>();
-        userIds.forEach((uid) => {
-          completionsPerUser.set(uid, (completionsPerUser.get(uid) || 0) + 1);
-        });
-
-        const bucketCounts = new Map<string, number>([
-          ['0', Math.max(0, totalUsers - completionsPerUser.size)],
-          ['1', 0],
-          ['2', 0],
-          ['3', 0],
-          ['4', 0],
-          ['5+', 0],
-        ]);
-
-        completionsPerUser.forEach((count) => {
-          const b =
-            count === 1
-              ? '1'
-              : count === 2
-                ? '2'
-                : count === 3
-                  ? '3'
-                  : count === 4
-                    ? '4'
-                    : '5+';
-          bucketCounts.set(b, (bucketCounts.get(b) || 0) + 1);
-        });
-
-        const order = ['1', '2', '3', '4', '5+'] as const;
-        return order.map((b) => {
-          const c = bucketCounts.get(b) || 0;
-          const percent = totalUsers ? Math.round((c / totalUsers) * 1000) / 10 : 0;
-          return { label: b, count: c, percent };
-        });
-      })();
-
-      // median time to first completion for users created in last 30d (rough but useful)
-      const profileCreatedAt = new Map<string, string>();
-      (profiles30dRes.data || []).forEach((p) => {
-        profileCreatedAt.set(p.id, p.created_at);
-      });
+      const createdByUser = new Map<string, string>();
+      (profiles30dRes.data || []).forEach((p) => createdByUser.set(p.id, p.created_at));
 
       const firstCompletionAt = new Map<string, string>();
       (completions30dRes.data || []).forEach((c) => {
         const prev = firstCompletionAt.get(c.user_id);
-        if (!prev || new Date(c.created_at).getTime() < new Date(prev).getTime()) {
-          firstCompletionAt.set(c.user_id, c.created_at);
-        }
+        if (!prev || new Date(c.created_at).getTime() < new Date(prev).getTime()) firstCompletionAt.set(c.user_id, c.created_at);
       });
 
-      const deltas: number[] = [];
-      firstCompletionAt.forEach((completedAt, uid) => {
-        const createdAt = profileCreatedAt.get(uid);
-        if (!createdAt) return;
-        const deltaDays = (new Date(completedAt).getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);
-        if (Number.isFinite(deltaDays) && deltaDays >= 0) deltas.push(deltaDays);
-      });
-      deltas.sort((a, b) => a - b);
-      const medianDaysToFirstCompletion30d = deltas.length
-        ? Math.round(deltas[Math.floor(deltas.length / 2)] * 10) / 10
-        : null;
+      const deltas = Array.from(firstCompletionAt.entries())
+        .map(([uid, completedAt]) => {
+          const createdAt = createdByUser.get(uid);
+          if (!createdAt) return null;
+          const days = (new Date(completedAt).getTime() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);
+          return Number.isFinite(days) && days >= 0 ? days : null;
+        })
+        .filter((x): x is number => x !== null);
 
+      const m = median(deltas);
+      const medianDaysToFirstCompletion30d = m === null ? null : Math.round(m * 10) / 10;
+
+      const activeChallenge = activeChallengeRes.data ?? null;
       let activeChallengeUniqueCompletions = 0;
       let activeChallengeTotalCompletions = 0;
-      const activeChallenge = activeChallengeRes.data ?? null;
 
       if (activeChallenge) {
         const [uniqueRes, totalRes] = await Promise.all([
-          supabase.from('post').select('user_id').eq('challenge_id', activeChallenge.id),
-          supabase.from('post').select('id', { count: 'exact', head: true }).eq('challenge_id', activeChallenge.id),
+          supabase.from("post").select("user_id").eq("challenge_id", activeChallenge.id),
+          supabase.from("post").select("id", { count: "exact", head: true }).eq("challenge_id", activeChallenge.id),
         ]);
-
         if (uniqueRes.error) throw uniqueRes.error;
         if (totalRes.error) throw totalRes.error;
-
         activeChallengeUniqueCompletions = new Set((uniqueRes.data || []).map((r) => r.user_id)).size;
         activeChallengeTotalCompletions = totalRes.count || 0;
       }
 
       setAnalytics({
-        userCount: usersRes.count || 0,
+        userCount: totalUsers,
         newUsers7d: newUsersRes.count || 0,
 
         weeklyActiveUsers7d,
@@ -395,7 +330,7 @@ const ChallengeCreation: React.FC = () => {
         pendingReports: pendingReportsRes.count || 0,
       });
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error("Error fetching analytics:", error);
     } finally {
       setAnalyticsLoading(false);
     }
