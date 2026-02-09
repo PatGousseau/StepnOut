@@ -21,7 +21,7 @@ export function useChallengeCompleters() {
     try {
       const { data: activeChallenge, error: activeChallengeError } = await supabase
         .from('challenges')
-        .select('id')
+        .select('id, created_at')
         .eq('is_active', true)
         .single();
 
@@ -30,6 +30,18 @@ export function useChallengeCompleters() {
         setUsers([]);
         return;
       }
+
+      // temporarily show last week's challenge (the most recent one before the active challenge)
+      const { data: lastWeekChallenge, error: lastWeekError } = await supabase
+        .from('challenges')
+        .select('id')
+        .lt('created_at', activeChallenge.created_at)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (lastWeekError) throw lastWeekError;
+      const challengeId = lastWeekChallenge?.id ?? activeChallenge.id;
 
       const { data, error: submissionsError } = await supabase
         .from('post')
@@ -45,7 +57,7 @@ export function useChallengeCompleters() {
           )
         `
         )
-        .eq('challenge_id', activeChallenge.id)
+        .eq('challenge_id', challengeId)
         .order('created_at', { ascending: false })
         .limit(500);
 
