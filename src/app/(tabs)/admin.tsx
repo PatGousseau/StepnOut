@@ -315,7 +315,7 @@ const ChallengeCreation: React.FC = () => {
           bucketCounts.set(b, (bucketCounts.get(b) || 0) + 1);
         });
 
-        const order = ['0', '1', '2', '3', '4', '5+'] as const;
+        const order = ['1', '2', '3', '4', '5+'] as const;
         return order.map((b) => {
           const c = bucketCounts.get(b) || 0;
           const percent = totalUsers ? Math.round((c / totalUsers) * 1000) / 10 : 0;
@@ -567,23 +567,23 @@ const ChallengeCreation: React.FC = () => {
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.userCount ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>total users</Text>
+            <Text style={styles.analyticsLabel}>Total Users</Text>
           </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.newUsers7d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>new users (7d)</Text>
+            <Text style={styles.analyticsLabel}>New Users (7d)</Text>
           </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.weeklyActiveUsers7d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>active completers (7d)</Text>
+            <Text style={styles.analyticsLabel}>Active Completers (7d)</Text>
             <Text style={styles.analyticsHint}>
-              new: {analyticsLoading ? '…' : analytics?.newCompleters7d ?? '—'} · returning:{' '}
+              New: {analyticsLoading ? '…' : analytics?.newCompleters7d ?? '—'} · Returning:{' '}
               {analyticsLoading ? '…' : analytics?.returningCompleters7d ?? '—'}
             </Text>
           </View>
@@ -596,7 +596,7 @@ const ChallengeCreation: React.FC = () => {
                   ? analytics.activeChallengeUniqueCompletions
                   : '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>completed current challenge</Text>
+            <Text style={styles.analyticsLabel}>Completed Current Challenge</Text>
             {analytics?.activeChallenge?.title ? (
               <Text style={styles.analyticsHint} numberOfLines={1}>
                 {analytics.activeChallenge.title}
@@ -608,42 +608,42 @@ const ChallengeCreation: React.FC = () => {
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.medianDaysToFirstCompletion30d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>median days to 1st completion (30d)</Text>
+            <Text style={styles.analyticsLabel}>Median Days to 1st Completion (30d)</Text>
           </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.posts7d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>posts (7d)</Text>
+            <Text style={styles.analyticsLabel}>Posts (7d)</Text>
           </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.comments7d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>comments (7d)</Text>
+            <Text style={styles.analyticsLabel}>Comments (7d)</Text>
           </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.feedback7d ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>feedback (7d)</Text>
+            <Text style={styles.analyticsLabel}>Feedback (7d)</Text>
           </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.pendingReports ?? '—'}
             </Text>
-            <Text style={styles.analyticsLabel}>pending reports</Text>
+            <Text style={styles.analyticsLabel}>Pending Reports</Text>
           </View>
         </View>
 
         <View style={styles.chartsRow}>
           <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>new users (14d)</Text>
-            <Text style={styles.axisLabel}>y: count · x: last 14 days</Text>
+            <Text style={styles.chartTitle}>New Users (14d)</Text>
+            <Text style={styles.axisLabel}>Y: Count · X: Last 14 Days</Text>
             <View style={styles.barChart}>
               {newUsers14d.map((p) => (
                 <View
@@ -661,8 +661,8 @@ const ChallengeCreation: React.FC = () => {
           </View>
 
           <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>challenge completions (14d)</Text>
-            <Text style={styles.axisLabel}>y: count · x: last 14 days</Text>
+            <Text style={styles.chartTitle}>Challenge Completions (14d)</Text>
+            <Text style={styles.axisLabel}>Y: Count · X: Last 14 Days</Text>
             <View style={styles.barChart}>
               {completions14d.map((p) => (
                 <View
@@ -681,8 +681,8 @@ const ChallengeCreation: React.FC = () => {
         </View>
 
         <View style={styles.chartWideCard}>
-          <Text style={styles.chartTitle}>users by total challenges completed</Text>
-          <Text style={styles.axisLabel}>y: users · x: total completions</Text>
+          <Text style={styles.chartTitle}>Users by Total Challenges Completed</Text>
+          <Text style={styles.axisLabel}>Y: Users · X: Total Completions</Text>
           <View style={styles.bucketRow}>
             {(analytics?.completionBuckets || []).map((b) => (
               <View key={b.label} style={styles.bucketItem}>
@@ -693,7 +693,6 @@ const ChallengeCreation: React.FC = () => {
                       styles.bucketBar,
                       {
                         width: `${Math.min(100, Math.round((b.count / Math.max(...(analytics?.completionBuckets || []).map((x) => x.count), 1)) * 100))}%`,
-                        backgroundColor: colors.light.primary,
                       },
                     ]}
                   />
@@ -1100,17 +1099,14 @@ const styles = StyleSheet.create({
   },
   analyticsCard: {
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     width: '48%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   analyticsValue: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
     color: colors.light.text,
   },
@@ -1134,13 +1130,10 @@ const styles = StyleSheet.create({
   chartCard: {
     flex: 1,
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   chartTitle: {
     color: '#666',
@@ -1156,15 +1149,12 @@ const styles = StyleSheet.create({
   },
   chartWideCard: {
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     marginTop: 12,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   bucketRow: {
     flexDirection: 'row',
