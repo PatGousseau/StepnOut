@@ -648,38 +648,52 @@ const ChallengeCreation: React.FC = () => {
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>New Users (14d)</Text>
             <Text style={styles.axisLabel}>Y: Count · X: Last 14 Days</Text>
-            <View style={styles.barChart}>
-              {newUsers14d.map((p) => (
-                <View
-                  key={p.date}
-                  style={[
-                    styles.bar,
-                    {
-                      height: Math.max(3, Math.round((p.count / maxNewUsers14d) * 70)),
-                      backgroundColor: colors.light.secondary,
-                    },
-                  ]}
-                />
-              ))}
+            <View style={styles.barChartRow}>
+              <View style={styles.yAxis}>
+                <Text style={styles.yAxisTick}>{maxNewUsers14d}</Text>
+                <Text style={styles.yAxisTick}>{Math.round(maxNewUsers14d / 2)}</Text>
+                <Text style={styles.yAxisTick}>0</Text>
+              </View>
+              <View style={styles.barChart}>
+                {newUsers14d.map((p) => (
+                  <View
+                    key={p.date}
+                    style={[
+                      styles.bar,
+                      {
+                        height: Math.max(3, Math.round((p.count / maxNewUsers14d) * 70)),
+                        backgroundColor: colors.light.secondary,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
           </View>
 
           <View style={styles.chartCard}>
             <Text style={styles.chartTitle}>Challenge Completions (14d)</Text>
             <Text style={styles.axisLabel}>Y: Count · X: Last 14 Days</Text>
-            <View style={styles.barChart}>
-              {completions14d.map((p) => (
-                <View
-                  key={p.date}
-                  style={[
-                    styles.bar,
-                    {
-                      height: Math.max(3, Math.round((p.count / maxCompletions14d) * 70)),
-                      backgroundColor: colors.light.primary,
-                    },
-                  ]}
-                />
-              ))}
+            <View style={styles.barChartRow}>
+              <View style={styles.yAxis}>
+                <Text style={styles.yAxisTick}>{maxCompletions14d}</Text>
+                <Text style={styles.yAxisTick}>{Math.round(maxCompletions14d / 2)}</Text>
+                <Text style={styles.yAxisTick}>0</Text>
+              </View>
+              <View style={styles.barChart}>
+                {completions14d.map((p) => (
+                  <View
+                    key={p.date}
+                    style={[
+                      styles.bar,
+                      {
+                        height: Math.max(3, Math.round((p.count / maxCompletions14d) * 70)),
+                        backgroundColor: colors.light.primary,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
             </View>
           </View>
         </View>
@@ -1193,7 +1207,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#666',
   },
+  barChartRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 8,
+  },
+  yAxis: {
+    width: 28,
+    height: 72,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  yAxisTick: {
+    fontSize: 10,
+    color: '#999',
+    fontWeight: '700',
+  },
   barChart: {
+    flex: 1,
     height: 72,
     flexDirection: 'row',
     alignItems: 'flex-end',
