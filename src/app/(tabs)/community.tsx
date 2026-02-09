@@ -4,8 +4,10 @@ import { colors } from '../../constants/Colors';
 import { Text } from '../../components/StyledText';
 import { FilledAvatarCircle, FilledAvatarCircleUser } from '../../components/FilledAvatarCircle';
 import { useChallengeCompleters } from '../../hooks/useChallengeCompleters';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function CommunityScreen() {
+  const { t } = useLanguage();
   const { users: completers, loading } = useChallengeCompleters();
 
   const [spotlightName, setSpotlightName] = useState<string | null>(null);
@@ -15,16 +17,16 @@ export default function CommunityScreen() {
     return completers as FilledAvatarCircleUser[];
   }, [completers]);
 
-  const countLabel = loading ? 'Loading…' : `${users.length} Completed`;
+  const countLabel = loading ? t('Loading…') : t('(count) Completed', { count: users.length });
 
-  const spotlightLabel = spotlightName ? `@${spotlightName}` : 'Someone this week';
-  const spotlightBody = spotlightText?.trim() ? spotlightText.trim() : 'No caption — just vibes.';
+  const spotlightLabel = spotlightName ? `@${spotlightName}` : t('Someone this week');
+  const spotlightBody = spotlightText?.trim() ? spotlightText.trim() : t('No caption — just vibes.');
 
   return (
     <View style={styles.screen}>
       <View style={styles.card}>
-        <Text style={styles.title}>This Week</Text>
-        <Text style={styles.subtitle}>Challenge Finishers</Text>
+        <Text style={styles.title}>{t('This Week')}</Text>
+        <Text style={styles.subtitle}>{t('Challenge Finishers')}</Text>
         <Text style={styles.meta}>{countLabel}</Text>
 
         <View style={styles.circleWrap}>
