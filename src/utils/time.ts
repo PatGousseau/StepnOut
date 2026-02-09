@@ -1,4 +1,7 @@
-export const formatRelativeTime = (dateString: string, t: (key: string, params?: Record<string, unknown>) => string) => {
+import { useLanguage } from "../contexts/LanguageContext";
+
+export const formatRelativeTime = (dateString: string) => {
+  const { t } = useLanguage();
 
   if (!dateString) return t('just now');
 

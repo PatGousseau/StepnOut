@@ -33,25 +33,27 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const initializeLikes = async (items: (Post | Comment)[], type: "post" | "comment") => {
     const ids = items.map((item) => item.id);
+
+    const [likesMap, countsMap] = await Promise.all([
+      type === "post"
+        ? postService.fetchPostsLikes(ids, user?.id)
+        : postService.fetchCommentsLikes(ids, user?.id),
+      type === "post"
+        ? postService.fetchPostLikesCounts(ids)
+        : postService.fetchCommentLikesCounts(ids),
+    ]);
+
     const setLikedItems = type === "post" ? setLikedPosts : setLikedComments;
     const setItemCounts = type === "post" ? setPostLikeCounts : setCommentLikeCounts;
 
-    // Counts are already available from the DB join on each item
-    const countsFromItems: { [id: number]: number } = {};
-    for (const item of items) {
-      countsFromItems[item.id] = (item as Post & { likes_count?: number }).likes_count ?? 0;
-    }
-    setItemCounts((prev) => ({
-      ...prev,
-      ...countsFromItems,
-    }));
-
-    // Only fetch the current user's liked status (single query)
-    if (!user?.id) return;
-    const likedIds = await postService.fetchUserLikedIds(ids, type, user.id);
     setLikedItems((prev) => ({
       ...prev,
-      ...Object.fromEntries(ids.map((id) => [id, likedIds.has(id)])),
+      ...Object.fromEntries(ids.map((id) => [id, likesMap[id]?.isLiked || false])),
+    }));
+
+    setItemCounts((prev) => ({
+      ...prev,
+      ...countsMap,
     }));
   };
 

@@ -142,17 +142,12 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
-  const [usersLoaded, setUsersLoaded] = useState(initialComments.length === 0);
 
   useEffect(() => {
     setComments(initialComments);
+    // Initialize likes for the comments
     if (initialComments.length > 0) {
-      setUsersLoaded(false);
       initializeCommentLikes(initialComments);
-      const userIds = [...new Set(initialComments.map(c => c.userId))];
-      User.prefetchUsers(userIds).then(() => setUsersLoaded(true));
-    } else {
-      setUsersLoaded(true);
     }
   }, [initialComments]);
 
@@ -239,7 +234,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     });
   };
 
-  if (loading || !usersLoaded) {
+  if (loading) {
     return (
       <View style={loadingContainerStyle}>
         <CommentsListSkeleton count={4} />
@@ -416,7 +411,7 @@ interface CommentProps {
   onCommentDeleted?: () => void;
 }
 
-const CommentInner: React.FC<CommentProps> = ({
+const Comment: React.FC<CommentProps> = ({
   id,
   userId,
   text,
@@ -431,7 +426,6 @@ const CommentInner: React.FC<CommentProps> = ({
   const { onClose } = useContext(CommentsContext);
   const { user: currentUser, isAdmin } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
-  const { t } = useLanguage();
 
   const [user, setUser] = useState<User | null>(null);
   const [replyToUser, setReplyToUser] = useState<User | null>(null);
@@ -516,7 +510,7 @@ const CommentInner: React.FC<CommentProps> = ({
             <View style={nameContainerStyle}>
               <Text style={displayNameStyle}>{user.name}</Text>
               <Text style={usernameStyle}>@{user.username}</Text>
-              <Text style={timestampStyle}>{formatRelativeTime(created_at, t)}</Text>
+              <Text style={timestampStyle}>{formatRelativeTime(created_at)}</Text>
             </View>
           </TouchableOpacity>
           <View style={commentFooterStyle}>
@@ -582,8 +576,6 @@ const CommentInner: React.FC<CommentProps> = ({
     </View>
   );
 };
-
-const Comment = React.memo(CommentInner);
 
 const commentAvatarStyle: ImageStyle = {
   borderRadius: 15,

@@ -112,4 +112,4 @@ const styles: Record<string, ViewStyle | TextStyle> = {
   },
 };
 
-export default React.memo(WelcomePostGroup);
+export default WelcomePostGroup;
