@@ -11,6 +11,7 @@ export type ChallengeCompleter = {
 
 export function useChallengeCompleters() {
   const [users, setUsers] = useState<ChallengeCompleter[]>([]);
+  const [challengeTitle, setChallengeTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +22,7 @@ export function useChallengeCompleters() {
     try {
       const { data: activeChallenge, error: activeChallengeError } = await supabase
         .from('challenges')
-        .select('id, created_at')
+        .select('id, created_at, title, title_it')
         .eq('is_active', true)
         .single();
 
@@ -34,7 +35,7 @@ export function useChallengeCompleters() {
       // temporarily show last week's challenge (the most recent one before the active challenge)
       const { data: lastWeekChallenge, error: lastWeekError } = await supabase
         .from('challenges')
-        .select('id')
+        .select('id, title, title_it')
         .lt('created_at', activeChallenge.created_at)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -42,6 +43,9 @@ export function useChallengeCompleters() {
 
       if (lastWeekError) throw lastWeekError;
       const challengeId = lastWeekChallenge?.id ?? activeChallenge.id;
+
+      const title = (lastWeekChallenge as any)?.title ?? (activeChallenge as any)?.title ?? null;
+      setChallengeTitle(title);
 
       const { data, error: submissionsError } = await supabase
         .from('post')
@@ -95,6 +99,7 @@ export function useChallengeCompleters() {
     } catch (e) {
       console.error('Error fetching challenge completers:', e);
       setUsers([]);
+      setChallengeTitle(null);
       setError(e instanceof Error ? e.message : 'Failed to fetch challenge completers');
     } finally {
       setLoading(false);
@@ -105,5 +110,5 @@ export function useChallengeCompleters() {
     fetchCompleters();
   }, [fetchCompleters]);
 
-  return { users, loading, error, refetch: fetchCompleters };
+  return { users, challengeTitle, loading, error, refetch: fetchCompleters };
 }

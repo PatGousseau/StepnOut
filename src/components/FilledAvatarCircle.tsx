@@ -127,6 +127,7 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
           const left = center + p.x - avatarSize / 2;
           const top = center + p.y - avatarSize / 2;
           const isHighlighted = i === highlightedIndex;
+          const hasPfp = !!u.profileImageUrl;
 
           return (
             <View
@@ -138,7 +139,7 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
                   height: avatarSize,
                   left,
                   top,
-                  zIndex: isHighlighted ? 10 : 1,
+                  zIndex: (isHighlighted ? 10 : 0) + (hasPfp ? 2 : 1),
                 },
               ]}
             >

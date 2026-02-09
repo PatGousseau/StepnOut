@@ -8,7 +8,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function CommunityScreen() {
   const { t } = useLanguage();
-  const { users: completers, loading } = useChallengeCompleters();
+  const { users: completers, challengeTitle, loading } = useChallengeCompleters();
 
   const [spotlightName, setSpotlightName] = useState<string | null>(null);
   const [spotlightText, setSpotlightText] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export default function CommunityScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.card}>
-        <Text style={styles.title}>{t('This Week')}</Text>
+        <Text style={styles.title}>{challengeTitle || t('Challenge')}</Text>
         <Text style={styles.subtitle}>{t('Challenge Finishers')}</Text>
         <Text style={styles.meta}>{countLabel}</Text>
 
