@@ -120,7 +120,11 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
     <View style={styles.container} onLayout={onLayout}>
       <View style={styles.circleClip}>
         {size > 0 &&
-          users.map((u, i) => {
+          [...users
+            .map((u, i) => ({ u, i }))
+            // render placeholders first so real pfps naturally stack on top
+            .sort((a, b) => Number(!!a.u.profileImageUrl) - Number(!!b.u.profileImageUrl))
+          ].map(({ u, i }) => {
           const p = positions[i];
           const left = center + p.x - avatarSize / 2;
           const top = center + p.y - avatarSize / 2;
@@ -137,7 +141,8 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
                   height: avatarSize,
                   left,
                   top,
-                  zIndex: (isHighlighted ? 10 : 0) + (hasPfp ? 2 : 1),
+                  zIndex: (isHighlighted ? 1000 : 0) + (hasPfp ? 100 : 0),
+                  elevation: (isHighlighted ? 1000 : 0) + (hasPfp ? 100 : 0),
                 },
               ]}
             >
