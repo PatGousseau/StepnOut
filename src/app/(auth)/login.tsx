@@ -76,12 +76,14 @@ export default function LoginScreen() {
     // Handle EULA
     if (!profile?.eula_accepted) {
       Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-        { text: t('Accept'), onPress: async () => {
-          await supabase
-            .from('profiles')
-            .update({ eula_accepted: true })
-            .eq('id', userId);
-        } },
+        {
+          text: t('Accept'), onPress: async () => {
+            await supabase
+              .from('profiles')
+              .update({ eula_accepted: true })
+              .eq('id', userId);
+          }
+        },
         {
           text: t('Decline'),
           onPress: async () => {
@@ -163,18 +165,26 @@ export default function LoginScreen() {
       // Check if this is their first login after verification
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_login, eula_accepted')
+        .select('first_login, eula_accepted, username')
         .eq('id', session.user.id)
         .single();
 
+      // If no username, this is a new user - send to profile setup
+      if (!profile?.username) {
+        router.replace(`/(auth)/register-profile`);
+        return;
+      }
+
       if (!profile?.eula_accepted) {
         Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          { text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', session.user.id);
-          } },
+          {
+            text: t('Accept'), onPress: async () => {
+              await supabase
+                .from('profiles')
+                .update({ eula_accepted: true })
+                .eq('id', session.user.id);
+            }
+          },
           {
             text: t('Decline'),
             onPress: () => router.replace('/(auth)/login')
@@ -187,7 +197,7 @@ export default function LoginScreen() {
           .from('profiles')
           .update({ first_login: false })
           .eq('id', session.user.id);
-        
+
         router.replace('/(auth)/onboarding');
       } else {
         router.replace('/(tabs)');
@@ -200,7 +210,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
@@ -234,8 +244,8 @@ export default function LoginScreen() {
           <Text style={styles.forgotPasswordText}>{t('Forgot password?')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleLogin}
           disabled={loading}
         >
@@ -278,7 +288,7 @@ export default function LoginScreen() {
           />
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.linkButton}
           onPress={() => router.push('/(auth)/register')}
         >

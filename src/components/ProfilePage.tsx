@@ -347,7 +347,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                         style={[styles.editInput, styles.usernameInput]}
                         placeholder={t("Username")}
                         value={editedInstagram}
-                        //onChangeText={setEditedInstagram}
                         onChangeText={(text) => setEditedInstagram(text.replace(/[@\s]+/g, ''))}
                         autoCapitalize="none"
                         keyboardType="default"
