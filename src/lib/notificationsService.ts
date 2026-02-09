@@ -79,7 +79,7 @@ export async function sendLikeNotification(
     
     const title = translations.title.replace('(username)', senderUsername);
     const body = translations.body;
-    const data = { type: 'post', postId, senderId, ...(commentId ? { commentId } : {}) };
+    const data = { postId, senderId, ...(commentId ? { commentId } : {}) };
 
     await sendPushNotification(pushToken, title, body, data);
 }
@@ -117,7 +117,7 @@ export async function sendCommentNotification(
 
     const title = translations.title.replace('(username)', senderUsername);
     const body = `"${commentText}"`;
-    const data = { type: 'post', postId, senderId, commentId };
+    const data = { postId, senderId, commentId };
 
     await sendPushNotification(pushToken, title, body, data);
 }
