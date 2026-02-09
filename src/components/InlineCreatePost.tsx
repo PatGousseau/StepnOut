@@ -126,7 +126,6 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           multiline
-          maxLength={500}
         />
       </View>
 
