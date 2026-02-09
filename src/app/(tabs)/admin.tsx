@@ -183,7 +183,11 @@ const ChallengeCreation: React.FC = () => {
           .order('id', { ascending: true })
           .range(0, 999),
 
-        supabase.from('post').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
+        supabase
+          .from('post')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', since7d)
+          .eq('is_welcome', false),
         supabase.from('comments').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('feedback').select('id', { count: 'exact', head: true }).gte('created_at', since7d),
         supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
