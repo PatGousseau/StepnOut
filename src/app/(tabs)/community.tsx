@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '../../constants/Colors';
 import { Text } from '../../components/StyledText';
@@ -10,17 +10,11 @@ export default function CommunityScreen() {
   const { t } = useLanguage();
   const { users: completers, challengeTitle, loading } = useChallengeCompleters();
 
-  const [spotlightName, setSpotlightName] = useState<string | null>(null);
-  const [spotlightText, setSpotlightText] = useState<string | null>(null);
-
   const users = useMemo(() => {
     return completers as FilledAvatarCircleUser[];
   }, [completers]);
 
   const countLabel = loading ? t('Loading…') : t('(count) Completed', { count: users.length });
-
-  const spotlightLabel = spotlightName ? `@${spotlightName}` : t('Someone this week');
-  const spotlightBody = spotlightText?.trim() ? spotlightText.trim() : t('No caption — just vibes.');
 
   return (
     <View style={styles.screen}>
@@ -35,27 +29,9 @@ export default function CommunityScreen() {
               <ActivityIndicator />
             </View>
           ) : (
-            <FilledAvatarCircle
-              users={users}
-              intervalMs={2200}
-              onHighlightChange={(u) => {
-                const username = (u as any)?.username ?? null;
-                const body = (u as any)?.latestPostBody ?? null;
-                setSpotlightName(username);
-                setSpotlightText(body);
-              }}
-            />
+            <FilledAvatarCircle users={users} />
           )}
         </View>
-
-        {!loading && users.length > 0 && (
-          <View style={styles.quoteCard}>
-            <Text style={styles.quoteAt}>{spotlightLabel}</Text>
-            <Text style={styles.quoteBody} numberOfLines={3}>
-              “{spotlightBody}”
-            </Text>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -104,24 +80,5 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  quoteCard: {
-    marginTop: 14,
-    padding: 14,
-    borderRadius: 12,
-    backgroundColor: colors.light.background,
-    borderWidth: 1,
-    borderColor: colors.neutral.grey2,
-  },
-  quoteAt: {
-    color: colors.light.primary,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  quoteBody: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 20,
   },
 });

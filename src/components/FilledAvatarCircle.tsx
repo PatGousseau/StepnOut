@@ -57,6 +57,7 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
 
   const scalesRef = useRef<Animated.Value[]>([]);
   const prevHighlightedRef = useRef(0);
+  const spotlightEnabled = false;
 
   useEffect(() => {
     // keep one animated value per user
@@ -68,6 +69,7 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
   }, [users.length]);
 
   useEffect(() => {
+    if (!spotlightEnabled) return;
     if (users.length === 0) return;
 
     const prev = prevHighlightedRef.current;
@@ -99,15 +101,11 @@ export function FilledAvatarCircle({ users, intervalMs = 2000, onHighlightChange
           })
         : Animated.delay(0),
     ]).start();
-  }, [highlightedIndex, users, onHighlightChange]);
+  }, [highlightedIndex, users, onHighlightChange, spotlightEnabled]);
 
   useEffect(() => {
-    if (users.length <= 1) return;
-    const t = setInterval(() => {
-      setHighlightedIndex((i) => (i + 1) % users.length);
-    }, intervalMs);
-    return () => clearInterval(t);
-  }, [users.length, intervalMs]);
+    // spotlight disabled for now
+  }, []);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
