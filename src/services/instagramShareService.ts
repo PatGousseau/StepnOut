@@ -1,5 +1,4 @@
 import { Linking, Platform, Share as RNShare } from "react-native";
-import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 
 const APP_STORE_URL = "https://apps.apple.com/app/stepnout/id6670766555";
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.patrickgousseau.stepnout";
@@ -23,17 +22,6 @@ async function getShareModule() {
     }
   }
   return { Share: ShareModule, Social };
-}
-
-/**
- * Convert a file URI to a base64 data URL for Instagram Stories sharing.
- * Instagram Stories on iOS requires base64 data via the pasteboard.
- */
-async function fileUriToBase64DataUrl(fileUri: string): Promise<string> {
-  const base64 = await readAsStringAsync(fileUri, {
-    encoding: EncodingType.Base64,
-  });
-  return `data:image/png;base64,${base64}`;
 }
 
 export const instagramShareService = {
@@ -80,24 +68,14 @@ export const instagramShareService = {
         return this.shareNative(imageUri);
       }
 
-      const attributionURL = this.getAttributionUrl();
-
-      // react-native-share requires base64 data URL for Instagram Stories backgroundImage
-      let backgroundImage = imageUri;
-      if (imageUri.startsWith("file://") || (imageUri.startsWith("/") && !imageUri.startsWith("data:"))) {
-        console.log("[Instagram Share] Converting file URI to base64...");
-        const filePath = imageUri.startsWith("file://") ? imageUri.replace("file://", "") : imageUri;
-        backgroundImage = await fileUriToBase64DataUrl(filePath);
-      }
-
       console.log("[Instagram Share] Attempting to share to Instagram Stories...");
-      console.log("[Instagram Share] appId:", FACEBOOK_APP_ID);
-      console.log("[Instagram Share] Image type:", backgroundImage.startsWith("data:") ? "base64" : "other");
+      console.log("[Instagram Share] Image URI:", imageUri.substring(0, 80));
 
       await Share.shareSingle({
+        stickerImage: imageUri,
         social: SocialEnum.InstagramStories,
-        backgroundImage,
-        attributionURL,
+        backgroundBottomColor: "#000000",
+        backgroundTopColor: "#000000",
         appId: FACEBOOK_APP_ID,
       });
 
