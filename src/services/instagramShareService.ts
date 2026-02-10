@@ -72,10 +72,8 @@ export const instagramShareService = {
       console.log("[Instagram Share] Image URI:", imageUri.substring(0, 80));
 
       await Share.shareSingle({
-        stickerImage: imageUri,
+        backgroundImage: imageUri,
         social: SocialEnum.InstagramStories,
-        backgroundBottomColor: "#000000",
-        backgroundTopColor: "#000000",
         appId: FACEBOOK_APP_ID,
       });
 

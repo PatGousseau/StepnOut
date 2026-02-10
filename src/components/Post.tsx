@@ -81,9 +81,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
-  const { storyCardRef, isSharing, onImageLoad, shareToInstagram } = useInstagramShare({
+  const { storyCardRef, isSharing, onImageLoad, completionCount, shareToInstagram } = useInstagramShare({
     postId: post.id,
     isChallengePost: !!post.challenge_id,
+    challengeId: post.challenge_id,
     mediaUrl: post.media?.file_path,
   });
 
@@ -547,6 +548,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           challengeTitle={post.challenge_title}
           mediaUrl={post.media?.file_path}
           postText={post.body}
+          completionCount={completionCount}
           onImageLoad={onImageLoad}
         />
 

@@ -1,14 +1,16 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { captureRef } from "react-native-view-shot";
 import { Image } from "expo-image";
 import { instagramShareService } from "../services/instagramShareService";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { supabase } from "../lib/supabase";
 
 interface UseInstagramShareOptions {
   postId: number;
   isChallengePost: boolean;
+  challengeId?: number;
   mediaUrl?: string;
 }
 
@@ -17,17 +19,29 @@ interface UseInstagramShareReturn {
   isSharing: boolean;
   imageLoaded: boolean;
   onImageLoad: () => void;
+  completionCount: number;
   shareToInstagram: () => Promise<void>;
 }
 
 export function useInstagramShare({
   postId,
   isChallengePost,
+  challengeId,
   mediaUrl,
 }: UseInstagramShareOptions): UseInstagramShareReturn {
   const storyCardRef = useRef<View>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(!mediaUrl);
+  const [completionCount, setCompletionCount] = useState(0);
+
+  useEffect(() => {
+    if (!challengeId) return;
+    supabase
+      .from("post")
+      .select("id", { count: "exact", head: true })
+      .eq("challenge_id", challengeId)
+      .then(({ count }) => setCompletionCount(count || 0));
+  }, [challengeId]);
 
   const onImageLoad = useCallback(() => {
     setImageLoaded(true);
@@ -103,6 +117,7 @@ export function useInstagramShare({
     isSharing,
     imageLoaded,
     onImageLoad,
+    completionCount,
     shareToInstagram,
   };
 }

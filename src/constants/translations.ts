@@ -245,4 +245,9 @@ export const translations = {
   "Instagram profile not found. Check your username": "Profilo Instagram non trovato. Controlla il tuo nome utente",
   "Instagram usernames can only use letters, numbers, underscores and periods.": "I nomi utente di Instagram possono contenere solo lettere, numeri, trattini bassi e punti.",
   "Join me on StepnOut!": "Unisciti a me su StepnOut!",
+  "THIS WEEK'S CHALLENGE": "LA SFIDA DELLA SETTIMANA",
+  "Join me and": "Unisciti a me e ad altri",
+  "others who completed this week's challenge on StepnOut": "che hanno completato la sfida della settimana su StepnOut",
+  "Join me on StepnOut": "Unisciti a me su StepnOut",
+  "Download free on iOS & Android": "Scarica gratis su iOS e Android",
 };
