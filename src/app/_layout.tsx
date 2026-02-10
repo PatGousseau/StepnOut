@@ -118,9 +118,42 @@ function RootLayoutNav() {
       console.log('Notification received:', notification);
     });
 
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification tapped:', response);
+    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+      try {
+        const data = (response?.notification?.request?.content?.data ?? {}) as Record<string, unknown>;
+
+        // support both new (type/postId) and legacy (postId) payloads
+        const postId = data['postId'] ?? data['post_id'];
+        const challengeId = data['challengeId'] ?? data['challenge_id'];
+
+        if (typeof postId === 'string' || typeof postId === 'number') {
+          const postIdStr = String(postId);
+          if (postIdStr.length > 0) {
+            router.push(`/post/${postIdStr}`);
+            return;
+          }
+        }
+
+        if (typeof challengeId === 'string' || typeof challengeId === 'number') {
+          const challengeIdStr = String(challengeId);
+          if (challengeIdStr.length > 0) {
+            router.push(`/challenge/${challengeIdStr}`);
+            return;
+          }
+        }
+
+        console.log('Notification tapped (no navigable data):', data);
+      } catch (e) {
+        console.error('Error handling notification tap:', e);
+      }
+    };
+
+    // handle the "cold start" case (app launched from a notification)
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) handleNotificationResponse(response);
     });
+
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
 
     return () => {
       subscription.remove();

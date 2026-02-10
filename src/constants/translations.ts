@@ -140,7 +140,7 @@ export const translations = {
   "Auth session missing. Open the reset link again from your email.": "Sessione di autenticazione mancante. Apri di nuovo il link di reset dalla tua email.",
   "Password update timed out. Please try opening the reset link again.": "Aggiornamento password scaduto. Prova ad aprire di nuovo il link di reset.",
   "Don't have an account? Register": "Non hai un account? Registrati",
-  "Welcome to Stepn Out!": "Benvenuto su Stepn Out!", 
+  "Welcome to Stepn Out!": "Benvenuto su Stepn Out!",
   "A community for people who want to step out of their comfort zone and challenge themselves.":
     "Una community per le persone che vogliono uscire dalla propria zona di comfort e mettersi alla prova.",
   "Create a discussion post": "Crea un post di discussione",
@@ -190,6 +190,8 @@ export const translations = {
   Someone: "Qualcuno",
   "active today": "attivi oggi",
   "Recently active": "Attivi di recente",
+  "Most recent": "Più recenti",
+  Popular: "Popolari",
   "Mark as complete": "Segna come completato",
   "Challenge completed!": "Sfida completata!",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
@@ -238,4 +240,6 @@ export const translations = {
   "Passwords do not match": "Le password non corrispondono",
   "Password*": "Password*",
   "View all (count) comments": "Vedi tutti i (count) commenti",
+  "Instagram profile not found. Check your username": "Profilo Instagram non trovato. Controlla il tuo nome utente",
+  "Instagram usernames can only use letters, numbers, underscores and periods.": "I nomi utente di Instagram possono contenere solo lettere, numeri, trattini bassi e punti.",
 };

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { Post } from "../types";
+import { Post, FeedSort } from "../types";
 import { User, UserProfile } from "../models/User";
 import { useAuth } from "../contexts/AuthContext";
 import { useLikes } from "../contexts/LikesContext";
@@ -11,8 +11,7 @@ import { postService } from "../services/postService";
 import { captureEvent } from "../lib/posthog";
 import { FEED_EVENTS } from "../constants/analyticsEvents";
 
-// Types for loading stage tracking
-type LoadingStage = 
+type LoadingStage =
   | 'idle'
   | 'blocked_users_loading'
   | 'blocked_users_complete'
@@ -48,7 +47,45 @@ interface CommentRow {
   profiles: { username: string } | null;
 }
 
-export const useFetchHomeData = () => {
+function formatPosts(posts: any[], likedPosts: PostLikes): { posts: Post[]; userMap: UserMap } {
+  const extractedUserMap: UserMap = {};
+
+  const formattedPosts = posts.map((post: any) => {
+    if (post.profiles) {
+      const profile = post.profiles;
+      extractedUserMap[post.user_id] = {
+        id: profile.id,
+        username: profile.username,
+        name: profile.name,
+        profileImageUrl: profile.profile_media?.file_path
+          ? imageService.getProfileImageUrlSync(profile.profile_media.file_path)
+          : null,
+      } as UserProfile;
+    }
+
+    let mediaUrl = post.media?.file_path;
+    if (mediaUrl && !mediaUrl.startsWith('http')) {
+      mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
+    }
+
+    return {
+      ...post,
+      media: mediaUrl ? { file_path: mediaUrl } : post.media,
+      likes_count: post.likes?.[0]?.count ?? 0,
+      comments_count: post.comments?.length ?? 0,
+      liked: likedPosts[post.id] ?? false,
+      challenge_title: post.challenges?.title,
+      profiles: undefined,
+    } as Post;
+  });
+
+  return { posts: formattedPosts, userMap: extractedUserMap };
+}
+
+export const useFetchHomeData = (
+  submissionSort: FeedSort = "recent",
+  discussionSort: FeedSort = "recent"
+) => {
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
   const { initializePostLikes } = useLikes();
@@ -72,7 +109,6 @@ export const useFetchHomeData = () => {
   });
   const hasLoggedSlowLoadingRef = useRef(false);
 
-  // Helper to update diagnostics
   const updateDiagnostics = useCallback((updates: Partial<LoadingDiagnostics>) => {
     diagnosticsRef.current = {
       ...diagnosticsRef.current,
@@ -81,14 +117,13 @@ export const useFetchHomeData = () => {
     };
   }, []);
 
-  // Helper to send slow loading log to PostHog
   const sendSlowLoadingLog = useCallback(() => {
     if (hasLoggedSlowLoadingRef.current) return;
     hasLoggedSlowLoadingRef.current = true;
 
     const diagnostics = diagnosticsRef.current;
-    const loadingDuration = loadingStartTimeRef.current 
-      ? Date.now() - loadingStartTimeRef.current 
+    const loadingDuration = loadingStartTimeRef.current
+      ? Date.now() - loadingStartTimeRef.current
       : 0;
 
     captureEvent(FEED_EVENTS.LOADING_SLOW, {
@@ -111,10 +146,9 @@ export const useFetchHomeData = () => {
     });
   }, [user?.id]);
 
-  // Start/stop slow loading timer based on loading state
   const startSlowLoadingTimer = useCallback(() => {
-    if (slowLoadingTimerRef.current) return; // Already running
-    
+    if (slowLoadingTimerRef.current) return;
+
     loadingStartTimeRef.current = Date.now();
     hasLoggedSlowLoadingRef.current = false;
     updateDiagnostics({ stage: 'blocked_users_loading' });
@@ -133,7 +167,6 @@ export const useFetchHomeData = () => {
     updateDiagnostics({ stage: 'complete' });
   }, [updateDiagnostics]);
 
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (slowLoadingTimerRef.current) {
@@ -162,7 +195,6 @@ export const useFetchHomeData = () => {
 
   const blockedUserIds = blockedUsers ?? [];
 
-  // Track blocked users query status
   useEffect(() => {
     const status = blockedUsersLoading ? 'loading' : (blockedUsersError ? 'error' : 'success');
     updateDiagnostics({
@@ -173,105 +205,126 @@ export const useFetchHomeData = () => {
     });
   }, [blockedUsersLoading, blockedUsersError, blockedUserIds.length, updateDiagnostics]);
 
-  // Fetch posts (now includes user profiles via foreign key join!)
+  const fetchFeedPage = useCallback(
+    (feedType: "challenge" | "discussion", sort: FeedSort) =>
+      async ({ pageParam = 1 }: { pageParam?: number }) => {
+        if (sort === "popular") {
+          return postService.fetchPopularPosts(feedType, pageParam, blockedUserIds, POSTS_PER_PAGE);
+        }
+        return postService.fetchRecentPosts(feedType, pageParam, blockedUserIds, POSTS_PER_PAGE);
+      },
+    [blockedUserIds]
+  );
+
+  const enabled = !!user && blockedUsers !== undefined;
+
   const {
-    data: postsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading: postsLoading,
-    isRefetching: postsRefetching,
-    isError: postsError,
-    error: postsErrorDetails,
-    refetch: refetchPosts,
+    data: challengeData,
+    fetchNextPage: fetchNextChallengePage,
+    hasNextPage: hasMoreChallenges,
+    isFetchingNextPage: isFetchingNextChallengePage,
+    isLoading: challengeLoading,
+    isRefetching: challengeRefetching,
+    isError: challengeError,
+    refetch: refetchChallenges,
   } = useInfiniteQuery({
-    queryKey: ["home-posts", blockedUserIds],
-    queryFn: async ({ pageParam = 1 }) => {
-      return postService.fetchHomePosts(pageParam, blockedUserIds, POSTS_PER_PAGE);
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.hasMore ? allPages.length + 1 : undefined;
-    },
+    queryKey: ["home-posts", "challenge", submissionSort, blockedUserIds],
+    queryFn: fetchFeedPage("challenge", submissionSort),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore ? allPages.length + 1 : undefined,
     initialPageParam: 1,
-    enabled: !!user && blockedUsers !== undefined,
+    enabled,
     staleTime: 60000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: 1,
   });
 
-  // Track posts query status
+  const {
+    data: discussionData,
+    fetchNextPage: fetchNextDiscussionPage,
+    hasNextPage: hasMoreDiscussions,
+    isFetchingNextPage: isFetchingNextDiscussionPage,
+    isLoading: discussionLoading,
+    isRefetching: discussionRefetching,
+    isError: discussionError,
+    refetch: refetchDiscussions,
+  } = useInfiniteQuery({
+    queryKey: ["home-posts", "discussion", discussionSort, blockedUserIds],
+    queryFn: fetchFeedPage("discussion", discussionSort),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.hasMore ? allPages.length + 1 : undefined,
+    initialPageParam: 1,
+    enabled,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
+  });
+
+  const postsLoading = challengeLoading || discussionLoading;
+  const postsError = challengeError || discussionError;
+
   useEffect(() => {
     const status = postsLoading ? 'loading' : (postsError ? 'error' : 'success');
     updateDiagnostics({
       postsQueryStatus: status,
-      isRefetching: postsRefetching,
+      isRefetching: challengeRefetching || discussionRefetching,
       stage: postsLoading ? 'posts_loading' : 'posts_complete',
-      ...(postsErrorDetails ? { errors: [...diagnosticsRef.current.errors, `PostsQuery: ${(postsErrorDetails as Error).message}`] } : {}),
     });
-  }, [postsLoading, postsError, postsErrorDetails, postsRefetching, updateDiagnostics]);
+  }, [postsLoading, postsError, challengeRefetching, discussionRefetching, updateDiagnostics]);
 
-  // Flatten posts and extract user profiles from the joined data
-  const { posts, userMap } = useMemo(() => {
-    const rawPosts = postsData?.pages.flatMap((page) => page.posts) ?? [];
-    const extractedUserMap: UserMap = {};
+  const { posts: challengePosts, userMap: challengeUserMap } = useMemo(() => {
+    const pages = challengeData?.pages.flatMap((page) => page.posts) ?? [];
+    return formatPosts(pages, likedPosts);
+  }, [challengeData, likedPosts]);
 
-    const formattedPosts = rawPosts.map((post: any) => {
-      // Extract user profile from joined data
-      if (post.profiles) {
-        const profile = post.profiles;
-        extractedUserMap[post.user_id] = {
-          id: profile.id,
-          username: profile.username,
-          name: profile.name,
-          profileImageUrl: profile.profile_media?.file_path
-            ? imageService.getProfileImageUrlSync(profile.profile_media.file_path)
-            : null,
-        } as UserProfile;
-      }
+  const { posts: discussionPosts, userMap: discussionUserMap } = useMemo(() => {
+    const pages = discussionData?.pages.flatMap((page) => page.posts) ?? [];
+    return formatPosts(pages, likedPosts);
+  }, [discussionData, likedPosts]);
 
-      // Format post with image URL
-      let mediaUrl = post.media?.file_path;
-      if (mediaUrl && !mediaUrl.startsWith('http')) {
-        mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
-      }
+  const userMap = useMemo(
+    () => ({ ...challengeUserMap, ...discussionUserMap }),
+    [challengeUserMap, discussionUserMap]
+  );
 
-      return {
-        ...post,
-        media: mediaUrl ? { file_path: mediaUrl } : post.media,
-        likes_count: post.likes?.[0]?.count ?? 0,
-        comments_count: post.comments?.length ?? 0,
-        liked: likedPosts[post.id] ?? false,
-        challenge_title: post.challenges?.title,
-        profiles: undefined, // Remove joined profile data from post object
-      } as Post;
-    });
+  const allPosts = useMemo(
+    () => [...challengePosts, ...discussionPosts],
+    [challengePosts, discussionPosts]
+  );
 
-    return { posts: formattedPosts, userMap: extractedUserMap };
-  }, [postsData, likedPosts]);
-
-  // Track posts and userMap for diagnostics
   useEffect(() => {
     updateDiagnostics({
-      rawPostsCount: posts.length,
+      rawPostsCount: allPosts.length,
       userMapSize: Object.keys(userMap).length,
-      formattedPostsCount: posts.length,
+      formattedPostsCount: allPosts.length,
     });
-  }, [posts.length, userMap, updateDiagnostics]);
+  }, [allPosts.length, userMap, updateDiagnostics]);
 
   // Initialize likes when posts change
   useEffect(() => {
-    if (posts.length > 0) {
-      initializePostLikes(posts);
-      initializePostReactions(posts);
+    if (allPosts.length > 0) {
+      initializePostLikes(allPosts);
+      initializePostReactions(allPosts);
     }
-  }, [posts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allPosts.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadMorePosts = useCallback(() => {
-    if (!postsLoading && !isFetchingNextPage && hasNextPage) {
-      fetchNextPage();
+  const loadMoreChallenges = useCallback(() => {
+    if (!challengeLoading && !isFetchingNextChallengePage && hasMoreChallenges) {
+      fetchNextChallengePage();
     }
-  }, [postsLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+  }, [challengeLoading, isFetchingNextChallengePage, hasMoreChallenges, fetchNextChallengePage]);
+
+  const loadMoreDiscussions = useCallback(() => {
+    if (!discussionLoading && !isFetchingNextDiscussionPage && hasMoreDiscussions) {
+      fetchNextDiscussionPage();
+    }
+  }, [discussionLoading, isFetchingNextDiscussionPage, hasMoreDiscussions, fetchNextDiscussionPage]);
+
+  const refetchPosts = useCallback(async () => {
+    await Promise.all([refetchChallenges(), refetchDiscussions()]);
+  }, [refetchChallenges, refetchDiscussions]);
 
   const fetchPost = async (postId: number): Promise<Post | null> => {
     try {
@@ -325,13 +378,19 @@ export const useFetchHomeData = () => {
   }, [postsLoading, startSlowLoadingTimer, stopSlowLoadingTimer]);
 
   return {
-    posts,
+    // legacy/compat: some screens expect a single combined list
+    posts: allPosts,
+    challengePosts,
+    discussionPosts,
     userMap,
     loading: postsLoading,
     error: postsError,
-    loadMorePosts,
-    hasMore: hasNextPage ?? false,
-    isFetchingNextPage,
+    loadMoreChallenges,
+    loadMoreDiscussions,
+    hasMoreChallenges: hasMoreChallenges ?? false,
+    hasMoreDiscussions: hasMoreDiscussions ?? false,
+    isFetchingNextChallengePage,
+    isFetchingNextDiscussionPage,
     fetchPost,
     likedPosts,
     refetchPosts,
