@@ -25,16 +25,12 @@ const PostPage = () => {
   const [fetchedPostUser, setFetchedPostUser] = useState<unknown>(null);
 
   useEffect(() => {
-    console.log('[post page] params', params);
-    console.log('[post page] postId', postId, 'posts.length', posts?.length);
-
     if (!postId) {
       console.error('[post page] no id available', params);
       return;
     }
 
     const cachedPost = posts?.find(p => p.id === postId);
-    console.log('[post page] cachedPost?', !!cachedPost);
     if (cachedPost) {
       setPost(cachedPost);
       return;
@@ -44,9 +40,7 @@ const PostPage = () => {
     const loadPost = async () => {
       setFetchingPost(true);
       try {
-        console.log('[post page] fetching post', postId);
         const fetchedPost = await fetchPost(postId);
-        console.log('[post page] fetchedPost?', !!fetchedPost, 'fetchedPost.user_id', fetchedPost?.user_id);
         setPost(fetchedPost);
       } catch (error) {
         console.error('[post page] error loading post', error);
@@ -63,9 +57,7 @@ const PostPage = () => {
       if (!post?.user_id) return;
       if (userMap?.[post.user_id]) return;
       try {
-        console.log('[post page] user missing from userMap, fetching profile', post.user_id);
         const profile = await profileService.fetchProfileById(post.user_id);
-        console.log('[post page] fetched profile?', !!profile);
         setFetchedPostUser(profile);
       } catch (e) {
         console.error('[post page] error fetching post user profile', e);
