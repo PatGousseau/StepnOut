@@ -83,7 +83,12 @@ const PostPage = () => {
     initLikes();
   }, [post, likeCounts, initializePostLikes]);
 
-  if (loading || fetchingPost) {
+  const postUser = post ? (userMap?.[post.user_id] ?? fetchedPostUser) : null;
+
+  // avoid flashing "post not found" while we're still resolving data from a notification deep-link
+  const isResolvingPost = !!postId && (!post || !postUser);
+
+  if (loading || fetchingPost || isResolvingPost) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Loader />
@@ -91,7 +96,13 @@ const PostPage = () => {
     );
   }
 
-  const postUser = post ? (userMap?.[post.user_id] ?? fetchedPostUser) : null;
+  if (!postId) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text>Post not found</Text>
+      </View>
+    );
+  }
 
   if (!post || !postUser) {
     return (
