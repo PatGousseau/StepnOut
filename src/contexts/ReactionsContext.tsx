@@ -99,8 +99,8 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
 
     const translations = {
-      title: "(username)",
-      body: `reacted ${normalized} to your ${item.type}`,
+      title: `(username) reacted ${normalized} to your ${item.type}!`,
+      body: `Check it out now.`,
     };
 
     try {

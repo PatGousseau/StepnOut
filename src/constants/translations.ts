@@ -38,6 +38,8 @@ export const translations = {
   "Unknown User": "Utente Sconosciuto",
   "liked your post": "ha messo mi piace al tuo post",
   "liked your comment": "ha messo mi piace al tuo commento",
+  "reacted (emoji) to your post": "ha reagito (emoji) al tuo post",
+  "reacted (emoji) to your comment": "ha reagito (emoji) al tuo commento",
   'commented: "(comment)"': 'ha commentato: "(comment)"',
   Notifications: "Notifiche",
   "No notifications yet": "Nessuna notifica",

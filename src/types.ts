@@ -63,7 +63,8 @@ export interface Challenge {
     notification_id: number;
     user_id: string;
     trigger_user_id: string;
-    action_type: 'like' | 'comment';
+    action_type: 'like' | 'comment' | 'reaction';
+    emoji?: string;
     created_at: string;
     is_read: boolean;
     post_id: string;

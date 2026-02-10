@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import { sendLikeNotification } from "../lib/notificationsService";
+import { sendLikeNotification, sendReactionNotification } from "../lib/notificationsService";
 import { LikeableItem, Post, ReactionSummary } from "../types";
 
 interface PostDataComment {
@@ -245,11 +245,12 @@ export const postService = {
           .eq("id", userId)
           .single();
 
-        await sendLikeNotification(
+        await sendReactionNotification(
           userId,
           userData?.username || "Someone",
           targetUserId,
           (parentId || id).toString(),
+          emoji,
           translations,
           type === "comment" ? id.toString() : undefined
         );

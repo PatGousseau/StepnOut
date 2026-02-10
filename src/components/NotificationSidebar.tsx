@@ -104,7 +104,12 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
     const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || t('Unknown User');
     
     let notificationText = '';
-    if (item.action_type === 'like') {
+    if (item.action_type === 'reaction') {
+      const emoji = item.emoji || '';
+      notificationText = item.comment_id
+        ? t('reacted (emoji) to your comment', { emoji })
+        : t('reacted (emoji) to your post', { emoji });
+    } else if (item.action_type === 'like') {
       notificationText = item.comment_id ? t('liked your comment') : t('liked your post');
     } else if (item.action_type === 'comment') {
       const commentText = item.comment?.body || '';
