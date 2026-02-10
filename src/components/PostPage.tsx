@@ -10,25 +10,29 @@ import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { Text } from './StyledText';
+import { profileService } from '../services/profileService';
 import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
 import { Loader } from './Loader';
+import { useLikes } from '../contexts/LikesContext';
 const PostPage = () => {
   const params = useLocalSearchParams();
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const postId = idParam ? parseInt(idParam) : null;
   
   const { posts, userMap, loading, fetchPost } = useFetchHomeData();
+  const { initializePostLikes, likeCounts } = useLikes();
   const [post, setPost] = useState<PostType | null>(null);
   const [fetchingPost, setFetchingPost] = useState(false);
+  const [fetchedPostUser, setFetchedPostUser] = useState<unknown>(null);
 
   useEffect(() => {
     if (!postId) {
-      console.error('No id available:', params);
+      console.error('[post page] no id available', params);
       return;
     }
 
-    const cachedPost = posts.find(p => p.id === postId);
+    const cachedPost = posts?.find(p => p.id === postId);
     if (cachedPost) {
       setPost(cachedPost);
       return;
@@ -41,7 +45,7 @@ const PostPage = () => {
         const fetchedPost = await fetchPost(postId);
         setPost(fetchedPost);
       } catch (error) {
-        console.error('Error loading post:', error);
+        console.error('[post page] error loading post', error);
       } finally {
         setFetchingPost(false);
       }
@@ -50,7 +54,41 @@ const PostPage = () => {
     loadPost();
   }, [postId, posts]);
 
-  if (loading || fetchingPost) {
+  useEffect(() => {
+    const loadPostUser = async () => {
+      if (!post?.user_id) return;
+      if (userMap?.[post.user_id]) return;
+      try {
+        const profile = await profileService.fetchProfileById(post.user_id);
+        setFetchedPostUser(profile);
+      } catch (e) {
+        console.error('[post page] error fetching post user profile', e);
+      }
+    };
+
+    loadPostUser();
+  }, [post?.user_id, userMap]);
+
+  useEffect(() => {
+    const initLikes = async () => {
+      if (!post) return;
+      if (likeCounts?.[post.id] !== undefined) return;
+      try {
+        await initializePostLikes([post]);
+      } catch (e) {
+        console.error('[post page] error initializing post likes', e);
+      }
+    };
+
+    initLikes();
+  }, [post, likeCounts, initializePostLikes]);
+
+  const postUser = post ? (userMap?.[post.user_id] ?? fetchedPostUser) : null;
+
+  // avoid flashing "post not found" while we're still resolving data from a notification deep-link
+  const isResolvingPost = !!postId && (!post || !postUser);
+
+  if (loading || fetchingPost || isResolvingPost) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Loader />
@@ -58,7 +96,15 @@ const PostPage = () => {
     );
   }
 
-  if (!post || !userMap[post.user_id]) {
+  if (!postId) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text>Post not found</Text>
+      </View>
+    );
+  }
+
+  if (!post || !postUser) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Text>Post not found</Text>
@@ -81,7 +127,7 @@ const PostPage = () => {
       >
         <Post
           post={post}
-          postUser={userMap[post.user_id]}
+          postUser={postUser}
           setPostCounts={() => {}}
           isPostPage={true}
         />

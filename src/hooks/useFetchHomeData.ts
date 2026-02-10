@@ -375,6 +375,8 @@ export const useFetchHomeData = (
   }, [postsLoading, startSlowLoadingTimer, stopSlowLoadingTimer]);
 
   return {
+    // legacy/compat: some screens expect a single combined list
+    posts: allPosts,
     challengePosts,
     discussionPosts,
     userMap,
