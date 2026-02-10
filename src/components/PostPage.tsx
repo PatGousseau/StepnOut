@@ -10,6 +10,7 @@ import Post from './Post';
 import { useLocalSearchParams } from 'expo-router';
 import { useFetchHomeData } from '../hooks/useFetchHomeData';
 import { Text } from './StyledText';
+import { profileService } from '../services/profileService';
 import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
 import { Loader } from './Loader';
@@ -21,6 +22,7 @@ const PostPage = () => {
   const { posts, userMap, loading, fetchPost } = useFetchHomeData();
   const [post, setPost] = useState<PostType | null>(null);
   const [fetchingPost, setFetchingPost] = useState(false);
+  const [fetchedPostUser, setFetchedPostUser] = useState<unknown>(null);
 
   useEffect(() => {
     console.log('[post page] params', params);
@@ -56,6 +58,23 @@ const PostPage = () => {
     loadPost();
   }, [postId, posts]);
 
+  useEffect(() => {
+    const loadPostUser = async () => {
+      if (!post?.user_id) return;
+      if (userMap?.[post.user_id]) return;
+      try {
+        console.log('[post page] user missing from userMap, fetching profile', post.user_id);
+        const profile = await profileService.fetchProfileById(post.user_id);
+        console.log('[post page] fetched profile?', !!profile);
+        setFetchedPostUser(profile);
+      } catch (e) {
+        console.error('[post page] error fetching post user profile', e);
+      }
+    };
+
+    loadPostUser();
+  }, [post?.user_id, userMap]);
+
   if (loading || fetchingPost) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -64,7 +83,9 @@ const PostPage = () => {
     );
   }
 
-  if (!post || !userMap[post.user_id]) {
+  const postUser = post ? (userMap?.[post.user_id] ?? fetchedPostUser) : null;
+
+  if (!post || !postUser) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Text>Post not found</Text>
@@ -87,7 +108,7 @@ const PostPage = () => {
       >
         <Post
           post={post}
-          postUser={userMap[post.user_id]}
+          postUser={postUser}
           setPostCounts={() => {}}
           isPostPage={true}
         />
