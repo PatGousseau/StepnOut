@@ -14,12 +14,14 @@ import { profileService } from '../services/profileService';
 import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
 import { Loader } from './Loader';
+import { useLikes } from '../contexts/LikesContext';
 const PostPage = () => {
   const params = useLocalSearchParams();
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const postId = idParam ? parseInt(idParam) : null;
   
   const { posts, userMap, loading, fetchPost } = useFetchHomeData();
+  const { initializePostLikes, likeCounts } = useLikes();
   const [post, setPost] = useState<PostType | null>(null);
   const [fetchingPost, setFetchingPost] = useState(false);
   const [fetchedPostUser, setFetchedPostUser] = useState<unknown>(null);
@@ -66,6 +68,20 @@ const PostPage = () => {
 
     loadPostUser();
   }, [post?.user_id, userMap]);
+
+  useEffect(() => {
+    const initLikes = async () => {
+      if (!post) return;
+      if (likeCounts?.[post.id] !== undefined) return;
+      try {
+        await initializePostLikes([post]);
+      } catch (e) {
+        console.error('[post page] error initializing post likes', e);
+      }
+    };
+
+    initLikes();
+  }, [post, likeCounts, initializePostLikes]);
 
   if (loading || fetchingPost) {
     return (
