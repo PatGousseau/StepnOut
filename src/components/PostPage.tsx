@@ -23,12 +23,16 @@ const PostPage = () => {
   const [fetchingPost, setFetchingPost] = useState(false);
 
   useEffect(() => {
+    console.log('[post page] params', params);
+    console.log('[post page] postId', postId, 'posts.length', posts?.length);
+
     if (!postId) {
-      console.error('No id available:', params);
+      console.error('[post page] no id available', params);
       return;
     }
 
-    const cachedPost = posts.find(p => p.id === postId);
+    const cachedPost = posts?.find(p => p.id === postId);
+    console.log('[post page] cachedPost?', !!cachedPost);
     if (cachedPost) {
       setPost(cachedPost);
       return;
@@ -38,10 +42,12 @@ const PostPage = () => {
     const loadPost = async () => {
       setFetchingPost(true);
       try {
+        console.log('[post page] fetching post', postId);
         const fetchedPost = await fetchPost(postId);
+        console.log('[post page] fetchedPost?', !!fetchedPost, 'fetchedPost.user_id', fetchedPost?.user_id);
         setPost(fetchedPost);
       } catch (error) {
-        console.error('Error loading post:', error);
+        console.error('[post page] error loading post', error);
       } finally {
         setFetchingPost(false);
       }
