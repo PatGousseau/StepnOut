@@ -259,4 +259,6 @@ export const translations = {
   "others who completed this week's challenge on StepnOut": "che hanno completato la sfida della settimana su StepnOut",
   "Join me on StepnOut": "Unisciti a me su StepnOut",
   "Download free on iOS & Android": "Scarica gratis su iOS e Android",
+  "Username not found": "Nome utente non trovato",
+  "We noticed that some required profile fields are missing due to a technical issue. Please complete your profile to continue using the app.": "Alcuni campi obbligatori non sono stati correttamente popolati. Per favore, completa il tuo profilo per continuare ad utilizzare l'app.",
 };
