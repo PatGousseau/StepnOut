@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
-import { sendLikeNotification } from "../lib/notificationsService";
-import { LikeableItem, Post } from "../types";
+import { sendLikeNotification, sendReactionNotification } from "../lib/notificationsService";
+import { LikeableItem, Post, ReactionSummary } from "../types";
 
 interface PostDataComment {
   id: number;
@@ -105,25 +105,167 @@ export const postService = {
       const { data, error } = await supabase
         .from("likes")
         .select(`${idField}, user_id`)
+        .eq("emoji", "❤️")
         .in(idField, ids);
 
       if (error) throw error;
 
-      const likesMap = ids.reduce((acc, itemId) => {
-        const itemLikes = data.filter((like) => like[idField] === itemId);
-        return {
-          ...acc,
-          [itemId]: {
-            count: itemLikes.length,
-            isLiked: userId ? itemLikes.some((like) => like.user_id === userId) : false,
-          },
-        };
-      }, {});
+      type LikeRow = {
+        user_id: string;
+        post_id: number | null;
+        comment_id: number | null;
+      };
+
+      const rows = (data || []) as unknown as LikeRow[];
+      const likesMap: { [id: number]: { count: number; isLiked: boolean } } = {};
+
+      for (const id of ids) {
+        likesMap[id] = { count: 0, isLiked: false };
+      }
+
+      for (const row of rows) {
+        const itemId = idField === "post_id" ? row.post_id : row.comment_id;
+        if (!itemId) continue;
+        if (!likesMap[itemId]) likesMap[itemId] = { count: 0, isLiked: false };
+
+        likesMap[itemId].count += 1;
+        if (userId && row.user_id === userId) {
+          likesMap[itemId].isLiked = true;
+        }
+      }
 
       return likesMap;
     } catch (error) {
       console.error(`Error fetching ${type} likes:`, error);
       return {};
+    }
+  },
+
+  async fetchReactions(
+    ids: number[],
+    type: LikeableItem["type"],
+    userId?: string
+  ): Promise<{ [id: number]: ReactionSummary[] }> {
+    type ReactionRow = {
+      user_id: string;
+      emoji: string;
+      post_id: number | null;
+      comment_id: number | null;
+    };
+    try {
+      const idField = `${type}_id` as const;
+      const { data, error } = await supabase
+        .from("likes")
+        .select(`${idField}, user_id, emoji`)
+        .neq("emoji", "❤️")
+        .in(idField, ids);
+
+      if (error) throw error;
+
+      const byId: { [id: number]: { [emoji: string]: { count: number; reacted: boolean } } } = {};
+
+      const rows = (data || []) as unknown as ReactionRow[];
+
+      for (const row of rows) {
+        const itemId = idField === "post_id" ? row.post_id : row.comment_id;
+        if (!itemId) continue;
+        const emoji = row.emoji;
+        if (!emoji) continue;
+
+        if (!byId[itemId]) byId[itemId] = {};
+        if (!byId[itemId][emoji]) {
+          byId[itemId][emoji] = {
+            count: 0,
+            reacted: false,
+          };
+        }
+
+        byId[itemId][emoji].count += 1;
+        if (userId && row.user_id === userId) {
+          byId[itemId][emoji].reacted = true;
+        }
+      }
+
+      const result: { [id: number]: ReactionSummary[] } = {};
+      for (const id of ids) {
+        const map = byId[id] || {};
+        result[id] = Object.entries(map)
+          .map(([emoji, v]) => ({ emoji, count: v.count, reacted: v.reacted }))
+          .sort((a, b) => {
+            if (a.reacted !== b.reacted) return a.reacted ? -1 : 1;
+            if (b.count !== a.count) return b.count - a.count;
+            return a.emoji.localeCompare(b.emoji);
+          });
+      }
+
+      return result;
+    } catch (error) {
+      console.error(`Error fetching ${type} reactions:`, error);
+      return {};
+    }
+  },
+
+  async toggleReaction(
+    item: LikeableItem,
+    userId: string,
+    targetUserId: string,
+    emoji: string,
+    translations: { title: string; body: string },
+    retryCount = 0
+  ): Promise<boolean | null> {
+    const MAX_RETRIES = 2;
+
+    try {
+      const { id, type, parentId } = item;
+      const idField = `${type}_id` as const;
+
+      const { data: existingRows } = await supabase
+        .from("likes")
+        .select("id")
+        .eq(idField, id)
+        .eq("user_id", userId)
+        .eq("emoji", emoji);
+
+      if (existingRows && existingRows.length > 0) {
+        const { error } = await supabase.from("likes").delete().eq("id", existingRows[0].id);
+        if (error) throw error;
+        return false;
+      }
+
+      const { error } = await supabase
+        .from("likes")
+        .insert([{ [idField]: id, user_id: userId, emoji }]);
+
+      if (error) throw error;
+
+      if (userId !== targetUserId) {
+        const { data: userData } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", userId)
+          .single();
+
+        await sendReactionNotification(
+          userId,
+          userData?.username || "Someone",
+          targetUserId,
+          (parentId || id).toString(),
+          emoji,
+          translations,
+          type === "comment" ? id.toString() : undefined
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.error(`Error toggling ${item.type} reaction (attempt ${retryCount + 1}):`, error);
+
+      if (retryCount < MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (retryCount + 1)));
+        return this.toggleReaction(item, userId, targetUserId, emoji, translations, retryCount + 1);
+      }
+
+      return null;
     }
   },
 
@@ -145,6 +287,7 @@ export const postService = {
         .select("id")
         .eq(idField, id)
         .eq("user_id", userId)
+        .eq("emoji", "❤️")
         .single();
 
       if (existingLike) {
@@ -152,7 +295,9 @@ export const postService = {
         if (error) throw error;
         return false; // unliked
       } else {
-        const { error } = await supabase.from("likes").insert([{ [idField]: id, user_id: userId }]);
+        const { error } = await supabase
+          .from("likes")
+          .insert([{ [idField]: id, user_id: userId, emoji: "❤️" }]);
 
         if (error) throw error;
 
@@ -255,17 +400,27 @@ export const postService = {
   async fetchItemLikesCounts(ids: number[], type: LikeableItem["type"]) {
     try {
       const idField = `${type}_id` as const;
-      const { data, error } = await supabase.from("likes").select(idField).in(idField, ids);
+      const { data, error } = await supabase
+        .from("likes")
+        .select(idField)
+        .eq("emoji", "❤️")
+        .in(idField, ids);
 
       if (error) throw error;
 
-      const likesCount = ids.reduce((acc, itemId) => {
-        const count = data.filter((like) => like[idField] === itemId).length;
-        return {
-          ...acc,
-          [itemId]: count,
-        };
-      }, {});
+      type LikeIdRow = { post_id: number | null; comment_id: number | null };
+      const rows = (data || []) as unknown as LikeIdRow[];
+      const likesCount: { [id: number]: number } = {};
+
+      for (const id of ids) {
+        likesCount[id] = 0;
+      }
+
+      for (const row of rows) {
+        const itemId = idField === "post_id" ? row.post_id : row.comment_id;
+        if (!itemId) continue;
+        likesCount[itemId] = (likesCount[itemId] || 0) + 1;
+      }
 
       return likesCount;
     } catch (error) {

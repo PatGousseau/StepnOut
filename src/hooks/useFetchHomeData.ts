@@ -4,6 +4,7 @@ import { Post, FeedSort } from "../types";
 import { User, UserProfile } from "../models/User";
 import { useAuth } from "../contexts/AuthContext";
 import { useLikes } from "../contexts/LikesContext";
+import { useReactions } from "../contexts/ReactionsContext";
 import { imageService } from "../services/imageService";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { postService } from "../services/postService";
@@ -88,6 +89,7 @@ export const useFetchHomeData = (
   const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
   const { initializePostLikes } = useLikes();
+  const { initializePostReactions } = useReactions();
   const POSTS_PER_PAGE = 20;
 
   // Loading diagnostics tracking
@@ -304,6 +306,7 @@ export const useFetchHomeData = (
   useEffect(() => {
     if (allPosts.length > 0) {
       initializePostLikes(allPosts);
+      initializePostReactions(allPosts);
     }
   }, [allPosts.length]); // eslint-disable-line react-hooks/exhaustive-deps
 

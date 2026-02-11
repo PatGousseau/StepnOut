@@ -30,6 +30,8 @@ import { formatRelativeTime } from "../utils/time";
 import { CommentsListSkeleton, CommentSkeleton } from "./Skeleton";
 import { Comment as CommentType } from "../types"; // todo: rename one of the Comment types
 import { useLikes } from "../contexts/LikesContext";
+import { useReactions } from "../contexts/ReactionsContext";
+import { ReactionsBar } from "./ReactionsBar";
 import { ActionsMenu } from "./ActionsMenu";
 import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
@@ -138,6 +140,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { initializeCommentLikes } = useLikes();
+  const { initializeCommentReactions } = useReactions();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
@@ -148,6 +151,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
     // Initialize likes for the comments
     if (initialComments.length > 0) {
       initializeCommentLikes(initialComments);
+      initializeCommentReactions(initialComments);
     }
   }, [initialComments]);
 
@@ -426,6 +430,7 @@ const Comment: React.FC<CommentProps> = ({
   const { onClose } = useContext(CommentsContext);
   const { user: currentUser, isAdmin } = useAuth();
   const { likedComments, commentLikeCounts, toggleCommentLike } = useLikes();
+  const { commentReactions, toggleCommentReaction } = useReactions();
 
   const [user, setUser] = useState<User | null>(null);
   const [replyToUser, setReplyToUser] = useState<User | null>(null);
@@ -466,11 +471,6 @@ const Comment: React.FC<CommentProps> = ({
       target_user_id: userId,
       post_id: post_id,
     });
-  };
-
-  const handleLikePress = async () => {
-    if (!currentUser) return;
-    await toggleCommentLike(id, post_id, currentUser.id, userId);
   };
 
   const handleTranslate = async () => {
@@ -514,16 +514,6 @@ const Comment: React.FC<CommentProps> = ({
             </View>
           </TouchableOpacity>
           <View style={commentFooterStyle}>
-            <TouchableOpacity onPress={handleLikePress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <View style={iconContainerStyle}>
-                <Icon
-                  name={likedComments[id] ? "heart" : "heart-o"}
-                  size={14}
-                  color={likedComments[id] ? "#eb656b" : colors.neutral.grey1}
-                />
-                <Text style={iconTextStyle}>{commentLikeCounts[id] || 0}</Text>
-              </View>
-            </TouchableOpacity>
             {onReply ? (
               <TouchableOpacity
                 onPress={() => (user?.username ? onReply(user.username) : null)}
@@ -571,6 +561,20 @@ const Comment: React.FC<CommentProps> = ({
               <Text style={translationTextStyle}>{translatedText}</Text>
             </View>
           )}
+
+          <ReactionsBar
+            reactions={commentReactions[id] || []}
+            onToggle={(emoji) => {
+              if (!currentUser) return;
+              toggleCommentReaction(id, post_id, currentUser.id, userId, emoji);
+            }}
+            isLiked={!!likedComments[id]}
+            likeCount={commentLikeCounts[id] || 0}
+            onLikeToggle={() => {
+              if (!currentUser) return;
+              toggleCommentLike(id, post_id, currentUser.id, userId);
+            }}
+          />
         </View>
       </View>
     </View>

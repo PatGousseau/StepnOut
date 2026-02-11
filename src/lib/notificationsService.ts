@@ -84,6 +84,42 @@ export async function sendLikeNotification(
     await sendPushNotification(pushToken, title, body, data);
 }
 
+export async function sendReactionNotification(
+    senderId: string | undefined,
+    senderUsername: string,
+    recipientId: string,
+    postId: string,
+    emoji: string,
+    translations: { title: string; body: string },
+    commentId?: string
+) {
+    const { error: dbError } = await supabase
+        .from('notifications')
+        .insert([{
+            user_id: recipientId,
+            trigger_user_id: senderId,
+            post_id: postId,
+            action_type: 'reaction',
+            emoji,
+            is_read: false,
+            ...(commentId && { comment_id: commentId })
+        }]);
+
+    if (dbError) {
+        console.error('Error saving reaction notification to database:', dbError);
+        return;
+    }
+
+    const pushToken = await getPushToken(recipientId);
+    if (!pushToken) return;
+
+    const title = translations.title.replace('(username)', senderUsername);
+    const body = translations.body;
+    const data = { postId, senderId, emoji, ...(commentId ? { commentId } : {}) };
+
+    await sendPushNotification(pushToken, title, body, data);
+}
+
 // Handle sending notifications for comments
 export async function sendCommentNotification(
     senderId: string | undefined, 

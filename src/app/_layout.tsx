@@ -16,6 +16,7 @@ import FeedbackModal from '../components/FeedbackModal';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
+import { ReactionsProvider } from '../contexts/ReactionsContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -181,7 +182,8 @@ function RootLayoutNav() {
     <MenuProvider>
       <LanguageProvider>
         <LikesProvider>
-          <UploadProgressProvider>
+          <ReactionsProvider>
+            <UploadProgressProvider>
             <SafeAreaView 
               style={{ flex: 1, backgroundColor: colors.light.background }}
               edges={['top', 'left', 'right']}
@@ -239,7 +241,8 @@ function RootLayoutNav() {
                 onClose={() => setShowFeedback(false)}
               />
             </SafeAreaView>
-          </UploadProgressProvider>
+            </UploadProgressProvider>
+          </ReactionsProvider>
         </LikesProvider>
       </LanguageProvider>
     </MenuProvider>

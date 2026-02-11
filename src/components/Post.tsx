@@ -29,6 +29,8 @@ import { Post as PostType } from "../types";
 import { useLanguage } from "../contexts/LanguageContext";
 import ImageViewer from "react-native-image-zoom-viewer";
 import { useLikes } from "../contexts/LikesContext";
+import { useReactions } from "../contexts/ReactionsContext";
+import { ReactionsBar } from "./ReactionsBar";
 import { Loader } from "./Loader";
 import Icon from "react-native-vector-icons/FontAwesome";
 import VideoPlayer from "./VideoPlayer";
@@ -54,6 +56,7 @@ interface PostProps {
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false, onPostDeleted }) => {
   const { t } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
+  const { postReactions, togglePostReaction } = useReactions();
   const { user, isAdmin, username: currentUserUsername } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -117,9 +120,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleLikePress = async (disallowUnlike: boolean) => {
     if (!user) return;
-    if (disallowUnlike && likedPosts[post.id]) {
-      return;
-    }
+    if (disallowUnlike && likedPosts[post.id]) return;
     await togglePostLike(post.id, user.id, post.user_id);
   };
 
@@ -494,16 +495,18 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       <View>
         <View style={footerStyle}>
-          <TouchableOpacity onPress={() => handleLikePress(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <View style={iconContainerStyle}>
-              <Icon
-                name={likedPosts[post.id] ? "heart" : "heart-o"}
-                size={16}
-                color={likedPosts[post.id] ? "#eb656b" : colors.neutral.grey1}
-              />
-              <Text style={iconTextStyle}>{likeCounts[post.id] || 0}</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <ReactionsBar
+              reactions={postReactions[post.id] || []}
+              onToggle={(emoji) => {
+                if (!user) return;
+                togglePostReaction(post.id, user.id, post.user_id, emoji);
+              }}
+              isLiked={!!likedPosts[post.id]}
+              likeCount={likeCounts[post.id] || 0}
+              onLikeToggle={() => handleLikePress(false)}
+            />
+          </View>
           {isAdmin && post.body && (
             <TouchableOpacity onPress={handleTranslate} disabled={isTranslating}>
               <View style={iconContainerStyle}>
