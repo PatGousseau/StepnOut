@@ -71,7 +71,9 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const setItemCounts = isPost ? setPostLikeCounts : setCommentLikeCounts;
 
     const isCurrentlyLiked = likedItems[id];
-    const notificationBody = isPost ? "liked your post" : "liked your comment";
+    const notificationTitle = isPost
+      ? "(username) ha messo mi piace al tuo post!"
+      : "(username) ha messo mi piace al tuo commento!";
 
     // Mark as pending and do optimistic update
     setPendingLikes((prev) => ({ ...prev, [id]: true }));
@@ -84,12 +86,12 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const result = isPost
         ? await postService.togglePostLike(id, userId, targetUserId, {
-            title: "(username)",
-            body: notificationBody,
+            title: notificationTitle,
+            body: "Dai un'occhiata ora.",
           })
         : await postService.toggleCommentLike(id, parentId!, userId, targetUserId, {
-            title: "(username)",
-            body: notificationBody,
+            title: notificationTitle,
+            body: "Dai un'occhiata ora.",
           });
 
       if (result === null) {

@@ -98,9 +98,10 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       [item.id]: upsertReaction(prev[item.id], normalized, isReacted ? -1 : 1, !isReacted),
     }));
 
+    const itemType = item.type === "post" ? "post" : "commento";
     const translations = {
-      title: `(username) reacted ${normalized} to your ${item.type}!`,
-      body: `Check it out now.`,
+      title: `(username) ha reagito ${normalized} al tuo ${itemType}!`,
+      body: "Dai un'occhiata ora.",
     };
 
     try {
