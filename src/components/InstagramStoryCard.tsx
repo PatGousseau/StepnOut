@@ -1,5 +1,5 @@
 import React, { forwardRef } from "react";
-import { View, ViewStyle, TextStyle, ImageStyle, Dimensions, Platform } from "react-native";
+import { View, ViewStyle, TextStyle, ImageStyle, Dimensions } from "react-native";
 import { Image } from "expo-image";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
@@ -15,12 +15,13 @@ interface InstagramStoryCardProps {
   challengeTitle?: string;
   mediaUrl?: string;
   postText?: string;
+  profileImageUrl?: string;
   completionCount?: number;
   onImageLoad?: () => void;
 }
 
 const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
-  ({ username, challengeTitle, mediaUrl, postText, completionCount = 0, onImageLoad }, ref) => {
+  ({ username, challengeTitle, mediaUrl, postText, profileImageUrl, completionCount = 0, onImageLoad }, ref) => {
     const { t } = useLanguage();
     const isChallenge = !!challengeTitle;
 
@@ -50,19 +51,35 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
           <View style={dividerStyle} />
         </View>
 
-        {/* Middle section - Media/text content */}
+        {/* Middle section - Post card UI */}
         <View style={middleSectionStyle}>
-          {postText ? (
-            <View style={contentContainerStyle}>
-              <View style={textContainerStyle}>
-                <Text style={postTextStyle} numberOfLines={8}>
-                  {`"${postText}"`}
+          <View style={postCardStyle}>
+            {/* Post header */}
+            <View style={postHeaderStyle}>
+              <Image
+                source={profileImageUrl ? { uri: profileImageUrl } : require("../assets/images/profile-pic.png")}
+                style={avatarStyle}
+                contentFit="cover"
+              />
+              <Text style={postUsernameStyle}>@{username}</Text>
+            </View>
+
+            {/* Challenge box */}
+            {isChallenge && (
+              <View style={postChallengeBoxStyle}>
+                <Text style={postChallengeTitleStyle} numberOfLines={1}>
+                  <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {challengeTitle}
                 </Text>
               </View>
-            </View>
-          ) : null}
+            )}
 
-
+            {/* Post text */}
+            {postText ? (
+              <Text style={postBodyStyle} numberOfLines={6}>
+                {postText}
+              </Text>
+            ) : null}
+          </View>
         </View>
 
         {/* Bottom section - CTA */}
@@ -77,9 +94,6 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
               {t("Join me on StepnOut")}
             </Text>
           )}
-          <Text style={downloadStyle}>
-            {t("Download free on iOS & Android")}
-          </Text>
         </View>
       </View>
     );
@@ -112,14 +126,14 @@ const logoStyle: ImageStyle = {
 };
 
 const challengeLabelStyle: TextStyle = {
-  fontSize: S(28),
+  fontSize: S(36),
   color: colors.neutral.darkGrey,
   letterSpacing: S(4),
   marginBottom: S(12),
 };
 
 const challengeNameStyle: TextStyle = {
-  fontSize: S(44),
+  fontSize: S(54),
   fontWeight: "700",
   color: colors.light.primary,
   textAlign: "center",
@@ -133,14 +147,6 @@ const dividerStyle: ViewStyle = {
   borderRadius: S(2),
 };
 
-const headingStyle: TextStyle = {
-  fontSize: S(38),
-  fontWeight: "800",
-  color: colors.light.primary,
-  letterSpacing: S(5),
-  marginTop: S(32),
-};
-
 const middleSectionStyle: ViewStyle = {
   alignItems: "center",
   flex: 1,
@@ -148,40 +154,53 @@ const middleSectionStyle: ViewStyle = {
   paddingVertical: S(40),
 };
 
-const contentContainerStyle: ViewStyle = {
+const postCardStyle: ViewStyle = {
   width: "100%",
-  aspectRatio: 4 / 5,
-  borderRadius: S(32),
-  overflow: "hidden",
   backgroundColor: colors.neutral.white,
+  borderRadius: S(24),
+  borderWidth: S(3),
+  borderColor: "#e0e0e0",
+  padding: S(32),
 };
 
-const mediaStyle: ImageStyle = {
-  width: "100%",
-  height: "100%",
-};
-
-const textContainerStyle: ViewStyle = {
-  flex: 1,
+const postHeaderStyle: ViewStyle = {
+  flexDirection: "row",
   alignItems: "center",
-  justifyContent: "center",
-  padding: S(60),
-  backgroundColor: colors.light.accent2,
+  marginBottom: S(20),
 };
 
-const postTextStyle: TextStyle = {
-  fontSize: S(44),
-  color: colors.light.text,
-  textAlign: "center",
-  lineHeight: S(64),
-  fontStyle: "italic",
+const avatarStyle: ImageStyle = {
+  width: S(80),
+  height: S(80),
+  borderRadius: S(40),
+  marginRight: S(20),
 };
 
-const usernameStyle: TextStyle = {
+const postUsernameStyle: TextStyle = {
   fontSize: S(36),
-  color: colors.neutral.darkGrey,
+  color: "#666",
   fontWeight: "600",
-  marginTop: S(48),
+};
+
+const postChallengeBoxStyle: ViewStyle = {
+  backgroundColor: colors.light.accent2,
+  borderColor: colors.light.primary,
+  borderRadius: S(16),
+  borderWidth: S(3),
+  marginBottom: S(16),
+  paddingHorizontal: S(32),
+  paddingVertical: S(12),
+};
+
+const postChallengeTitleStyle: TextStyle = {
+  color: colors.light.primary,
+  fontSize: S(32),
+};
+
+const postBodyStyle: TextStyle = {
+  fontSize: S(40),
+  color: colors.light.text,
+  lineHeight: S(58),
 };
 
 const bottomSectionStyle: ViewStyle = {
@@ -189,7 +208,7 @@ const bottomSectionStyle: ViewStyle = {
 };
 
 const ctaStyle: TextStyle = {
-  fontSize: S(38),
+  fontSize: S(46),
   fontWeight: "600",
   color: colors.light.primary,
   textAlign: "center",
@@ -198,7 +217,7 @@ const ctaStyle: TextStyle = {
 };
 
 const downloadStyle: TextStyle = {
-  fontSize: S(34),
+  fontSize: S(42),
   fontWeight: "600",
   color: colors.neutral.darkGrey,
 };

@@ -477,6 +477,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         challengeId={challenge.id}
         mediaPreview={selectedMedia?.previewUrl || null}
         streakCount={1}
+        postText={postText?.trim() || t("Just completed this week's challenge!")}
       />
     </>
   );

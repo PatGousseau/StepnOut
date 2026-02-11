@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { captureEvent } from '../lib/posthog';
 import { CHALLENGE_EVENTS } from '../constants/analyticsEvents';
 import { appConfigService } from '../services/appConfigService';
+import { profileService } from '../services/profileService';
 import InstagramStoryCard from './InstagramStoryCard';
 import { captureRef } from 'react-native-view-shot';
 import { instagramShareService } from '../services/instagramShareService';
@@ -22,6 +23,7 @@ interface ShareChallengeProps {
   challengeId: number;
   mediaPreview?: string | null;
   streakCount?: number;
+  postText?: string;
 }
 
 const ShareChallenge: React.FC<ShareChallengeProps> = ({
@@ -30,14 +32,31 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   onClose,
   mediaPreview,
   streakCount = 1,
-  isVisible
+  isVisible,
+  postText
 }) => {
   const { t } = useLanguage();
-  const { username } = useAuth();
+  const { username, user } = useAuth();
   const confettiRef = useRef<any>(null);
   const storyCardRef = useRef<View>(null);
   const [isSharing, setIsSharing] = React.useState(false);
+  const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(null);
   const { completionCount } = useActiveChallenge();
+
+  React.useEffect(() => {
+    const loadProfileImage = async () => {
+      if (!user?.id) return;
+      try {
+        const profile = await profileService.fetchProfileById(user.id);
+        if (profile?.profileImageUrl) {
+          setProfileImageUrl(profile.profileImageUrl);
+        }
+      } catch (error) {
+        console.error('Error loading profile image:', error);
+      }
+    };
+    if (isVisible) loadProfileImage();
+  }, [user?.id, isVisible]);
 
   const celebrationText = useMemo(() => {
     const options = [
@@ -158,6 +177,8 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
           username={username || ''}
           challengeTitle={title}
           mediaUrl={mediaPreview || undefined}
+          postText={postText}
+          profileImageUrl={profileImageUrl || undefined}
           completionCount={completionCount}
         />
 
