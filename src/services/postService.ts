@@ -482,30 +482,107 @@ export const postService = {
       ? `${BASE_SELECT}, challenges!inner (title)`
       : BASE_SELECT;
 
-    let query = supabase
-      .from("post")
-      .select(select)
-      .not("media.upload_status", "in", '("failed","pending")')
-      .order("created_at", { ascending: false });
-
+    // challenge feed behaves normally
     if (isChallenge) {
-      query = query.not("challenge_id", "is", null);
-    } else {
-      query = query.is("challenge_id", null);
+      let query = supabase
+        .from("post")
+        .select(select)
+        .not("media.upload_status", "in", '("failed","pending")')
+        .order("created_at", { ascending: false })
+        .not("challenge_id", "is", null);
+
+      query = applyBlockedFilter(query, blockedUserIds);
+
+      const start = (pageParam - 1) * postsPerPage;
+      query = query.range(start, start + postsPerPage - 1);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const rows = (data ?? []) as PostData[];
+      const posts = rows.map((p) => processPost(p, true));
+
+      return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
     }
 
-    query = applyBlockedFilter(query, blockedUserIds);
-
+    // discussion feed: welcome posts should *not* count toward pagination.
+    // we paginate by non-welcome discussion posts, then pull any welcome posts
+    // that fall in the same "timeline slice" and merge them back in.
     const start = (pageParam - 1) * postsPerPage;
-    query = query.range(start, start + postsPerPage - 1);
 
-    const { data, error } = await query;
-    if (error) throw error;
+    const baseDiscussionQuery = () => {
+      let q = supabase
+        .from("post")
+        .select(select)
+        .not("media.upload_status", "in", '("failed","pending")')
+        .order("created_at", { ascending: false })
+        .is("challenge_id", null);
 
-    const rows = (data ?? []) as PostData[];
-    const posts = rows.map((p) => processPost(p, isChallenge));
+      q = applyBlockedFilter(q, blockedUserIds);
+      return q;
+    };
 
-    return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
+    // 1) fetch the non-welcome discussion posts for this page
+    const { data: nonWelcomeData, error: nonWelcomeError } = await baseDiscussionQuery()
+      .eq("is_welcome", false)
+      .range(start, start + postsPerPage - 1);
+
+    if (nonWelcomeError) throw nonWelcomeError;
+
+    const nonWelcomeRows = (nonWelcomeData ?? []) as PostData[];
+
+    // if there are no non-welcome posts at all, fall back to showing welcome posts normally
+    if (nonWelcomeRows.length === 0) {
+      const { data: welcomeData, error: welcomeError } = await baseDiscussionQuery()
+        .eq("is_welcome", true)
+        .range(start, start + postsPerPage - 1);
+
+      if (welcomeError) throw welcomeError;
+
+      const welcomeRows = (welcomeData ?? []) as PostData[];
+      const posts = welcomeRows.map((p) => processPost(p, false));
+      return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
+    }
+
+    // 2) compute the timeline bounds for this page based on non-welcome pagination
+    // newerBound = the non-welcome post right before this page (i.e. last item in previous page)
+    let newerBoundCreatedAt: string | null = null;
+    if (start > 0) {
+      const { data: boundData, error: boundError } = await baseDiscussionQuery()
+        .eq("is_welcome", false)
+        .range(start - 1, start - 1);
+
+      if (boundError) throw boundError;
+      const boundRow = (boundData?.[0] ?? null) as PostData | null;
+      newerBoundCreatedAt = boundRow?.created_at ?? null;
+    }
+
+    // olderBound = the last non-welcome post in this page
+    const olderBoundCreatedAt = nonWelcomeRows[nonWelcomeRows.length - 1].created_at;
+
+    // 3) pull welcome posts that fall within this slice (newer than olderBound and
+    // not newer than newerBound, if present)
+    let welcomeQuery = baseDiscussionQuery().eq("is_welcome", true).gt("created_at", olderBoundCreatedAt);
+    if (newerBoundCreatedAt) {
+      welcomeQuery = welcomeQuery.lte("created_at", newerBoundCreatedAt);
+    }
+
+    const { data: welcomeData, error: welcomeError } = await welcomeQuery;
+    if (welcomeError) throw welcomeError;
+
+    const welcomeRows = (welcomeData ?? []) as PostData[];
+
+    // 4) merge + sort to preserve the real timeline
+    const mergedRows = [...welcomeRows, ...nonWelcomeRows].sort((a, b) =>
+      a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0
+    );
+
+    const posts = mergedRows.map((p) => processPost(p, false));
+
+    return {
+      posts: posts as Post[],
+      hasMore: nonWelcomeRows.length === postsPerPage,
+    };
   },
 
   async fetchPopularPosts(
