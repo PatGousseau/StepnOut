@@ -14,6 +14,7 @@ import {
   ImageStyle,
   Animated,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { AnimatedSendButton } from "./AnimatedSendButton";
@@ -42,6 +43,8 @@ import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS, COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { sendCommentNotification } from "../lib/notificationsService";
 import { translationService } from "../services/translationService";
+import { useInstagramShare } from "../hooks/useInstagramShare";
+import InstagramStoryCard from "./InstagramStoryCard";
 
 interface PostProps {
   post: PostType;
@@ -78,6 +81,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
+  const { storyCardRef, isSharing, onImageLoad, completionCount, shareToInstagram } = useInstagramShare({
+    postId: post.id,
+    isChallengePost: !!post.challenge_id,
+    challengeId: post.challenge_id,
+    mediaUrl: post.media?.file_path,
+  });
 
   useEffect(() => {
     const loadProfileImage = async () => {
@@ -507,6 +516,17 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               onLikeToggle={() => handleLikePress(false)}
             />
           </View>
+          {isAdmin && (
+            <TouchableOpacity onPress={shareToInstagram} disabled={isSharing}>
+              <View style={iconContainerStyle}>
+                {isSharing ? (
+                  <ActivityIndicator size="small" color={colors.neutral.grey1} />
+                ) : (
+                  <MaterialCommunityIcons name="instagram" size={18} color={colors.neutral.grey1} />
+                )}
+              </View>
+            </TouchableOpacity>
+          )}
           {isAdmin && post.body && (
             <TouchableOpacity onPress={handleTranslate} disabled={isTranslating}>
               <View style={iconContainerStyle}>
@@ -522,6 +542,19 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Hidden Instagram Story Card for capture */}
+        <InstagramStoryCard
+          ref={storyCardRef}
+          username={postUser?.username || "unknown"}
+          challengeTitle={post.challenge_title}
+          mediaUrl={post.media?.file_path}
+          postText={post.body}
+          profileImageUrl={profileImageUrl || undefined}
+          completionCount={completionCount}
+          variant="post"
+          onImageLoad={onImageLoad}
+        />
 
         {localPreviews.length > 0 && (
           <TouchableOpacity onPress={handleOpenComments} style={commentPreviewStyle}>

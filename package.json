@@ -84,6 +84,7 @@
     "react-native-svg-transformer": "^1.5.1",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.3.0",
+    "react-native-view-shot": "4.0.3",
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {

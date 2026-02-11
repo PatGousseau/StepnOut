@@ -7,29 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01DEE3BA6882D967DA49ECC3 /* libPods-StepnOut.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 721BD0F8F4203061A34995CB /* libPods-StepnOut.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		4E86AC21F8361E83F85AA3B4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4E717D569CE2E4BB818CA6F9 /* PrivacyInfo.xcprivacy */; };
-		ABCE73B9AFCDA622D8685365 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8C7D7103ADFBE3F4F6FD1D /* ExpoModulesProvider.swift */; };
+		41B9DA180D562EAD2AE0924D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7920155816A8E4AD37AEB6AF /* ExpoModulesProvider.swift */; };
+		566A9D4F604A47ED2B1FA580 /* libPods-StepnOut.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 29F0534685E51729365C258A /* libPods-StepnOut.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F59443CC3EEBF3DB0EAE6538 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5017E1460EE1331CAFC82B86 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		081830913D67DF3A2A4E7500 /* Pods-StepnOut.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StepnOut.release.xcconfig"; path = "Target Support Files/Pods-StepnOut/Pods-StepnOut.release.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* StepnOut.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StepnOut.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = StepnOut/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = StepnOut/Info.plist; sourceTree = "<group>"; };
-		4E717D569CE2E4BB818CA6F9 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = StepnOut/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		721BD0F8F4203061A34995CB /* libPods-StepnOut.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-StepnOut.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		81A7F625D73D1F54A726493D /* Pods-StepnOut.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StepnOut.release.xcconfig"; path = "Target Support Files/Pods-StepnOut/Pods-StepnOut.release.xcconfig"; sourceTree = "<group>"; };
+		29F0534685E51729365C258A /* libPods-StepnOut.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-StepnOut.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5017E1460EE1331CAFC82B86 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = StepnOut/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7920155816A8E4AD37AEB6AF /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-StepnOut/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = StepnOut/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		BD96BF2CE128F7009C999A3B /* Pods-StepnOut.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StepnOut.debug.xcconfig"; path = "Target Support Files/Pods-StepnOut/Pods-StepnOut.debug.xcconfig"; sourceTree = "<group>"; };
+		D044BD07B9D605345A8066B9 /* Pods-StepnOut.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-StepnOut.debug.xcconfig"; path = "Target Support Files/Pods-StepnOut/Pods-StepnOut.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = StepnOut/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* StepnOut-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "StepnOut-Bridging-Header.h"; path = "StepnOut/StepnOut-Bridging-Header.h"; sourceTree = "<group>"; };
-		FA8C7D7103ADFBE3F4F6FD1D /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-StepnOut/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				01DEE3BA6882D967DA49ECC3 /* libPods-StepnOut.a in Frameworks */,
+				566A9D4F604A47ED2B1FA580 /* libPods-StepnOut.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,24 +53,34 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				4E717D569CE2E4BB818CA6F9 /* PrivacyInfo.xcprivacy */,
+				5017E1460EE1331CAFC82B86 /* PrivacyInfo.xcprivacy */,
 			);
 			name = StepnOut;
+			sourceTree = "<group>";
+		};
+		2549FE63922DB3DF6AB62020 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				D044BD07B9D605345A8066B9 /* Pods-StepnOut.debug.xcconfig */,
+				081830913D67DF3A2A4E7500 /* Pods-StepnOut.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				721BD0F8F4203061A34995CB /* libPods-StepnOut.a */,
+				29F0534685E51729365C258A /* libPods-StepnOut.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		646208B14AD61DAFEECC7B1D /* StepnOut */ = {
+		3A16F037EE89797F9257C226 /* StepnOut */ = {
 			isa = PBXGroup;
 			children = (
-				FA8C7D7103ADFBE3F4F6FD1D /* ExpoModulesProvider.swift */,
+				7920155816A8E4AD37AEB6AF /* ExpoModulesProvider.swift */,
 			);
 			name = StepnOut;
 			sourceTree = "<group>";
@@ -89,8 +99,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				A82E30E5DBCB85EF19FCC15C /* Pods */,
-				F29F9224E6E3CE57608BB568 /* ExpoModulesProviders */,
+				2549FE63922DB3DF6AB62020 /* Pods */,
+				DFAC350DE4612AB84E46130B /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -105,16 +115,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A82E30E5DBCB85EF19FCC15C /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				BD96BF2CE128F7009C999A3B /* Pods-StepnOut.debug.xcconfig */,
-				81A7F625D73D1F54A726493D /* Pods-StepnOut.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -124,10 +124,10 @@
 			path = StepnOut/Supporting;
 			sourceTree = "<group>";
 		};
-		F29F9224E6E3CE57608BB568 /* ExpoModulesProviders */ = {
+		DFAC350DE4612AB84E46130B /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				646208B14AD61DAFEECC7B1D /* StepnOut */,
+				3A16F037EE89797F9257C226 /* StepnOut */,
 			);
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "StepnOut" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				551D1D2A89BC68A790BCDD96 /* [Expo] Configure project */,
+				6C86848C069D01D98AF7D363 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				E885B09867E0ECDECCE8336F /* [CP] Embed Pods Frameworks */,
+				DE1BEC84B7214CD02BA0ED55 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -198,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				4E86AC21F8361E83F85AA3B4 /* PrivacyInfo.xcprivacy in Resources */,
+				F59443CC3EEBF3DB0EAE6538 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -244,7 +244,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		551D1D2A89BC68A790BCDD96 /* [Expo] Configure project */ = {
+		6C86848C069D01D98AF7D363 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -352,7 +352,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-StepnOut/Pods-StepnOut-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E885B09867E0ECDECCE8336F /* [CP] Embed Pods Frameworks */ = {
+		DE1BEC84B7214CD02BA0ED55 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -382,7 +382,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				ABCE73B9AFCDA622D8685365 /* ExpoModulesProvider.swift in Sources */,
+				41B9DA180D562EAD2AE0924D /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,7 +391,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BD96BF2CE128F7009C999A3B /* Pods-StepnOut.debug.xcconfig */;
+			baseConfigurationReference = D044BD07B9D605345A8066B9 /* Pods-StepnOut.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -430,7 +430,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 81A7F625D73D1F54A726493D /* Pods-StepnOut.release.xcconfig */;
+			baseConfigurationReference = 081830913D67DF3A2A4E7500 /* Pods-StepnOut.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

@@ -27,6 +27,7 @@ export const POST_EVENTS = {
   LIKED: 'post_liked',
   UNLIKED: 'post_unliked',
   SHARED: 'post_shared',
+  SHARED_TO_INSTAGRAM: 'post_shared_to_instagram',
   DELETED: 'post_deleted',
   MEDIA_VIEWED: 'post_media_viewed',
   VIDEO_PLAYED: 'post_video_played',
@@ -57,6 +58,7 @@ export const CHALLENGE_EVENTS = {
   SHARE_MODAL_OPENED: 'challenge_share_modal_opened',
   SHARED: 'challenge_shared',
   SHARE_SKIPPED: 'challenge_share_skipped',
+  SHARED_TO_INSTAGRAM: 'challenge_shared_to_instagram',
   PATRIZIO_EXAMPLE_CLICKED: 'challenge_patrizio_example_clicked',
 } as const;
 
