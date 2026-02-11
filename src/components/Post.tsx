@@ -516,15 +516,17 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               onLikeToggle={() => handleLikePress(false)}
             />
           </View>
-          <TouchableOpacity onPress={shareToInstagram} disabled={isSharing}>
-            <View style={iconContainerStyle}>
-              {isSharing ? (
-                <ActivityIndicator size="small" color={colors.neutral.grey1} />
-              ) : (
-                <MaterialCommunityIcons name="instagram" size={18} color={colors.neutral.grey1} />
-              )}
-            </View>
-          </TouchableOpacity>
+          {isAdmin && (
+            <TouchableOpacity onPress={shareToInstagram} disabled={isSharing}>
+              <View style={iconContainerStyle}>
+                {isSharing ? (
+                  <ActivityIndicator size="small" color={colors.neutral.grey1} />
+                ) : (
+                  <MaterialCommunityIcons name="instagram" size={18} color={colors.neutral.grey1} />
+                )}
+              </View>
+            </TouchableOpacity>
+          )}
           {isAdmin && post.body && (
             <TouchableOpacity onPress={handleTranslate} disabled={isTranslating}>
               <View style={iconContainerStyle}>
