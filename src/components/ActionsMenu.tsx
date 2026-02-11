@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, ViewStyle, TextStyle, View } from "react-native";
+import { Alert, ViewStyle, TextStyle, View, Linking } from "react-native";
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
@@ -185,6 +185,26 @@ export const ProfileActions: React.FC<ProfileActionsProps> = ({
       text: t("Edit profile"),
       onSelect: onEdit,
       icon: "edit",
+    },
+    {
+      text: t("Buy me a coffee"),
+      onSelect: async () => {
+        const url = process.env.EXPO_PUBLIC_BUY_ME_A_COFFEE_URL;
+
+        if (!url) {
+          Alert.alert(t("Error"), t("Support link not configured"));
+          return;
+        }
+
+        const canOpen = await Linking.canOpenURL(url);
+        if (!canOpen) {
+          Alert.alert(t("Error"), t("Support link not configured"));
+          return;
+        }
+
+        Linking.openURL(url);
+      },
+      icon: "local-cafe",
     },
     {
       text: t("Sign out"),
