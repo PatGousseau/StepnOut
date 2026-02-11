@@ -1,14 +1,19 @@
-import React, { useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Share, Modal, Image } from 'react-native';
+import React, { useRef, useEffect, useMemo } from 'react';
+import { View, StyleSheet, TouchableOpacity, Share, Modal, Image, ActivityIndicator } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { captureEvent } from '../lib/posthog';
 import { CHALLENGE_EVENTS } from '../constants/analyticsEvents';
 import { appConfigService } from '../services/appConfigService';
+import InstagramStoryCard from './InstagramStoryCard';
+import { captureRef } from 'react-native-view-shot';
+import { instagramShareService } from '../services/instagramShareService';
+import { Image as ExpoImage } from 'expo-image';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -19,8 +24,8 @@ interface ShareChallengeProps {
   streakCount?: number;
 }
 
-const ShareChallenge: React.FC<ShareChallengeProps> = ({ 
-  title, 
+const ShareChallenge: React.FC<ShareChallengeProps> = ({
+  title,
   challengeId,
   onClose,
   mediaPreview,
@@ -28,8 +33,22 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   isVisible
 }) => {
   const { t } = useLanguage();
+  const { username } = useAuth();
   const confettiRef = useRef<any>(null);
+  const storyCardRef = useRef<View>(null);
+  const [isSharing, setIsSharing] = React.useState(false);
   const { completionCount } = useActiveChallenge();
+
+  const celebrationText = useMemo(() => {
+    const options = [
+      'You did it!',
+      'Well done!',
+      'Way to go!',
+      'You stepped out!',
+      'Bravo!',
+    ];
+    return options[Math.floor(Math.random() * options.length)];
+  }, [isVisible]);
 
   useEffect(() => {
     if (isVisible) {
@@ -50,21 +69,67 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
         count: completionCount + 1,
         link: shareLink
       });
-      
+
       await Share.share({
         message: defaultMessage,
         title: t('Join Me on Stepn Out!'),
       });
-      
+
       captureEvent(CHALLENGE_EVENTS.SHARED, {
         challenge_id: challengeId,
         challenge_title: title,
         completion_count: completionCount,
       });
-      
+
       onClose();
     } catch (error) {
       console.error(t('Error sharing:'), error);
+    }
+  };
+
+  const handleInstagramShare = async () => {
+    if (isSharing || !storyCardRef.current) return;
+    setIsSharing(true);
+
+    try {
+      if (mediaPreview) {
+        await ExpoImage.prefetch(mediaPreview);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+
+      const fileUri = await captureRef(storyCardRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+      });
+
+      const instagramInstalled = await instagramShareService.isInstagramInstalled();
+      let shared = false;
+
+      if (instagramInstalled) {
+        try {
+          shared = await instagramShareService.shareToInstagramStories(fileUri);
+        } catch {
+          shared = await instagramShareService.shareNative(fileUri);
+        }
+      } else {
+        shared = await instagramShareService.shareNative(fileUri);
+      }
+
+      if (shared) {
+        captureEvent(CHALLENGE_EVENTS.SHARED_TO_INSTAGRAM, {
+          challenge_id: challengeId,
+          challenge_title: title,
+          completion_count: completionCount,
+        });
+      }
+
+      onClose();
+    } catch (error) {
+      console.error('Error sharing to Instagram:', error);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -86,24 +151,28 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
           colors={['#FFD700', '#FFA500', '#FF69B4', '#87CEEB', '#98FB98']}
           autoStartDelay={0}
         />
-        
+
+        {/* Hidden Instagram Story Card for capture */}
+        <InstagramStoryCard
+          ref={storyCardRef}
+          username={username || ''}
+          challengeTitle={title}
+          mediaUrl={mediaPreview || undefined}
+          completionCount={completionCount}
+        />
+
         <View style={styles.modalContent}>
           <View style={styles.celebrationContainer}>
-            <Text style={styles.emoji}>🎯</Text>
-            <Text style={styles.title}>{t('Challenge Complete!')}</Text>
+            <Text style={styles.title}>{t(celebrationText)}</Text>
           </View>
 
-          <View style={styles.recapContainer}>
-            {mediaPreview && (
-              <Image 
-                source={{ uri: mediaPreview }} 
-                style={styles.mediaPreview}
-                resizeMode="cover"
-              />
-            )}
-            <Text style={styles.challengeTitle}>"{title}"</Text>
-          </View>
-
+          {mediaPreview && (
+            <Image
+              source={{ uri: mediaPreview }}
+              style={styles.mediaPreview}
+              resizeMode="cover"
+            />
+          )}
           <View style={styles.socialProofContainer}>
             <Text style={styles.socialProofText}>
               <Text style={styles.highlight}>
@@ -111,33 +180,49 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
               </Text>
               {' '}
               {t('have stepped out of their comfort zone this week.')}
-              {'\n'}
-              <Text style={styles.socialProofSubtext}>
-                {t('Inspire your friend to be the (count)th!', { count: completionCount + 1 })}
-              </Text>
+            </Text>
+
+            <Text style={styles.inspireText}>
+              <MaterialCommunityIcons name="shimmer" size={14} color={colors.light.accent} />
+              {' '}{t('Inspire your friend to be the (count)th!', { count: completionCount + 1 })}
             </Text>
           </View>
-          
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.laterButton} 
-              onPress={() => {
-                captureEvent(CHALLENGE_EVENTS.SHARE_SKIPPED, {
-                  challenge_id: challengeId,
-                });
-                onClose();
-              }}
+
+          <View style={styles.shareButtons}>
+            <TouchableOpacity
+              style={styles.instagramButton}
+              onPress={handleInstagramShare}
+              disabled={isSharing}
             >
-              <Text style={styles.laterButtonText}>{t('Skip')}</Text>
+              {isSharing ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <MaterialCommunityIcons name="instagram" size={20} color="white" />
+              )}
+              <Text style={styles.buttonText}>
+                {isSharing ? t('Sharing...') : t('Share to Instagram Story')}
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.shareButton} 
+
+            <TouchableOpacity
+              style={styles.friendButton}
               onPress={handleShare}
             >
-              <MaterialCommunityIcons name="shimmer" size={20} color="white" />
-              <Text style={styles.shareButtonText}>{t('Inspire someone!')}</Text>
+              <MaterialCommunityIcons name="send" size={18} color="white" style={{ transform: [{ rotate: '-30deg' }] }} />
+              <Text style={styles.friendButtonText}>{t('Share with a friend')}</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            onPress={() => {
+              captureEvent(CHALLENGE_EVENTS.SHARE_SKIPPED, {
+                challenge_id: challengeId,
+              });
+              onClose();
+            }}
+          >
+            <Text style={styles.skipText}>{t('Skip')}</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -145,41 +230,69 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 };
 
 const styles = StyleSheet.create({
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
+  buttonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   celebrationContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  challengeBox: {
+    backgroundColor: colors.light.accent2,
+    borderColor: colors.light.primary,
+    borderRadius: 8,
+    borderWidth: 1.25,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    width: '100%',
   },
   challengeTitle: {
-    color: colors.light.text,
-    fontSize: 18,
-    fontStyle: 'italic',
+    color: colors.light.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  skipText: {
+    color: colors.neutral.darkGrey,
+    fontSize: 15,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  inspireText: {
+    color: colors.light.accent,
+    fontSize: 15,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
   emoji: {
     fontSize: 48,
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  highlight: {
-    color: colors.light.accent,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  laterButton: {
+  friendButton: {
     alignItems: 'center',
-    backgroundColor: colors.neutral.grey2,
+    backgroundColor: colors.light.primary,
     borderRadius: 12,
-    flex: 0.3,
+    flexDirection: 'row',
     justifyContent: 'center',
-    padding: 12,
+    padding: 14,
   },
-  laterButtonText: {
-    color: colors.neutral.darkGrey,
-    fontSize: 16,
-    fontWeight: '500',
+  friendButtonText: {
+    color: 'white',
+    fontSize: 15,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  instagramButton: {
+    alignItems: 'center',
+    backgroundColor: '#D44A7A',
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    padding: 14,
   },
   mediaPreview: {
     borderRadius: 12,
@@ -191,7 +304,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.background,
     borderRadius: 24,
     maxWidth: 400,
-    padding: 24,
+    paddingVertical: 24,
+    paddingHorizontal: 26,
     width: '90%',
   },
   modalOverlay: {
@@ -200,24 +314,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  recapContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+  highlight: {
+    color: colors.light.accent,
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  shareButton: {
-    alignItems: 'center',
-    backgroundColor: colors.light.accent,
-    borderRadius: 12,
-    flex: 0.7,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    padding: 12,
-  },
-  shareButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+  shareButtons: {
+    gap: 10,
   },
   socialProofContainer: {
     backgroundColor: colors.neutral.grey2,
@@ -225,23 +328,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 16,
   },
-  socialProofSubtext: {
-    color: colors.neutral.darkGrey,
-    fontSize: 15,
-  },
   socialProofText: {
     color: colors.light.text,
     fontSize: 16,
     lineHeight: 24,
+    marginBottom: 12,
     textAlign: 'center',
   },
   title: {
     color: colors.light.text,
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: 'center',
   },
 });
 
-export default ShareChallenge; 
+export default ShareChallenge;
