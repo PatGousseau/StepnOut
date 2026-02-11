@@ -17,13 +17,60 @@ interface InstagramStoryCardProps {
   postText?: string;
   profileImageUrl?: string;
   completionCount?: number;
+  variant?: "challenge" | "post";
   onImageLoad?: () => void;
 }
 
 const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
-  ({ username, challengeTitle, mediaUrl, postText, profileImageUrl, completionCount = 0, onImageLoad }, ref) => {
+  ({ username, challengeTitle, mediaUrl, postText, profileImageUrl, completionCount = 0, variant = "challenge", onImageLoad }, ref) => {
     const { t } = useLanguage();
     const isChallenge = !!challengeTitle;
+
+    if (variant === "post") {
+      return (
+        <View
+          ref={ref}
+          style={containerStyle}
+          collapsable={false}
+        >
+          {/* Post card centered */}
+          <View style={middleSectionStyle}>
+            <Image
+              source={require("../assets/images/header-logo.png")}
+              style={postVariantLogoStyle}
+              contentFit="contain"
+            />
+            <View style={postCardStyle}>
+              {/* Post header */}
+              <View style={postHeaderStyle}>
+                <Image
+                  source={profileImageUrl ? { uri: profileImageUrl } : require("../assets/images/default-pfp.png")}
+                  style={avatarStyle}
+                  contentFit="cover"
+                />
+                <Text style={postUsernameStyle}>@{username}</Text>
+              </View>
+
+              {/* Challenge box */}
+              {isChallenge && (
+                <View style={postChallengeBoxStyle}>
+                  <Text style={postChallengeTitleStyle} numberOfLines={1}>
+                    <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {challengeTitle}
+                  </Text>
+                </View>
+              )}
+
+              {/* Post text */}
+              {postText ? (
+                <Text style={postBodyStyle} numberOfLines={20}>
+                  {postText}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <View
@@ -57,7 +104,7 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
             {/* Post header */}
             <View style={postHeaderStyle}>
               <Image
-                source={profileImageUrl ? { uri: profileImageUrl } : require("../assets/images/profile-pic.png")}
+                source={profileImageUrl ? { uri: profileImageUrl } : require("../assets/images/default-pfp.png")}
                 style={avatarStyle}
                 contentFit="cover"
               />
@@ -75,7 +122,7 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
 
             {/* Post text */}
             {postText ? (
-              <Text style={postBodyStyle} numberOfLines={6}>
+              <Text style={postBodyStyle} numberOfLines={20}>
                 {postText}
               </Text>
             ) : null}
@@ -201,6 +248,14 @@ const postBodyStyle: TextStyle = {
   fontSize: S(40),
   color: colors.light.text,
   lineHeight: S(58),
+};
+
+const postVariantLogoStyle: ImageStyle = {
+  width: S(420),
+  height: S(120),
+  alignSelf: "flex-start",
+  marginLeft: S(-40),
+  marginBottom: S(20),
 };
 
 const bottomSectionStyle: ViewStyle = {

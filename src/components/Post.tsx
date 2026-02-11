@@ -548,7 +548,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           challengeTitle={post.challenge_title}
           mediaUrl={post.media?.file_path}
           postText={post.body}
+          profileImageUrl={profileImageUrl || undefined}
           completionCount={completionCount}
+          variant="post"
           onImageLoad={onImageLoad}
         />
 
