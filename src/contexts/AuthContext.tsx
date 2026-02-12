@@ -16,6 +16,8 @@ type SignUpOptions = {
   instagram?: string;
   // Flag to indicate social (Google/Apple) signup
   isSocialUser?: boolean;
+  // Flag to indicate incomplete profile completion (existing user with null username)
+  isIncompleteProfile?: boolean;
 };
 
 type AuthContextType = {
@@ -215,7 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Signup function for completing profile (user already authenticated)
   const signUp = async (options: SignUpOptions): Promise<string> => {
-    const { username, displayName, profileMediaId, instagram } = options;
+    const { username, displayName, profileMediaId, instagram, isIncompleteProfile } = options;
 
     // Get the already-authenticated user
     const { data: { session } } = await supabase.auth.getSession();
@@ -248,8 +250,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUsername(username);
 
-    // Create welcome post
-    await createWelcomePost(userId);
+    // Create welcome post (skip for existing users completing their profile)
+    if (!isIncompleteProfile) {
+      await createWelcomePost(userId);
+    }
 
     // Track sign up event
     captureEvent(AUTH_EVENTS.SIGNED_UP, {
