@@ -24,7 +24,6 @@ import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
 import { UI_EVENTS } from '../constants/analyticsEvents';
 import { supabase } from '../lib/supabase';
-import { Alert } from 'react-native';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -97,11 +96,7 @@ function RootLayoutNav() {
           .single();
         // If no username, redirect to profile setup
         if (!profile?.username) {
-          Alert.alert(
-            t('Username not found'),
-            t('We noticed that some required profile fields are missing due to a technical issue. Please complete your profile to continue using the app.'),
-          );
-          router.replace('/(auth)/register-profile');
+          router.replace('/(auth)/register-profile?isIncompleteProfile=true');
         }
       } catch (error) {
         console.error('Error checking username:', error);
