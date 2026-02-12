@@ -160,6 +160,7 @@ export default function RegisterProfileScreen() {
         profileMediaId,
         instagram: instagram,
         isSocialUser: isSocialSignUp,
+        isIncompleteProfile: isProfileCompletion,
       });
 
       if (isProfileCompletion) {
