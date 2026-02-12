@@ -115,9 +115,12 @@ export const translations = {
   "Username*": "Nome Utente*",
   "Display Name*": "Nome Visualizzato*",
   "Creating Account...": "Creazione Account...",
+  "Saving...": "Salvataggio...",
   "Complete Registration": "Completa Registrazione",
   "Complete Setup": "Completa Configurazione",
+  "Complete Profile": "Completa Profilo",
   "Complete your profile": "Completa il tuo profilo",
+  "It looks like your profile is missing some details. Please fill in the fields below to continue.": "Sembra che al tuo profilo manchino alcuni dettagli. Compila i campi qui sotto per continuare.",
   "Registration Successful": "Registrazione Completata",
   "Please check your email to verify your account. After verification, you can log in to continue.":
     "Controlla la tua email per verificare il tuo account. Dopo la verifica, potrai accedere per continuare.",
