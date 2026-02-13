@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useMemo, useRef, useState } from "react";
 import { postService } from "../services/postService";
 import { useAuth } from "./AuthContext";
 import { Comment, LikeableItem, Post, ReactionSummary } from "../types";
@@ -57,7 +57,8 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const { user } = useAuth();
   const [postReactions, setPostReactions] = useState<ReactionMap>({});
   const [commentReactions, setCommentReactions] = useState<ReactionMap>({});
-  const [pending, setPending] = useState<{ [key: string]: boolean }>({});
+
+  const reactionQueueRef = useRef<{ [key: string]: Promise<void> }>({});
 
   const initializeReactions = async (items: (Post | Comment)[], type: LikeableItem["type"]) => {
     const ids = items.map((i) => i.id);
@@ -82,21 +83,21 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (!normalized) return;
 
     const key = `${item.type}:${item.id}:${normalized}`;
-    if (pending[key]) return;
 
     const isPost = item.type === "post";
     const setMap = isPost ? setPostReactions : setCommentReactions;
-    const map = isPost ? postReactions : commentReactions;
 
-    const current = map[item.id] || [];
-    const existing = current.find((r) => r.emoji === normalized);
-    const isReacted = !!existing?.reacted;
+    let wasReacted = false;
+    setMap((prev) => {
+      const current = prev[item.id] || [];
+      const existing = current.find((r) => r.emoji === normalized);
+      wasReacted = !!existing?.reacted;
 
-    setPending((prev) => ({ ...prev, [key]: true }));
-    setMap((prev) => ({
-      ...prev,
-      [item.id]: upsertReaction(prev[item.id], normalized, isReacted ? -1 : 1, !isReacted),
-    }));
+      return {
+        ...prev,
+        [item.id]: upsertReaction(prev[item.id], normalized, wasReacted ? -1 : 1, !wasReacted),
+      };
+    });
 
     const itemType = item.type === "post" ? "post" : "commento";
     const translations = {
@@ -104,17 +105,20 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       body: "Dai un'occhiata ora.",
     };
 
-    try {
+    const run = async () => {
       const result = await postService.toggleReaction(item, userId, targetUserId, normalized, translations);
       if (result === null) {
         setMap((prev) => ({
           ...prev,
-          [item.id]: upsertReaction(prev[item.id], normalized, isReacted ? 1 : -1, isReacted),
+          [item.id]: upsertReaction(prev[item.id], normalized, wasReacted ? 1 : -1, wasReacted),
         }));
       }
-    } finally {
-      setPending((prev) => ({ ...prev, [key]: false }));
-    }
+    };
+
+    const previous = reactionQueueRef.current[key] || Promise.resolve();
+    reactionQueueRef.current[key] = previous.then(run).catch(() => {});
+
+    await reactionQueueRef.current[key];
   };
 
   const value = useMemo(
@@ -133,7 +137,7 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         emoji: string
       ) => toggleReaction({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId, emoji),
     }),
-    [postReactions, commentReactions, user?.id, pending]
+    [postReactions, commentReactions, user?.id]
   );
 
   return <ReactionsContext.Provider value={value}>{children}</ReactionsContext.Provider>;
