@@ -86,6 +86,10 @@ export interface Challenge {
     created_at: string;
     post_id: number;
     parent_comment_id?: number | null;
+    media_id?: number | null;
+    media?: {
+      file_path: string;
+    };
     liked: boolean;
     likes?: {
       count: number;

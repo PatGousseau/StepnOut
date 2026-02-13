@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   View,
-  StyleSheet,
   TouchableOpacity,
   Modal,
   TextInput,
@@ -22,6 +21,8 @@ import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -35,6 +36,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
 
   const {
     selectedMedia,
+    setSelectedMedia,
     setPostText,
     isUploading,
     uploadProgress,
@@ -53,6 +55,13 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
       }
     },
     successMessage: t("Post sent successfully!"),
+  });
+
+  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => {
+      setSelectedMedia(memo);
+      captureEvent(POST_EVENTS.MEDIA_ATTACHED, { kind: "audio" });
+    },
   });
 
   const handleOpenModal = () => {
@@ -113,15 +122,21 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   </View>
                 ) : selectedMedia ? (
                   <View style={mediaPreviewContainerStyle}>
-                    <Image
-                      source={{ 
-                        uri: selectedMedia.isVideo 
-                          ? selectedMedia.thumbnailUri || selectedMedia.previewUrl 
-                          : selectedMedia.previewUrl 
-                      }}
-                      style={mediaPreviewStyle}
-                      resizeMode="contain"
-                    />
+                    {selectedMedia.pendingUpload.mediaType === 'audio' ? (
+                      <View style={{ padding: 12 }}>
+                        <VoiceMemoPlayer uri={selectedMedia.previewUrl} />
+                      </View>
+                    ) : (
+                      <Image
+                        source={{
+                          uri: selectedMedia.isVideo
+                            ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
+                            : selectedMedia.previewUrl,
+                        }}
+                        style={mediaPreviewStyle}
+                        resizeMode="contain"
+                      />
+                    )}
                     <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
                       <MaterialIcons name="close" size={12} color="white" />
                     </TouchableOpacity>
@@ -147,13 +162,23 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                 />
 
                 <View style={mediaUploadContainerStyle}>
-                  <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
-                    <MaterialIcons
-                      name="add-photo-alternate"
-                      size={24}
-                      color={colors.light.primary}
-                    />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
+                      <MaterialIcons
+                        name="add-photo-alternate"
+                        size={24}
+                        color={colors.light.primary}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
+                      <MaterialIcons
+                        name={isRecording ? "stop-circle" : "keyboard-voice"}
+                        size={24}
+                        color={isRecording ? colors.light.accent : colors.light.primary}
+                      />
+                    </TouchableOpacity>
+                  </View>
 
                   <TouchableOpacity
                     style={[submitButtonStyle, isUploading && disabledButtonStyle]}
