@@ -509,7 +509,7 @@ export const postService = {
       const newest = rows[0].created_at;
       const oldest = rows[rows.length - 1].created_at;
 
-      let wQuery = supabase
+      let welcomeQuery = supabase
         .from("post")
         .select(select)
         .is("challenge_id", null)
@@ -517,12 +517,12 @@ export const postService = {
         .not("media.upload_status", "in", '("failed","pending")')
         .lte("created_at", newest)
         .gte("created_at", oldest);
-      wQuery = applyBlockedFilter(wQuery, blockedUserIds);
+      welcomeQuery = applyBlockedFilter(welcomeQuery, blockedUserIds);
 
-      const { data: wData, error: wError } = await wQuery;
-      if (wError) throw wError;
+      const { data: welcomeData, error: welcomeError } = await welcomeQuery;
+      if (welcomeError) throw welcomeError;
 
-      const merged = [...rows, ...(wData ?? []) as PostData[]].sort((a, b) =>
+      const merged = [...rows, ...(welcomeData ?? []) as PostData[]].sort((a, b) =>
         a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0
       );
 
