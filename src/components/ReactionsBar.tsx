@@ -41,13 +41,25 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     setOpen(false);
   };
 
-  const getReactionPillStyle = (reacted: boolean) => [
-    pillStyle,
-    reactionPillStyle,
-    reacted && reactedPillStyle,
-  ];
+  const getReactionPillStyle = (reacted: boolean): ViewStyle => ({
+    ...pillStyle,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: reacted ? colors.light.primary : colors.neutral.grey2,
+    ...(reacted ? { backgroundColor: colors.light.accent2 } : {}),
+  });
 
-  const getCountStyle = (reacted: boolean) => [countStyle, reacted && reactedCountStyle];
+  const getCountStyle = (reacted: boolean): TextStyle => ({
+    ...countStyle,
+    ...(reacted ? { color: colors.light.primary, fontWeight: "700" } : {}),
+  });
+
+  const getEmojiOptionStyle = (reacted: boolean): ViewStyle => ({
+    ...emojiOptionStyle,
+    ...(reacted ? { backgroundColor: colors.light.accent2 } : {}),
+  });
 
   return (
     <View style={containerStyle}>
@@ -90,7 +102,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
               <TouchableOpacity
                 key={e}
                 onPress={() => selectEmoji(e)}
-                style={[emojiOptionStyle, reactedEmojis.has(e) && reactedEmojiOptionStyle]}
+                style={getEmojiOptionStyle(reactedEmojis.has(e))}
               >
                 <Text style={emojiOptionText}>{e}</Text>
               </TouchableOpacity>
@@ -116,19 +128,6 @@ const pillStyle: ViewStyle = {
   paddingVertical: 2,
 };
 
-const reactionPillStyle: ViewStyle = {
-  paddingHorizontal: 6,
-  paddingVertical: 3,
-  borderRadius: 999,
-  borderWidth: 1,
-  borderColor: colors.neutral.grey2,
-};
-
-const reactedPillStyle: ViewStyle = {
-  backgroundColor: colors.light.accent2,
-  borderColor: colors.light.primary,
-};
-
 const emojiStyle: TextStyle = {
   fontSize: 12,
 };
@@ -137,11 +136,6 @@ const countStyle: TextStyle = {
   marginLeft: 3,
   fontSize: 11,
   color: colors.light.text,
-};
-
-const reactedCountStyle: TextStyle = {
-  color: colors.light.primary,
-  fontWeight: "700",
 };
 
 const addButtonStyle: ViewStyle = {
@@ -179,10 +173,6 @@ const popoverStyle: ViewStyle = {
 const emojiOptionStyle: ViewStyle = {
   padding: 4,
   borderRadius: 999,
-};
-
-const reactedEmojiOptionStyle: ViewStyle = {
-  backgroundColor: colors.light.accent2,
 };
 
 const emojiOptionText: TextStyle = {
