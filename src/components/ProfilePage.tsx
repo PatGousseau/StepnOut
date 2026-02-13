@@ -16,6 +16,9 @@ import {
 import UserProgress from "./UserProgress";
 import Post from "./Post";
 import useUserProgress from "../hooks/useUserProgress";
+import useUserComments from "../hooks/useUserComments";
+import { router } from "expo-router";
+import { formatRelativeTime } from "../utils/time";
 import { useAuth } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -35,15 +38,19 @@ import { captureEvent, setUserProperties } from "../lib/posthog";
 import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 type ProfilePageProps = {
-  userId: string;
+  userId?: string;
 };
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { initializePostLikes } = useLikes();
-  const { initializePostReactions } = useReactions();
+  const { initializePostLikes, initializeCommentLikes } = useLikes();
+  const { initializePostReactions, initializeCommentReactions } = useReactions();
+
+  const targetUserId = userId || user?.id || "";
+  const isOwnProfile = !userId || userId === user?.id;
+
   const {
     data,
     loading: progressLoading,
@@ -52,8 +59,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     postsLoading,
     hasMorePosts,
     fetchUserPosts,
-  } = useUserProgress(userId);
+  } = useUserProgress(targetUserId);
+  const {
+    userComments,
+    commentsLoading,
+    hasMoreComments,
+    fetchUserComments,
+  } = useUserComments(targetUserId);
+  const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
   const [page, setPage] = useState(1);
+  const [commentsPage, setCommentsPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -64,11 +79,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
 
-  // for features that are only available to the user themselves
-  const isOwnProfile = userId ? userId === user?.id : true;
-
-  // Get target user ID (from prop or current user)
-  const targetUserId = userId || user?.id;
 
   // Use React Query to fetch profile data
   const {
@@ -91,14 +101,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setPage(1);
-    await Promise.all([refetchProfile(), fetchUserPosts(1)]);
+    setCommentsPage(1);
+    await Promise.all([refetchProfile(), fetchUserPosts(1), fetchUserComments(1)]);
     setRefreshing(false);
-  }, [fetchUserPosts, refetchProfile]);
+  }, [fetchUserPosts, fetchUserComments, refetchProfile]);
 
   const handleUpdateProfilePicture = async () => {
     try {
       setImageUploading(true);
-      const result = await profileService.updateProfilePicture(user?.id!);
+      if (!user?.id) return;
+      const result = await profileService.updateProfilePicture(user.id);
 
       if (result.success) {
         // Optimistically update with preview URL if available
@@ -151,7 +163,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         }
       }
 
-      const result = await profileService.validateAndUpdateProfile(user?.id!, {
+      if (!user?.id) return;
+
+      const result = await profileService.validateAndUpdateProfile(user.id, {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
         name: editedName !== userProfile?.name ? editedName : undefined,
@@ -183,10 +197,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleLoadMore = () => {
-    if (!postsLoading && hasMorePosts) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchUserPosts(nextPage, true);
+    if (activeTab === "posts") {
+      if (!postsLoading && hasMorePosts) {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchUserPosts(nextPage, true);
+      }
+      return;
+    }
+
+    if (activeTab === "comments") {
+      if (!commentsLoading && hasMoreComments) {
+        const nextPage = commentsPage + 1;
+        setCommentsPage(nextPage);
+        fetchUserComments(nextPage, true);
+      }
     }
   };
 
@@ -200,7 +225,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleDeleteAccount = async () => {
     try {
-      const result = await profileService.confirmAndDeleteAccount(user?.id!, t);
+      if (!user?.id) return;
+      const result = await profileService.confirmAndDeleteAccount(user.id, t);
       if (result.success) {
         captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
         await signOut();
@@ -253,6 +279,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       initializePostReactions(userPosts);
     }
   }, [userPosts]);
+
+  useEffect(() => {
+    if (userComments.length > 0) {
+      initializeCommentLikes(userComments);
+      initializeCommentReactions(userComments);
+    }
+  }, [userComments]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
@@ -414,22 +447,73 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-        <Text style={styles.pastChallengesTitle}>
-          {isOwnProfile ? t("Your Posts") : t("Posts")}
-        </Text>
-        {userPosts.map((post) => (
-          <Post
-            key={post.id}
-            post={post} // Pass the entire post object
-            postUser={userProfile}
-            setPostCounts={() => { }}
-            onPostDeleted={() => { }}
-          />
-        ))}
-        {postsLoading && (
-          <View style={{ padding: 20, alignItems: "center" }}>
-            <Loader />
-          </View>
+        <View style={styles.tabsRow}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === "posts" && styles.tabButtonActive]}
+            onPress={() => setActiveTab("posts")}
+          >
+            <Text style={[styles.tabText, activeTab === "posts" && styles.tabTextActive]}>
+              {t("Posts")}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === "comments" && styles.tabButtonActive]}
+            onPress={() => setActiveTab("comments")}
+          >
+            <Text style={[styles.tabText, activeTab === "comments" && styles.tabTextActive]}>
+              {t("Comments")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === "posts" && (
+          <>
+            {userPosts.map((post) => (
+              <Post
+                key={post.id}
+                post={post}
+                postUser={userProfile}
+                setPostCounts={() => {}}
+                onPostDeleted={() => {}}
+              />
+            ))}
+            {postsLoading && (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <Loader />
+              </View>
+            )}
+          </>
+        )}
+
+        {activeTab === "comments" && (
+          <>
+            {userComments.map((comment) => (
+              <TouchableOpacity
+                key={comment.id}
+                style={styles.commentCard}
+                onPress={() => router.push(`/post/${comment.post_id}`)}
+              >
+                <View style={styles.commentHeaderRow}>
+                  <Text style={styles.commentMetaText}>{formatRelativeTime(comment.created_at)}</Text>
+                  {!!comment.likes_count && (
+                    <Text style={styles.commentMetaText}>
+                      {` · ${comment.likes_count} likes`}
+                    </Text>
+                  )}
+                </View>
+                <Text style={styles.commentBodyText}>{comment.text}</Text>
+                <Text style={styles.commentPostContextText} numberOfLines={2}>
+                  on {comment.post?.challenge_title ? `${comment.post.challenge_title}: ` : ""}
+                  {comment.post?.body || "post"}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            {commentsLoading && (
+              <View style={{ padding: 20, alignItems: "center" }}>
+                <Loader />
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -566,26 +650,61 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  menuItemContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
-  menuOptionText: {
-    color: colors.light.primary,
-    fontSize: 14,
-  },
   modalContainer: {
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.9)",
     flex: 1,
     justifyContent: "center",
   },
-  pastChallengesTitle: {
+  tabsRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+  },
+  tabButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e1e1e1",
+  },
+  tabButtonActive: {
+    borderColor: colors.light.primary,
+  },
+  tabText: {
+    color: "#7F8C8D",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  tabTextActive: {
+    color: colors.light.primary,
+  },
+  commentCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#efefef",
+  },
+  commentHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  commentMetaText: {
+    color: "#7F8C8D",
+    fontSize: 12,
+  },
+  commentBodyText: {
     color: "#0D1B1E",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginVertical: 16,
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  commentPostContextText: {
+    color: "#7F8C8D",
+    fontSize: 13,
   },
   profileHeader: {
     alignItems: "center",
@@ -601,14 +720,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     alignItems: "center",
     flexDirection: "row",
-  },
-  input: {
-    borderColor: colors.light.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
   },
   userInfo: {
     alignItems: "center",
@@ -650,18 +761,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 0,
   },
-  websiteLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
   websiteText: {
     color: colors.light.primary,
     fontSize: 14,
-  },
-  inputWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   instagram: {
     flexDirection: "row",
