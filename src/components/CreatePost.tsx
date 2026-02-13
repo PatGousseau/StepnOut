@@ -173,9 +173,9 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                     </TouchableOpacity>
 
                     {isRecording && recording ? (
-                      <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
-                        <RecordingWaveform recording={recording} isRecording={isRecording} />
-                      </TouchableOpacity>
+                      <View style={mediaUploadIconStyle}>
+                        <RecordingWaveform recording={recording} isRecording={isRecording} onStop={handleVoiceMemoPress} />
+                      </View>
                     ) : (
                       <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
                         <MaterialIcons

@@ -348,13 +348,9 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 </View>
 
                 {isRecording && recording ? (
-                  <TouchableOpacity
-                    style={shareStyles.mediaUploadButton}
-                    onPress={handleVoiceMemoPress}
-                    activeOpacity={0.8}
-                  >
-                    <RecordingWaveform recording={recording} isRecording={isRecording} />
-                  </TouchableOpacity>
+                  <View style={shareStyles.mediaUploadButton}>
+                    <RecordingWaveform recording={recording} isRecording={isRecording} onStop={handleVoiceMemoPress} />
+                  </View>
                 ) : (
                   <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
                     {selectedMedia ? (

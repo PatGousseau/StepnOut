@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, ViewStyle, TextStyle } from "react-native";
+import { View, TouchableOpacity, ViewStyle, TextStyle } from "react-native";
 import { Audio } from "expo-av";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 
 interface RecordingWaveformProps {
   recording: Audio.Recording;
   isRecording: boolean;
+  onStop: () => void;
   compact?: boolean;
 }
 
@@ -34,6 +36,7 @@ const formatElapsed = (ms: number): string => {
 export const RecordingWaveform: React.FC<RecordingWaveformProps> = ({
   recording,
   isRecording,
+  onStop,
   compact = false,
 }) => {
   const [levels, setLevels] = useState<number[]>(() =>
@@ -75,8 +78,17 @@ export const RecordingWaveform: React.FC<RecordingWaveformProps> = ({
   const barWidth = compact ? 2 : 3;
   const gap = compact ? 1.5 : 2;
 
+  const stopSize = compact ? 18 : 22;
+
   return (
     <View style={[containerStyle, compact && compactContainerStyle]}>
+      <TouchableOpacity
+        onPress={onStop}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.7}
+      >
+        <MaterialIcons name="stop-circle" size={stopSize} color={colors.light.accent} />
+      </TouchableOpacity>
       <View style={[barsContainerStyle, { height: barHeight }]}>
         {levels.map((level, i) => (
           <View

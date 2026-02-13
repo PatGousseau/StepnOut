@@ -611,9 +611,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
         <View style={inlineCommentContainer}>
           {inlineIsRecording && inlineRecording ? (
-            <TouchableOpacity onPress={handleInlineVoiceMemoPress} style={{ flex: 1 }} activeOpacity={0.8}>
-              <RecordingWaveform recording={inlineRecording} isRecording={inlineIsRecording} compact />
-            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <RecordingWaveform recording={inlineRecording} isRecording={inlineIsRecording} onStop={handleInlineVoiceMemoPress} compact />
+            </View>
           ) : inlineVoiceMemo ? (
             <View style={inlineVoiceMemoPreviewStyle}>
               <VoiceMemoPlayer uri={inlineVoiceMemo.previewUrl} compact />

@@ -98,9 +98,9 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
     <View style={containerStyle}>
       {/* Recording waveform */}
       {isRecording && recording ? (
-        <TouchableOpacity onPress={handleVoiceMemoPress} activeOpacity={0.8} style={recordingWaveformContainerStyle}>
-          <RecordingWaveform recording={recording} isRecording={isRecording} />
-        </TouchableOpacity>
+        <View style={recordingWaveformContainerStyle}>
+          <RecordingWaveform recording={recording} isRecording={isRecording} onStop={handleVoiceMemoPress} />
+        </View>
       ) : null}
 
       {/* Media preview if selected */}

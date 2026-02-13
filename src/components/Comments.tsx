@@ -333,13 +333,9 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             ) : null}
 
             {isRecording && recording ? (
-              <TouchableOpacity
-                onPress={handleVoiceMemoPress}
-                style={{ paddingHorizontal: 4, paddingVertical: 2 }}
-                activeOpacity={0.8}
-              >
-                <RecordingWaveform recording={recording} isRecording={isRecording} compact />
-              </TouchableOpacity>
+              <View style={{ paddingHorizontal: 4, paddingVertical: 2 }}>
+                <RecordingWaveform recording={recording} isRecording={isRecording} onStop={handleVoiceMemoPress} compact />
+              </View>
             ) : (
               <TouchableOpacity
                 onPress={handleVoiceMemoPress}
