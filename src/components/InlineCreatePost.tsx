@@ -18,6 +18,9 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import ImageViewer from "react-native-image-zoom-viewer";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { RecordingWaveform } from "./RecordingWaveform";
 
 const POST_PROMPT_KEYS = [
   "What made you step outside your comfort zone today?",
@@ -54,6 +57,7 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
 
   const {
     selectedMedia,
+    setSelectedMedia,
     isUploading,
     handleMediaUpload,
     handleRemoveMedia,
@@ -67,6 +71,10 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
       }
     },
     successMessage: t("Post sent successfully!"),
+  });
+
+  const { recording, isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => setSelectedMedia(memo),
   });
 
   const onSubmit = async () => {
@@ -88,31 +96,47 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
 
   return (
     <View style={containerStyle}>
+      {/* Recording waveform */}
+      {isRecording && recording ? (
+        <TouchableOpacity onPress={handleVoiceMemoPress} activeOpacity={0.8} style={recordingWaveformContainerStyle}>
+          <RecordingWaveform recording={recording} isRecording={isRecording} />
+        </TouchableOpacity>
+      ) : null}
+
       {/* Media preview if selected */}
-      {isUploading ? (
+      {!isRecording && isUploading ? (
         <View style={mediaPreviewContainerStyle}>
           <Loader />
         </View>
-      ) : selectedMedia ? (
-        <Pressable style={mediaPreviewContainerStyle} onPress={() => setShowFullScreenImage(true)}>
-          <Image
-            source={{
-              uri: selectedMedia.isVideo
-                ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
-                : selectedMedia.previewUrl,
-            }}
-            style={mediaPreviewStyle}
-            resizeMode="cover"
-          />
-          <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
-            <MaterialIcons name="close" size={12} color="white" />
-          </TouchableOpacity>
-          {selectedMedia.isVideo && (
-            <View style={videoIndicatorStyle}>
-              <MaterialIcons name="play-circle-filled" size={20} color="white" />
-            </View>
-          )}
-        </Pressable>
+      ) : !isRecording && selectedMedia ? (
+        selectedMedia.pendingUpload.mediaType === 'audio' ? (
+          <View style={audioPreviewContainerStyle}>
+            <VoiceMemoPlayer uri={selectedMedia.previewUrl} compact />
+            <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
+              <MaterialIcons name="close" size={12} color="white" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <Pressable style={mediaPreviewContainerStyle} onPress={() => setShowFullScreenImage(true)}>
+            <Image
+              source={{
+                uri: selectedMedia.isVideo
+                  ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
+                  : selectedMedia.previewUrl,
+              }}
+              style={mediaPreviewStyle}
+              resizeMode="cover"
+            />
+            <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
+              <MaterialIcons name="close" size={12} color="white" />
+            </TouchableOpacity>
+            {selectedMedia.isVideo && (
+              <View style={videoIndicatorStyle}>
+                <MaterialIcons name="play-circle-filled" size={20} color="white" />
+              </View>
+            )}
+          </Pressable>
+        )
       ) : null}
 
       {/* Input row */}
@@ -132,9 +156,14 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
 
       {/* Actions row */}
       <View style={actionsRowStyle}>
-        <TouchableOpacity style={mediaButtonStyle} onPress={handleMediaUpload}>
-          <MaterialIcons name="add-photo-alternate" size={20} color={colors.light.primary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <TouchableOpacity style={mediaButtonStyle} onPress={handleMediaUpload}>
+            <MaterialIcons name="add-photo-alternate" size={20} color={colors.light.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={mediaButtonStyle} onPress={handleVoiceMemoPress}>
+            <MaterialIcons name="keyboard-voice" size={20} color={colors.light.primary} />
+          </TouchableOpacity>
+        </View>
 
         <AnimatedSendButton
           hasContent={!!hasContent}
@@ -255,6 +284,24 @@ const videoIndicatorStyle: ViewStyle = {
   backgroundColor: "rgba(0,0,0,0.5)",
   borderRadius: 10,
   padding: 2,
+};
+
+const recordingWaveformContainerStyle: ViewStyle = {
+  marginBottom: 8,
+  paddingVertical: 4,
+  paddingHorizontal: 4,
+  backgroundColor: colors.light.accent2,
+  borderRadius: 8,
+};
+
+const audioPreviewContainerStyle: ViewStyle = {
+  position: "relative",
+  width: "100%",
+  borderRadius: 8,
+  marginBottom: 8,
+  paddingVertical: 8,
+  paddingHorizontal: 8,
+  backgroundColor: colors.neutral.grey2,
 };
 
 const fullScreenContainerStyle: ViewStyle = {

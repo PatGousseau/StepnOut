@@ -23,6 +23,7 @@ import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
 import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
 import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
+import { RecordingWaveform } from "./RecordingWaveform";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -57,7 +58,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
     successMessage: t("Post sent successfully!"),
   });
 
-  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+  const { recording, isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
     onCreated: (memo) => {
       setSelectedMedia(memo);
       captureEvent(POST_EVENTS.MEDIA_ATTACHED, { kind: "audio" });
@@ -171,13 +172,19 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                       />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
-                      <MaterialIcons
-                        name={isRecording ? "stop-circle" : "keyboard-voice"}
-                        size={24}
-                        color={isRecording ? colors.light.accent : colors.light.primary}
-                      />
-                    </TouchableOpacity>
+                    {isRecording && recording ? (
+                      <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
+                        <RecordingWaveform recording={recording} isRecording={isRecording} />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity style={mediaUploadIconStyle} onPress={handleVoiceMemoPress}>
+                        <MaterialIcons
+                          name="keyboard-voice"
+                          size={24}
+                          color={colors.light.primary}
+                        />
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   <TouchableOpacity

@@ -47,6 +47,11 @@ import { translationService } from "../services/translationService";
 import { toPublicMediaUrl, isVideoUrl, isAudioUrl } from "../utils/mediaUrl";
 import { useInstagramShare } from "../hooks/useInstagramShare";
 import InstagramStoryCard from "./InstagramStoryCard";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
+import { RecordingWaveform } from "./RecordingWaveform";
+import { MediaSelectionResult } from "../utils/handleMediaUpload";
+import { backgroundUploadService } from "../services/backgroundUploadService";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 interface PostProps {
   post: PostType;
@@ -79,6 +84,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [inlineComment, setInlineComment] = useState("");
   const [localPreviews, setLocalPreviews] = useState(post.comment_previews || []);
+  const [inlineVoiceMemo, setInlineVoiceMemo] = useState<MediaSelectionResult | null>(null);
+  const { recording: inlineRecording, isRecording: inlineIsRecording, toggle: handleInlineVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => setInlineVoiceMemo(memo),
+  });
   const lastTapTime = useRef<number>(0);
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
@@ -248,18 +257,25 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   };
 
   const handleInlineComment = async () => {
-    if (!inlineComment.trim() || !user) return;
+    if (!inlineComment.trim() && !inlineVoiceMemo) return;
+    if (!user) return;
 
     const commentText = inlineComment.trim();
+    const memo = inlineVoiceMemo;
     setInlineComment("");
+    setInlineVoiceMemo(null);
 
     try {
-      const newComment = await addCommentMutation(user.id, commentText);
+      const newComment = await addCommentMutation(user.id, commentText, null, memo);
       if (newComment) {
+        if (memo) {
+          backgroundUploadService.addToQueue(memo.mediaId, memo.pendingUpload);
+        }
+
         setCommentCount(prev => prev + 1);
         setLocalPreviews(prev => [...prev, {
           username: currentUserUsername || "unknown",
-          text: commentText,
+          text: commentText || t("sent a voice memo"),
         }]);
 
         if (user.id !== post.user_id) {
@@ -268,7 +284,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             user.user_metadata?.username,
             post.user_id,
             post.id.toString(),
-            commentText,
+            commentText || t("sent a voice memo"),
             newComment.id.toString(),
             {
               title: t("(username) commented"),
@@ -282,6 +298,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           comment_id: newComment.id,
           comment_length: commentText.length,
           source: "inline",
+          has_voice_memo: !!memo,
         });
       }
     } catch (error) {
@@ -593,19 +610,44 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         )}
 
         <View style={inlineCommentContainer}>
-          <TextInput
-            style={inlineCommentInput}
-            placeholder={t("Add a comment...")}
-            placeholderTextColor={colors.neutral.grey1}
-            value={inlineComment}
-            onChangeText={setInlineComment}
-            onSubmitEditing={handleInlineComment}
-            returnKeyType="send"
-            multiline
-            textAlignVertical="top"
-          />
+          {inlineIsRecording && inlineRecording ? (
+            <TouchableOpacity onPress={handleInlineVoiceMemoPress} style={{ flex: 1 }} activeOpacity={0.8}>
+              <RecordingWaveform recording={inlineRecording} isRecording={inlineIsRecording} compact />
+            </TouchableOpacity>
+          ) : inlineVoiceMemo ? (
+            <View style={inlineVoiceMemoPreviewStyle}>
+              <VoiceMemoPlayer uri={inlineVoiceMemo.previewUrl} compact />
+              <TouchableOpacity
+                onPress={() => setInlineVoiceMemo(null)}
+                style={inlineVoiceMemoCloseStyle}
+              >
+                <MaterialIcons name="close" size={12} color={colors.neutral.grey1} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TextInput
+              style={inlineCommentInput}
+              placeholder={t("Add a comment...")}
+              placeholderTextColor={colors.neutral.grey1}
+              value={inlineComment}
+              onChangeText={setInlineComment}
+              onSubmitEditing={handleInlineComment}
+              returnKeyType="send"
+              multiline
+              textAlignVertical="top"
+            />
+          )}
+          {!inlineIsRecording && !inlineVoiceMemo && (
+            <TouchableOpacity
+              onPress={handleInlineVoiceMemoPress}
+              style={{ padding: 2 }}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="keyboard-voice" size={16} color={colors.neutral.grey1} />
+            </TouchableOpacity>
+          )}
           <AnimatedSendButton
-            hasContent={inlineComment.trim().length > 0}
+            hasContent={inlineComment.trim().length > 0 || !!inlineVoiceMemo}
             onPress={handleInlineComment}
             disabled={isAddingComment}
             size="small"
@@ -798,6 +840,17 @@ const inlineCommentInput: TextStyle = {
   maxHeight: 100,
 };
 
+
+const inlineVoiceMemoPreviewStyle: ViewStyle = {
+  flex: 1,
+  flexDirection: "row",
+  alignItems: "center",
+};
+
+const inlineVoiceMemoCloseStyle: ViewStyle = {
+  padding: 4,
+  marginLeft: 2,
+};
 
 const fullScreenContainerStyle: ViewStyle = {
   alignItems: "center",

@@ -64,6 +64,7 @@ export const useVoiceMemoRecorder = (options: {
   };
 
   return {
+    recording,
     isRecording,
     toggle,
     start,

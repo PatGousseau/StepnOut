@@ -42,6 +42,7 @@ import { backgroundUploadService } from "../services/backgroundUploadService";
 import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
 import { MediaSelectionResult } from "../utils/handleMediaUpload";
 import { toPublicMediaUrl, isAudioUrl } from "../utils/mediaUrl";
+import { RecordingWaveform } from "./RecordingWaveform";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -153,7 +154,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
   const [voiceMemo, setVoiceMemo] = useState<MediaSelectionResult | null>(null);
 
-  const { isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+  const { recording, isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
     onCreated: (memo) => setVoiceMemo(memo),
   });
 
@@ -331,17 +332,27 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               </View>
             ) : null}
 
-            <TouchableOpacity
-              onPress={handleVoiceMemoPress}
-              style={{ paddingHorizontal: 8, paddingVertical: 6 }}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons
-                name={isRecording ? "stop-circle" : "microphone"}
-                size={22}
-                color={isRecording ? colors.light.accent : colors.neutral.grey1}
-              />
-            </TouchableOpacity>
+            {isRecording && recording ? (
+              <TouchableOpacity
+                onPress={handleVoiceMemoPress}
+                style={{ paddingHorizontal: 4, paddingVertical: 2 }}
+                activeOpacity={0.8}
+              >
+                <RecordingWaveform recording={recording} isRecording={isRecording} compact />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleVoiceMemoPress}
+                style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons
+                  name="microphone"
+                  size={22}
+                  color={colors.neutral.grey1}
+                />
+              </TouchableOpacity>
+            )}
 
             <Pressable
               onPress={handleAddComment}
