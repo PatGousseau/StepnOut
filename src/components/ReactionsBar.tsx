@@ -6,7 +6,7 @@ import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { ReactionSummary } from "../types";
 
-const EMOJIS = ["😂", "😭", "🫶", "🔝", "💯", "🥺", "🤗", "🫠", "😢"];
+const EMOJIS = ["😂", "😭", "🔝", "🥺", "🤗", "🫠"];
 
 interface ReactionsBarProps {
   reactions: ReactionSummary[];
