@@ -41,6 +41,14 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     setOpen(false);
   };
 
+  const getReactionPillStyle = (reacted: boolean) => [
+    pillStyle,
+    reactionPillStyle,
+    reacted && reactedPillStyle,
+  ];
+
+  const getCountStyle = (reacted: boolean) => [countStyle, reacted && reactedCountStyle];
+
   return (
     <View style={containerStyle}>
       <TouchableOpacity onPress={onLikeToggle} style={pillStyle}>
@@ -56,10 +64,10 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
         <TouchableOpacity
           key={r.emoji}
           onPress={() => onToggle(r.emoji)}
-          style={[pillStyle, reactionPillStyle, r.reacted && reactedPillStyle]}
+          style={getReactionPillStyle(r.reacted)}
         >
           <Text style={emojiStyle}>{r.emoji}</Text>
-          <Text style={[countStyle, r.reacted && reactedCountStyle]}>{r.count}</Text>
+          <Text style={getCountStyle(r.reacted)}>{r.count}</Text>
         </TouchableOpacity>
       ))}
 
