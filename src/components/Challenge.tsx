@@ -177,6 +177,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const notificationAnim = useRef(new Animated.Value(0)).current;
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const submittedTextRef = useRef('');
 
   // Use React Query to check if user has completed the challenge
   const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
@@ -243,6 +244,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
     // Use placeholder text if user didn't input anything
     const placeholderText = t("Just completed this week's challenge!");
     const textToSubmit = postText && postText.trim() ? postText : placeholderText;
+    submittedTextRef.current = textToSubmit.trim();
 
     await handleSubmit(
       {
@@ -477,7 +479,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         challengeId={challenge.id}
         mediaPreview={selectedMedia?.previewUrl || null}
         streakCount={1}
-        postText={postText?.trim() || t("Just completed this week's challenge!")}
+        postText={submittedTextRef.current || t("Just completed this week's challenge!")}
       />
     </>
   );
