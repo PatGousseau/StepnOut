@@ -47,7 +47,9 @@
             "gradlePluginVersion": "8.3.0",
             "ndkVersion": "26.1.10909125",
             "splits": {
-              "abi": ["arm64-v8a"]
+              "abi": [
+                "arm64-v8a"
+              ]
             }
           }
         }
@@ -56,8 +58,13 @@
       [
         "react-native-share",
         {
-          "ios": ["instagram", "instagram-stories"],
-          "android": ["com.instagram.android"]
+          "ios": [
+            "instagram",
+            "instagram-stories"
+          ],
+          "android": [
+            "com.instagram.android"
+          ]
         }
       ],
       "expo-apple-authentication",
@@ -89,7 +96,9 @@
     "icon": "./src/assets/images/appstore.png",
     "android": {
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.patrickgousseau.stepnout"
     },
@@ -102,7 +111,16 @@
       },
       "usesApnsToken": true,
       "usesAppleSignIn": true,
-      "infoPlist": {}
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "instagram",
+          "instagram-stories"
+        ]
+      }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/6ac120ac-1dca-4d86-9088-4dbe426901fc"
     }
   }
 }
