@@ -482,19 +482,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               style={styles.commentCard}
               onPress={() => router.push(`/post/${item.comment.post_id}`)}
             >
-              <View style={styles.commentHeaderRow}>
-                <Text style={styles.commentMetaText}>
-                  {formatRelativeTime(item.comment.created_at)}
-                </Text>
-                {!!item.comment.likes_count && (
-                  <Text style={styles.commentMetaText}>{` · ${item.comment.likes_count} likes`}</Text>
+              <View style={styles.commentTopRow}>
+                {userProfile?.profileImageUrl ? (
+                  <Image source={{ uri: userProfile.profileImageUrl }} style={styles.commentAvatar} />
+                ) : (
+                  <View style={styles.defaultCommentAvatar}>
+                    <MaterialCommunityIcons name="account-circle" size={30} color="#e1e1e1" />
+                  </View>
                 )}
+                <View style={styles.commentHeaderContent}>
+                  <View style={styles.commentNameRow}>
+                    <Text style={styles.commentDisplayName}>{userProfile.name}</Text>
+                    <Text style={styles.commentUsername}>@{userProfile.username}</Text>
+                    <Text style={styles.commentTimestamp}>
+                      {formatRelativeTime(item.comment.created_at)}
+                    </Text>
+                  </View>
+                  <Text style={styles.commentBodyText}>{item.comment.text}</Text>
+                  <Text style={styles.commentPostContextText} numberOfLines={2}>
+                    on {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
+                    {item.comment.post?.body || "post"}
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.commentBodyText}>{item.comment.text}</Text>
-              <Text style={styles.commentPostContextText} numberOfLines={2}>
-                on {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
-                {item.comment.post?.body || "post"}
-              </Text>
             </TouchableOpacity>
           );
         })}
@@ -646,31 +656,60 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   commentCard: {
-    backgroundColor: "#fff",
+    borderColor: "#ccc",
+    borderWidth: 1,
     borderRadius: 8,
+    marginBottom: 8,
     padding: 10,
     paddingBottom: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#ccc",
   },
-  commentHeaderRow: {
+  commentTopRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
+  },
+  commentAvatar: {
+    borderRadius: 15,
+    height: 30,
+    width: 30,
+    marginRight: 10,
+  },
+  defaultCommentAvatar: {
+    borderRadius: 15,
+    height: 30,
+    width: 30,
+    marginRight: 10,
+  },
+  commentHeaderContent: {
+    flex: 1,
+  },
+  commentNameRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    flexWrap: "wrap",
+    columnGap: 6,
     marginBottom: 6,
   },
-  commentMetaText: {
-    color: "#7F8C8D",
+  commentDisplayName: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: colors.light.text,
+  },
+  commentUsername: {
     fontSize: 12,
+    color: "#666",
+  },
+  commentTimestamp: {
+    fontSize: 11,
+    color: "#666",
   },
   commentBodyText: {
-    color: "#0D1B1E",
-    fontSize: 15,
+    fontSize: 14,
     marginBottom: 8,
+    color: colors.light.text,
   },
   commentPostContextText: {
-    color: "#7F8C8D",
-    fontSize: 13,
+    color: colors.light.lightText,
+    fontSize: 12,
   },
   profileHeader: {
     alignItems: "center",
