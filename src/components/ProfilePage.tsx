@@ -656,10 +656,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   commentCard: {
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderBottomColor: "#ccc",
+    borderBottomWidth: 1,
     padding: 10,
     paddingBottom: 16,
   },
