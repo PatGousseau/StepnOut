@@ -66,7 +66,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     hasMoreComments,
     fetchUserComments,
   } = useUserComments(targetUserId);
-  const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
   const [page, setPage] = useState(1);
   const [commentsPage, setCommentsPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
@@ -197,21 +196,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleLoadMore = () => {
-    if (activeTab === "posts") {
-      if (!postsLoading && hasMorePosts) {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchUserPosts(nextPage, true);
-      }
+    if (!postsLoading && hasMorePosts) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchUserPosts(nextPage, true);
       return;
     }
 
-    if (activeTab === "comments") {
-      if (!commentsLoading && hasMoreComments) {
-        const nextPage = commentsPage + 1;
-        setCommentsPage(nextPage);
-        fetchUserComments(nextPage, true);
-      }
+    if (!commentsLoading && hasMoreComments) {
+      const nextPage = commentsPage + 1;
+      setCommentsPage(nextPage);
+      fetchUserComments(nextPage, true);
     }
   };
 
@@ -447,73 +442,50 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-        <View style={styles.tabsRow}>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === "posts" && styles.tabButtonActive]}
-            onPress={() => setActiveTab("posts")}
-          >
-            <Text style={[styles.tabText, activeTab === "posts" && styles.tabTextActive]}>
-              {t("Posts")}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === "comments" && styles.tabButtonActive]}
-            onPress={() => setActiveTab("comments")}
-          >
-            <Text style={[styles.tabText, activeTab === "comments" && styles.tabTextActive]}>
-              {t("Comments")}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {userPosts.map((post) => (
+          <Post
+            key={post.id}
+            post={post}
+            postUser={userProfile}
+            setPostCounts={() => {}}
+            onPostDeleted={() => {}}
+          />
+        ))}
 
-        {activeTab === "posts" && (
-          <>
-            {userPosts.map((post) => (
-              <Post
-                key={post.id}
-                post={post}
-                postUser={userProfile}
-                setPostCounts={() => {}}
-                onPostDeleted={() => {}}
-              />
-            ))}
-            {postsLoading && (
-              <View style={{ padding: 20, alignItems: "center" }}>
-                <Loader />
-              </View>
-            )}
-          </>
+        {postsLoading && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Loader />
+          </View>
         )}
 
-        {activeTab === "comments" && (
-          <>
-            {userComments.map((comment) => (
-              <TouchableOpacity
-                key={comment.id}
-                style={styles.commentCard}
-                onPress={() => router.push(`/post/${comment.post_id}`)}
-              >
-                <View style={styles.commentHeaderRow}>
-                  <Text style={styles.commentMetaText}>{formatRelativeTime(comment.created_at)}</Text>
-                  {!!comment.likes_count && (
-                    <Text style={styles.commentMetaText}>
-                      {` · ${comment.likes_count} likes`}
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.commentBodyText}>{comment.text}</Text>
-                <Text style={styles.commentPostContextText} numberOfLines={2}>
-                  on {comment.post?.challenge_title ? `${comment.post.challenge_title}: ` : ""}
-                  {comment.post?.body || "post"}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            {commentsLoading && (
-              <View style={{ padding: 20, alignItems: "center" }}>
-                <Loader />
-              </View>
-            )}
-          </>
+        {userComments.length > 0 && (
+          <Text style={styles.sectionTitle}>{t("Comments")}</Text>
+        )}
+
+        {userComments.map((comment) => (
+          <TouchableOpacity
+            key={comment.id}
+            style={styles.commentCard}
+            onPress={() => router.push(`/post/${comment.post_id}`)}
+          >
+            <View style={styles.commentHeaderRow}>
+              <Text style={styles.commentMetaText}>{formatRelativeTime(comment.created_at)}</Text>
+              {!!comment.likes_count && (
+                <Text style={styles.commentMetaText}>{` · ${comment.likes_count} likes`}</Text>
+              )}
+            </View>
+            <Text style={styles.commentBodyText}>{comment.text}</Text>
+            <Text style={styles.commentPostContextText} numberOfLines={2}>
+              on {comment.post?.challenge_title ? `${comment.post.challenge_title}: ` : ""}
+              {comment.post?.body || "post"}
+            </Text>
+          </TouchableOpacity>
+        ))}
+
+        {commentsLoading && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Loader />
+          </View>
         )}
       </ScrollView>
 
@@ -656,37 +628,22 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  tabsRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 16,
-  },
-  tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e1e1e1",
-  },
-  tabButtonActive: {
-    borderColor: colors.light.primary,
-  },
-  tabText: {
-    color: "#7F8C8D",
-    fontSize: 14,
+  sectionTitle: {
+    color: colors.neutral.grey1,
+    fontSize: 12,
     fontWeight: "600",
-  },
-  tabTextActive: {
-    color: colors.light.primary,
+    marginTop: 12,
+    marginBottom: 8,
+    marginLeft: 4,
   },
   commentCard: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 8,
+    padding: 10,
+    paddingBottom: 16,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#efefef",
+    borderColor: "#ccc",
   },
   commentHeaderRow: {
     flexDirection: "row",
