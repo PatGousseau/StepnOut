@@ -38,7 +38,13 @@ export const useProfileActivity = (targetUserId: string) => {
 
   const lastCursor = useMemo(() => {
     if (items.length === 0) return null;
-    return items[items.length - 1].createdAt;
+
+    const last = items[items.length - 1];
+    return {
+      created_at: last.createdAt,
+      item_type: last.type,
+      item_id: last.type === "post" ? last.post.id : last.comment.id,
+    };
   }, [items]);
 
   const hydratePosts = useCallback(
@@ -225,7 +231,9 @@ export const useProfileActivity = (targetUserId: string) => {
         const { data: rows, error } = await supabase.rpc("get_profile_activity", {
           p_user_id: targetUserId,
           p_limit: PAGE_SIZE,
-          p_before: before,
+          p_before_created_at: before?.created_at || null,
+          p_before_type: before?.item_type || null,
+          p_before_id: before?.item_id || null,
         });
 
         if (error) throw error;
