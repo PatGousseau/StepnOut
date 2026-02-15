@@ -330,6 +330,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
+
             <View style={styles.userInfo}>
               {isEditing ? (
                 <View style={styles.editContainer}>
@@ -399,8 +400,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                   <Text style={styles.username}>{userProfile.name}</Text>
                   <Text style={styles.userTitle}>@{userProfile.username}</Text>
 
-                  {!!userProfile?.bio && <Text style={styles.bioText}>{userProfile.bio}</Text>}
-
                   {userProfile?.instagram && (
                     <TouchableOpacity
                       style={styles.instagram}
@@ -424,6 +423,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               )}
             </View>
           </View>
+
           <View style={styles.headerButtons}>
             {isOwnProfile && (
               <ProfileActions
@@ -442,6 +442,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             )}
           </View>
         </View>
+
+        {!!userProfile?.bio && !isEditing && (
+          <View style={styles.bioSection}>
+            <Text style={styles.bioText}>{userProfile.bio}</Text>
+          </View>
+        )}
+
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
@@ -586,7 +593,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-    minHeight: 80,
+    minHeight: 96,
     width: "100%",
   },
   editButtonsContainer: {
@@ -630,18 +637,19 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   profileHeader: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   headerButtons: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 16,
+    paddingTop: 6,
   },
   headerLeft: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
   },
   input: {
@@ -664,12 +672,20 @@ const styles = StyleSheet.create({
     color: "#7F8C8D",
     fontSize: 16,
   },
+  bioSection: {
+    width: "100%",
+    marginBottom: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e6e6e6",
+  },
   bioText: {
-    marginTop: 8,
     color: "#0D1B1E",
     fontSize: 14,
     lineHeight: 20,
-    maxWidth: 220,
   },
   username: {
     color: "#0D1B1E",
