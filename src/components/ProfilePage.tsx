@@ -276,6 +276,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     return <ProfileSkeleton />;
   }
 
+
   if (error || profileError) {
     return (
       <Text>
@@ -445,6 +446,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
         {!!userProfile?.bio && !isEditing && (
           <View style={styles.bioSection}>
+            <Text style={styles.bioLabel}>{t("Bio")}</Text>
             <Text style={styles.bioText}>{userProfile.bio}</Text>
           </View>
         )}
@@ -676,16 +678,24 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 16,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
+    paddingVertical: 12,
+    backgroundColor: colors.light.accent2,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#e6e6e6",
+    borderColor: "rgba(77, 83, 130, 0.18)",
   },
   bioText: {
     color: "#0D1B1E",
     fontSize: 14,
     lineHeight: 20,
+  },
+  bioLabel: {
+    marginBottom: 6,
+    color: colors.light.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   username: {
     color: "#0D1B1E",
