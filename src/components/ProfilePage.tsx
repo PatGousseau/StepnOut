@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { isInstagramUsernameValidProfile } from "../utils/validation";
 import {
   View,
@@ -200,7 +200,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       const nextPage = page + 1;
       setPage(nextPage);
       fetchUserPosts(nextPage, true);
-      return;
     }
 
     if (!commentsLoading && hasMoreComments) {
@@ -281,6 +280,28 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       initializeCommentReactions(userComments);
     }
   }, [userComments]);
+
+  const activityItems = useMemo(() => {
+    const postItems = userPosts.map((post) => ({
+      type: "post" as const,
+      id: post.id,
+      createdAt: post.created_at,
+      post,
+    }));
+
+    const commentItems = userComments.map((comment) => ({
+      type: "comment" as const,
+      id: comment.id,
+      createdAt: comment.created_at,
+      comment,
+    }));
+
+    return [...postItems, ...commentItems].sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return bTime - aTime;
+    });
+  }, [userPosts, userComments]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
@@ -442,47 +463,43 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-        {userPosts.map((post) => (
-          <Post
-            key={post.id}
-            post={post}
-            postUser={userProfile}
-            setPostCounts={() => {}}
-            onPostDeleted={() => {}}
-          />
-        ))}
+        {activityItems.map((item) => {
+          if (item.type === "post") {
+            return (
+              <Post
+                key={`post-${item.id}`}
+                post={item.post}
+                postUser={userProfile}
+                setPostCounts={() => {}}
+                onPostDeleted={() => {}}
+              />
+            );
+          }
 
-        {postsLoading && (
-          <View style={{ padding: 20, alignItems: "center" }}>
-            <Loader />
-          </View>
-        )}
+          return (
+            <TouchableOpacity
+              key={`comment-${item.id}`}
+              style={styles.commentCard}
+              onPress={() => router.push(`/post/${item.comment.post_id}`)}
+            >
+              <View style={styles.commentHeaderRow}>
+                <Text style={styles.commentMetaText}>
+                  {formatRelativeTime(item.comment.created_at)}
+                </Text>
+                {!!item.comment.likes_count && (
+                  <Text style={styles.commentMetaText}>{` · ${item.comment.likes_count} likes`}</Text>
+                )}
+              </View>
+              <Text style={styles.commentBodyText}>{item.comment.text}</Text>
+              <Text style={styles.commentPostContextText} numberOfLines={2}>
+                on {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
+                {item.comment.post?.body || "post"}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
 
-        {userComments.length > 0 && (
-          <Text style={styles.sectionTitle}>{t("Comments")}</Text>
-        )}
-
-        {userComments.map((comment) => (
-          <TouchableOpacity
-            key={comment.id}
-            style={styles.commentCard}
-            onPress={() => router.push(`/post/${comment.post_id}`)}
-          >
-            <View style={styles.commentHeaderRow}>
-              <Text style={styles.commentMetaText}>{formatRelativeTime(comment.created_at)}</Text>
-              {!!comment.likes_count && (
-                <Text style={styles.commentMetaText}>{` · ${comment.likes_count} likes`}</Text>
-              )}
-            </View>
-            <Text style={styles.commentBodyText}>{comment.text}</Text>
-            <Text style={styles.commentPostContextText} numberOfLines={2}>
-              on {comment.post?.challenge_title ? `${comment.post.challenge_title}: ` : ""}
-              {comment.post?.body || "post"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-
-        {commentsLoading && (
+        {(postsLoading || commentsLoading) && (
           <View style={{ padding: 20, alignItems: "center" }}>
             <Loader />
           </View>
@@ -627,14 +644,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.9)",
     flex: 1,
     justifyContent: "center",
-  },
-  sectionTitle: {
-    color: colors.neutral.grey1,
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 12,
-    marginBottom: 8,
-    marginLeft: 4,
   },
   commentCard: {
     backgroundColor: "#fff",
