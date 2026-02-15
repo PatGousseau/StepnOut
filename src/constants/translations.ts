@@ -30,6 +30,8 @@ export const translations = {
   Success: "Successo",
   Name: "Nome",
   Username: "Nome utente",
+  Bio: "Bio",
+  "Add a bio": "Aggiungi una bio",
   Save: "Salva",
   "Edit profile": "Modifica Profilo",
   "Sign out": "Esci",
