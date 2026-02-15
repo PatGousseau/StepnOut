@@ -163,7 +163,7 @@ export async function sendNewChallengeNotification(recipientId: string, challeng
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
-    const title = 'Nuova sfida!';
+    const title = 'Nuova sfida settimanale!';
     const body = challengeTitle;
     const data = { challengeId };
 
