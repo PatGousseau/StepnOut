@@ -450,12 +450,19 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             <TouchableOpacity
               key={`comment-${item.comment.id}`}
               style={styles.commentCard}
-              onPress={() => router.push(`/post/${item.comment.post_id}`)}
+              onPress={() => {
+                if (!item.comment.post) {
+                  Alert.alert(t("Post not found"), t("This post may have been deleted."));
+                  return;
+                }
+                router.push(`/post/${item.comment.post_id}`);
+              }}
             >
               <View>
                 <Text style={styles.commentPostContextText} numberOfLines={2}>
-                  {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
-                  {item.comment.post?.body || "post"}
+                  {item.comment.post
+                    ? `${item.comment.post.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}${item.comment.post.body || ""}`
+                    : t("Deleted post")}
                 </Text>
                 <View style={styles.commentTopRow}>
                   {userProfile?.profileImageUrl ? (
