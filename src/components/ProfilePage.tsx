@@ -452,27 +452,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               style={styles.commentCard}
               onPress={() => router.push(`/post/${item.comment.post_id}`)}
             >
-              <View style={styles.commentTopRow}>
-                {userProfile?.profileImageUrl ? (
-                  <Image source={{ uri: userProfile.profileImageUrl }} style={styles.commentAvatar} />
-                ) : (
-                  <View style={styles.defaultCommentAvatar}>
-                    <MaterialCommunityIcons name="account-circle" size={30} color="#e1e1e1" />
+              <View>
+                <Text style={styles.commentPostContextText} numberOfLines={2}>
+                  {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
+                  {item.comment.post?.body || "post"}
+                </Text>
+                <View style={styles.commentTopRow}>
+                  {userProfile?.profileImageUrl ? (
+                    <Image source={{ uri: userProfile.profileImageUrl }} style={styles.commentAvatar} />
+                  ) : (
+                    <View style={styles.defaultCommentAvatar}>
+                      <MaterialCommunityIcons name="account-circle" size={30} color="#e1e1e1" />
+                    </View>
+                  )}
+                  <View style={styles.commentHeaderContent}>
+                    <View style={styles.commentNameRow}>
+                      <Text style={styles.commentDisplayName}>{userProfile.name}</Text>
+                      <Text style={styles.commentUsername}>@{userProfile.username}</Text>
+                      <Text style={styles.commentTimestamp}>
+                        {formatRelativeTime(item.comment.created_at)}
+                      </Text>
+                    </View>
+                    <Text style={styles.commentBodyText}>{item.comment.text}</Text>
                   </View>
-                )}
-                <View style={styles.commentHeaderContent}>
-                  <View style={styles.commentNameRow}>
-                    <Text style={styles.commentDisplayName}>{userProfile.name}</Text>
-                    <Text style={styles.commentUsername}>@{userProfile.username}</Text>
-                    <Text style={styles.commentTimestamp}>
-                      {formatRelativeTime(item.comment.created_at)}
-                    </Text>
-                  </View>
-                  <Text style={styles.commentBodyText}>{item.comment.text}</Text>
-                  <Text style={styles.commentPostContextText} numberOfLines={2}>
-                    {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
-                    {item.comment.post?.body || "post"}
-                  </Text>
                 </View>
               </View>
             </TouchableOpacity>
