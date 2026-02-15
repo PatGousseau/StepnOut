@@ -16,7 +16,7 @@ import {
 import UserProgress from "./UserProgress";
 import Post from "./Post";
 import useUserProgress from "../hooks/useUserProgress";
-import useUserComments from "../hooks/useUserComments";
+import { useProfileActivity } from "../hooks/useProfileActivity";
 import { router } from "expo-router";
 import { formatRelativeTime } from "../utils/time";
 import { useAuth } from "../contexts/AuthContext";
@@ -51,23 +51,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const targetUserId = userId || user?.id || "";
   const isOwnProfile = !userId || userId === user?.id;
 
+  const { data, loading: progressLoading, error } = useUserProgress(targetUserId);
   const {
-    data,
-    loading: progressLoading,
-    error,
-    userPosts,
-    postsLoading,
-    hasMorePosts,
-    fetchUserPosts,
-  } = useUserProgress(targetUserId);
-  const {
-    userComments,
-    commentsLoading,
-    hasMoreComments,
-    fetchUserComments,
-  } = useUserComments(targetUserId);
-  const [page, setPage] = useState(1);
-  const [commentsPage, setCommentsPage] = useState(1);
+    activityItems,
+    loading: activityLoading,
+    hasMore: hasMoreActivity,
+    fetchNextPage,
+    refresh: refreshActivity,
+  } = useProfileActivity(targetUserId);
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -99,11 +90,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setPage(1);
-    setCommentsPage(1);
-    await Promise.all([refetchProfile(), fetchUserPosts(1), fetchUserComments(1)]);
+    await Promise.all([refetchProfile(), refreshActivity()]);
     setRefreshing(false);
-  }, [fetchUserPosts, fetchUserComments, refetchProfile]);
+  }, [refetchProfile, refreshActivity]);
 
   const handleUpdateProfilePicture = async () => {
     try {
@@ -196,17 +185,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleLoadMore = () => {
-    if (!postsLoading && hasMorePosts) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchUserPosts(nextPage, true);
-    }
-
-    if (!commentsLoading && hasMoreComments) {
-      const nextPage = commentsPage + 1;
-      setCommentsPage(nextPage);
-      fetchUserComments(nextPage, true);
-    }
+    if (activityLoading || !hasMoreActivity) return;
+    fetchNextPage();
   };
 
   const handleSignOut = async () => {
@@ -267,41 +247,31 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   }, [userProfile, targetUserId, isOwnProfile]);
 
-  useEffect(() => {
-    if (userPosts.length > 0) {
-      initializePostLikes(userPosts);
-      initializePostReactions(userPosts);
-    }
-  }, [userPosts]);
+  const postsInFeed = useMemo(() => {
+    return activityItems
+      .filter((item) => item.type === "post")
+      .map((item) => item.post);
+  }, [activityItems]);
+
+  const commentsInFeed = useMemo(() => {
+    return activityItems
+      .filter((item) => item.type === "comment")
+      .map((item) => item.comment);
+  }, [activityItems]);
 
   useEffect(() => {
-    if (userComments.length > 0) {
-      initializeCommentLikes(userComments);
-      initializeCommentReactions(userComments);
+    if (postsInFeed.length > 0) {
+      initializePostLikes(postsInFeed);
+      initializePostReactions(postsInFeed);
     }
-  }, [userComments]);
+  }, [postsInFeed]);
 
-  const activityItems = useMemo(() => {
-    const postItems = userPosts.map((post) => ({
-      type: "post" as const,
-      id: post.id,
-      createdAt: post.created_at,
-      post,
-    }));
-
-    const commentItems = userComments.map((comment) => ({
-      type: "comment" as const,
-      id: comment.id,
-      createdAt: comment.created_at,
-      comment,
-    }));
-
-    return [...postItems, ...commentItems].sort((a, b) => {
-      const aTime = new Date(a.createdAt).getTime();
-      const bTime = new Date(b.createdAt).getTime();
-      return bTime - aTime;
-    });
-  }, [userPosts, userComments]);
+  useEffect(() => {
+    if (commentsInFeed.length > 0) {
+      initializeCommentLikes(commentsInFeed);
+      initializeCommentReactions(commentsInFeed);
+    }
+  }, [commentsInFeed]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
@@ -467,7 +437,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           if (item.type === "post") {
             return (
               <Post
-                key={`post-${item.id}`}
+                key={`post-${item.post.id}`}
                 post={item.post}
                 postUser={userProfile}
                 setPostCounts={() => {}}
@@ -478,7 +448,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
           return (
             <TouchableOpacity
-              key={`comment-${item.id}`}
+              key={`comment-${item.comment.id}`}
               style={styles.commentCard}
               onPress={() => router.push(`/post/${item.comment.post_id}`)}
             >
@@ -509,7 +479,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           );
         })}
 
-        {(postsLoading || commentsLoading) && (
+        {activityLoading && (
           <View style={{ padding: 20, alignItems: "center" }}>
             <Loader />
           </View>
