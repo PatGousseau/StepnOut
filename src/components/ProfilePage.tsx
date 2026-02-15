@@ -500,7 +500,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                   </View>
                   <Text style={styles.commentBodyText}>{item.comment.text}</Text>
                   <Text style={styles.commentPostContextText} numberOfLines={2}>
-                    on {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
+                    {item.comment.post?.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}
                     {item.comment.post?.body || "post"}
                   </Text>
                 </View>
