@@ -464,6 +464,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
             </Text>
           </View>
+          {post.comfort_zone_rating != null && (
+            <View style={comfortRatingStyle}>
+              <Text style={comfortRatingTextStyle}>
+                {t("Stretch")}: {post.comfort_zone_rating}/10
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       )}
       {post.body && !post.media?.file_path ? (
@@ -687,6 +694,20 @@ const challengeBoxStyle: ViewStyle = {
   paddingHorizontal: 16,
   paddingVertical: 4,
   width: "100%",
+};
+
+const comfortRatingStyle: ViewStyle = {
+  alignSelf: "flex-start",
+  flexDirection: "row",
+  alignItems: "center",
+  marginTop: 4,
+  marginBottom: 4,
+};
+
+const comfortRatingTextStyle: TextStyle = {
+  color: colors.light.primary,
+  fontSize: 12,
+  fontWeight: "600",
 };
 
 const challengeContainerStyle: ViewStyle = {

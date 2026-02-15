@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import Slider from "@react-native-community/slider";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
 import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
@@ -178,6 +179,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const submittedTextRef = useRef('');
+  const [comfortRating, setComfortRating] = useState<number>(5);
 
   // Use React Query to check if user has completed the challenge
   const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
@@ -220,6 +222,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         challenge_difficulty: challenge.difficulty,
         has_media: !!selectedMedia,
         is_video: selectedMedia?.isVideo || false,
+        comfort_zone_rating: comfortRating,
       });
       // Update user properties
       setUserProperties({
@@ -250,6 +253,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       {
         user_id: user.id,
         challenge_id: challenge.id,
+        comfort_zone_rating: comfortRating,
       },
       textToSubmit
     );
@@ -429,6 +433,30 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   placeholderTextColor="#999"
                   onChangeText={setPostText}
                 />
+
+                <View style={shareStyles.sliderSection}>
+                  <View style={shareStyles.sliderHeader}>
+                    <Text style={shareStyles.sliderLabel}>
+                      {t("How far out of your comfort zone?")}
+                    </Text>
+                    <Text style={shareStyles.sliderValue}>{comfortRating}/10</Text>
+                  </View>
+                  <Slider
+                    style={shareStyles.slider}
+                    minimumValue={1}
+                    maximumValue={10}
+                    step={1}
+                    value={comfortRating}
+                    onValueChange={setComfortRating}
+                    minimumTrackTintColor={colors.light.accent}
+                    maximumTrackTintColor={colors.neutral.grey2}
+                    thumbTintColor={colors.light.accent}
+                  />
+                  <View style={shareStyles.sliderLabels}>
+                    <Text style={shareStyles.sliderEndLabel}>{t("Comfortable")}</Text>
+                    <Text style={shareStyles.sliderEndLabel}>{t("Way out there")}</Text>
+                  </View>
+                </View>
 
                 <TouchableOpacity
                   style={[
@@ -822,5 +850,36 @@ const shareStyles = StyleSheet.create({
     backgroundColor: colors.light.accent,
     borderRadius: 2,
     height: "100%",
+  },
+  slider: {
+    height: 40,
+    width: "100%",
+  },
+  sliderEndLabel: {
+    color: colors.neutral.darkGrey,
+    fontSize: 11,
+  },
+  sliderHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  sliderLabel: {
+    color: colors.light.text,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  sliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: -4,
+  },
+  sliderSection: {
+    marginVertical: 8,
+  },
+  sliderValue: {
+    color: colors.light.accent,
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
