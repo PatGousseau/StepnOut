@@ -425,7 +425,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 )}
 
                 <TextInput
-                  style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
+                  style={[shareStyles.textInput, { fontSize: 13 }]}
                   multiline
                   scrollEnabled
                   autoFocus
