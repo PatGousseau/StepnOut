@@ -458,31 +458,18 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 router.push(`/post/${item.comment.post_id}`);
               }}
             >
-              <View>
-                <Text style={styles.commentPostContextText} numberOfLines={2}>
-                  {item.comment.post
-                    ? `${item.comment.post.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}${item.comment.post.body || ""}`
-                    : t("Deleted post")}
+              <Text style={styles.commentPostContextText} numberOfLines={2}>
+                {item.comment.post
+                  ? `${item.comment.post.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}${item.comment.post.body || ""}`
+                  : t("Deleted post")}
+              </Text>
+              <View style={styles.commentRow}>
+                <View style={styles.commentTrunkLast} />
+                <View style={styles.commentConnector} />
+                <Text style={styles.commentPreviewText} numberOfLines={2}>
+                  <Text style={styles.commentPreviewUsername}>@{userProfile.username}:</Text>
+                  {"  "}<Text style={styles.commentPreviewBody}>{item.comment.text}</Text>
                 </Text>
-                <View style={styles.commentTopRow}>
-                  {userProfile?.profileImageUrl ? (
-                    <Image source={{ uri: userProfile.profileImageUrl }} style={styles.commentAvatar} />
-                  ) : (
-                    <View style={styles.defaultCommentAvatar}>
-                      <MaterialCommunityIcons name="account-circle" size={30} color="#e1e1e1" />
-                    </View>
-                  )}
-                  <View style={styles.commentHeaderContent}>
-                    <View style={styles.commentNameRow}>
-                      <Text style={styles.commentDisplayName}>{userProfile.name}</Text>
-                      <Text style={styles.commentUsername}>@{userProfile.username}</Text>
-                      <Text style={styles.commentTimestamp}>
-                        {formatRelativeTime(item.comment.created_at)}
-                      </Text>
-                    </View>
-                    <Text style={styles.commentBodyText}>{item.comment.text}</Text>
-                  </View>
-                </View>
               </View>
             </TouchableOpacity>
           );
@@ -639,54 +626,42 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     padding: 10,
     paddingBottom: 16,
+    paddingLeft: 8,
   },
-  commentTopRow: {
+  commentRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    minHeight: 18,
   },
-  commentAvatar: {
-    borderRadius: 15,
-    height: 30,
-    width: 30,
-    marginRight: 10,
+  commentTrunkLast: {
+    width: 2,
+    height: "50%",
+    backgroundColor: colors.neutral.grey2,
+    alignSelf: "flex-start",
   },
-  defaultCommentAvatar: {
-    borderRadius: 15,
-    height: 30,
-    width: 30,
-    marginRight: 10,
+  commentConnector: {
+    width: 10,
+    height: 2,
+    backgroundColor: colors.neutral.grey2,
+    marginRight: 8,
   },
-  commentHeaderContent: {
+  commentPreviewText: {
     flex: 1,
+    color: colors.light.lightText,
+    fontSize: 12,
+    lineHeight: 16,
   },
-  commentNameRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    flexWrap: "wrap",
-    columnGap: 6,
-    marginBottom: 6,
-  },
-  commentDisplayName: {
-    fontSize: 14,
-    fontWeight: "bold",
+  commentPreviewUsername: {
+    fontWeight: "600",
     color: colors.light.text,
   },
-  commentUsername: {
-    fontSize: 12,
-    color: "#666",
-  },
-  commentTimestamp: {
-    fontSize: 11,
-    color: "#666",
-  },
-  commentBodyText: {
-    fontSize: 14,
-    marginBottom: 8,
+  commentPreviewBody: {
     color: colors.light.text,
   },
   commentPostContextText: {
     color: colors.light.lightText,
     fontSize: 12,
+    marginBottom: 4,
   },
   profileHeader: {
     alignItems: "center",
