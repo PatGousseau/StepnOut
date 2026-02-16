@@ -5,6 +5,7 @@ export interface UserProfile {
   id: string;
   username: string;
   name: string;
+  bio?: string;
   profileImageUrl: string | null;
   created_at?: string;
   instagram?: string;
@@ -53,6 +54,7 @@ export class User {
           id,
           username,
           name,
+          bio,
           created_at,
           instagram,
           profile_media:media!profiles_profile_media_id_fkey (
@@ -81,6 +83,7 @@ export class User {
           id: data.id,
           username: data.username || "Unknown",
           name: data.name || "Unknown",
+          bio: data.bio || undefined,
           profileImageUrl,
           created_at: data.created_at,
           instagram: data.instagram || undefined,
@@ -119,6 +122,9 @@ export class User {
   get instagram(): string | undefined {
     return this._profile?.instagram;
   }
+  get bio(): string | undefined {
+    return this._profile?.bio;
+  }
 
   // Setters
   set profileImageUrl(url: string) {
@@ -142,6 +148,12 @@ export class User {
   set instagram(value: string | undefined) {
     if (this._profile) {
       this._profile.instagram = value;
+    }
+  }
+
+  set bio(value: string | undefined) {
+    if (this._profile) {
+      this._profile.bio = value;
     }
   }
 }

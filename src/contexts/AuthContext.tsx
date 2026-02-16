@@ -14,6 +14,7 @@ type SignUpOptions = {
   // Optional for all signups
   profileMediaId?: number | null;
   instagram?: string;
+  bio?: string;
   // Flag to indicate social (Google/Apple) signup
   isSocialUser?: boolean;
   // Flag to indicate incomplete profile completion (existing user with null username)
@@ -217,7 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Signup function for completing profile (user already authenticated)
   const signUp = async (options: SignUpOptions): Promise<string> => {
-    const { username, displayName, profileMediaId, instagram, isIncompleteProfile } = options;
+    const { username, displayName, profileMediaId, instagram, bio, isIncompleteProfile } = options;
 
     // Get the already-authenticated user
     const { data: { session } } = await supabase.auth.getSession();
@@ -240,6 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Optional fields
     if (profileMediaId) updates.profile_media_id = profileMediaId;
     if (instagram) updates.instagram = instagram;
+    if (bio) updates.bio = bio;
 
     // Upsert profile
     const { error: upsertError } = await supabase
