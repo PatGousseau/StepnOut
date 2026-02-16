@@ -466,21 +466,34 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </View>
           {post.comfort_zone_rating != null && (
             <View style={comfortRatingStyle}>
-              <Text style={comfortRatingTextStyle}>
+              <Text style={comfortRatingLabelStyle}>
                 {t(discomfortLabels[post.comfort_zone_rating] ?? "Chill")}
               </Text>
-              <View style={ratingDotsRow}>
-                {[1, 2, 3, 4, 5].map((i) => (
+              <View style={miniSliderRow}>
+                <View style={miniSliderTrack}>
                   <View
-                    key={i}
                     style={[
-                      ratingDot,
-                      i <= post.comfort_zone_rating!
-                        ? ratingDotFilled
-                        : ratingDotEmpty,
+                      miniSliderFill,
+                      { width: `${((post.comfort_zone_rating - 1) / 4) * 100}%` },
                     ]}
                   />
-                ))}
+                </View>
+                <View style={miniSliderTickContainer}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <View
+                      key={i}
+                      style={[
+                        miniSliderTick,
+                        {
+                          backgroundColor:
+                            i <= post.comfort_zone_rating!
+                              ? colors.light.accent
+                              : colors.neutral.grey2,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
               </View>
             </View>
           )}
@@ -723,33 +736,51 @@ const comfortRatingStyle: ViewStyle = {
   gap: 8,
   marginBottom: 4,
   marginTop: 4,
+};
+
+const comfortRatingLabelStyle: TextStyle = {
+  color: colors.light.accent,
+  fontSize: 13,
+  fontWeight: "600",
+  width: 90,
+};
+
+const miniSliderRow: ViewStyle = {
+  flex: 1,
+  height: 8,
+  justifyContent: "center",
+};
+
+const miniSliderTrack: ViewStyle = {
+  backgroundColor: colors.neutral.grey2,
+  borderRadius: 2,
+  height: 3,
   width: "100%",
 };
 
-const comfortRatingTextStyle: TextStyle = {
-  color: colors.light.primary,
-  fontSize: 12,
-  fontWeight: "600",
-};
-
-const ratingDotsRow: ViewStyle = {
+const miniSliderTickContainer: ViewStyle = {
   flexDirection: "row",
-  gap: 4,
+  justifyContent: "space-between",
+  left: 0,
+  position: "absolute",
+  right: 0,
 };
 
-const ratingDot: ViewStyle = {
-  borderRadius: 4,
-  height: 8,
-  width: 8,
+const miniSliderTick: ViewStyle = {
+  borderRadius: 1,
+  height: 6,
+  width: 2,
 };
 
-const ratingDotFilled: ViewStyle = {
+const miniSliderFill: ViewStyle = {
   backgroundColor: colors.light.accent,
+  borderRadius: 2,
+  height: 3,
+  left: 0,
+  position: "absolute",
+  top: 0,
 };
 
-const ratingDotEmpty: ViewStyle = {
-  backgroundColor: colors.neutral.grey2,
-};
 
 
 const challengeContainerStyle: ViewStyle = {
