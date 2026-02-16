@@ -59,6 +59,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     fetchNextPage,
     refresh: refreshActivity,
   } = useProfileActivity(targetUserId);
+  const [activityFilter, setActivityFilter] = useState<"all" | "post" | "comment">("all");
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -247,6 +248,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   }, [userProfile, targetUserId, isOwnProfile]);
 
+  const filteredActivityItems = useMemo(() => {
+    if (activityFilter === "all") return activityItems;
+    return activityItems.filter((item) => item.type === activityFilter);
+  }, [activityItems, activityFilter]);
+
   const postsInFeed = useMemo(() => {
     return activityItems
       .filter((item) => item.type === "post")
@@ -433,7 +439,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-        {activityItems.map((item) => {
+        <View style={styles.filterRow}>
+          {(["all", "post", "comment"] as const).map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
+              onPress={() => setActivityFilter(filter)}
+            >
+              <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
+                {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {filteredActivityItems.map((item) => {
           if (item.type === "post") {
             return (
               <Post
@@ -617,6 +636,29 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.9)",
     flex: 1,
     justifyContent: "center",
+  },
+  filterRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: colors.neutral.grey2 + "40",
+  },
+  filterPillActive: {
+    backgroundColor: colors.light.primary,
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.light.lightText,
+  },
+  filterPillTextActive: {
+    color: "#fff",
   },
   commentCard: {
     borderBottomColor: "#ccc",

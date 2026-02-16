@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, ViewStyle, TextStyle } from "react-native";
-import { colors } from "../constants/colors";
+import { colors } from "../constants/Colors";
 
 type CommentPreviewRowProps = {
   username: string;
