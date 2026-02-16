@@ -8,7 +8,7 @@ import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
-import { LanguageProvider } from '../contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
 import * as SplashScreen from 'expo-splash-screen';
 import NotificationSidebar from '../components/NotificationSidebar';
 import MenuSidebar from '../components/MenuSidebar';
@@ -23,6 +23,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
 import { UI_EVENTS } from '../constants/analyticsEvents';
+import { supabase } from '../lib/supabase';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -52,6 +53,7 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutNav() {
+  const { t } = useLanguage();
   const { session, loading } = useAuth();
   const { markAllAsRead, notifications, unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -60,24 +62,53 @@ function RootLayoutNav() {
   const pathname = usePathname();
 
   // Check if we're on a detail page
-  const isDetailPage = pathname.includes('/post/') || 
-                      pathname.includes('/profile/') || 
-                      pathname.includes('/challenge/');
+  const isDetailPage = pathname.includes('/post/') ||
+    pathname.includes('/profile/') ||
+    pathname.includes('/challenge/');
 
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
-  
+
   // hide recently active banner on onboarding
   const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
 
   // Track screen views when pathname changes
   useEffect(() => {
+    const requestUsernameIfMissing = async () => {
+      // Only check if we have a session and are not on auth routes
+      if (!session || loading) return;
+
+      const isAuthRoute =
+        pathname === '/login' ||
+        pathname === '/register' ||
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password' ||
+        pathname === '/(auth)/onboarding' ||
+        pathname === '/onboarding' ||
+        pathname === '/(auth)/register-profile' ||
+        pathname === '/register-profile';
+      if (isAuthRoute) return;
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', session.user.id)
+          .single();
+        // If no username, redirect to profile setup
+        if (!profile?.username) {
+          router.replace('/(auth)/register-profile?isIncompleteProfile=true');
+        }
+      } catch (error) {
+        console.error('Error checking username:', error);
+      }
+    };
     if (pathname) {
       captureScreen(pathname, {
         is_detail_page: isDetailPage,
         is_auth_screen: hideLogo,
       });
     }
+    requestUsernameIfMissing();
   }, [pathname, isDetailPage, hideLogo]);
 
   // Simplified onLayoutRootView
@@ -179,73 +210,63 @@ function RootLayoutNav() {
   }
 
   return (
-    <MenuProvider>
-      <LanguageProvider>
-        <LikesProvider>
-          <ReactionsProvider>
-            <UploadProgressProvider>
-            <SafeAreaView 
-              style={{ flex: 1, backgroundColor: colors.light.background }}
-              edges={['top', 'left', 'right']}
-              onLayout={onLayoutRootView}
-            >
-              <StatusBar backgroundColor={colors.light.background} style="dark" />
-              <Header 
-                onNotificationPress={handleNotificationPress}
-                onMenuPress={handleMenuPress}
-                onFeedbackPress={() => setShowFeedback(true)}
-                unreadCount={unreadCount}
-                isDetailPage={isDetailPage}
-                hideLogo={hideLogo}
-              />
-              {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  gestureEnabled: true,
-                  gestureDirection: 'horizontal',
-                  fullScreenGestureEnabled: true,
-                  presentation: 'card'
-                }}
-              >
-                <Stack.Screen 
-                  name="(tabs)" 
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen 
-                  name="post/[id]" 
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen 
-                  name="profile/[id]" 
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen 
-                  name="challenge/[id]" 
-                  options={{ headerShown: false }}
-                />
-              </Stack>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.light.background }}
+      edges={['top', 'left', 'right']}
+      onLayout={onLayoutRootView}
+    >
+      <StatusBar backgroundColor={colors.light.background} style="dark" />
+      <Header
+        onNotificationPress={handleNotificationPress}
+        onMenuPress={handleMenuPress}
+        onFeedbackPress={() => setShowFeedback(true)}
+        unreadCount={unreadCount}
+        isDetailPage={isDetailPage}
+        hideLogo={hideLogo}
+      />
+      {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
+          fullScreenGestureEnabled: true,
+          presentation: 'card'
+        }}
+      >
+        <Stack.Screen
+          name="(tabs)"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="post/[id]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="profile/[id]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="challenge/[id]"
+          options={{ headerShown: false }}
+        />
+      </Stack>
 
-              <NotificationSidebar 
-                visible={showNotifications}
-                onClose={() => setShowNotifications(false)}
-                notifications={notifications}
-              />
-              <MenuSidebar 
-                isOpen={showMenu}
-                onClose={() => setShowMenu(false)}
-                enableSwiping={!isDetailPage}
-              />
-              <FeedbackModal 
-                isVisible={showFeedback}
-                onClose={() => setShowFeedback(false)}
-              />
-            </SafeAreaView>
-            </UploadProgressProvider>
-          </ReactionsProvider>
-        </LikesProvider>
-      </LanguageProvider>
-    </MenuProvider>
+      <NotificationSidebar
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        notifications={notifications}
+      />
+      <MenuSidebar
+        isOpen={showMenu}
+        onClose={() => setShowMenu(false)}
+        enableSwiping={!isDetailPage}
+      />
+      <FeedbackModal
+        isVisible={showFeedback}
+        onClose={() => setShowFeedback(false)}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -257,30 +278,40 @@ export default function Layout() {
 
   return (
     <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <PostHogProvider 
-          apiKey={posthogApiKey || 'placeholder'} 
-          options={{
-            host: posthogHost,
-            disabled: isPostHogDisabled,
-            debug: __DEV__,
-            // Enable session recordings (free tier: 5,000/month)
-            enableSessionReplay: true,
-            // Capture app lifecycle events
-            captureAppLifecycleEvents: true,
-            // Flush settings
-            flushAt: 20,
-            flushInterval: 10000,
-            sessionExpirationTimeSeconds: 1800,
-          }}
-          autocapture={{
-            captureScreens: false, // We're handling screen tracking manually for expo-router
-            captureTouches: false, 
-          }}
-        >
-          <RootLayoutNav />
-        </PostHogProvider>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <PostHogProvider
+            apiKey={posthogApiKey || 'placeholder'}
+            options={{
+              host: posthogHost,
+              disabled: isPostHogDisabled,
+              debug: __DEV__,
+              // Enable session recordings (free tier: 5,000/month)
+              enableSessionReplay: true,
+              // Capture app lifecycle events
+              captureAppLifecycleEvents: true,
+              // Flush settings
+              flushAt: 20,
+              flushInterval: 10000,
+              sessionExpirationTimeSeconds: 1800,
+            }}
+            autocapture={{
+              captureScreens: false, // We're handling screen tracking manually for expo-router
+              captureTouches: false,
+            }}
+          >
+            <MenuProvider>
+              <LikesProvider>
+                <ReactionsProvider>
+                  <UploadProgressProvider>
+                    <RootLayoutNav />
+                  </UploadProgressProvider>
+                </ReactionsProvider>
+              </LikesProvider>
+            </MenuProvider>
+          </PostHogProvider>
+        </QueryClientProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }

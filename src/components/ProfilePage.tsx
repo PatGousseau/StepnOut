@@ -67,6 +67,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [editedName, setEditedName] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
   const [editedInstagram, setEditedInstagram] = useState("");
+  const [editedBio, setEditedBio] = useState("");
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
 
@@ -97,6 +98,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleUpdateProfilePicture = async () => {
     try {
+      if (!user?.id) {
+        Alert.alert(t("Error"), t("User not authenticated"));
+        return;
+      }
+
       setImageUploading(true);
       if (!user?.id) return;
       const result = await profileService.updateProfilePicture(user.id);
@@ -158,6 +164,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
         name: editedName !== userProfile?.name ? editedName : undefined,
+        bio: editedBio !== (userProfile?.bio || "") ? editedBio : undefined,
       });
 
       if (result.success) {
@@ -170,6 +177,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           changed_name: editedName !== userProfile?.name,
           changed_username: editedUsername !== userProfile?.username,
           changed_instagram: editedInstagram !== userProfile?.instagram,
+          changed_bio: editedBio !== (userProfile?.bio || ""),
         });
         // Update user properties if instagram was changed
         if (editedInstagram !== userProfile?.instagram) {
@@ -283,6 +291,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     return <ProfileSkeleton />;
   }
 
+
   if (error || profileError) {
     return (
       <Text>
@@ -337,6 +346,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
+
             <View style={styles.userInfo}>
               {isEditing ? (
                 <View style={styles.editContainer}>
@@ -372,12 +382,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                         style={[styles.editInput, styles.usernameInput]}
                         placeholder={t("Username")}
                         value={editedInstagram}
-                        //onChangeText={setEditedInstagram}
                         onChangeText={(text) => setEditedInstagram(text.replace(/[@\s]+/g, ''))}
                         autoCapitalize="none"
                         keyboardType="default"
                       />
                     </View>
+
+                    <Text style={styles.editLabel}>{t("Bio")}</Text>
+                    <TextInput
+                      style={styles.bioInput}
+                      value={editedBio}
+                      onChangeText={setEditedBio}
+                      placeholder={t("Add a bio")}
+                      maxLength={160}
+                      multiline
+                      textAlignVertical="top"
+                    />
                   </View>
                   <View style={styles.editButtonsContainer}>
                     <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
@@ -419,6 +439,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               )}
             </View>
           </View>
+
           <View style={styles.headerButtons}>
             {isOwnProfile && (
               <ProfileActions
@@ -427,6 +448,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                   setEditedName(userProfile?.name || "");
                   setEditedUsername(userProfile?.username || "");
                   setEditedInstagram(userProfile?.instagram || "");
+                  setEditedBio(userProfile?.bio || "");
                 }}
                 onSignOut={handleSignOut}
                 onDeleteAccount={handleDeleteAccount}
@@ -436,6 +458,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             )}
           </View>
         </View>
+
+        {!!userProfile?.bio && !isEditing && (
+          <View style={styles.bioSection}>
+            <Text style={styles.bioText}>{userProfile.bio}</Text>
+          </View>
+        )}
+
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
@@ -612,6 +641,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: "100%",
   },
+  bioInput: {
+    backgroundColor: "#fff",
+    borderColor: colors.light.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    minHeight: 96,
+    width: "100%",
+  },
   editButtonsContainer: {
     flexDirection: "row",
     gap: 8,
@@ -673,18 +713,19 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   profileHeader: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   headerButtons: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 16,
+    paddingTop: 6,
   },
   headerLeft: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
   },
   userInfo: {
@@ -698,6 +739,16 @@ const styles = StyleSheet.create({
   userTitle: {
     color: "#7F8C8D",
     fontSize: 16,
+  },
+  bioSection: {
+    width: "100%",
+    marginBottom: 16,
+    paddingHorizontal: 12,
+  },
+  bioText: {
+    color: "#7F8C8D",
+    fontSize: 14,
+    lineHeight: 20,
   },
   username: {
     color: "#0D1B1E",

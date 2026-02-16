@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -23,8 +23,9 @@ import { EULA_IT, EULA } from "../../constants/EULA";
 import { isInstagramUsernameValidProfile } from "../../utils/validation";
 
 export default function RegisterProfileScreen() {
-  const { isSocialUser } = useLocalSearchParams<{
+  const { isSocialUser, isIncompleteProfile } = useLocalSearchParams<{
     isSocialUser?: string;
+    isIncompleteProfile?: string;
   }>();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -34,10 +35,39 @@ export default function RegisterProfileScreen() {
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [instagram, setInstagram] = useState('');
+  const [bio, setBio] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
 
   const isSocialSignUp = isSocialUser === 'true';
+  const isProfileCompletion = isIncompleteProfile === 'true';
+
+  useEffect(() => {
+    if (!isProfileCompletion) return;
+    const fetchExistingProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('username, name, instagram, bio, profile_media_id, profile_media:media!profiles_profile_media_id_fkey(file_path)')
+        .eq('id', user.id)
+        .single();
+      if (!profile) return;
+      if (profile.username) setUsername(profile.username);
+      if (profile.name) setDisplayName(profile.name);
+      if (profile.instagram) setInstagram(profile.instagram);
+      if (profile.bio) setBio(profile.bio);
+      if (profile.profile_media_id) {
+        setProfileMediaId(profile.profile_media_id);
+        const filePath = (profile.profile_media as any)?.file_path;
+        if (filePath) {
+          const { data } = supabase.storage.from('challenge-uploads').getPublicUrl(filePath);
+          setProfileImage(data.publicUrl);
+        }
+      }
+    };
+    fetchExistingProfile();
+  }, [isProfileCompletion]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -131,28 +161,34 @@ export default function RegisterProfileScreen() {
         displayName,
         profileMediaId,
         instagram: instagram,
+        bio: bio || undefined,
         isSocialUser: isSocialSignUp,
+        isIncompleteProfile: isProfileCompletion,
       });
 
-      // Show EULA then go to onboarding
-      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-        {
-          text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', userId);
-            router.replace('/(auth)/onboarding');
+      if (isProfileCompletion) {
+        router.replace('/(tabs)');
+      } else {
+        // Show EULA then go to onboarding
+        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
+          {
+            text: t('Accept'), onPress: async () => {
+              await supabase
+                .from('profiles')
+                .update({ eula_accepted: true })
+                .eq('id', userId);
+              router.replace('/(auth)/onboarding');
+            }
+          },
+          {
+            text: t('Decline'),
+            onPress: async () => {
+              await supabase.auth.signOut();
+              router.replace('/(auth)/login');
+            }
           }
-        },
-        {
-          text: t('Decline'),
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/(auth)/login');
-          }
-        }
-      ]);
+        ]);
+      }
     } catch (error) {
       setError(t((error as Error).message));
     } finally {
@@ -165,14 +201,20 @@ export default function RegisterProfileScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <Pressable style={styles.form} onPress={Keyboard.dismiss}>
+      <Pressable style={[styles.form, !isProfileCompletion && styles.formCentered]} onPress={Keyboard.dismiss}>
+        {isProfileCompletion && (
+          <Text style={styles.infoBannerText}>
+            {t("It looks like your profile is missing some details. Please fill in the fields below to continue.")}
+          </Text>
+        )}
+
         <View style={styles.logoContainer}>
           <Image
             source={require("../../assets/images/logo.png")}
             style={styles.logo}
           />
           <Text style={styles.stepnOut}>{t("Stepn Out")}</Text>
-          {isSocialSignUp && (
+          {(isSocialSignUp || isProfileCompletion) && (
             <Text style={styles.subtitle}>{t("Complete your profile")}</Text>
           )}
         </View>
@@ -226,6 +268,19 @@ export default function RegisterProfileScreen() {
           </View>
         </View>
 
+        <View style={styles.bioContainer}>
+          <TextInput
+            style={styles.bioInput}
+            placeholder={t("Bio (Optional)")}
+            placeholderTextColor="#666"
+            value={bio}
+            onChangeText={setBio}
+            maxLength={160}
+            multiline
+            textAlignVertical="top"
+          />
+        </View>
+
         {error && (
           <Text style={styles.errorText}>{error}</Text>
         )}
@@ -240,10 +295,12 @@ export default function RegisterProfileScreen() {
         >
           <Text style={styles.buttonText}>
             {loading
-              ? t("Creating Account...")
-              : isSocialSignUp
-                ? t("Complete Setup")
-                : t("Complete Registration")}
+              ? t("Saving...")
+              : isProfileCompletion
+                ? t("Complete Profile")
+                : isSocialSignUp
+                  ? t("Complete Setup")
+                  : t("Complete Registration")}
           </Text>
         </TouchableOpacity>
       </Pressable>
@@ -278,8 +335,20 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1,
-    justifyContent: "center",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  formCentered: {
+    justifyContent: 'center',
+    paddingTop: 0,
+  },
+  infoBannerText: {
+    color: colors.light.primary,
+    fontSize: 20,
+    fontWeight: '500',
+    marginBottom: 48,
+    marginTop: 24,
+    textAlign: 'center',
   },
   imageContainer: {
     justifyContent: "center",
@@ -330,6 +399,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 15,
     marginBottom: 20,
+  },
+  bioContainer: {
+    marginBottom: 12,
+  },
+  bioInput: {
+    borderColor: "#ddd",
+    borderRadius: 5,
+    borderWidth: 1,
+    padding: 12,
+    minHeight: 60,
   },
   stepnOut: {
     color: colors.light.primary,
