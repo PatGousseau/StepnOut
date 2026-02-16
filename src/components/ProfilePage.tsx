@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { isInstagramUsernameValidProfile } from "../utils/validation";
 import {
   View,
@@ -14,8 +14,11 @@ import {
   Linking,
 } from "react-native";
 import UserProgress from "./UserProgress";
+import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
 import useUserProgress from "../hooks/useUserProgress";
+import { useProfileActivity } from "../hooks/useProfileActivity";
+import { router } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -35,25 +38,28 @@ import { captureEvent, setUserProperties } from "../lib/posthog";
 import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 type ProfilePageProps = {
-  userId: string;
+  userId?: string;
 };
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { initializePostLikes } = useLikes();
-  const { initializePostReactions } = useReactions();
+  const { initializePostLikes, initializeCommentLikes } = useLikes();
+  const { initializePostReactions, initializeCommentReactions } = useReactions();
+
+  const targetUserId = userId || user?.id || "";
+  const isOwnProfile = !userId || userId === user?.id;
+
+  const { data, loading: progressLoading, error } = useUserProgress(targetUserId);
   const {
-    data,
-    loading: progressLoading,
-    error,
-    userPosts,
-    postsLoading,
-    hasMorePosts,
-    fetchUserPosts,
-  } = useUserProgress(userId);
-  const [page, setPage] = useState(1);
+    activityItems,
+    loading: activityLoading,
+    hasMore: hasMoreActivity,
+    fetchNextPage,
+    refresh: refreshActivity,
+  } = useProfileActivity(targetUserId);
+  const [activityFilter, setActivityFilter] = useState<"all" | "post" | "comment">("all");
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -65,11 +71,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
 
-  // for features that are only available to the user themselves
-  const isOwnProfile = userId ? userId === user?.id : true;
-
-  // Get target user ID (from prop or current user)
-  const targetUserId = userId || user?.id;
 
   // Use React Query to fetch profile data
   const {
@@ -91,10 +92,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setPage(1);
-    await Promise.all([refetchProfile(), fetchUserPosts(1)]);
+    await Promise.all([refetchProfile(), refreshActivity()]);
     setRefreshing(false);
-  }, [fetchUserPosts, refetchProfile]);
+  }, [refetchProfile, refreshActivity]);
 
   const handleUpdateProfilePicture = async () => {
     try {
@@ -104,6 +104,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       }
 
       setImageUploading(true);
+      if (!user?.id) return;
       const result = await profileService.updateProfilePicture(user.id);
 
       if (result.success) {
@@ -157,10 +158,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         }
       }
 
-      if (!user?.id) {
-        Alert.alert(t("Error"), t("User not authenticated"));
-        return;
-      }
+      if (!user?.id) return;
 
       const result = await profileService.validateAndUpdateProfile(user.id, {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
@@ -196,11 +194,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleLoadMore = () => {
-    if (!postsLoading && hasMorePosts) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchUserPosts(nextPage, true);
-    }
+    if (activityLoading || !hasMoreActivity) return;
+    fetchNextPage();
   };
 
   const handleSignOut = async () => {
@@ -213,11 +208,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleDeleteAccount = async () => {
     try {
-      if (!user?.id) {
-        Alert.alert(t("Error"), t("User not authenticated"));
-        return;
-      }
-
+      if (!user?.id) return;
       const result = await profileService.confirmAndDeleteAccount(user.id, t);
       if (result.success) {
         captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
@@ -265,12 +256,36 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   }, [userProfile, targetUserId, isOwnProfile]);
 
+  const filteredActivityItems = useMemo(() => {
+    if (activityFilter === "all") return activityItems;
+    return activityItems.filter((item) => item.type === activityFilter);
+  }, [activityItems, activityFilter]);
+
+  const postsInFeed = useMemo(() => {
+    return activityItems
+      .filter((item) => item.type === "post")
+      .map((item) => item.post);
+  }, [activityItems]);
+
+  const commentsInFeed = useMemo(() => {
+    return activityItems
+      .filter((item) => item.type === "comment")
+      .map((item) => item.comment);
+  }, [activityItems]);
+
   useEffect(() => {
-    if (userPosts.length > 0) {
-      initializePostLikes(userPosts);
-      initializePostReactions(userPosts);
+    if (postsInFeed.length > 0) {
+      initializePostLikes(postsInFeed);
+      initializePostReactions(postsInFeed);
     }
-  }, [userPosts]);
+  }, [postsInFeed]);
+
+  useEffect(() => {
+    if (commentsInFeed.length > 0) {
+      initializeCommentLikes(commentsInFeed);
+      initializeCommentReactions(commentsInFeed);
+    }
+  }, [commentsInFeed]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
@@ -453,19 +468,59 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-        <Text style={styles.pastChallengesTitle}>
-          {isOwnProfile ? t("Your Posts") : t("Posts")}
-        </Text>
-        {userPosts.map((post) => (
-          <Post
-            key={post.id}
-            post={post} // Pass the entire post object
-            postUser={userProfile}
-            setPostCounts={() => { }}
-            onPostDeleted={() => { }}
-          />
-        ))}
-        {postsLoading && (
+        <View style={styles.filterRow}>
+          {(["all", "post", "comment"] as const).map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
+              onPress={() => setActivityFilter(filter)}
+            >
+              <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
+                {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {filteredActivityItems.map((item) => {
+          if (item.type === "post") {
+            return (
+              <Post
+                key={`post-${item.post.id}`}
+                post={item.post}
+                postUser={userProfile}
+                setPostCounts={() => {}}
+                onPostDeleted={() => {}}
+              />
+            );
+          }
+
+          return (
+            <TouchableOpacity
+              key={`comment-${item.comment.id}`}
+              style={styles.commentCard}
+              onPress={() => {
+                if (!item.comment.post) {
+                  Alert.alert(t("Post not found"), t("This post may have been deleted."));
+                  return;
+                }
+                router.push(`/post/${item.comment.post_id}`);
+              }}
+            >
+              <Text style={styles.commentPostContextText} numberOfLines={2}>
+                {item.comment.post
+                  ? `${item.comment.post.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}${item.comment.post.body || ""}`
+                  : t("Deleted post")}
+              </Text>
+              <CommentPreviewRow
+                username={userProfile.username}
+                text={item.comment.text}
+                bodyColor={colors.light.text}
+              />
+            </TouchableOpacity>
+          );
+        })}
+
+        {activityLoading && (
           <View style={{ padding: 20, alignItems: "center" }}>
             <Loader />
           </View>
@@ -622,11 +677,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  pastChallengesTitle: {
-    color: "#0D1B1E",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginVertical: 16,
+  filterRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: colors.neutral.grey2 + "40",
+  },
+  filterPillActive: {
+    backgroundColor: colors.light.primary,
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.light.lightText,
+  },
+  filterPillTextActive: {
+    color: "#fff",
+  },
+  commentCard: {
+    borderBottomColor: "#ccc",
+    borderBottomWidth: 1,
+    padding: 10,
+    paddingBottom: 16,
+    paddingLeft: 8,
+  },
+  commentPostContextText: {
+    color: colors.light.lightText,
+    fontSize: 12,
+    marginBottom: 4,
   },
   profileHeader: {
     alignItems: "flex-start",

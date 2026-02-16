@@ -37,6 +37,8 @@ export const translations = {
   "Sign out": "Esci",
   "Your Posts": "I tuoi Post",
   Posts: "Post",
+  All: "Tutti",
+  Comments: "Commenti",
   "Unknown User": "Utente Sconosciuto",
   "liked your post": "ha messo mi piace al tuo post",
   "liked your comment": "ha messo mi piace al tuo commento",
