@@ -179,7 +179,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const submittedTextRef = useRef('');
-  const [comfortRating, setComfortRating] = useState<number>(5);
+  const [comfortRating, setComfortRating] = useState<number>(3);
 
   // Use React Query to check if user has completed the challenge
   const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
@@ -439,13 +439,13 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                     <Text style={shareStyles.sliderLabel}>
                       {t("How far out of your comfort zone was this?")}
                     </Text>
-                    <Text style={shareStyles.sliderValue}>{comfortRating}/10</Text>
+                    <Text style={shareStyles.sliderValue}>{comfortRating}/5</Text>
                   </View>
                   <ComfortSlider
                     value={comfortRating}
                     onValueChange={setComfortRating}
                     minimumValue={1}
-                    maximumValue={10}
+                    maximumValue={5}
                     minimumTrackTintColor={colors.light.accent}
                     maximumTrackTintColor={colors.neutral.grey2}
                     thumbTintColor={colors.light.accent}

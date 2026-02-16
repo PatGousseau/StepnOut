@@ -467,8 +467,16 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           {post.comfort_zone_rating != null && (
             <View style={comfortRatingStyle}>
               <Text style={comfortRatingTextStyle}>
-                {t("Stretch")}: {post.comfort_zone_rating}/10
+                {t(discomfortLabels[post.comfort_zone_rating] ?? "Chill")}
               </Text>
+              <View style={miniSliderTrack}>
+                <View
+                  style={[
+                    miniSliderFill,
+                    { width: `${((post.comfort_zone_rating - 1) / 4) * 100}%` },
+                  ]}
+                />
+              </View>
             </View>
           )}
         </TouchableOpacity>
@@ -683,6 +691,14 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   );
 };
 
+const discomfortLabels: Record<number, string> = {
+  1: "Chill",
+  2: "Uneasy",
+  3: "Nervous",
+  4: "Scary",
+  5: "Way out there",
+};
+
 const challengeBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
   backgroundColor: colors.light.accent2,
@@ -697,11 +713,12 @@ const challengeBoxStyle: ViewStyle = {
 };
 
 const comfortRatingStyle: ViewStyle = {
-  alignSelf: "flex-start",
-  flexDirection: "row",
   alignItems: "center",
-  marginTop: 4,
+  flexDirection: "row",
+  gap: 8,
   marginBottom: 4,
+  marginTop: 4,
+  width: "100%",
 };
 
 const comfortRatingTextStyle: TextStyle = {
@@ -709,6 +726,21 @@ const comfortRatingTextStyle: TextStyle = {
   fontSize: 12,
   fontWeight: "600",
 };
+
+const miniSliderTrack: ViewStyle = {
+  backgroundColor: colors.neutral.grey2,
+  borderRadius: 2,
+  flex: 1,
+  height: 3,
+  justifyContent: "center",
+};
+
+const miniSliderFill: ViewStyle = {
+  backgroundColor: colors.light.accent,
+  borderRadius: 2,
+  height: "100%",
+};
+
 
 const challengeContainerStyle: ViewStyle = {
   // backgroundColor: '#ffeecc',
