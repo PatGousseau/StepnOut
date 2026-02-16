@@ -35,6 +35,7 @@ export default function RegisterProfileScreen() {
   const [profileMediaId, setProfileMediaId] = useState<number | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [instagram, setInstagram] = useState('');
+  const [bio, setBio] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { t, language } = useLanguage();
 
@@ -48,13 +49,14 @@ export default function RegisterProfileScreen() {
       if (!user) return;
       const { data: profile } = await supabase
         .from('profiles')
-        .select('username, name, instagram, profile_media_id, profile_media:media!profiles_profile_media_id_fkey(file_path)')
+        .select('username, name, instagram, bio, profile_media_id, profile_media:media!profiles_profile_media_id_fkey(file_path)')
         .eq('id', user.id)
         .single();
       if (!profile) return;
       if (profile.username) setUsername(profile.username);
       if (profile.name) setDisplayName(profile.name);
       if (profile.instagram) setInstagram(profile.instagram);
+      if (profile.bio) setBio(profile.bio);
       if (profile.profile_media_id) {
         setProfileMediaId(profile.profile_media_id);
         const filePath = (profile.profile_media as any)?.file_path;
@@ -159,6 +161,7 @@ export default function RegisterProfileScreen() {
         displayName,
         profileMediaId,
         instagram: instagram,
+        bio: bio || undefined,
         isSocialUser: isSocialSignUp,
         isIncompleteProfile: isProfileCompletion,
       });
@@ -263,6 +266,19 @@ export default function RegisterProfileScreen() {
               autoCapitalize="none"
             />
           </View>
+        </View>
+
+        <View style={styles.bioContainer}>
+          <TextInput
+            style={styles.bioInput}
+            placeholder={t("Bio (Optional)")}
+            placeholderTextColor="#666"
+            value={bio}
+            onChangeText={setBio}
+            maxLength={160}
+            multiline
+            textAlignVertical="top"
+          />
         </View>
 
         {error && (
@@ -383,6 +399,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 15,
     marginBottom: 20,
+  },
+  bioContainer: {
+    marginBottom: 12,
+  },
+  bioInput: {
+    borderColor: "#ddd",
+    borderRadius: 5,
+    borderWidth: 1,
+    padding: 12,
+    minHeight: 60,
   },
   stepnOut: {
     color: colors.light.primary,
