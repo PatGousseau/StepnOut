@@ -446,7 +446,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
         {!!userProfile?.bio && !isEditing && (
           <View style={styles.bioSection}>
-            <Text style={styles.bioLabel}>{t("Bio")}</Text>
             <Text style={styles.bioText}>{userProfile.bio}</Text>
           </View>
         )}
@@ -617,15 +616,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  menuItemContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
-  menuOptionText: {
-    color: colors.light.primary,
-    fontSize: 14,
-  },
   modalContainer: {
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.9)",
@@ -654,14 +644,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     flexDirection: "row",
   },
-  input: {
-    borderColor: colors.light.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
   userInfo: {
     alignItems: "center",
     flexDirection: "row",
@@ -688,14 +670,6 @@ const styles = StyleSheet.create({
     color: "#0D1B1E",
     fontSize: 14,
     lineHeight: 20,
-  },
-  bioLabel: {
-    marginBottom: 6,
-    color: colors.light.primary,
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
   },
   username: {
     color: "#0D1B1E",
@@ -725,18 +699,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 0,
   },
-  websiteLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
   websiteText: {
     color: colors.light.primary,
     fontSize: 14,
-  },
-  inputWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   instagram: {
     flexDirection: "row",
