@@ -13,6 +13,7 @@ import {
   ImageStyle,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -138,13 +139,14 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   isAddingComment = false,
 }) => {
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { initializeCommentLikes } = useLikes();
   const { initializeCommentReactions } = useReactions();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
+  const [translateOutgoing, setTranslateOutgoing] = useState(true);
 
   useEffect(() => {
     setComments(initialComments);
@@ -157,9 +159,18 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
   const handleAddComment = async () => {
     if (newComment.trim() && user) {
-      const commentText = newComment.trim();
+      let commentText = newComment.trim();
 
       try {
+        if (isAdmin && translateOutgoing) {
+          const result = await translationService.translateToItalian(commentText);
+          if (!result.translatedText) {
+            Alert.alert('Translation failed', result.error || 'Could not translate');
+            return;
+          }
+          commentText = result.translatedText;
+        }
+
         const parentCommentId = replyTo?.commentId ?? null;
         const newCommentData = await addComment(user.id, commentText, parentCommentId);
 
@@ -298,6 +309,19 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 textAlignVertical="top"
               />
             </View>
+
+            {isAdmin ? (
+              <TouchableOpacity
+                onPress={() => setTranslateOutgoing((v) => !v)}
+                style={[translatePillStyle, translateOutgoing ? translatePillOnStyle : null]}
+                activeOpacity={0.8}
+              >
+                <Text style={[translatePillTextStyle, translateOutgoing ? translatePillTextOnStyle : null]}>
+                  EN→IT
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
             <Pressable
               onPress={handleAddComment}
               style={({ pressed }) => [
@@ -751,6 +775,31 @@ const postButtonStyle: ViewStyle = {
   paddingHorizontal: 15,
   paddingVertical: 10,
   alignSelf: "flex-end",
+};
+
+const translatePillStyle: ViewStyle = {
+  borderWidth: 1,
+  borderColor: colors.neutral.grey2,
+  borderRadius: 999,
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  marginRight: 10,
+  alignSelf: "flex-end",
+};
+
+const translatePillOnStyle: ViewStyle = {
+  backgroundColor: colors.light.primary,
+  borderColor: colors.light.primary,
+};
+
+const translatePillTextStyle: TextStyle = {
+  color: colors.neutral.grey1,
+  fontSize: 12,
+  fontWeight: "700",
+};
+
+const translatePillTextOnStyle: TextStyle = {
+  color: "#ffffff",
 };
 
 const postButtonDisabledStyle: ViewStyle = {
