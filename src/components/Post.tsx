@@ -469,13 +469,18 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               <Text style={comfortRatingTextStyle}>
                 {t(discomfortLabels[post.comfort_zone_rating] ?? "Chill")}
               </Text>
-              <View style={miniSliderTrack}>
-                <View
-                  style={[
-                    miniSliderFill,
-                    { width: `${((post.comfort_zone_rating - 1) / 4) * 100}%` },
-                  ]}
-                />
+              <View style={ratingDotsRow}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <View
+                    key={i}
+                    style={[
+                      ratingDot,
+                      i <= post.comfort_zone_rating!
+                        ? ratingDotFilled
+                        : ratingDotEmpty,
+                    ]}
+                  />
+                ))}
               </View>
             </View>
           )}
@@ -727,18 +732,23 @@ const comfortRatingTextStyle: TextStyle = {
   fontWeight: "600",
 };
 
-const miniSliderTrack: ViewStyle = {
-  backgroundColor: colors.neutral.grey2,
-  borderRadius: 2,
-  flex: 1,
-  height: 3,
-  justifyContent: "center",
+const ratingDotsRow: ViewStyle = {
+  flexDirection: "row",
+  gap: 4,
 };
 
-const miniSliderFill: ViewStyle = {
+const ratingDot: ViewStyle = {
+  borderRadius: 4,
+  height: 8,
+  width: 8,
+};
+
+const ratingDotFilled: ViewStyle = {
   backgroundColor: colors.light.accent,
-  borderRadius: 2,
-  height: "100%",
+};
+
+const ratingDotEmpty: ViewStyle = {
+  backgroundColor: colors.neutral.grey2,
 };
 
 

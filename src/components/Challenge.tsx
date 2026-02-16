@@ -439,7 +439,6 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                     <Text style={shareStyles.sliderLabel}>
                       {t("How far out of your comfort zone was this?")}
                     </Text>
-                    <Text style={shareStyles.sliderValue}>{comfortRating}/5</Text>
                   </View>
                   <ComfortSlider
                     value={comfortRating}
@@ -451,10 +450,9 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                     thumbTintColor={colors.light.accent}
                     thumbSize={18}
                   />
-                  <View style={shareStyles.sliderLabels}>
-                    <Text style={shareStyles.sliderEndLabel}>{t("Comfortable")}</Text>
-                    <Text style={shareStyles.sliderEndLabel}>{t("Way out there")}</Text>
-                  </View>
+                  <Text style={shareStyles.sliderEndLabel}>
+                    {t(["Chill", "Uneasy", "Nervous", "Scary", "Way out there"][comfortRating - 1])}
+                  </Text>
                 </View>
 
                 <TouchableOpacity
@@ -851,8 +849,9 @@ const shareStyles = StyleSheet.create({
     height: "100%",
   },
   sliderEndLabel: {
-    color: colors.neutral.darkGrey,
-    fontSize: 11,
+    color: colors.light.accent,
+    fontSize: 13,
+    fontWeight: "600",
   },
   sliderHeader: {
     alignItems: "center",

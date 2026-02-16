@@ -127,7 +127,7 @@ export const ComfortSlider: React.FC<ComfortSliderProps> = ({
               styles.tick,
               {
                 backgroundColor:
-                  i + minimumValue <= value
+                  i + minimumValue < value
                     ? minimumTrackTintColor
                     : maximumTrackTintColor,
               },
