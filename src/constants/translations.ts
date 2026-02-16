@@ -261,4 +261,11 @@ export const translations = {
   "others who completed this week's challenge on StepnOut": "che hanno completato la sfida della settimana su StepnOut",
   "Join me on StepnOut": "Unisciti a me su StepnOut",
   "Download free on iOS & Android": "Scarica gratis su iOS e Android",
+  "How far out of your comfort zone was this?": "Quanto fuori dalla tua zona di comfort è stato?",
+  "Comfortable": "Comodo",
+  "Chill": "Tranquillo",
+  "Uneasy": "A disagio",
+  "Nervous": "Nervoso",
+  "Scary": "Spaventoso",
+  "Way out there": "Molto fuori",
 };

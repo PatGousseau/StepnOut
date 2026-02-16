@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { ComfortSlider } from "./ComfortSlider";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
 import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
@@ -178,6 +179,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const submittedTextRef = useRef('');
+  const [comfortRating, setComfortRating] = useState<number>(3);
 
   // Use React Query to check if user has completed the challenge
   const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
@@ -213,6 +215,8 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       setModalVisible(false);
       // Mark challenge as completed in the cache
       queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
+      // Refresh home feed so the new post appears
+      queryClient.invalidateQueries({ queryKey: ["home-posts"] });
       // Track challenge completed
       captureEvent(CHALLENGE_EVENTS.COMPLETED, {
         challenge_id: challenge.id,
@@ -220,6 +224,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         challenge_difficulty: challenge.difficulty,
         has_media: !!selectedMedia,
         is_video: selectedMedia?.isVideo || false,
+        comfort_zone_rating: comfortRating,
       });
       // Update user properties
       setUserProperties({
@@ -250,6 +255,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       {
         user_id: user.id,
         challenge_id: challenge.id,
+        comfort_zone_rating: comfortRating,
       },
       textToSubmit
     );
@@ -421,7 +427,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 )}
 
                 <TextInput
-                  style={[shareStyles.textInput, { fontSize: 13, fontStyle: "italic" }]}
+                  style={[shareStyles.textInput, { fontSize: 13 }]}
                   multiline
                   scrollEnabled
                   autoFocus
@@ -429,6 +435,27 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   placeholderTextColor="#999"
                   onChangeText={setPostText}
                 />
+
+                <View style={shareStyles.sliderSection}>
+                  <View style={shareStyles.sliderHeader}>
+                    <Text style={shareStyles.sliderLabel}>
+                      {t("How far out of your comfort zone was this?")}
+                    </Text>
+                  </View>
+                  <ComfortSlider
+                    value={comfortRating}
+                    onValueChange={setComfortRating}
+                    minimumValue={1}
+                    maximumValue={5}
+                    minimumTrackTintColor={colors.light.accent}
+                    maximumTrackTintColor={colors.neutral.grey2}
+                    thumbTintColor={colors.light.accent}
+                    thumbSize={18}
+                  />
+                  <Text style={shareStyles.sliderEndLabel}>
+                    {t(["Chill", "Uneasy", "Nervous", "Scary", "Way out there"][comfortRating - 1])}
+                  </Text>
+                </View>
 
                 <TouchableOpacity
                   style={[
@@ -822,5 +849,33 @@ const shareStyles = StyleSheet.create({
     backgroundColor: colors.light.accent,
     borderRadius: 2,
     height: "100%",
+  },
+  sliderEndLabel: {
+    color: colors.light.accent,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  sliderHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  sliderLabel: {
+    color: colors.light.text,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  sliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: -4,
+  },
+  sliderSection: {
+    marginVertical: 8,
+  },
+  sliderValue: {
+    color: colors.light.accent,
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

@@ -29,6 +29,7 @@ export interface Challenge {
     featured: boolean;
     challenge_id?: number;
     challenge_title?: string;
+    comfort_zone_rating?: number;
     likes_count: number;
     comments_count: number;
     liked: boolean;
