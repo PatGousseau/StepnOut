@@ -6,7 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import Slider from "@react-native-community/slider";
+import { ComfortSlider } from "./ComfortSlider";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
 import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
@@ -437,20 +437,19 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                 <View style={shareStyles.sliderSection}>
                   <View style={shareStyles.sliderHeader}>
                     <Text style={shareStyles.sliderLabel}>
-                      {t("How far out of your comfort zone?")}
+                      {t("How far out of your comfort zone was this?")}
                     </Text>
                     <Text style={shareStyles.sliderValue}>{comfortRating}/10</Text>
                   </View>
-                  <Slider
-                    style={shareStyles.slider}
-                    minimumValue={1}
-                    maximumValue={10}
-                    step={1}
+                  <ComfortSlider
                     value={comfortRating}
                     onValueChange={setComfortRating}
+                    minimumValue={1}
+                    maximumValue={10}
                     minimumTrackTintColor={colors.light.accent}
                     maximumTrackTintColor={colors.neutral.grey2}
                     thumbTintColor={colors.light.accent}
+                    thumbSize={18}
                   />
                   <View style={shareStyles.sliderLabels}>
                     <Text style={shareStyles.sliderEndLabel}>{t("Comfortable")}</Text>
@@ -850,10 +849,6 @@ const shareStyles = StyleSheet.create({
     backgroundColor: colors.light.accent,
     borderRadius: 2,
     height: "100%",
-  },
-  slider: {
-    height: 40,
-    width: "100%",
   },
   sliderEndLabel: {
     color: colors.neutral.darkGrey,
