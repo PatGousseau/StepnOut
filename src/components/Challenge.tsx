@@ -215,6 +215,8 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       setModalVisible(false);
       // Mark challenge as completed in the cache
       queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
+      // Refresh home feed so the new post appears
+      queryClient.invalidateQueries({ queryKey: ["home-posts"] });
       // Track challenge completed
       captureEvent(CHALLENGE_EVENTS.COMPLETED, {
         challenge_id: challenge.id,
