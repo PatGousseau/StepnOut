@@ -14,11 +14,11 @@ import {
   Linking,
 } from "react-native";
 import UserProgress from "./UserProgress";
+import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
 import useUserProgress from "../hooks/useUserProgress";
 import { useProfileActivity } from "../hooks/useProfileActivity";
 import { router } from "expo-router";
-import { formatRelativeTime } from "../utils/time";
 import { useAuth } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -463,14 +463,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                   ? `${item.comment.post.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}${item.comment.post.body || ""}`
                   : t("Deleted post")}
               </Text>
-              <View style={styles.commentRow}>
-                <View style={styles.commentTrunkLast} />
-                <View style={styles.commentConnector} />
-                <Text style={styles.commentPreviewText} numberOfLines={2}>
-                  <Text style={styles.commentPreviewUsername}>@{userProfile.username}:</Text>
-                  {"  "}<Text style={styles.commentPreviewBody}>{item.comment.text}</Text>
-                </Text>
-              </View>
+              <CommentPreviewRow
+                username={userProfile.username}
+                text={item.comment.text}
+                bodyColor={colors.light.text}
+              />
             </TouchableOpacity>
           );
         })}
@@ -627,36 +624,6 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingBottom: 16,
     paddingLeft: 8,
-  },
-  commentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 18,
-  },
-  commentTrunkLast: {
-    width: 2,
-    height: "50%",
-    backgroundColor: colors.neutral.grey2,
-    alignSelf: "flex-start",
-  },
-  commentConnector: {
-    width: 10,
-    height: 2,
-    backgroundColor: colors.neutral.grey2,
-    marginRight: 8,
-  },
-  commentPreviewText: {
-    flex: 1,
-    color: colors.light.lightText,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  commentPreviewUsername: {
-    fontWeight: "600",
-    color: colors.light.text,
-  },
-  commentPreviewBody: {
-    color: colors.light.text,
   },
   commentPostContextText: {
     color: colors.light.lightText,

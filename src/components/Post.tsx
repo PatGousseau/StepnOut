@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { AnimatedSendButton } from "./AnimatedSendButton";
+import CommentPreviewRow from "./CommentPreviewRow";
 import { CommentsModal } from "./Comments";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
@@ -561,16 +562,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             {localPreviews.map((preview, index) => {
               const isLast = index === localPreviews.length - 1 && commentCount <= localPreviews.length;
               return (
-                <View key={index} style={commentRowStyle}>
-                  <View style={[commentTrunkStyle, isLast && commentTrunkLastStyle]} />
-                  <View style={commentConnectorStyle} />
-                  <Text style={[commentPreviewTextStyle, { flex: 1 }]} numberOfLines={1}>
-                    <Text style={commentPreviewUsernameStyle}>@{preview.username}:</Text>
-                    {"  "}{preview.replyToUsername && (
-                      <Text style={commentPreviewBodyStyle}>@{preview.replyToUsername} </Text>
-                    )}<Text style={commentPreviewBodyStyle}>{preview.text}</Text>
-                  </Text>
-                </View>
+                <CommentPreviewRow
+                  key={index}
+                  username={preview.username}
+                  text={preview.text}
+                  replyToUsername={preview.replyToUsername}
+                  isLast={isLast}
+                />
               );
             })}
             {commentCount > localPreviews.length && (
@@ -747,20 +745,6 @@ const commentConnectorStyle: ViewStyle = {
   marginRight: 8,
 };
 
-const commentPreviewTextStyle: TextStyle = {
-  color: colors.light.lightText,
-  fontSize: 12,
-  lineHeight: 16,
-};
-
-const commentPreviewUsernameStyle: TextStyle = {
-  fontWeight: "600",
-  color: colors.light.text,
-};
-
-const commentPreviewBodyStyle: TextStyle = {
-  color: colors.neutral.darkGrey,
-};
 
 const viewAllCommentsStyle: TextStyle = {
   color: colors.neutral.grey1,
