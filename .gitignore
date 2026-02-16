@@ -2,6 +2,9 @@
 
 scrap/
 
+# local-only scripts
+.local/
+
 # dependencies
 node_modules/
 

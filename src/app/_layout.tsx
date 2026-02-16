@@ -19,6 +19,7 @@ import { LikesProvider } from '../contexts/LikesContext';
 import { ReactionsProvider } from '../contexts/ReactionsContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
+import UpdateAvailableBanner from '../components/UpdateAvailableBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
@@ -224,6 +225,7 @@ function RootLayoutNav() {
         isDetailPage={isDetailPage}
         hideLogo={hideLogo}
       />
+      {!hideLogo && !isDetailPage && <UpdateAvailableBanner />}
       {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
       <Stack
         screenOptions={{
