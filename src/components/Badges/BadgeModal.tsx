@@ -71,9 +71,9 @@ export const BadgeModal: React.FC<BadgeModalProps> = ({
 
                         <Text style={styles.description}>{badge.description}</Text>
 
-                        <View style={styles.detailsContainer}>
-                            {/* Show progress bar if it's a numeric badge (has threshold) */}
-                            {badge.threshold && currentProgress !== undefined && (
+                        {/* Show progress bar if it's a numeric badge (has threshold) */}
+                        {badge.threshold && currentProgress !== undefined && (
+                            <View style={styles.detailsContainer}>
                                 <View style={styles.progressContainer}>
                                     <View style={styles.progressBarBg}>
                                         <View
@@ -83,12 +83,12 @@ export const BadgeModal: React.FC<BadgeModalProps> = ({
                                             ]}
                                         />
                                         <Text style={styles.progressTextInside}>
-                                            {currentProgress} / {badge.threshold}
+                                            {currentProgress <= badge.threshold ? currentProgress : badge.threshold} / {badge.threshold}
                                         </Text>
                                     </View>
                                 </View>
-                            )}
-                        </View>
+                            </View>
+                        )}
                     </View>
                 </TouchableOpacity>
             </TouchableOpacity>
