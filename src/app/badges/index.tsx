@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
-import { Badge, UserBadge } from '../../types/badges';
+import { Badge } from '../../types/badges';
 import { BadgeIcon } from '../../components/Badges/BadgeIcon';
 import { BadgeModal } from '../../components/Badges/BadgeModal';
 import { colors } from '../../constants/Colors';
@@ -52,7 +53,7 @@ export default function BadgesScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container}>
+            <SafeAreaView style={styles.container} edges={['bottom']}>
                 <Stack.Screen options={{ headerShown: false }} />
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -83,7 +84,7 @@ export default function BadgesScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['bottom']}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <View style={styles.header}>
@@ -135,7 +136,6 @@ export default function BadgesScreen() {
                 onClose={() => setSelectedBadge(null)}
                 badge={selectedBadge}
                 unlocked={selectedBadge?.unlocked || false}
-                earnedDate={selectedBadge?.earnedDate}
                 currentProgress={selectedBadge?.currentProgress}
             />
         </SafeAreaView>
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
         rowGap: 16,
     },
     gridItem: {
-        width: '30%', // roughly 3 columns. Adjust based on screen width/padding
+        width: '30%',
         alignItems: 'center',
         marginBottom: 0,
     },

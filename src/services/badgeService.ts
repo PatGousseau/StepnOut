@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Badge, UserBadge, UserStats } from '../types/badges';
 import { BADGES } from '../constants/badges';
 import { UserProfile } from '../models/User';
+import { Challenge } from '../types';
 
 export const BadgeService = {
     /**
@@ -10,14 +11,11 @@ export const BadgeService = {
     async getUserStats(userId: string): Promise<UserStats> {
         const stats: UserStats = {
             postsCount: 0,
-            commentsCount: 0,
-            likesReceivedCount: 0,
+            challengesCount: 0,
+            commentsGivenCount: 0,
             likesGivenCount: 0,
             streakCurrent: 0,
-            streakLongest: 0,
-            profileCompleted: false,
             firstChallengeCompleted: false,
-            commentsReceivedCount: 0,
             reactionsReceivedCount: 0,
         };
 
@@ -26,7 +24,8 @@ export const BadgeService = {
             const { count: postsCount, error: postsError } = await supabase
                 .from('post')
                 .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId);
+                .eq('user_id', userId)
+                .neq('body', '');
 
             if (!postsError) stats.postsCount = postsCount || 0;
 
@@ -36,7 +35,7 @@ export const BadgeService = {
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', userId);
 
-            if (!commentsError) stats.commentsCount = commentsCount || 0;
+            if (!commentsError) stats.commentsGivenCount = commentsCount || 0;
 
             // 3. Likes Given Count
             const { count: likesGivenCount, error: likesGivenError } = await supabase
@@ -46,6 +45,8 @@ export const BadgeService = {
 
             if (!likesGivenError) stats.likesGivenCount = likesGivenCount || 0;
 
+            /*
+            TODO this may not scalate well
             // 4. Activity received (Likes + Comments on user's posts)
             // This is a bit more complex. best way without a new table is to get user's post IDs first.
             // For scalability, we might just fetch the last 100 posts or similar, but for now let's try to get aggregate if possible.
@@ -58,10 +59,10 @@ export const BadgeService = {
             const { data: postsData } = await supabase
                 .from('post')
                 .select(`
-          id,
-          likes:likes(count),
-          comments:comments(count)
-        `)
+                    id,
+                    likes:likes(count),
+                    comments:comments(count)
+                `)
                 .eq('user_id', userId)
                 .limit(100); // Limit to avoid performance hit
 
@@ -89,10 +90,9 @@ export const BadgeService = {
                 stats.commentsReceivedCount = totalCommentsReceived;
                 stats.reactionsReceivedCount = totalLikes + totalCommentsReceived;
             }
+            */
 
-            // 5. Streaks 
-            // We can reuse the WeekData logic if we had access to it, or fetch challenges.
-            // For now, let's fetch completed challenges count.
+            // 5. Challenges
             const { count: challengesCompletedCount } = await supabase
                 .from('post')
                 .select('*', { count: 'exact', head: true })
@@ -101,11 +101,47 @@ export const BadgeService = {
 
             if (challengesCompletedCount && challengesCompletedCount > 0) {
                 stats.firstChallengeCompleted = true;
+                stats.challengesCount = challengesCompletedCount;
             }
 
-            // Streak calculation would ideally come from the same logic as UserProgress.
-            // For this MVP, we might Mock streak or check `UserProgress` hook reuse in the component.
-            // We will leave streak at 0 here and allow it to be passed in or calculated if passed from the hook.
+            // Streak calculation
+            // 1. Get active challenge
+            const { data: activeChallenge, error: activeChallengeError } = await supabase
+                .from('challenges')
+                .select('*')
+                .eq('is_active', true)
+                .single();
+
+            if (activeChallengeError) throw activeChallengeError;
+            if (!activeChallenge) throw new Error('No active challenge found');
+
+            // 2. Get previous challenges (enough to compute max streak)
+            const { data: previousChallenges, error: prevError } = await supabase
+                .from('challenges')
+                .select('*')
+                .lt('created_at', activeChallenge.created_at)
+                .order('created_at', { ascending: false })
+                .limit(5); // currently 5 is enough as the best bade is 4 weeks
+
+            if (prevError) throw prevError;
+
+            // 3. Build full ordered list (active first)
+            const orderedChallenges = [activeChallenge, ...previousChallenges];
+
+            const challengeIds = orderedChallenges.map(c => c.id);
+
+            // 4. Get user completions
+            const { data: userPosts, error: postsChallengeError } = await supabase
+                .from('post')
+                .select('challenge_id')
+                .eq('user_id', userId)
+                .in('challenge_id', challengeIds);
+
+            if (postsChallengeError) throw postsChallengeError;
+
+            const completedSet = new Set(userPosts.map(p => p.challenge_id));
+            stats.streakCurrent = this.computeStreak(completedSet, activeChallenge, orderedChallenges);
+            console.log(stats);
 
         } catch (error) {
             console.error('Error fetching user stats for badges:', error);
@@ -114,19 +150,34 @@ export const BadgeService = {
         return stats;
     },
 
+    computeStreak(completedSet: Set<number>, activeChallenge: Challenge, orderedChallenges: Challenge[]): number {
+        const isActiveCompleted = completedSet.has(activeChallenge.id);
+
+        let streak = 0;
+
+        for (let i = 0; i < orderedChallenges.length; i++) {
+            const challenge = orderedChallenges[i];
+
+            // If active and NOT completed -> skip it
+            if (i === 0 && !isActiveCompleted) {
+                continue;
+            }
+
+            if (completedSet.has(challenge.id)) {
+                streak++;
+            } else {
+                break; // streak broken
+            }
+        }
+
+        return streak;
+    },
+
     /**
      * Calculates which badges are unlocked based on stats and profile data.
      */
     calculateBadges(stats: UserStats, userProfile: UserProfile): UserBadge[] {
         const earnedBadges: UserBadge[] = [];
-
-        // Check availability of profile data
-        const isProfileComplete = !!(
-            userProfile.name &&
-            userProfile.username &&
-            userProfile.profileImageUrl &&
-            userProfile.instagram
-        );
 
         // --- Onboarding ---
         if (stats.firstChallengeCompleted) {
@@ -137,18 +188,25 @@ export const BadgeService = {
             earnedBadges.push(this.createBadgeEntry('documenter'));
         }
 
-        if (stats.commentsCount > 0) {
+        if (stats.commentsGivenCount > 0) {
             earnedBadges.push(this.createBadgeEntry('icebreaker'));
         }
 
+        // Check availability of profile data
+        const isProfileComplete = !!(
+            userProfile.name &&
+            userProfile.username &&
+            userProfile.profileImageUrl &&
+            userProfile.instagram
+        );
         if (isProfileComplete) {
             earnedBadges.push(this.createBadgeEntry('open_book'));
         }
 
         // --- Consistency ---
         // If we had streak data:
-        if (stats.streakCurrent >= 15) earnedBadges.push(this.createBadgeEntry('streak_15'));
-        if (stats.streakCurrent >= 30) earnedBadges.push(this.createBadgeEntry('streak_30'));
+        if (stats.streakCurrent >= 2) earnedBadges.push(this.createBadgeEntry('streak_2'));
+        if (stats.streakCurrent >= 4) earnedBadges.push(this.createBadgeEntry('streak_4'));
 
         // --- Community (Multi-level) ---
         // Storyteller (Posts)
@@ -157,8 +215,8 @@ export const BadgeService = {
         // Supporter (Likes Given)
         this.checkLevelBadge(earnedBadges, stats.likesGivenCount, 'supporter');
 
-        // Influencer (Reactions Received)
-        this.checkLevelBadge(earnedBadges, stats.reactionsReceivedCount, 'influencer');
+        // Conversationalist (Comments Given)
+        this.checkLevelBadge(earnedBadges, stats.commentsGivenCount, 'conversationalist');
 
         return earnedBadges;
     },
@@ -166,6 +224,7 @@ export const BadgeService = {
     checkLevelBadge(earnedBadges: UserBadge[], value: number, baseId: string) {
         // Find all badges with this baseId (e.g. storyteller_bronze, storyteller_silver...)
         const relatedBadges = BADGES.filter(b => b.id.startsWith(baseId + '_'));
+        console.log(relatedBadges);
 
         // Sort by threshold desc to find highest unlocked
         relatedBadges.sort((a, b) => (b.threshold || 0) - (a.threshold || 0));
@@ -174,27 +233,23 @@ export const BadgeService = {
             if (badge.threshold && value >= badge.threshold) {
                 earnedBadges.push({
                     badgeId: badge.id,
-                    unlockedAt: new Date().toISOString(), // In a real app we'd store this date
                     progress: value
                 });
-                // If we want to show only highest level: break; 
-                // If we want to show all achieved levels: continue;
-                // Usually showing all is fine, or UI filters it. Let's return all achieved.
             }
         }
+        console.log(earnedBadges);
     },
 
     createBadgeEntry(id: string): UserBadge {
         return {
             badgeId: id,
-            unlockedAt: new Date().toISOString()
         };
     },
 
     /**
      * Returns metadata for all badges (locked and unlocked) merged with user progress
      */
-    getAllBadgesWithStatus(stats: UserStats, earnedBadges: UserBadge[]): (Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number })[] {
+    getAllBadgesWithStatus(stats: UserStats, earnedBadges: UserBadge[]): (Badge & { unlocked: boolean, currentProgress?: number })[] {
         const earnedMap = new Map(earnedBadges.map(b => [b.badgeId, b]));
 
         return BADGES.map(badge => {
@@ -205,14 +260,13 @@ export const BadgeService = {
             if (currentProgress === undefined && badge.threshold) {
                 if (badge.id.startsWith('storyteller')) currentProgress = stats.postsCount;
                 else if (badge.id.startsWith('supporter')) currentProgress = stats.likesGivenCount;
-                else if (badge.id.startsWith('influencer')) currentProgress = stats.reactionsReceivedCount;
+                else if (badge.id.startsWith('conversationalist')) currentProgress = stats.commentsGivenCount;
                 else if (badge.id.startsWith('streak')) currentProgress = stats.streakCurrent;
             }
 
             return {
                 ...badge,
                 unlocked: !!earned,
-                earnedDate: earned?.unlockedAt,
                 currentProgress: currentProgress
             };
         });

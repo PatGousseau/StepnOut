@@ -4,13 +4,13 @@ import { BadgeIcon } from './BadgeIcon';
 import { Badge } from '../../types/badges';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/Colors';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BadgeModalProps {
     visible: boolean;
     onClose: () => void;
     badge: Badge | null;
     unlocked: boolean;
-    earnedDate?: string;
     currentProgress?: number;
 }
 
@@ -19,9 +19,9 @@ export const BadgeModal: React.FC<BadgeModalProps> = ({
     onClose,
     badge,
     unlocked,
-    earnedDate,
     currentProgress
 }) => {
+    const { t } = useLanguage();
     if (!badge) return null;
 
     return (
@@ -65,11 +65,15 @@ export const BadgeModal: React.FC<BadgeModalProps> = ({
                                 color={unlocked ? "#4CAF50" : "#666"}
                             />
                             <Text style={[styles.statusText, { color: unlocked ? "#4CAF50" : "#666" }]}>
-                                {unlocked ? "Obtained" : "Locked"}
+                                {unlocked ? t('Obtained') : t('Locked')}
                             </Text>
                         </View>
 
-                        <Text style={styles.description}>{badge.description}</Text>
+                        <Text style={styles.description}>
+                            {badge.threshold !== undefined
+                                ? t(badge.description, { threshold: badge.threshold })
+                                : t(badge.description)}
+                        </Text>
 
                         {/* Show progress bar if it's a numeric badge (has threshold) */}
                         {badge.threshold && currentProgress !== undefined && (

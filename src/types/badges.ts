@@ -17,21 +17,20 @@ export interface Badge {
 
 export interface UserBadge {
     badgeId: string;
-    unlockedAt: string; // ISO date string
     progress?: number; // Current progress value (e.g., 5/10 likes)
 }
 
 // Stats needed to calculate badges
 export interface UserStats {
     postsCount: number;
-    commentsCount: number;
-    likesReceivedCount: number;
-    likesGivenCount: number; // We might need to fetch this
+    challengesCount: number;
+    commentsGivenCount: number;
+    // commentsReceivedCount: number;
+    likesGivenCount: number;
+    // likesReceivedCount: number;
     streakCurrent: number;
-    streakLongest: number;
-    profileCompleted: boolean; // Based on name, bio, image, etc.
+    // streakLongest: number;
     firstChallengeCompleted: boolean;
     daysSinceLastActivity?: number;
-    commentsReceivedCount: number;
     reactionsReceivedCount: number;
 }
