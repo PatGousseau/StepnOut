@@ -13,6 +13,7 @@ StepnOut is a React Native mobile app (iOS and Android) that helps users step ou
 npx expo start           # Start dev server
 npx expo run:ios         # Run on iOS simulator
 npx expo run:android     # Run on Android emulator
+npx expo start --web     # Run web build
 
 # Testing & Linting
 npm test                 # Run Jest tests (watch mode)
@@ -23,6 +24,20 @@ npm run lint:fix         # Auto-fix lint issues
 eas build --profile development  # Dev build
 eas build --profile preview      # Preview/internal build
 eas build --profile production   # Production build
+
+# Local Supabase
+npm run db:start         # Start local Supabase
+npm run db:stop          # Stop local Supabase
+npm run db:reset         # Reset DB and re-seed storage
+npm run db:new           # Create a migration
+npm run db:up            # Apply pending migrations locally
+npm run db:diff          # Generate diff migration
+npm run db:push          # Push migrations to production (careful!)
+
+# OTA Updates
+npm run update:dev        # EAS update for development branch
+npm run update:preview    # EAS update for preview branch
+npm run update:production # EAS update for production branch
 ```
 
 ## Architecture
@@ -125,3 +140,8 @@ supabase db pull                 # Pull remote schema changes
 
 ### Local Dashboard
 When running locally, access Supabase Studio at: http://127.0.0.1:54323
+
+## Testing Notes
+
+- Jest is configured with `jest-expo`, but there are currently no `*.test.*` files checked in.
+- Load testing uses k6 scripts in `tests/k6/` (e.g., `k6 run tests/k6/fetchHomeData.js`).
