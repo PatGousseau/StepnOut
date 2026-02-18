@@ -84,15 +84,6 @@ npx expo run:ios
 npx expo run:android
 ```
 
-### Environment variables
-
-Set these in your `.env` (or via EAS secrets):
-
-- `EXPO_PUBLIC_SUPABASE_URL`
-- `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- (optional) `EXPO_PUBLIC_POSTHOG_API_KEY`, `EXPO_PUBLIC_POSTHOG_HOST`, `EXPO_PUBLIC_POSTHOG_DISABLED`
-- (optional) `EXPO_PUBLIC_BUY_ME_A_COFFEE_URL`
-
 
 ## 🌐 Connect With Us
 

@@ -35,7 +35,6 @@ export const translations = {
   Save: "Salva",
   "Edit profile": "Modifica Profilo",
   "Buy me a coffee": "Offrimi un caffè",
-  "Support link not configured": "Link di supporto non configurato",
   "Sign out": "Esci",
   "Your Posts": "I tuoi Post",
   Posts: "Post",
