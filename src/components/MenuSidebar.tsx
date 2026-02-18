@@ -22,7 +22,7 @@ interface MenuSidebarProps {
   enableSwiping?: boolean; // Add new prop
 }
 
-const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.5;
+const SIDEBAR_WIDTH = Dimensions.get('window').width * 0.65;
 const HANDLE_WIDTH = 10;
 
 const MenuSidebar: React.FC<MenuSidebarProps> = ({
@@ -231,16 +231,18 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({
                   </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.coffeeItem}
-                  onPress={handleCoffeePress}
-                >
+              </SafeAreaView>
+              <View style={styles.coffeeSection}>
+                <Text style={styles.coffeeText}>
+                  {t('StepnOut is built by independent developers with no ads or monetization. Your support helps us keep the app running!')}
+                </Text>
+                <TouchableOpacity onPress={handleCoffeePress}>
                   <Image
                     source={{ uri: 'https://cdn.buymeacoffee.com/buttons/v2/default-blue.png' }}
                     style={styles.coffeeButton}
                   />
                 </TouchableOpacity>
-              </SafeAreaView>
+              </View>
             </View>
           </View>
         </Animated.View>
@@ -329,10 +331,19 @@ const styles = StyleSheet.create({
     height: '100%',
     width: SIDEBAR_WIDTH,
   },
-  coffeeItem: {
+  coffeeSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    position: 'absolute',
+    bottom: 40,
     width: '100%',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  coffeeText: {
+    color: colors.light.primary,
+    fontSize: 12,
+    lineHeight: 16,
+    opacity: 0.7,
   },
   coffeeButton: {
     height: 40,

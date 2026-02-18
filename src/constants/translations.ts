@@ -34,6 +34,7 @@ export const translations = {
   "Add a bio": "Aggiungi una bio",
   Save: "Salva",
   "Edit profile": "Modifica Profilo",
+  "StepnOut is built by independent developers with no ads or monetization. Your support helps us keep the app running!": "StepnOut è creato da sviluppatori indipendenti, senza pubblicità né monetizzazione. Il tuo supporto ci aiuta a mantenere l'app attiva!",
   "Sign out": "Esci",
   "Your Posts": "I tuoi Post",
   Posts: "Post",
