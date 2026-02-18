@@ -491,7 +491,7 @@ export const postService = {
     if (isChallenge) {
       query = query.not("challenge_id", "is", null);
     } else {
-      query = query.is("challenge_id", null);
+      query = query.is("challenge_id", null).eq("is_welcome", false);
     }
 
     query = applyBlockedFilter(query, blockedUserIds);
@@ -503,8 +503,34 @@ export const postService = {
     if (error) throw error;
 
     const rows = (data ?? []) as PostData[];
-    const posts = rows.map((p) => processPost(p, isChallenge));
 
+    // For discussions, fetch welcome posts within the same time range and merge them in
+    if (!isChallenge && rows.length > 0) {
+      const newest = rows[0].created_at;
+      const oldest = rows[rows.length - 1].created_at;
+
+      let welcomeQuery = supabase
+        .from("post")
+        .select(select)
+        .is("challenge_id", null)
+        .eq("is_welcome", true)
+        .not("media.upload_status", "in", '("failed","pending")')
+        .lte("created_at", newest)
+        .gte("created_at", oldest);
+      welcomeQuery = applyBlockedFilter(welcomeQuery, blockedUserIds);
+
+      const { data: welcomeData, error: welcomeError } = await welcomeQuery;
+      if (welcomeError) throw welcomeError;
+
+      const merged = [...rows, ...(welcomeData ?? []) as PostData[]].sort((a, b) =>
+        a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0
+      );
+
+      const posts = merged.map((p) => processPost(p, false));
+      return { posts: posts as Post[], hasMore: rows.length === postsPerPage };
+    }
+
+    const posts = rows.map((p) => processPost(p, isChallenge));
     return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
   },
 

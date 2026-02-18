@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { AnimatedSendButton } from "./AnimatedSendButton";
+import CommentPreviewRow from "./CommentPreviewRow";
 import { CommentsModal } from "./Comments";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
@@ -464,6 +465,39 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
             </Text>
           </View>
+          {post.comfort_zone_rating != null && (
+            <View style={comfortRatingStyle}>
+              <Text style={comfortRatingLabelStyle}>
+                {t(discomfortLabels[post.comfort_zone_rating] ?? "Chill")}
+              </Text>
+              <View style={miniSliderRow}>
+                <View style={miniSliderTrack}>
+                  <View
+                    style={[
+                      miniSliderFill,
+                      { width: `${((post.comfort_zone_rating - 1) / 4) * 100}%` },
+                    ]}
+                  />
+                </View>
+                <View style={miniSliderTickContainer}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <View
+                      key={i}
+                      style={[
+                        miniSliderTick,
+                        {
+                          backgroundColor:
+                            i <= post.comfort_zone_rating!
+                              ? colors.light.accent
+                              : colors.neutral.grey2,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
         </TouchableOpacity>
       )}
       {post.body && !post.media?.file_path ? (
@@ -561,16 +595,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             {localPreviews.map((preview, index) => {
               const isLast = index === localPreviews.length - 1 && commentCount <= localPreviews.length;
               return (
-                <View key={index} style={commentRowStyle}>
-                  <View style={[commentTrunkStyle, isLast && commentTrunkLastStyle]} />
-                  <View style={commentConnectorStyle} />
-                  <Text style={[commentPreviewTextStyle, { flex: 1 }]} numberOfLines={1}>
-                    <Text style={commentPreviewUsernameStyle}>@{preview.username}:</Text>
-                    {"  "}{preview.replyToUsername && (
-                      <Text style={commentPreviewBodyStyle}>@{preview.replyToUsername} </Text>
-                    )}<Text style={commentPreviewBodyStyle}>{preview.text}</Text>
-                  </Text>
-                </View>
+                <CommentPreviewRow
+                  key={index}
+                  username={preview.username}
+                  text={preview.text}
+                  replyToUsername={preview.replyToUsername}
+                  isLast={isLast}
+                />
               );
             })}
             {commentCount > localPreviews.length && (
@@ -676,6 +707,14 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   );
 };
 
+const discomfortLabels: Record<number, string> = {
+  1: "Chill",
+  2: "Uneasy",
+  3: "Nervous",
+  4: "Scary",
+  5: "Way out there",
+};
+
 const challengeBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
   backgroundColor: colors.light.accent2,
@@ -688,6 +727,59 @@ const challengeBoxStyle: ViewStyle = {
   paddingVertical: 4,
   width: "100%",
 };
+
+const comfortRatingStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  gap: 8,
+  marginBottom: 4,
+  marginTop: 4,
+};
+
+const comfortRatingLabelStyle: TextStyle = {
+  color: colors.light.accent,
+  fontSize: 13,
+  fontWeight: "600",
+  width: 90,
+};
+
+const miniSliderRow: ViewStyle = {
+  flex: 1,
+  height: 8,
+  justifyContent: "center",
+};
+
+const miniSliderTrack: ViewStyle = {
+  backgroundColor: colors.neutral.grey2,
+  borderRadius: 2,
+  height: 3,
+  width: "100%",
+};
+
+const miniSliderTickContainer: ViewStyle = {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  left: 0,
+  position: "absolute",
+  right: 0,
+};
+
+const miniSliderTick: ViewStyle = {
+  borderRadius: 1,
+  height: 6,
+  width: 2,
+};
+
+const miniSliderFill: ViewStyle = {
+  backgroundColor: colors.light.accent,
+  borderRadius: 2,
+  height: 3,
+  left: 0,
+  position: "absolute",
+  top: 0,
+};
+
+
 
 const challengeContainerStyle: ViewStyle = {
   // backgroundColor: '#ffeecc',
@@ -747,20 +839,6 @@ const commentConnectorStyle: ViewStyle = {
   marginRight: 8,
 };
 
-const commentPreviewTextStyle: TextStyle = {
-  color: colors.light.lightText,
-  fontSize: 12,
-  lineHeight: 16,
-};
-
-const commentPreviewUsernameStyle: TextStyle = {
-  fontWeight: "600",
-  color: colors.light.text,
-};
-
-const commentPreviewBodyStyle: TextStyle = {
-  color: colors.neutral.darkGrey,
-};
 
 const viewAllCommentsStyle: TextStyle = {
   color: colors.neutral.grey1,

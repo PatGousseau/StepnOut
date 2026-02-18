@@ -6,7 +6,7 @@ import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { ReactionSummary } from "../types";
 
-const EMOJIS = ["😂", "😭", "🫶", "🔝", "💯", "🥺", "🤗", "🫠", "😢"];
+const EMOJIS = ["😂", "😭", "🔝", "🥺", "🤗", "🫠"];
 
 interface ReactionsBarProps {
   reactions: ReactionSummary[];
@@ -27,6 +27,8 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
   const buttonRef = useRef<View>(null);
 
+  const reactedEmojis = new Set(reactions.filter((r) => r.reacted).map((r) => r.emoji));
+
   const handleOpen = () => {
     buttonRef.current?.measureInWindow((x, y) => {
       setPopoverPos({ x, y });
@@ -38,6 +40,26 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     onToggle(emoji);
     setOpen(false);
   };
+
+  const getReactionPillStyle = (reacted: boolean): ViewStyle => ({
+    ...pillStyle,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: reacted ? colors.light.primary : colors.neutral.grey2,
+    ...(reacted ? { backgroundColor: colors.light.accent2 } : {}),
+  });
+
+  const getCountStyle = (reacted: boolean): TextStyle => ({
+    ...countStyle,
+    ...(reacted ? { color: colors.light.primary, fontWeight: "700" } : {}),
+  });
+
+  const getEmojiOptionStyle = (reacted: boolean): ViewStyle => ({
+    ...emojiOptionStyle,
+    ...(reacted ? { backgroundColor: colors.light.accent2 } : {}),
+  });
 
   return (
     <View style={containerStyle}>
@@ -54,10 +76,10 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
         <TouchableOpacity
           key={r.emoji}
           onPress={() => onToggle(r.emoji)}
-          style={pillStyle}
+          style={getReactionPillStyle(r.reacted)}
         >
           <Text style={emojiStyle}>{r.emoji}</Text>
-          <Text style={countStyle}>{r.count}</Text>
+          <Text style={getCountStyle(r.reacted)}>{r.count}</Text>
         </TouchableOpacity>
       ))}
 
@@ -77,7 +99,11 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
             ]}
           >
             {EMOJIS.map((e) => (
-              <TouchableOpacity key={e} onPress={() => selectEmoji(e)} style={emojiOptionStyle}>
+              <TouchableOpacity
+                key={e}
+                onPress={() => selectEmoji(e)}
+                style={getEmojiOptionStyle(reactedEmojis.has(e))}
+              >
                 <Text style={emojiOptionText}>{e}</Text>
               </TouchableOpacity>
             ))}
@@ -146,6 +172,7 @@ const popoverStyle: ViewStyle = {
 
 const emojiOptionStyle: ViewStyle = {
   padding: 4,
+  borderRadius: 999,
 };
 
 const emojiOptionText: TextStyle = {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { isInstagramUsernameValidProfile } from "../utils/validation";
 import {
   View,
@@ -14,8 +14,11 @@ import {
   Linking,
 } from "react-native";
 import UserProgress from "./UserProgress";
+import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
 import useUserProgress from "../hooks/useUserProgress";
+import { useProfileActivity } from "../hooks/useProfileActivity";
+import { router } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
 import Icon from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -35,25 +38,28 @@ import { captureEvent, setUserProperties } from "../lib/posthog";
 import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 
 type ProfilePageProps = {
-  userId: string;
+  userId?: string;
 };
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
   const queryClient = useQueryClient();
-  const { initializePostLikes } = useLikes();
-  const { initializePostReactions } = useReactions();
+  const { initializePostLikes, initializeCommentLikes } = useLikes();
+  const { initializePostReactions, initializeCommentReactions } = useReactions();
+
+  const targetUserId = userId || user?.id || "";
+  const isOwnProfile = !userId || userId === user?.id;
+
+  const { data, loading: progressLoading, error } = useUserProgress(targetUserId);
   const {
-    data,
-    loading: progressLoading,
-    error,
-    userPosts,
-    postsLoading,
-    hasMorePosts,
-    fetchUserPosts,
-  } = useUserProgress(userId);
-  const [page, setPage] = useState(1);
+    activityItems,
+    loading: activityLoading,
+    hasMore: hasMoreActivity,
+    fetchNextPage,
+    refresh: refreshActivity,
+  } = useProfileActivity(targetUserId);
+  const [activityFilter, setActivityFilter] = useState<"all" | "post" | "comment">("all");
   const [refreshing, setRefreshing] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -61,14 +67,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [editedName, setEditedName] = useState("");
   const [editedUsername, setEditedUsername] = useState("");
   const [editedInstagram, setEditedInstagram] = useState("");
+  const [editedBio, setEditedBio] = useState("");
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
 
-  // for features that are only available to the user themselves
-  const isOwnProfile = userId ? userId === user?.id : true;
-
-  // Get target user ID (from prop or current user)
-  const targetUserId = userId || user?.id;
 
   // Use React Query to fetch profile data
   const {
@@ -90,15 +92,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setPage(1);
-    await Promise.all([refetchProfile(), fetchUserPosts(1)]);
+    await Promise.all([refetchProfile(), refreshActivity()]);
     setRefreshing(false);
-  }, [fetchUserPosts, refetchProfile]);
+  }, [refetchProfile, refreshActivity]);
 
   const handleUpdateProfilePicture = async () => {
     try {
+      if (!user?.id) {
+        Alert.alert(t("Error"), t("User not authenticated"));
+        return;
+      }
+
       setImageUploading(true);
-      const result = await profileService.updateProfilePicture(user?.id!);
+      if (!user?.id) return;
+      const result = await profileService.updateProfilePicture(user.id);
 
       if (result.success) {
         // Optimistically update with preview URL if available
@@ -151,10 +158,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         }
       }
 
-      const result = await profileService.validateAndUpdateProfile(user?.id!, {
+      if (!user?.id) return;
+
+      const result = await profileService.validateAndUpdateProfile(user.id, {
         instagram: editedInstagram !== userProfile?.instagram ? editedInstagram : undefined,
         username: editedUsername !== userProfile?.username ? editedUsername : undefined,
         name: editedName !== userProfile?.name ? editedName : undefined,
+        bio: editedBio !== (userProfile?.bio || "") ? editedBio : undefined,
       });
 
       if (result.success) {
@@ -167,6 +177,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           changed_name: editedName !== userProfile?.name,
           changed_username: editedUsername !== userProfile?.username,
           changed_instagram: editedInstagram !== userProfile?.instagram,
+          changed_bio: editedBio !== (userProfile?.bio || ""),
         });
         // Update user properties if instagram was changed
         if (editedInstagram !== userProfile?.instagram) {
@@ -183,11 +194,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   };
 
   const handleLoadMore = () => {
-    if (!postsLoading && hasMorePosts) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchUserPosts(nextPage, true);
-    }
+    if (activityLoading || !hasMoreActivity) return;
+    fetchNextPage();
   };
 
   const handleSignOut = async () => {
@@ -200,7 +208,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
   const handleDeleteAccount = async () => {
     try {
-      const result = await profileService.confirmAndDeleteAccount(user?.id!, t);
+      if (!user?.id) return;
+      const result = await profileService.confirmAndDeleteAccount(user.id, t);
       if (result.success) {
         captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
         await signOut();
@@ -247,16 +256,41 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     }
   }, [userProfile, targetUserId, isOwnProfile]);
 
+  const filteredActivityItems = useMemo(() => {
+    if (activityFilter === "all") return activityItems;
+    return activityItems.filter((item) => item.type === activityFilter);
+  }, [activityItems, activityFilter]);
+
+  const postsInFeed = useMemo(() => {
+    return activityItems
+      .filter((item) => item.type === "post")
+      .map((item) => item.post);
+  }, [activityItems]);
+
+  const commentsInFeed = useMemo(() => {
+    return activityItems
+      .filter((item) => item.type === "comment")
+      .map((item) => item.comment);
+  }, [activityItems]);
+
   useEffect(() => {
-    if (userPosts.length > 0) {
-      initializePostLikes(userPosts);
-      initializePostReactions(userPosts);
+    if (postsInFeed.length > 0) {
+      initializePostLikes(postsInFeed);
+      initializePostReactions(postsInFeed);
     }
-  }, [userPosts]);
+  }, [postsInFeed]);
+
+  useEffect(() => {
+    if (commentsInFeed.length > 0) {
+      initializeCommentLikes(commentsInFeed);
+      initializeCommentReactions(commentsInFeed);
+    }
+  }, [commentsInFeed]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
   }
+
 
   if (error || profileError) {
     return (
@@ -312,6 +346,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
+
             <View style={styles.userInfo}>
               {isEditing ? (
                 <View style={styles.editContainer}>
@@ -347,12 +382,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                         style={[styles.editInput, styles.usernameInput]}
                         placeholder={t("Username")}
                         value={editedInstagram}
-                        //onChangeText={setEditedInstagram}
                         onChangeText={(text) => setEditedInstagram(text.replace(/[@\s]+/g, ''))}
                         autoCapitalize="none"
                         keyboardType="default"
                       />
                     </View>
+
+                    <Text style={styles.editLabel}>{t("Bio")}</Text>
+                    <TextInput
+                      style={styles.bioInput}
+                      value={editedBio}
+                      onChangeText={setEditedBio}
+                      placeholder={t("Add a bio")}
+                      maxLength={160}
+                      multiline
+                      textAlignVertical="top"
+                    />
                   </View>
                   <View style={styles.editButtonsContainer}>
                     <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
@@ -394,6 +439,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               )}
             </View>
           </View>
+
           <View style={styles.headerButtons}>
             {isOwnProfile && (
               <ProfileActions
@@ -402,6 +448,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                   setEditedName(userProfile?.name || "");
                   setEditedUsername(userProfile?.username || "");
                   setEditedInstagram(userProfile?.instagram || "");
+                  setEditedBio(userProfile?.bio || "");
                 }}
                 onSignOut={handleSignOut}
                 onDeleteAccount={handleDeleteAccount}
@@ -411,22 +458,69 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
             )}
           </View>
         </View>
+
+        {!!userProfile?.bio && !isEditing && (
+          <View style={styles.bioSection}>
+            <Text style={styles.bioText}>{userProfile.bio}</Text>
+          </View>
+        )}
+
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-        <Text style={styles.pastChallengesTitle}>
-          {isOwnProfile ? t("Your Posts") : t("Posts")}
-        </Text>
-        {userPosts.map((post) => (
-          <Post
-            key={post.id}
-            post={post} // Pass the entire post object
-            postUser={userProfile}
-            setPostCounts={() => { }}
-            onPostDeleted={() => { }}
-          />
-        ))}
-        {postsLoading && (
+        <View style={styles.filterRow}>
+          {(["all", "post", "comment"] as const).map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
+              onPress={() => setActivityFilter(filter)}
+            >
+              <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
+                {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {filteredActivityItems.map((item) => {
+          if (item.type === "post") {
+            return (
+              <Post
+                key={`post-${item.post.id}`}
+                post={item.post}
+                postUser={userProfile}
+                setPostCounts={() => {}}
+                onPostDeleted={() => {}}
+              />
+            );
+          }
+
+          return (
+            <TouchableOpacity
+              key={`comment-${item.comment.id}`}
+              style={styles.commentCard}
+              onPress={() => {
+                if (!item.comment.post) {
+                  Alert.alert(t("Post not found"), t("This post may have been deleted."));
+                  return;
+                }
+                router.push(`/post/${item.comment.post_id}`);
+              }}
+            >
+              <Text style={styles.commentPostContextText} numberOfLines={2}>
+                {item.comment.post
+                  ? `${item.comment.post.challenge_title ? `${item.comment.post.challenge_title}: ` : ""}${item.comment.post.body || ""}`
+                  : t("Deleted post")}
+              </Text>
+              <CommentPreviewRow
+                username={userProfile.username}
+                text={item.comment.text}
+                bodyColor={colors.light.text}
+              />
+            </TouchableOpacity>
+          );
+        })}
+
+        {activityLoading && (
           <View style={{ padding: 20, alignItems: "center" }}>
             <Loader />
           </View>
@@ -547,6 +641,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: "100%",
   },
+  bioInput: {
+    backgroundColor: "#fff",
+    borderColor: colors.light.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    minHeight: 96,
+    width: "100%",
+  },
   editButtonsContainer: {
     flexDirection: "row",
     gap: 8,
@@ -566,49 +671,62 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
   },
-  menuItemContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
-  menuOptionText: {
-    color: colors.light.primary,
-    fontSize: 14,
-  },
   modalContainer: {
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.9)",
     flex: 1,
     justifyContent: "center",
   },
-  pastChallengesTitle: {
-    color: "#0D1B1E",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginVertical: 16,
+  filterRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+  },
+  filterPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: colors.neutral.grey2 + "40",
+  },
+  filterPillActive: {
+    backgroundColor: colors.light.primary,
+  },
+  filterPillText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: colors.light.lightText,
+  },
+  filterPillTextActive: {
+    color: "#fff",
+  },
+  commentCard: {
+    borderBottomColor: "#ccc",
+    borderBottomWidth: 1,
+    padding: 10,
+    paddingBottom: 16,
+    paddingLeft: 8,
+  },
+  commentPostContextText: {
+    color: colors.light.lightText,
+    fontSize: 12,
+    marginBottom: 4,
   },
   profileHeader: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   headerButtons: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
     gap: 16,
+    paddingTop: 6,
   },
   headerLeft: {
-    alignItems: "center",
+    alignItems: "flex-start",
     flexDirection: "row",
-  },
-  input: {
-    borderColor: colors.light.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
   },
   userInfo: {
     alignItems: "center",
@@ -621,6 +739,16 @@ const styles = StyleSheet.create({
   userTitle: {
     color: "#7F8C8D",
     fontSize: 16,
+  },
+  bioSection: {
+    width: "100%",
+    marginBottom: 16,
+    paddingHorizontal: 12,
+  },
+  bioText: {
+    color: "#7F8C8D",
+    fontSize: 14,
+    lineHeight: 20,
   },
   username: {
     color: "#0D1B1E",
@@ -650,18 +778,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 0,
   },
-  websiteLink: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
   websiteText: {
     color: colors.light.primary,
     fontSize: 14,
-  },
-  inputWithIcon: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   instagram: {
     flexDirection: "row",

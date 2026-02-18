@@ -48,7 +48,7 @@ export const profileService = {
 
   async updateProfile(
     userId: string,
-    updates: { username?: string; name?: string; website?: string; instagram?: string }
+    updates: { username?: string; name?: string; website?: string; instagram?: string; bio?: string }
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Check if username contains spaces
@@ -99,6 +99,14 @@ export const profileService = {
           .update({ instagram: updates.instagram })
           .eq("id", userId);
         if (instaError) throw instaError;
+      }
+
+      if (updates.bio !== undefined) {
+        const { error: bioError } = await supabase
+          .from("profiles")
+          .update({ bio: updates.bio })
+          .eq("id", userId);
+        if (bioError) throw bioError;
       }
 
       return { success: true };
@@ -188,6 +196,7 @@ export const profileService = {
       username?: string;
       name?: string;
       instagram?: string;
+      bio?: string;
     }
   ): Promise<{ success: boolean; error?: string }> {
     try {
@@ -204,6 +213,7 @@ export const profileService = {
         instagram: updates.instagram,
         username: updates.username,
         name: updates.name,
+        bio: updates.bio,
       });
     } catch (error) {
       return {
@@ -235,6 +245,7 @@ export const profileService = {
           id,
           username,
           name,
+          bio,
           created_at,
           instagram,
           profile_media:media!profiles_profile_media_id_fkey (
@@ -271,6 +282,7 @@ export const profileService = {
         id: data.id,
         username: data.username || "Unknown",
         name: data.name || "Unknown",
+        bio: data.bio || undefined,
         profileImageUrl,
         created_at: data.created_at,
         instagram: data.instagram || undefined,
