@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Linking,
   PanResponder,
+  Image,
 } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -103,6 +104,14 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({
       await Linking.openURL('mailto:pcgousseau@gmail.com');
     } catch (error) {
       console.error('Failed to open email client:', error);
+    }
+  };
+
+  const handleCoffeePress = async () => {
+    try {
+      await Linking.openURL('https://www.buymeacoffee.com/stepnout');
+    } catch (error) {
+      console.error('Failed to open Buy Me a Coffee:', error);
     }
   };
 
@@ -208,18 +217,28 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({
                   </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.menuItem}
                   onPress={handleFeedbackPress}
                 >
                   <View style={styles.menuItemContent}>
-                    <Ionicons 
-                      name="mail-outline" 
-                      size={24} 
-                      color={colors.light.primary} 
+                    <Ionicons
+                      name="mail-outline"
+                      size={24}
+                      color={colors.light.primary}
                     />
                     <Text style={styles.menuText}>{t('Contact Us')}</Text>
                   </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.coffeeItem}
+                  onPress={handleCoffeePress}
+                >
+                  <Image
+                    source={{ uri: 'https://cdn.buymeacoffee.com/buttons/v2/default-blue.png' }}
+                    style={styles.coffeeButton}
+                  />
                 </TouchableOpacity>
               </SafeAreaView>
             </View>
@@ -309,6 +328,16 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     height: '100%',
     width: SIDEBAR_WIDTH,
+  },
+  coffeeItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
+  },
+  coffeeButton: {
+    height: 40,
+    width: 150,
+    borderRadius: 8,
   },
   title: {
     alignSelf: 'flex-start',

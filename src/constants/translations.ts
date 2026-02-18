@@ -34,6 +34,7 @@ export const translations = {
   "Add a bio": "Aggiungi una bio",
   Save: "Salva",
   "Edit profile": "Modifica Profilo",
+  "Buy me a coffee": "Offrimi un caffè",
   "Sign out": "Esci",
   "Your Posts": "I tuoi Post",
   Posts: "Post",
