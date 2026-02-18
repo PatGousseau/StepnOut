@@ -150,8 +150,8 @@ export const RecentlyActiveBanner = () => {
           <View style={styles.activeDotIndicator} />
           <Text style={styles.headerText}>
             {activeTodayCount > 0
-              ? `${activeTodayCount} ${t('Recently active')}`
-              : t('Recently active')}
+              ? `${activeTodayCount} ${t('recently active')}`
+              : t('recently active')}
           </Text>
           {!isExpanded && (
             <View style={styles.smallAvatarsOuterWrapper}>

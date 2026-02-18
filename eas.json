@@ -10,19 +10,22 @@
       "env": {
         "EXPO_PUBLIC_POSTHOG_HOST": "https://eu.i.posthog.com",
         "EXPO_PUBLIC_POSTHOG_DISABLED": "true"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_POSTHOG_HOST": "https://eu.i.posthog.com"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_POSTHOG_HOST": "https://eu.i.posthog.com"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {
