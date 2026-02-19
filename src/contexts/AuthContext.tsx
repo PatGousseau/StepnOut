@@ -173,17 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nextAppState === "active"
       ) {
         // Refresh session when app returns from background
-        try {
-          const { data, error } = await supabase.auth.refreshSession();
-          if (error) throw error;
-          if (data.session) {
-            setSession(data.session);
-          } else {
-            const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-            if (refreshedSession) setSession(refreshedSession);
-          }
-        } catch (error) {
-          console.warn("[auth] refreshSession failed:", error);
+        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+        if (refreshedSession) {
+          setSession(refreshedSession);
         }
       }
       appState.current = nextAppState;

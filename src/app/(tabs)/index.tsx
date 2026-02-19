@@ -125,34 +125,15 @@ const Home = () => {
     setPostCounts(counts);
   }, [submissionPosts, discussionPosts]);
 
-  const withTimeout = useCallback(async (promise: Promise<void>, timeoutMs: number) => {
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    try {
-      await Promise.race([
-        promise,
-        new Promise<void>((_, reject) => {
-          timeoutId = setTimeout(() => {
-            reject(new Error("refresh timeout"));
-          }, timeoutMs);
-        }),
-      ]);
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-    }
-  }, []);
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await withTimeout(refetchPosts(), 15000);
+      await refetchPosts();
       setPromptRefreshKey((prev) => prev + 1);
-    } catch (error) {
-      console.warn("[Feed] Refresh failed or timed out", error);
-      queryClient.resetQueries({ queryKey: ["home-posts"] });
     } finally {
       setRefreshing(false);
     }
-  }, [refetchPosts, withTimeout, queryClient]);
+  }, [refetchPosts]);
 
   const handlePostDeleted = useCallback((postId: number) => {
     // Optimistically remove the deleted post from the cache
