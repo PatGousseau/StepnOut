@@ -28,7 +28,7 @@ export const BADGES: Badge[] = [
         name: 'Open Book',
         description: 'Fully complete your profile details',
         category: 'onboarding',
-        icon: 'person-outline',
+        icon: 'book-outline',
     },
 
     // --- Consistency ---
@@ -115,7 +115,7 @@ export const BADGES: Badge[] = [
         name: 'Conversationalist Bronze',
         description: 'Comment (threshold) times',
         category: 'community',
-        icon: 'chatbubble-outline',
+        icon: 'chatbubbles-outline',
         level: 'bronze',
         threshold: 10,
     },
@@ -124,7 +124,7 @@ export const BADGES: Badge[] = [
         name: 'Conversationalist Silver',
         description: 'Comment (threshold) times',
         category: 'community',
-        icon: 'chatbubble-outline',
+        icon: 'chatbubbles-outline',
         level: 'silver',
         threshold: 50,
     },
@@ -133,32 +133,8 @@ export const BADGES: Badge[] = [
         name: 'Conversationalist Gold',
         description: 'Comment (threshold) times',
         category: 'community',
-        icon: 'chatbubble-outline',
+        icon: 'chatbubbles-outline',
         level: 'gold',
         threshold: 100,
-    },
-
-    /*
-    // Influencer (Reactions/Comments Received)
-    {
-        id: 'influencer_bronze',
-        name: 'Influencer Bronze',
-        description: 'Receive 10 reactions/comments.',
-        category: 'community',
-        icon: 'star-outline',
-        level: 'bronze',
-        maxLevel: 'platinum',
-        threshold: 10, // Combined comments + likes received
-    },
-    {
-        id: 'influencer_silver',
-        name: 'Influencer Silver',
-        description: 'Receive 100 reactions/comments.',
-        category: 'community',
-        icon: 'star',
-        level: 'silver',
-        maxLevel: 'platinum',
-        threshold: 100,
-    },
-    */
+    }
 ];

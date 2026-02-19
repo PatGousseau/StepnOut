@@ -141,8 +141,6 @@ export const BadgeService = {
 
             const completedSet = new Set(userPosts.map(p => p.challenge_id));
             stats.streakCurrent = this.computeStreak(completedSet, activeChallenge, orderedChallenges);
-            console.log(stats);
-
         } catch (error) {
             console.error('Error fetching user stats for badges:', error);
         }
@@ -224,7 +222,6 @@ export const BadgeService = {
     checkLevelBadge(earnedBadges: UserBadge[], value: number, baseId: string) {
         // Find all badges with this baseId (e.g. storyteller_bronze, storyteller_silver...)
         const relatedBadges = BADGES.filter(b => b.id.startsWith(baseId + '_'));
-        console.log(relatedBadges);
 
         // Sort by threshold desc to find highest unlocked
         relatedBadges.sort((a, b) => (b.threshold || 0) - (a.threshold || 0));
@@ -237,7 +234,6 @@ export const BadgeService = {
                 });
             }
         }
-        console.log(earnedBadges);
     },
 
     createBadgeEntry(id: string): UserBadge {
