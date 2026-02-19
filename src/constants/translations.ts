@@ -285,5 +285,6 @@ export const translations = {
   "Like (threshold) posts": "Metti like a (threshold) post",
   "Comment (threshold) times": "Commenta (threshold) volte",
   "Locked": "Bloccato",
+  "Unlocked": "Sbloccati",
   "Obtained": "Ottenuto",
 };
