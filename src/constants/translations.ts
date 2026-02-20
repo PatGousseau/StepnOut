@@ -207,7 +207,7 @@ export const translations = {
   hi: "ciao",
   ", welcome to the StepnOut community!": ", benvenuto nella community di StepnOut!",
   Someone: "Qualcuno",
-  "recently active": "Attivi di recente",
+  "recently active": "attivi di recente",
   "Most recent": "Più recenti",
   Popular: "Popolari",
   "Mark as complete": "Segna come completato",
