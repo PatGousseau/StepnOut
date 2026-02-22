@@ -195,7 +195,8 @@ export const BadgeService = {
             userProfile.name &&
             userProfile.username &&
             userProfile.profileImageUrl &&
-            userProfile.instagram
+            userProfile.instagram &&
+            userProfile.bio
         );
         if (isProfileComplete) {
             earnedBadges.push(this.createBadgeEntry('open_book'));
