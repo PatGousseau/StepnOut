@@ -197,14 +197,16 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
       >
         <Pressable onPress={() => setUsersOpen(false)} style={usersBackdropStyle}>
           <Pressable style={usersModalStyle}>
+            <View style={usersGrabberStyle} />
             <View style={usersHeaderStyle}>
               <Text style={usersTitleStyle}>
                 {selectedEmoji === "❤️"
                   ? t("Likes")
                   : `${selectedEmoji || ""} ${t("Reactions")}`}
               </Text>
-              <TouchableOpacity onPress={() => setUsersOpen(false)}>
-                <Icon name="times" size={16} color={colors.neutral.grey1} />
+              <View style={{ width: 32 }} />
+              <TouchableOpacity onPress={() => setUsersOpen(false)} style={usersCloseButtonStyle}>
+                <Icon name="times" size={14} color={colors.light.primary} />
               </TouchableOpacity>
             </View>
 
@@ -367,28 +369,49 @@ const usersModalStyle: ViewStyle = {
   elevation: 6,
 };
 
+const usersGrabberStyle: ViewStyle = {
+  alignSelf: "center",
+  marginTop: 10,
+  marginBottom: 6,
+  width: 44,
+  height: 5,
+  borderRadius: 999,
+  backgroundColor: colors.neutral.grey2,
+};
+
 const usersHeaderStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
   paddingHorizontal: 16,
-  paddingTop: 14,
-  paddingBottom: 10,
+  paddingTop: 6,
+  paddingBottom: 12,
   borderBottomWidth: 1,
   borderBottomColor: colors.neutral.grey2,
   backgroundColor: colors.light.background,
 };
 
 const usersTitleStyle: TextStyle = {
-  fontSize: 16,
-  fontWeight: "700",
-  color: colors.light.text,
+  flex: 1,
+  textAlign: "center",
+  fontSize: 18,
+  fontWeight: "800",
+  color: colors.light.primary,
 };
 
 const usersLoadingStyle: ViewStyle = {
   padding: 16,
   alignItems: "center",
   justifyContent: "center",
+};
+
+const usersCloseButtonStyle: ViewStyle = {
+  width: 32,
+  height: 32,
+  borderRadius: 16,
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: colors.neutral.grey2,
 };
 
 const usersListStyle: ViewStyle = {
