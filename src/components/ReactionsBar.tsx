@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Dimensions,
   FlatList,
   Modal,
@@ -32,6 +31,47 @@ interface ReactionsBarProps {
   onLikeToggle: () => void;
 }
 
+const ReactionUserRowSkeleton = () => (
+  <View style={userRowStyle}>
+    <View style={userAvatarSkeletonStyle} />
+    <View style={userTextColStyle}>
+      <View style={userNameSkeletonStyle} />
+      <View style={userUsernameSkeletonStyle} />
+    </View>
+  </View>
+);
+
+const ReactionUserRow = ({
+  user,
+  onPress,
+}: {
+  user: ReactionUser;
+  onPress: () => void;
+}) => (
+  <TouchableOpacity style={userRowStyle} onPress={onPress}>
+    {user.profileImageUrl ? (
+      <Image source={{ uri: user.profileImageUrl }} style={userAvatarStyle} />
+    ) : (
+      <View style={userAvatarPlaceholderStyle}>
+        <MaterialCommunityIcons
+          name="account-circle"
+          size={38}
+          color={colors.neutral.grey1}
+        />
+      </View>
+    )}
+    <View style={userTextColStyle}>
+      <Text style={userNameStyle} numberOfLines={1}>
+        {user.name}
+      </Text>
+      <Text style={userUsernameStyle} numberOfLines={1}>
+        @{user.username}
+      </Text>
+    </View>
+    <Icon name="chevron-right" size={12} color={colors.neutral.grey1} />
+  </TouchableOpacity>
+);
+
 export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   item,
   reactions,
@@ -49,12 +89,17 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   const [usersOpen, setUsersOpen] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
-  const [reactionUsers, setReactionUsers] = useState<Record<string, ReactionUser[]>>({});
+  const [reactionUsers, setReactionUsers] = useState<
+    Record<string, ReactionUser[]>
+  >({});
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
 
   const didLongPressRef = useRef(false);
 
-  const SKELETON_ROWS = useMemo(() => Array.from({ length: 8 }, () => ({})), []);
+  const SKELETON_ROWS = useMemo(
+    () => Array.from({ length: 8 }, () => ({})),
+    [],
+  );
 
   const tabs = useMemo(() => {
     const available: string[] = [];
@@ -74,18 +119,14 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     return reactionUsers[selectedEmoji] || [];
   }, [reactionUsers, selectedEmoji]);
 
-  const getCountForEmoji = useMemo(() => {
-    const map = new Map<string, number>();
-    map.set("❤️", likeCount);
-    for (const r of reactions) {
-      map.set(r.emoji, r.count);
-    }
-    return (emoji: string) => map.get(emoji) ?? 0;
-  }, [likeCount, reactions]);
+  const getCountForEmoji = (emoji: string) => {
+    if (emoji === "❤️") return likeCount;
+    return reactions.find((r) => r.emoji === emoji)?.count ?? 0;
+  };
 
   const reactedEmojis = useMemo(
     () => new Set(reactions.filter((r) => r.reacted).map((r) => r.emoji)),
-    [reactions]
+    [reactions],
   );
 
   const usersModalHeight = useMemo(() => {
@@ -115,9 +156,24 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
       const byEmoji = await postService.fetchReactionUsersForItem(item);
       setReactionUsers(byEmoji);
 
-      const available = tabs;
-      if (available.length > 0 && !available.includes(emoji)) {
-        setSelectedEmoji(available[0]);
+      const available = Object.entries(byEmoji)
+        .filter(([, list]) => list.length > 0)
+        .map(([e]) => e);
+
+      const ordered = ["❤️", ...reactions.map((r) => r.emoji)].filter(
+        (e, idx, arr) => arr.indexOf(e) === idx,
+      );
+
+      const availableOrdered = ordered.filter((e) => available.includes(e));
+
+      if (availableOrdered.length > 0) {
+        setSelectedEmoji(
+          availableOrdered.includes(emoji) ? emoji : availableOrdered[0],
+        );
+      }
+
+      if (availableOrdered.length === 0) {
+        setSelectedEmoji(emoji);
       }
     } catch (error) {
       console.error("Error fetching reaction users:", error);
@@ -159,20 +215,11 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     ...(reacted ? { color: colors.light.primary, fontWeight: "700" } : {}),
   });
 
-  const getLikeTabStyle = (selected: boolean): ViewStyle => ({
-    ...pillStyle,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: selected ? colors.light.primary : colors.neutral.grey2,
-    ...(selected ? { backgroundColor: colors.light.accent2 } : {}),
-  });
+  const getTabPillStyle = (selected: boolean): ViewStyle =>
+    getReactionPillStyle(selected);
 
-  const getLikeCountStyle = (selected: boolean): TextStyle => ({
-    ...countStyle,
-    ...(selected ? { color: colors.light.primary, fontWeight: "700" } : {}),
-  });
+  const getTabCountStyle = (selected: boolean): TextStyle =>
+    getCountStyle(selected);
 
   const getEmojiOptionStyle = (reacted: boolean): ViewStyle => ({
     ...emojiOptionStyle,
@@ -216,12 +263,21 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
 
       <View ref={buttonRef} collapsable={false}>
         <TouchableOpacity onPress={handleOpen} style={addButtonStyle}>
-          <MaterialCommunityIcons name="emoticon-happy-outline" size={16} color={"#888"} />
+          <MaterialCommunityIcons
+            name="emoticon-happy-outline"
+            size={16}
+            color={"#888"}
+          />
           <Text style={addPlusStyle}>+</Text>
         </TouchableOpacity>
       </View>
 
-      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="none"
+        onRequestClose={() => setOpen(false)}
+      >
         <Pressable onPress={() => setOpen(false)} style={modalBackdropStyle}>
           <View
             style={[
@@ -248,7 +304,10 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
         animationType="fade"
         onRequestClose={() => setUsersOpen(false)}
       >
-        <Pressable onPress={() => setUsersOpen(false)} style={usersBackdropStyle}>
+        <Pressable
+          onPress={() => setUsersOpen(false)}
+          style={usersBackdropStyle}
+        >
           <Pressable style={[usersModalStyle, { height: usersModalHeight }]}>
             <View style={usersGrabberStyle} />
             <View style={usersHeaderStyle}>
@@ -260,17 +319,16 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                 contentContainerStyle={usersHeaderTabsStyle}
                 renderItem={({ item: e }) => (
                   <TouchableOpacity onPress={() => setSelectedEmoji(e)}>
-                    {e === "❤️" ? (
-                      <View style={getLikeTabStyle(selectedEmoji === e)}>
+                    <View style={getTabPillStyle(selectedEmoji === e)}>
+                      {e === "❤️" ? (
                         <Icon name="heart" size={14} color="#eb656b" />
-                        <Text style={getLikeCountStyle(selectedEmoji === e)}>{getCountForEmoji(e)}</Text>
-                      </View>
-                    ) : (
-                      <View style={getReactionPillStyle(selectedEmoji === e)}>
+                      ) : (
                         <Text style={emojiStyle}>{e}</Text>
-                        <Text style={getCountStyle(selectedEmoji === e)}>{getCountForEmoji(e)}</Text>
-                      </View>
-                    )}
+                      )}
+                      <Text style={getTabCountStyle(selectedEmoji === e)}>
+                        {getCountForEmoji(e)}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 )}
               />
@@ -295,50 +353,23 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                 contentContainerStyle={usersListStyle}
                 renderItem={({ item }) => {
                   if (usersLoading) {
-                    return (
-                      <View style={userRowStyle}>
-                        <View style={userAvatarSkeletonStyle} />
-                        <View style={userTextColStyle}>
-                          <View style={userNameSkeletonStyle} />
-                          <View style={userUsernameSkeletonStyle} />
-                        </View>
-                      </View>
-                    );
+                    return <ReactionUserRowSkeleton />;
                   }
 
                   const u = item as ReactionUser;
                   return (
-                    <TouchableOpacity
-                      style={userRowStyle}
+                    <ReactionUserRow
+                      user={u}
                       onPress={() => {
                         setUsersOpen(false);
                         router.push(`/profile/${u.id}`);
                       }}
-                    >
-                      {u.profileImageUrl ? (
-                        <Image source={{ uri: u.profileImageUrl }} style={userAvatarStyle} />
-                      ) : (
-                        <View style={userAvatarPlaceholderStyle}>
-                          <MaterialCommunityIcons
-                            name="account-circle"
-                            size={38}
-                            color={colors.neutral.grey1}
-                          />
-                        </View>
-                      )}
-                      <View style={userTextColStyle}>
-                        <Text style={userNameStyle} numberOfLines={1}>
-                          {u.name}
-                        </Text>
-                        <Text style={userUsernameStyle} numberOfLines={1}>
-                          @{u.username}
-                        </Text>
-                      </View>
-                      <Icon name="chevron-right" size={12} color={colors.neutral.grey1} />
-                    </TouchableOpacity>
+                    />
                   );
                 }}
-                ItemSeparatorComponent={() => <View style={userSeparatorStyle} />}
+                ItemSeparatorComponent={() => (
+                  <View style={userSeparatorStyle} />
+                )}
                 ListEmptyComponent={
                   usersLoading ? null : (
                     <View style={usersLoadingStyle}>
