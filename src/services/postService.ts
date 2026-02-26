@@ -515,16 +515,21 @@ export const postService = {
         .is("challenge_id", null)
         .eq("is_welcome", true)
         .not("media.upload_status", "in", '("failed","pending")')
-        .lte("created_at", newest)
         .gte("created_at", oldest);
+
+      if (pageParam === 1) {
+        welcomeQuery = welcomeQuery.lte("created_at", new Date().toISOString());
+      } else {
+        welcomeQuery = welcomeQuery.lte("created_at", newest);
+      }
       welcomeQuery = applyBlockedFilter(welcomeQuery, blockedUserIds);
 
       const { data: welcomeData, error: welcomeError } = await welcomeQuery;
       if (welcomeError) throw welcomeError;
 
-      const merged = [...rows, ...(welcomeData ?? []) as PostData[]].sort((a, b) =>
-        a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0
-      );
+      const merged = [...rows, ...((welcomeData ?? []) as PostData[])]
+        .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
+        .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
 
       const posts = merged.map((p) => processPost(p, false));
       return { posts: posts as Post[], hasMore: rows.length === postsPerPage };
