@@ -18,6 +18,7 @@ import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { LikeableItem, ReactionSummary, ReactionUser } from "../types";
 import { postService } from "../services/postService";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const EMOJIS = ["😂", "😭", "🔝", "🥺", "🤗", "🫠"];
 
@@ -38,6 +39,8 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   likeCount,
   onLikeToggle,
 }) => {
+  const { t } = useLanguage();
+
   const [open, setOpen] = useState(false);
   const [popoverPos, setPopoverPos] = useState({ x: 0, y: 0 });
   const buttonRef = useRef<View>(null);
@@ -80,7 +83,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
       setUsers(rows);
     } catch (error) {
       console.error("Error fetching reaction users:", error);
-      setUsersError("Failed to load");
+      setUsersError(t("Failed to load"));
       setUsers([]);
     } finally {
       setUsersLoading(false);
@@ -196,7 +199,9 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
           <Pressable style={usersModalStyle}>
             <View style={usersHeaderStyle}>
               <Text style={usersTitleStyle}>
-                {selectedEmoji === "❤️" ? "Likes" : `${selectedEmoji || ""} Reactions`}
+                {selectedEmoji === "❤️"
+                  ? t("Likes")
+                  : `${selectedEmoji || ""} ${t("Reactions")}`}
               </Text>
               <TouchableOpacity onPress={() => setUsersOpen(false)}>
                 <Icon name="times" size={16} color={colors.neutral.grey1} />
@@ -262,7 +267,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                   usersLoading ? null : (
                     <View style={usersLoadingStyle}>
                       <Text style={usersEmptyStyle}>
-                        {selectedEmoji === "❤️" ? "No Likes Yet" : "No Reactions Yet"}
+                        {selectedEmoji === "❤️" ? t("No Likes Yet") : t("No Reactions Yet")}
                       </Text>
                     </View>
                   )
