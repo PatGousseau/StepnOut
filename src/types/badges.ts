@@ -23,6 +23,7 @@ export interface UserBadge {
 // Stats needed to calculate badges
 export interface UserStats {
     postsCount: number;
+    postsWithImageCount: number;
     challengesCount: number;
     commentsGivenCount: number;
     likesGivenCount: number;

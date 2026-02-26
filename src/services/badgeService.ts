@@ -11,6 +11,7 @@ export const BadgeService = {
     async getUserStats(userId: string): Promise<UserStats> {
         const stats: UserStats = {
             postsCount: 0,
+            postsWithImageCount: 0,
             challengesCount: 0,
             commentsGivenCount: 0,
             likesGivenCount: 0,
@@ -28,6 +29,15 @@ export const BadgeService = {
                 .neq('body', '');
 
             if (!postsError) stats.postsCount = postsCount || 0;
+
+            const { count: postsWithImageCount, error: postsWithImageError } = await supabase
+                .from('post')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .neq('body', '')
+                .not('media_id', 'is', null);
+
+            if (!postsWithImageError) stats.postsWithImageCount = postsWithImageCount || 0;
 
             // Comments Given Count
             const { count: commentsCount, error: commentsError } = await supabase
@@ -135,7 +145,7 @@ export const BadgeService = {
             earnedBadges.push(this.createBadgeEntry('first_challenger'));
         }
 
-        if (stats.postsCount > 0) {
+        if (stats.postsWithImageCount > 0) {
             earnedBadges.push(this.createBadgeEntry('documenter'));
         }
 
