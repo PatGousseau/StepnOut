@@ -204,9 +204,8 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                   ? t("Likes")
                   : `${selectedEmoji || ""} ${t("Reactions")}`}
               </Text>
-              <View style={{ width: 32 }} />
-              <TouchableOpacity onPress={() => setUsersOpen(false)} style={usersCloseButtonStyle}>
-                <Icon name="times" size={14} color={colors.light.primary} />
+              <TouchableOpacity onPress={() => setUsersOpen(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Icon name="times" size={14} color={colors.neutral.grey1} />
               </TouchableOpacity>
             </View>
 
@@ -393,9 +392,9 @@ const usersHeaderStyle: ViewStyle = {
 
 const usersTitleStyle: TextStyle = {
   flex: 1,
-  textAlign: "center",
-  fontSize: 18,
-  fontWeight: "800",
+  textAlign: "left",
+  fontSize: 16,
+  fontWeight: "600",
   color: colors.light.primary,
 };
 
@@ -405,14 +404,7 @@ const usersLoadingStyle: ViewStyle = {
   justifyContent: "center",
 };
 
-const usersCloseButtonStyle: ViewStyle = {
-  width: 32,
-  height: 32,
-  borderRadius: 16,
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: colors.neutral.grey2,
-};
+const usersCloseButtonStyle: ViewStyle = {};
 
 const usersListStyle: ViewStyle = {
   paddingVertical: 8,
