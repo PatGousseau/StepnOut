@@ -79,12 +79,13 @@ export const BadgeService = {
             if (!activeChallenge) throw new Error('No active challenge found');
 
             // - Get previous challenges (enough to compute max streak)
+            const maxStreakThreshold = Math.max(...BADGES.filter(b => b.id.startsWith('streak')).map(b => b.threshold || 0), 1);
             const { data: previousChallenges, error: prevError } = await supabase
                 .from('challenges')
                 .select('*')
                 .lt('created_at', activeChallenge.created_at)
                 .order('created_at', { ascending: false })
-                .limit(5); // currently 5 is enough as the best bade is 4 weeks
+                .limit(maxStreakThreshold + 1);
 
             if (prevError) throw prevError;
 
