@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
 import { Badge, UserBadge } from '../../types/badges';
 import { UserProfile } from '../../models/User';
-import { BadgeIcon } from './BadgeIcon';
+import { BadgeIcon, SIZES } from './BadgeIcon';
 import { BadgeModal } from './BadgeModal';
 import { colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,31 +22,26 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
     const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean })[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedBadge, setSelectedBadge] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number }) | null>(null);
+    const [containerWidth, setContainerWidth] = useState(0);
+    const [previewCount, setPreviewCount] = useState(3);
+    const [dynamicGap, setDynamicGap] = useState(16);
 
     useEffect(() => {
         const fetchBadges = async () => {
             if (!userId) return;
             try {
                 setLoading(true);
-                // We need profile data for some badges (profile completed)
-                // If not passed, we might need to fetch it, but usually it's passed in ProfilePage.
-                // For now, assuming userProfile is passed or we fetch basic stats without it if missing (might miss 'Open Book').
-
                 const stats = await BadgeService.getUserStats(userId);
-                const profileToUse = userProfile || { id: userId } as any; // Fallback if profile not loaded yet
+                const profileToUse = userProfile || { id: userId } as any;
 
                 const earned = BadgeService.calculateBadges(stats, profileToUse);
                 setEarnedBadges(earned);
 
                 const allWithStatus = BadgeService.getAllBadgesWithStatus(stats, earned);
-                // Sort: Unlocked first, then by category/priority?
-                // Actually for preview we might want to show latest earned?
-                // Let's show top 4 unlocked, or if none, top 4 to earn.
-
                 allWithStatus.sort((a, b) => {
                     if (a.unlocked && !b.unlocked) return -1;
                     if (!a.unlocked && b.unlocked) return 1;
-                    return 0; // Keep original order otherwise
+                    return 0;
                 });
 
                 setAllBadges(allWithStatus);
@@ -60,9 +55,41 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
         fetchBadges();
     }, [userId, userProfile]);
 
-    if (loading) return null; // Or skeleton
+    const G_MIN = 10;
+    const ITEM_SIZE = SIZES.medium.total;
 
-    const previewBadges = allBadges.slice(0, 3); // Reduced from 4 to 3 to fit + button
+    useEffect(() => {
+        if (containerWidth > 0) {
+            const n = Math.floor((containerWidth + G_MIN) / (ITEM_SIZE + G_MIN));
+
+            let currentPreviewCount = 0;
+            let totalItemsForGap = 0;
+
+            if (allBadges.length > n) {
+                // More badges than capacity, show n-1 badges + plus button
+                currentPreviewCount = Math.max(0, n - 1);
+                totalItemsForGap = currentPreviewCount + 1;
+            } else {
+                // All badges fit
+                currentPreviewCount = allBadges.length;
+                totalItemsForGap = currentPreviewCount;
+            }
+
+            setPreviewCount(currentPreviewCount);
+
+            if (totalItemsForGap > 1) {
+                const gap = (containerWidth - (totalItemsForGap * ITEM_SIZE)) / (totalItemsForGap - 1);
+                setDynamicGap(gap);
+            } else {
+                setDynamicGap(0);
+            }
+        }
+    }, [containerWidth, allBadges.length]);
+
+    if (loading) return null;
+
+    const previewBadges = allBadges.slice(0, previewCount);
+    const hasMore = allBadges.length > previewCount;
 
     const handleSeeAll = () => {
         router.push({
@@ -75,7 +102,10 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
         <View style={styles.container}>
             <Text style={styles.sectionTitle}>{t('Badges') || 'LocalBadges'}</Text>
 
-            <View style={styles.listContainer}>
+            <View
+                style={[styles.listContainer, { gap: dynamicGap }]}
+                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+            >
                 {previewBadges.map(badge => (
                     <View key={badge.id} style={styles.badgeWrapper}>
                         <BadgeIcon
@@ -87,9 +117,11 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
                     </View>
                 ))}
 
-                <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll}>
-                    <Ionicons name="add" size={24} color={colors.light.primary} />
-                </TouchableOpacity>
+                {hasMore && (
+                    <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll}>
+                        <Ionicons name="add" size={24} color={colors.light.primary} />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <BadgeModal
@@ -121,7 +153,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        gap: 16,
     },
     badgeWrapper: {
         alignItems: 'center',

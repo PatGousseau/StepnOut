@@ -270,7 +270,7 @@ function gearPath(
 
 // ─── Size presets ─────────────────────────────────────────────────────────────
 
-const SIZES = {
+export const SIZES = {
     small: { total: 38, icon: 16 },
     medium: { total: 64, icon: 28 },
     large: { total: 104, icon: 44 },
