@@ -127,7 +127,6 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
                 onClose={() => setSelectedBadge(null)}
                 badge={selectedBadge}
                 unlocked={selectedBadge?.unlocked || false}
-                earnedDate={selectedBadge?.earnedDate}
                 currentProgress={selectedBadge?.currentProgress}
             />
         </View>
