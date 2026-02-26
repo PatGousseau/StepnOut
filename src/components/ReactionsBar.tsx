@@ -55,6 +55,12 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
 
   const SKELETON_ROWS = useMemo(() => Array.from({ length: 8 }, () => ({})), []);
 
+  const selectedReactionCount = useMemo(() => {
+    if (!selectedEmoji || selectedEmoji === "❤️") return 0;
+    const r = reactions.find((x) => x.emoji === selectedEmoji);
+    return r?.count ?? 0;
+  }, [reactions, selectedEmoji]);
+
   const reactedEmojis = useMemo(
     () => new Set(reactions.filter((r) => r.reacted).map((r) => r.emoji)),
     [reactions]
@@ -199,12 +205,23 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
           <Pressable style={usersModalStyle}>
             <View style={usersGrabberStyle} />
             <View style={usersHeaderStyle}>
-              <Text style={usersTitleStyle}>
-                {selectedEmoji === "❤️"
-                  ? t("Likes")
-                  : `${selectedEmoji || ""} ${t("Reactions")}`}
-              </Text>
-              <TouchableOpacity onPress={() => setUsersOpen(false)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <View style={usersHeaderPillWrapStyle}>
+                {selectedEmoji === "❤️" ? (
+                  <View style={pillStyle}>
+                    <Icon name="heart" size={14} color="#eb656b" />
+                    <Text style={countStyle}>{likeCount}</Text>
+                  </View>
+                ) : (
+                  <View style={getReactionPillStyle(true)}>
+                    <Text style={emojiStyle}>{selectedEmoji}</Text>
+                    <Text style={getCountStyle(true)}>{selectedReactionCount}</Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity
+                onPress={() => setUsersOpen(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Icon name="times" size={14} color={colors.neutral.grey1} />
               </TouchableOpacity>
             </View>
@@ -390,12 +407,8 @@ const usersHeaderStyle: ViewStyle = {
   backgroundColor: colors.light.background,
 };
 
-const usersTitleStyle: TextStyle = {
+const usersHeaderPillWrapStyle: ViewStyle = {
   flex: 1,
-  textAlign: "left",
-  fontSize: 16,
-  fontWeight: "600",
-  color: colors.light.primary,
 };
 
 const usersLoadingStyle: ViewStyle = {
