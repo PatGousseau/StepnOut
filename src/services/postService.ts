@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { sendLikeNotification, sendReactionNotification } from "../lib/notificationsService";
-import { LikeableItem, Post, ReactionSummary } from "../types";
+import { imageService } from "../services/imageService";
+import { LikeableItem, Post, ReactionSummary, ReactionUser } from "../types";
 
 interface PostDataComment {
   id: number;
@@ -203,6 +204,64 @@ export const postService = {
       console.error(`Error fetching ${type} reactions:`, error);
       return {};
     }
+  },
+
+  async fetchReactionUsers(item: LikeableItem, emoji: string): Promise<ReactionUser[]> {
+    const idField = `${item.type}_id` as const;
+
+    const { data, error } = await supabase
+      .from("likes")
+      .select(
+        `
+        user_id,
+        created_at,
+        profiles!likes_user_id_profiles_fkey (
+          id,
+          username,
+          name,
+          profile_media:media!profiles_profile_media_id_fkey (
+            file_path
+          )
+        )
+      `
+      )
+      .eq(idField, item.id)
+      .eq("emoji", emoji)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    type Row = {
+      user_id: string;
+      created_at: string;
+      profiles: {
+        id: string;
+        username: string;
+        name: string;
+        profile_media: { file_path: string } | null;
+      } | null;
+    };
+
+    const rows = (data || []) as unknown as Row[];
+
+    const users = rows
+      .map((r) => r.profiles)
+      .filter((p): p is NonNullable<Row["profiles"]> => !!p)
+      .map((p) => ({
+        id: p.id,
+        username: p.username || "unknown",
+        name: p.name || "Unknown",
+        profileImageUrl: p.profile_media?.file_path
+          ? imageService.getProfileImageUrlSync(p.profile_media.file_path, "small")
+          : null,
+      }));
+
+    const seen = new Set<string>();
+    return users.filter((u) => {
+      if (seen.has(u.id)) return false;
+      seen.add(u.id);
+      return true;
+    });
   },
 
   async toggleReaction(

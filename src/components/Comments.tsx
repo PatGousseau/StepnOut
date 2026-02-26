@@ -563,6 +563,7 @@ const Comment: React.FC<CommentProps> = ({
           )}
 
           <ReactionsBar
+            item={{ id, type: "comment", parentId: post_id }}
             reactions={commentReactions[id] || []}
             onToggle={(emoji) => {
               if (!currentUser) return;
