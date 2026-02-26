@@ -262,11 +262,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                   <TouchableOpacity onPress={() => setSelectedEmoji(e)}>
                     {e === "❤️" ? (
                       <View style={getLikeTabStyle(selectedEmoji === e)}>
-                        <Icon
-                          name={selectedEmoji === e ? "heart" : "heart-o"}
-                          size={14}
-                          color={selectedEmoji === e ? colors.light.primary : colors.neutral.grey1}
-                        />
+                        <Icon name="heart" size={14} color="#eb656b" />
                         <Text style={getLikeCountStyle(selectedEmoji === e)}>{getCountForEmoji(e)}</Text>
                       </View>
                     ) : (
