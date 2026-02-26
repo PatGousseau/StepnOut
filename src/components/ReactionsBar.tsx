@@ -321,7 +321,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                         <View style={userAvatarPlaceholderStyle}>
                           <MaterialCommunityIcons
                             name="account-circle"
-                            size={44}
+                            size={38}
                             color={colors.neutral.grey1}
                           />
                         </View>
@@ -489,27 +489,27 @@ const userRowStyle: ViewStyle = {
 const userSeparatorStyle: ViewStyle = {
   height: 1,
   backgroundColor: colors.neutral.grey2,
-  marginLeft: 68,
+  marginLeft: 60,
 };
 
 const userAvatarStyle: ImageStyle = {
-  width: 42,
-  height: 42,
-  borderRadius: 21,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
   backgroundColor: colors.neutral.grey2,
 };
 
 const userAvatarPlaceholderStyle: ViewStyle = {
-  width: 42,
-  height: 42,
+  width: 36,
+  height: 36,
   alignItems: "center",
   justifyContent: "center",
 };
 
 const userAvatarSkeletonStyle: ViewStyle = {
-  width: 42,
-  height: 42,
-  borderRadius: 21,
+  width: 36,
+  height: 36,
+  borderRadius: 18,
   backgroundColor: colors.neutral.grey2,
 };
 
