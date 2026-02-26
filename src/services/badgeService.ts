@@ -20,7 +20,7 @@ export const BadgeService = {
         };
 
         try {
-            // 1. Posts Count
+            // Posts Count
             const { count: postsCount, error: postsError } = await supabase
                 .from('post')
                 .select('*', { count: 'exact', head: true })
@@ -29,7 +29,7 @@ export const BadgeService = {
 
             if (!postsError) stats.postsCount = postsCount || 0;
 
-            // 2. Comments Given Count
+            // Comments Given Count
             const { count: commentsCount, error: commentsError } = await supabase
                 .from('comments')
                 .select('*', { count: 'exact', head: true })
@@ -37,7 +37,7 @@ export const BadgeService = {
 
             if (!commentsError) stats.commentsGivenCount = commentsCount || 0;
 
-            // 3. Likes Given Count
+            // Likes Given Count
             const { count: likesGivenCount, error: likesGivenError } = await supabase
                 .from('likes')
                 .select('*', { count: 'exact', head: true })
@@ -45,54 +45,7 @@ export const BadgeService = {
 
             if (!likesGivenError) stats.likesGivenCount = likesGivenCount || 0;
 
-            /*
-            TODO this may not scalate well
-            // 4. Activity received (Likes + Comments on user's posts)
-            // This is a bit more complex. best way without a new table is to get user's post IDs first.
-            // For scalability, we might just fetch the last 100 posts or similar, but for now let's try to get aggregate if possible.
-            // Supabase doesn't easily support "sum of likes on my posts" without an RPC or complex join.
-            // We will approximate or use a separate query. For now, let's skip "Likes Received" precise count aggregation 
-            // if it requires too many reads, OR do a join.
-
-            // Let's try to get it via post summaries if we had them. Since we don't, we can try to fetch posts and sum their likes.
-            // Limit to 1000 latest posts to avoid timeout.
-            const { data: postsData } = await supabase
-                .from('post')
-                .select(`
-                    id,
-                    likes:likes(count),
-                    comments:comments(count)
-                `)
-                .eq('user_id', userId)
-                .limit(100); // Limit to avoid performance hit
-
-            if (postsData) {
-                let totalLikes = 0;
-                let totalCommentsReceived = 0;
-
-                postsData.forEach((post: any) => {
-                    // Supabase returns array of counts for one-to-many if structured right, or we just get length
-                    // actually select count above usually returns [{count: N}] array if using count aggregator, 
-                    // but with the syntax above it returns the actual rows unless we use specific join. 
-                    // Wait, the standard way to get counts in join is .select('*, likes(count)'). 
-                    // But here we need sum.
-
-                    // Let's rely on the previous implementation pattern or just simple approximation for now.
-                    // The query `likes(count)` returns `likes: [{ count: 5 }]` usually.
-                    const postLikes = post.likes?.[0]?.count || 0;
-                    const postComments = post.comments?.[0]?.count || 0;
-
-                    totalLikes += postLikes;
-                    totalCommentsReceived += postComments;
-                });
-
-                stats.likesReceivedCount = totalLikes;
-                stats.commentsReceivedCount = totalCommentsReceived;
-                stats.reactionsReceivedCount = totalLikes + totalCommentsReceived;
-            }
-            */
-
-            // 5. Challenges
+            // Challenges
             const { count: challengesCompletedCount } = await supabase
                 .from('post')
                 .select('*', { count: 'exact', head: true })
@@ -105,7 +58,7 @@ export const BadgeService = {
             }
 
             // Streak calculation
-            // 1. Get active challenge
+            // - Get active challenge
             const { data: activeChallenge, error: activeChallengeError } = await supabase
                 .from('challenges')
                 .select('*')
@@ -115,7 +68,7 @@ export const BadgeService = {
             if (activeChallengeError) throw activeChallengeError;
             if (!activeChallenge) throw new Error('No active challenge found');
 
-            // 2. Get previous challenges (enough to compute max streak)
+            // - Get previous challenges (enough to compute max streak)
             const { data: previousChallenges, error: prevError } = await supabase
                 .from('challenges')
                 .select('*')
@@ -125,12 +78,12 @@ export const BadgeService = {
 
             if (prevError) throw prevError;
 
-            // 3. Build full ordered list (active first)
+            // - Build full ordered list (active first)
             const orderedChallenges = [activeChallenge, ...previousChallenges];
 
             const challengeIds = orderedChallenges.map(c => c.id);
 
-            // 4. Get user completions
+            // - Get user completions
             const { data: userPosts, error: postsChallengeError } = await supabase
                 .from('post')
                 .select('challenge_id')

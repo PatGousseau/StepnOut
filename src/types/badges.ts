@@ -6,12 +6,12 @@ export interface Badge {
     name: string;
     description: string;
     category: BadgeCategory;
-    icon: string; // Icon name from a vector icon library (e.g., FontAwesome/Ionicons) or custom image
+    icon: string;
     level?: BadgeLevel;
     maxLevel?: BadgeLevel; // To know if it's a multi-level badge
 
     // Logic fields
-    threshold?: number; // Value required to unlock (e.g., 10 likes, 3 streaks)
+    threshold?: number; // Value required to unlock (e.g., 10 likes)
     requiredAction?: string; // Description of action for logic (e.g., "first_post")
 }
 
@@ -25,11 +25,8 @@ export interface UserStats {
     postsCount: number;
     challengesCount: number;
     commentsGivenCount: number;
-    // commentsReceivedCount: number;
     likesGivenCount: number;
-    // likesReceivedCount: number;
     streakCurrent: number;
-    // streakLongest: number;
     firstChallengeCompleted: boolean;
     daysSinceLastActivity?: number;
     reactionsReceivedCount: number;
