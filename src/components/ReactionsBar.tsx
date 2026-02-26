@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -87,6 +88,11 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     [reactions]
   );
 
+  const usersModalHeight = useMemo(() => {
+    const { height } = Dimensions.get("window");
+    return Math.max(320, Math.floor(height * 0.5));
+  }, []);
+
   const handleOpen = () => {
     buttonRef.current?.measureInWindow((x, y) => {
       setPopoverPos({ x, y });
@@ -159,13 +165,13 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     paddingVertical: 3,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: selected ? "#eb656b" : colors.neutral.grey2,
-    ...(selected ? { backgroundColor: "#fdebed" } : {}),
+    borderColor: selected ? colors.light.primary : colors.neutral.grey2,
+    ...(selected ? { backgroundColor: colors.light.accent2 } : {}),
   });
 
   const getLikeCountStyle = (selected: boolean): TextStyle => ({
     ...countStyle,
-    ...(selected ? { color: "#eb656b", fontWeight: "700" } : {}),
+    ...(selected ? { color: colors.light.primary, fontWeight: "700" } : {}),
   });
 
   const getEmojiOptionStyle = (reacted: boolean): ViewStyle => ({
@@ -243,7 +249,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
         onRequestClose={() => setUsersOpen(false)}
       >
         <Pressable onPress={() => setUsersOpen(false)} style={usersBackdropStyle}>
-          <Pressable style={usersModalStyle}>
+          <Pressable style={[usersModalStyle, { height: usersModalHeight }]}>
             <View style={usersGrabberStyle} />
             <View style={usersHeaderStyle}>
               <FlatList
@@ -259,7 +265,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                         <Icon
                           name={selectedEmoji === e ? "heart" : "heart-o"}
                           size={14}
-                          color={selectedEmoji === e ? "#eb656b" : colors.neutral.grey1}
+                          color={selectedEmoji === e ? colors.light.primary : colors.neutral.grey1}
                         />
                         <Text style={getLikeCountStyle(selectedEmoji === e)}>{getCountForEmoji(e)}</Text>
                       </View>
@@ -428,8 +434,6 @@ const usersModalStyle: ViewStyle = {
   backgroundColor: colors.light.background,
   borderTopLeftRadius: 18,
   borderTopRightRadius: 18,
-  maxHeight: "75%",
-  minHeight: 420,
   overflow: "hidden",
   paddingBottom: 8,
   shadowColor: "#000",
