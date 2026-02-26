@@ -12,7 +12,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BadgePreviewSectionProps {
     userId: string;
-    userProfile?: UserProfile | null; // Optional, can be fetched if needed, but better passed
+    userProfile?: UserProfile;
 }
 
 export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId, userProfile }) => {
@@ -28,13 +28,11 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
     useEffect(() => {
         const fetchBadges = async () => {
-            if (!userId) return;
+            if (!userId || !userProfile) return;
             try {
                 setLoading(true);
                 const stats = await BadgeService.getUserStats(userId);
-                const profileToUse = userProfile || { id: userId } as any;
-
-                const earned = BadgeService.calculateBadges(stats, profileToUse);
+                const earned = BadgeService.calculateBadges(stats, userProfile);
                 setEarnedBadges(earned);
 
                 const allWithStatus = BadgeService.getAllBadgesWithStatus(stats, earned);
