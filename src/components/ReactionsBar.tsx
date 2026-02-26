@@ -194,7 +194,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
           <Pressable style={usersModalStyle}>
             <View style={usersHeaderStyle}>
               <Text style={usersTitleStyle}>
-                {selectedEmoji === "❤️" ? "likes" : `${selectedEmoji || ""} reactions`}
+                {selectedEmoji === "❤️" ? "Likes" : `${selectedEmoji || ""} Reactions`}
               </Text>
               <TouchableOpacity onPress={() => setUsersOpen(false)}>
                 <Icon name="times" size={16} color={colors.neutral.grey1} />
@@ -225,7 +225,13 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                     {u.profileImageUrl ? (
                       <Image source={{ uri: u.profileImageUrl }} style={userAvatarStyle} />
                     ) : (
-                      <View style={userAvatarPlaceholderStyle} />
+                      <View style={userAvatarPlaceholderStyle}>
+                        <MaterialCommunityIcons
+                          name="account-circle"
+                          size={38}
+                          color={colors.neutral.grey1}
+                        />
+                      </View>
                     )}
                     <View style={userTextColStyle}>
                       <Text style={userNameStyle} numberOfLines={1}>
@@ -235,11 +241,15 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                         @{u.username}
                       </Text>
                     </View>
+                    <Icon name="chevron-right" size={12} color={colors.neutral.grey1} />
                   </TouchableOpacity>
                 )}
+                ItemSeparatorComponent={() => <View style={userSeparatorStyle} />}
                 ListEmptyComponent={
                   <View style={usersLoadingStyle}>
-                    <Text style={usersEmptyStyle}>no reactions yet</Text>
+                    <Text style={usersEmptyStyle}>
+                      {selectedEmoji === "❤️" ? "No Likes Yet" : "No Reactions Yet"}
+                    </Text>
                   </View>
                 }
               />
@@ -318,30 +328,38 @@ const emojiOptionText: TextStyle = {
 
 const usersBackdropStyle: ViewStyle = {
   flex: 1,
-  justifyContent: "center",
-  padding: 16,
-  backgroundColor: "rgba(0,0,0,0.2)",
+  justifyContent: "flex-end",
+  backgroundColor: "rgba(0,0,0,0.35)",
 };
 
 const usersModalStyle: ViewStyle = {
-  backgroundColor: "#fff",
-  borderRadius: 12,
-  maxHeight: "70%",
+  backgroundColor: colors.light.background,
+  borderTopLeftRadius: 18,
+  borderTopRightRadius: 18,
+  maxHeight: "75%",
   overflow: "hidden",
+  paddingBottom: 8,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: -4 },
+  shadowOpacity: 0.12,
+  shadowRadius: 12,
+  elevation: 6,
 };
 
 const usersHeaderStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
-  paddingHorizontal: 12,
-  paddingVertical: 10,
+  paddingHorizontal: 16,
+  paddingTop: 14,
+  paddingBottom: 10,
   borderBottomWidth: 1,
-  borderBottomColor: colors.neutral.grey3,
+  borderBottomColor: colors.neutral.grey2,
+  backgroundColor: colors.light.background,
 };
 
 const usersTitleStyle: TextStyle = {
-  fontSize: 14,
+  fontSize: 16,
   fontWeight: "700",
   color: colors.light.text,
 };
@@ -353,28 +371,36 @@ const usersLoadingStyle: ViewStyle = {
 };
 
 const usersListStyle: ViewStyle = {
-  paddingVertical: 6,
+  paddingVertical: 8,
 };
 
 const userRowStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
-  paddingHorizontal: 12,
-  paddingVertical: 10,
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+};
+
+const userSeparatorStyle: ViewStyle = {
+  height: 1,
+  backgroundColor: colors.neutral.grey2,
+  marginLeft: 62,
 };
 
 const userAvatarStyle: ImageStyle = {
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-  backgroundColor: colors.neutral.grey3,
+  width: 42,
+  height: 42,
+  borderRadius: 21,
+  backgroundColor: colors.neutral.grey2,
 };
 
 const userAvatarPlaceholderStyle: ViewStyle = {
-  width: 36,
-  height: 36,
-  borderRadius: 18,
-  backgroundColor: colors.neutral.grey3,
+  width: 42,
+  height: 42,
+  borderRadius: 21,
+  backgroundColor: colors.neutral.grey2,
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const userTextColStyle: ViewStyle = {
