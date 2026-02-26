@@ -483,7 +483,7 @@ const userRowStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   paddingHorizontal: 16,
-  paddingVertical: 10,
+  paddingVertical: 7,
 };
 
 const userSeparatorStyle: ViewStyle = {
