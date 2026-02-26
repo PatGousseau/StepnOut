@@ -50,6 +50,8 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
 
   const didLongPressRef = useRef(false);
 
+  const SKELETON_ROWS = useMemo(() => Array.from({ length: 8 }, () => ({})), []);
+
   const reactedEmojis = useMemo(
     () => new Set(reactions.filter((r) => r.reacted).map((r) => r.emoji)),
     [reactions]
@@ -201,56 +203,69 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
               </TouchableOpacity>
             </View>
 
-            {usersLoading ? (
-              <View style={usersLoadingStyle}>
-                <ActivityIndicator size="small" color={colors.neutral.grey1} />
-              </View>
-            ) : usersError ? (
+            {usersError ? (
               <View style={usersLoadingStyle}>
                 <Text style={usersErrorStyle}>{usersError}</Text>
               </View>
             ) : (
               <FlatList
-                data={users}
-                keyExtractor={(u) => u.id}
+                data={usersLoading ? SKELETON_ROWS : users}
+                keyExtractor={(u, idx) => (usersLoading ? `skeleton-${idx}` : (u as ReactionUser).id)}
                 contentContainerStyle={usersListStyle}
-                renderItem={({ item: u }) => (
-                  <TouchableOpacity
-                    style={userRowStyle}
-                    onPress={() => {
-                      setUsersOpen(false);
-                      router.push(`/profile/${u.id}`);
-                    }}
-                  >
-                    {u.profileImageUrl ? (
-                      <Image source={{ uri: u.profileImageUrl }} style={userAvatarStyle} />
-                    ) : (
-                      <View style={userAvatarPlaceholderStyle}>
-                        <MaterialCommunityIcons
-                          name="account-circle"
-                          size={38}
-                          color={colors.neutral.grey1}
-                        />
+                renderItem={({ item }) => {
+                  if (usersLoading) {
+                    return (
+                      <View style={userRowStyle}>
+                        <View style={userAvatarSkeletonStyle} />
+                        <View style={userTextColStyle}>
+                          <View style={userNameSkeletonStyle} />
+                          <View style={userUsernameSkeletonStyle} />
+                        </View>
                       </View>
-                    )}
-                    <View style={userTextColStyle}>
-                      <Text style={userNameStyle} numberOfLines={1}>
-                        {u.name}
-                      </Text>
-                      <Text style={userUsernameStyle} numberOfLines={1}>
-                        @{u.username}
-                      </Text>
-                    </View>
-                    <Icon name="chevron-right" size={12} color={colors.neutral.grey1} />
-                  </TouchableOpacity>
-                )}
+                    );
+                  }
+
+                  const u = item as ReactionUser;
+                  return (
+                    <TouchableOpacity
+                      style={userRowStyle}
+                      onPress={() => {
+                        setUsersOpen(false);
+                        router.push(`/profile/${u.id}`);
+                      }}
+                    >
+                      {u.profileImageUrl ? (
+                        <Image source={{ uri: u.profileImageUrl }} style={userAvatarStyle} />
+                      ) : (
+                        <View style={userAvatarPlaceholderStyle}>
+                          <MaterialCommunityIcons
+                            name="account-circle"
+                            size={44}
+                            color={colors.neutral.grey1}
+                          />
+                        </View>
+                      )}
+                      <View style={userTextColStyle}>
+                        <Text style={userNameStyle} numberOfLines={1}>
+                          {u.name}
+                        </Text>
+                        <Text style={userUsernameStyle} numberOfLines={1}>
+                          @{u.username}
+                        </Text>
+                      </View>
+                      <Icon name="chevron-right" size={12} color={colors.neutral.grey1} />
+                    </TouchableOpacity>
+                  );
+                }}
                 ItemSeparatorComponent={() => <View style={userSeparatorStyle} />}
                 ListEmptyComponent={
-                  <View style={usersLoadingStyle}>
-                    <Text style={usersEmptyStyle}>
-                      {selectedEmoji === "❤️" ? "No Likes Yet" : "No Reactions Yet"}
-                    </Text>
-                  </View>
+                  usersLoading ? null : (
+                    <View style={usersLoadingStyle}>
+                      <Text style={usersEmptyStyle}>
+                        {selectedEmoji === "❤️" ? "No Likes Yet" : "No Reactions Yet"}
+                      </Text>
+                    </View>
+                  )
                 }
               />
             )}
@@ -337,6 +352,7 @@ const usersModalStyle: ViewStyle = {
   borderTopLeftRadius: 18,
   borderTopRightRadius: 18,
   maxHeight: "75%",
+  minHeight: 420,
   overflow: "hidden",
   paddingBottom: 8,
   shadowColor: "#000",
@@ -378,13 +394,13 @@ const userRowStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   paddingHorizontal: 16,
-  paddingVertical: 12,
+  paddingVertical: 10,
 };
 
 const userSeparatorStyle: ViewStyle = {
   height: 1,
   backgroundColor: colors.neutral.grey2,
-  marginLeft: 62,
+  marginLeft: 68,
 };
 
 const userAvatarStyle: ImageStyle = {
@@ -397,10 +413,30 @@ const userAvatarStyle: ImageStyle = {
 const userAvatarPlaceholderStyle: ViewStyle = {
   width: 42,
   height: 42,
-  borderRadius: 21,
-  backgroundColor: colors.neutral.grey2,
   alignItems: "center",
   justifyContent: "center",
+};
+
+const userAvatarSkeletonStyle: ViewStyle = {
+  width: 42,
+  height: 42,
+  borderRadius: 21,
+  backgroundColor: colors.neutral.grey2,
+};
+
+const userNameSkeletonStyle: ViewStyle = {
+  height: 12,
+  width: "55%",
+  borderRadius: 6,
+  backgroundColor: colors.neutral.grey2,
+};
+
+const userUsernameSkeletonStyle: ViewStyle = {
+  height: 10,
+  width: "40%",
+  borderRadius: 6,
+  marginTop: 6,
+  backgroundColor: colors.neutral.grey2,
 };
 
 const userTextColStyle: ViewStyle = {
