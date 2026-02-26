@@ -206,25 +206,24 @@ export const postService = {
     }
   },
 
-  async fetchReactionUsers(item: LikeableItem, emoji: string): Promise<ReactionUser[]> {
+  async fetchReactionUsersForItem(item: LikeableItem): Promise<Record<string, ReactionUser[]>> {
     const idField = `${item.type}_id` as const;
 
     const { data: likeRows, error: likesError } = await supabase
       .from("likes")
-      .select("user_id, created_at")
+      .select("user_id, emoji, created_at")
       .eq(idField, item.id)
-      .eq("emoji", emoji)
       .order("created_at", { ascending: false });
 
     if (likesError) throw likesError;
 
-    type LikeRow = { user_id: string; created_at: string };
+    type LikeRow = { user_id: string; emoji: string; created_at: string };
     const rows = (likeRows || []) as unknown as LikeRow[];
 
     const orderedUserIds = rows.map((r) => r.user_id).filter(Boolean);
     const uniqueUserIds = Array.from(new Set(orderedUserIds));
 
-    if (uniqueUserIds.length === 0) return [];
+    if (uniqueUserIds.length === 0) return {};
 
     const { data: profileRows, error: profilesError } = await supabase
       .from("profiles")
@@ -264,7 +263,18 @@ export const postService = {
       ])
     );
 
-    return uniqueUserIds.map((id) => profileMap.get(id)).filter((u): u is ReactionUser => !!u);
+    const result: Record<string, ReactionUser[]> = {};
+    for (const row of rows) {
+      const emoji = row.emoji;
+      if (!emoji) continue;
+      const u = profileMap.get(row.user_id);
+      if (!u) continue;
+      if (!result[emoji]) result[emoji] = [];
+      if (result[emoji].some((x) => x.id === u.id)) continue;
+      result[emoji].push(u);
+    }
+
+    return result;
   },
 
   async toggleReaction(

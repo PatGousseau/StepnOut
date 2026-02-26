@@ -48,18 +48,39 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   const [usersOpen, setUsersOpen] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
-  const [users, setUsers] = useState<ReactionUser[]>([]);
+  const [reactionUsers, setReactionUsers] = useState<Record<string, ReactionUser[]>>({});
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
 
   const didLongPressRef = useRef(false);
 
   const SKELETON_ROWS = useMemo(() => Array.from({ length: 8 }, () => ({})), []);
 
-  const selectedReactionCount = useMemo(() => {
-    if (!selectedEmoji || selectedEmoji === "❤️") return 0;
-    const r = reactions.find((x) => x.emoji === selectedEmoji);
-    return r?.count ?? 0;
-  }, [reactions, selectedEmoji]);
+  const tabs = useMemo(() => {
+    const available: string[] = [];
+
+    if (likeCount > 0) available.push("❤️");
+
+    const emojiTabs = reactions
+      .filter((r) => r.count > 0)
+      .map((r) => r.emoji)
+      .filter((e) => e !== "❤️");
+
+    return [...available, ...emojiTabs];
+  }, [likeCount, reactions]);
+
+  const activeUsers = useMemo(() => {
+    if (!selectedEmoji) return [];
+    return reactionUsers[selectedEmoji] || [];
+  }, [reactionUsers, selectedEmoji]);
+
+  const getCountForEmoji = useMemo(() => {
+    const map = new Map<string, number>();
+    map.set("❤️", likeCount);
+    for (const r of reactions) {
+      map.set(r.emoji, r.count);
+    }
+    return (emoji: string) => map.get(emoji) ?? 0;
+  }, [likeCount, reactions]);
 
   const reactedEmojis = useMemo(
     () => new Set(reactions.filter((r) => r.reacted).map((r) => r.emoji)),
@@ -85,12 +106,17 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
     setUsersError(null);
 
     try {
-      const rows = await postService.fetchReactionUsers(item, emoji);
-      setUsers(rows);
+      const byEmoji = await postService.fetchReactionUsersForItem(item);
+      setReactionUsers(byEmoji);
+
+      const available = tabs;
+      if (available.length > 0 && !available.includes(emoji)) {
+        setSelectedEmoji(available[0]);
+      }
     } catch (error) {
       console.error("Error fetching reaction users:", error);
       setUsersError(t("Failed to load"));
-      setUsers([]);
+      setReactionUsers({});
     } finally {
       setUsersLoading(false);
     }
@@ -125,6 +151,21 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
   const getCountStyle = (reacted: boolean): TextStyle => ({
     ...countStyle,
     ...(reacted ? { color: colors.light.primary, fontWeight: "700" } : {}),
+  });
+
+  const getLikeTabStyle = (selected: boolean): ViewStyle => ({
+    ...pillStyle,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: selected ? "#eb656b" : colors.neutral.grey2,
+    ...(selected ? { backgroundColor: "#fdebed" } : {}),
+  });
+
+  const getLikeCountStyle = (selected: boolean): TextStyle => ({
+    ...countStyle,
+    ...(selected ? { color: "#eb656b", fontWeight: "700" } : {}),
   });
 
   const getEmojiOptionStyle = (reacted: boolean): ViewStyle => ({
@@ -205,19 +246,32 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
           <Pressable style={usersModalStyle}>
             <View style={usersGrabberStyle} />
             <View style={usersHeaderStyle}>
-              <View style={usersHeaderPillWrapStyle}>
-                {selectedEmoji === "❤️" ? (
-                  <View style={pillStyle}>
-                    <Icon name="heart" size={14} color="#eb656b" />
-                    <Text style={countStyle}>{likeCount}</Text>
-                  </View>
-                ) : (
-                  <View style={getReactionPillStyle(true)}>
-                    <Text style={emojiStyle}>{selectedEmoji}</Text>
-                    <Text style={getCountStyle(true)}>{selectedReactionCount}</Text>
-                  </View>
+              <FlatList
+                data={tabs}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(e) => e}
+                contentContainerStyle={usersHeaderTabsStyle}
+                renderItem={({ item: e }) => (
+                  <TouchableOpacity onPress={() => setSelectedEmoji(e)}>
+                    {e === "❤️" ? (
+                      <View style={getLikeTabStyle(selectedEmoji === e)}>
+                        <Icon
+                          name={selectedEmoji === e ? "heart" : "heart-o"}
+                          size={14}
+                          color={selectedEmoji === e ? "#eb656b" : colors.neutral.grey1}
+                        />
+                        <Text style={getLikeCountStyle(selectedEmoji === e)}>{getCountForEmoji(e)}</Text>
+                      </View>
+                    ) : (
+                      <View style={getReactionPillStyle(selectedEmoji === e)}>
+                        <Text style={emojiStyle}>{e}</Text>
+                        <Text style={getCountStyle(selectedEmoji === e)}>{getCountForEmoji(e)}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
                 )}
-              </View>
+              />
               <TouchableOpacity
                 onPress={() => setUsersOpen(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -232,8 +286,10 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
               </View>
             ) : (
               <FlatList
-                data={usersLoading ? SKELETON_ROWS : users}
-                keyExtractor={(u, idx) => (usersLoading ? `skeleton-${idx}` : (u as ReactionUser).id)}
+                data={usersLoading ? SKELETON_ROWS : activeUsers}
+                keyExtractor={(u, idx) =>
+                  usersLoading ? `skeleton-${idx}` : (u as ReactionUser).id
+                }
                 contentContainerStyle={usersListStyle}
                 renderItem={({ item }) => {
                   if (usersLoading) {
@@ -284,9 +340,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
                 ListEmptyComponent={
                   usersLoading ? null : (
                     <View style={usersLoadingStyle}>
-                      <Text style={usersEmptyStyle}>
-                        {selectedEmoji === "❤️" ? t("No Likes Yet") : t("No Reactions Yet")}
-                      </Text>
+                      <Text style={usersEmptyStyle}>no one yet</Text>
                     </View>
                   )
                 }
@@ -407,8 +461,10 @@ const usersHeaderStyle: ViewStyle = {
   backgroundColor: colors.light.background,
 };
 
-const usersHeaderPillWrapStyle: ViewStyle = {
-  flex: 1,
+const usersHeaderTabsStyle: ViewStyle = {
+  flexGrow: 1,
+  paddingRight: 12,
+  gap: 6,
 };
 
 const usersLoadingStyle: ViewStyle = {
