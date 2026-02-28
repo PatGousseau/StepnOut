@@ -34,6 +34,19 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const initializeLikes = async (items: (Post | Comment)[], type: "post" | "comment") => {
     const ids = items.map((item) => item.id);
 
+    const setLikedItems = type === "post" ? setLikedPosts : setLikedComments;
+    const setItemCounts = type === "post" ? setPostLikeCounts : setCommentLikeCounts;
+
+    // seed counts immediately from the data we already have to avoid a 0-likes flash
+    setItemCounts((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        items
+          .filter((item) => typeof item.likes_count === "number")
+          .map((item) => [item.id, item.likes_count])
+      ),
+    }));
+
     const [likesMap, countsMap] = await Promise.all([
       type === "post"
         ? postService.fetchPostsLikes(ids, user?.id)
@@ -42,9 +55,6 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ? postService.fetchPostLikesCounts(ids)
         : postService.fetchCommentLikesCounts(ids),
     ]);
-
-    const setLikedItems = type === "post" ? setLikedPosts : setLikedComments;
-    const setItemCounts = type === "post" ? setPostLikeCounts : setCommentLikeCounts;
 
     setLikedItems((prev) => ({
       ...prev,
