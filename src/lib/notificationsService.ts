@@ -213,14 +213,15 @@ export async function sendCustomNotification(
     title: string,
     body: string,
     userIds: string[]
-): Promise<{ sent: number; failed: number }> {
+): Promise<{ sent: number; failed: number; noToken: number }> {
     let sent = 0;
     let failed = 0;
+    let noToken = 0;
 
     const notifications = userIds.map(async (userId) => {
         const pushToken = await getPushToken(userId);
         if (!pushToken) {
-            failed++;
+            noToken++;
             return;
         }
         try {
@@ -232,7 +233,7 @@ export async function sendCustomNotification(
     });
 
     await Promise.all(notifications);
-    return { sent, failed };
+    return { sent, failed, noToken };
 }
 
 export { getAllUserIds };

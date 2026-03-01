@@ -474,8 +474,8 @@ const ChallengeCreation: React.FC = () => {
     try {
       const result = await sendCustomNotification(notifTitle.trim(), notifBody.trim(), targetUserIds);
       Alert.alert(
-        "Success",
-        `Notifications sent: ${result.sent} successful, ${result.failed} failed`
+        "Done",
+        `Sent: ${result.sent}\nFailed: ${result.failed}\nNo push token: ${result.noToken}`
       );
       setNotifTitle("");
       setNotifBody("");
