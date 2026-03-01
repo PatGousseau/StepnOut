@@ -9,15 +9,6 @@ export const useActiveChallenge = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const getDaysUntilSunday = (): number => {
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
-    
-    // If it's Sunday, return 7 (days until next Sunday)
-    // Otherwise, calculate days remaining until Sunday
-    return dayOfWeek === 0 ? 7 : 7 - dayOfWeek;
-  };
-
   const fetchActiveChallenge = async () => {
     setLoading(true);
     try {
@@ -52,7 +43,6 @@ export const useActiveChallenge = () => {
       const challenge = {
         ...challengeData,
         media_file_path: challengeData.media?.file_path || null,
-        daysRemaining: getDaysUntilSunday(),
         completion_count: currentCount
       };
       
@@ -68,19 +58,6 @@ export const useActiveChallenge = () => {
     fetchActiveChallenge();
 
 
-    // Update days remaining at midnight
-    const midnightUpdate = setInterval(() => {
-      if (activeChallenge) {
-        setActiveChallenge({
-          ...activeChallenge,
-          daysRemaining: getDaysUntilSunday()
-        });
-      }
-    }, 60 * 60 * 1000); // Check every hour
-
-    return () => {
-      clearInterval(midnightUpdate);
-    };
   }, [user?.id]);
 
   return {
