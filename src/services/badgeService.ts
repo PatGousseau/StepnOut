@@ -4,11 +4,20 @@ import { BADGES } from '../constants/badges';
 import { UserProfile } from '../models/User';
 import { Challenge } from '../types';
 
+const CACHE_TIMEOUT = 15 * 1000;
+const statsCache: Record<string, { stats: UserStats, timestamp: number }> = {};
+
 export const BadgeService = {
     /**
      * Fetches all necessary stats for a user to calculate badges.
      */
     async getUserStats(userId: string): Promise<UserStats> {
+        const now = Date.now();
+        const cached = statsCache[userId];
+        if (cached && (now - cached.timestamp < CACHE_TIMEOUT)) {
+            return cached.stats;
+        }
+
         const stats: UserStats = {
             postsCount: 0,
             postsWithImageCount: 0,
@@ -109,6 +118,7 @@ export const BadgeService = {
             console.error('Error fetching user stats for badges:', error);
         }
 
+        statsCache[userId] = { stats, timestamp: Date.now() };
         return stats;
     },
 

@@ -24,7 +24,10 @@ export default function BadgesScreen() {
 
     useEffect(() => {
         const loadData = async () => {
-            if (!userId) return;
+            if (!userId) {
+                setLoading(false);
+                return;
+            }
             try {
                 setLoading(true);
                 // We fetch profile to get "complete profile" status accurately
