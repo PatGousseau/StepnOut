@@ -1,11 +1,12 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppState } from 'react-native';
 import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
 import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
@@ -71,6 +72,21 @@ function RootLayoutNav() {
 
   // hide recently active banner on onboarding
   const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
+  const lastOpenUpdateRef = useRef<number>(0);
+
+  const updateLastOpenAt = useCallback(async () => {
+    if (!session?.user?.id) return;
+    const now = Date.now();
+    if (now - lastOpenUpdateRef.current < 30 * 60 * 1000) return;
+    lastOpenUpdateRef.current = now;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ last_open_at: new Date().toISOString() })
+      .eq('id', session.user.id);
+    if (error) {
+      console.error('Error updating last_open_at:', error);
+    }
+  }, [session]);
 
   // Track screen views when pathname changes
   useEffect(() => {
@@ -110,6 +126,21 @@ function RootLayoutNav() {
     }
     requestUsernameIfMissing();
   }, [pathname, isDetailPage, hideLogo]);
+
+  useEffect(() => {
+    if (!session || loading) return;
+    updateLastOpenAt();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        updateLastOpenAt();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [session, loading, updateLastOpenAt]);
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
