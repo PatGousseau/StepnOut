@@ -1,5 +1,3 @@
-/// <reference types="https://deno.land/x/supabase_functions@1.3.3/mod.ts" />
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import OpenAI from 'https://esm.sh/openai@4.86.1';
 import { corsHeaders } from '../_shared/cors.ts';
