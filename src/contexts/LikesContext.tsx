@@ -47,6 +47,14 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ),
     }));
 
+    // seed liked state from items that already carry a `liked` field to avoid grey→red flash
+    setLikedItems((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        items.map((item) => [item.id, item.liked ?? false])
+      ),
+    }));
+
     const [likesMap, countsMap] = await Promise.all([
       type === "post"
         ? postService.fetchPostsLikes(ids, user?.id)
