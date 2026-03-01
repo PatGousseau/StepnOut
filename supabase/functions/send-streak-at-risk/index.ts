@@ -3,7 +3,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { sendExpoPushBatches, PushMessage } from '../_shared/notifications.ts';
-import { getAppConfigValue } from '../_shared/appConfig.ts';
+import { getPromptContent } from '../_shared/prompts.ts';
 import { pickRandom, safeParseJson } from '../_shared/utils.ts';
 
 type CandidateRow = {
@@ -78,9 +78,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const templateRaw = await getAppConfigValue(
+    const templateRaw = await getPromptContent(
       supabase,
-      'streak_at_risk_templates_it',
+      'streak_at_risk_templates',
     );
     const templates = parseTemplates(templateRaw);
 

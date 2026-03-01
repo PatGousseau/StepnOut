@@ -49,22 +49,39 @@ CREATE INDEX IF NOT EXISTS idx_community_highlights_generated_at
 
 ALTER TABLE public.community_highlights ENABLE ROW LEVEL SECURITY;
 
--- Configurable prompt templates (Italian)
-INSERT INTO public.app_config (key, value)
+-- Prompt templates (Italian)
+CREATE TABLE IF NOT EXISTS public.prompts (
+  id bigserial PRIMARY KEY,
+  key text NOT NULL UNIQUE,
+  locale text NOT NULL DEFAULT 'it',
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompts_key_locale
+  ON public.prompts (key, locale);
+
+ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
+
+INSERT INTO public.prompts (key, locale, content)
 VALUES
   (
-    'prompt_community_highlight_it',
+    'community_highlight',
+    'it',
     'Stai scrivendo una push notification per StepnOut, un''app di sfide per uscire dalla comfort zone. Un membro della community di nome {poster_first_name} ha appena condiviso questa storia sulla sfida "{challenge_title}": "{post_body}". Scrivi una notifica in italiano (titolo: max 40 caratteri, corpo: max 100 caratteri) che invogli ad aprire l''app. Riferisciti al cuore emotivo della storia senza citarla direttamente. Sii specifico, niente motivazionale generico. Nessuna emoji nel titolo. Max 1 emoji nel corpo. Output JSON: {"title": "...", "body": "..."}'
   ),
   (
-    'prompt_personalized_nudge_it',
+    'personalized_nudge',
+    'it',
     'Stai scrivendo una push notification di re-engagement per StepnOut, in italiano. Utente: {first_name}. Ultima sfida completata: "{last_challenge_title}" ({days_ago} giorni fa). Totale sfide completate: {total_count}. Streak prima di sparire: {streak_count}. Scrivi una notifica che sembri personale, richiami ciò che ha fatto, crei curiosita gentile (non senso di colpa), tono caldo ma non pressante. Output JSON: {"title": "...", "body": "..."}'
   ),
   (
-    'streak_at_risk_templates_it',
+    'streak_at_risk_templates',
+    'it',
     '[{"title":"Non perdere la serie","body":"Mancano 2 giorni alla sfida: se la salti perdi la tua serie. Ci sei?"},{"title":"Serie a rischio","body":"Ti restano 2 giorni per completare la sfida e salvare la tua serie."},{"title":"Ultimo avviso","body":"Ancora 2 giorni: fai la sfida di oggi e tieni viva la tua serie."}]'
   )
-ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+ON CONFLICT (key) DO UPDATE SET content = EXCLUDED.content;
 
 -- Latest pre-generated highlight for the last 48 hours
 CREATE OR REPLACE FUNCTION public.get_latest_community_highlight()

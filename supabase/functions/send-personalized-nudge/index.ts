@@ -3,7 +3,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import OpenAI from 'https://esm.sh/openai@4.86.1';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getAppConfigValue, applyTemplate } from '../_shared/appConfig.ts';
+import { getPromptContent, applyTemplate } from '../_shared/prompts.ts';
 import { sendExpoPushBatches, PushMessage } from '../_shared/notifications.ts';
 import { safeParseJson, truncate } from '../_shared/utils.ts';
 
@@ -102,8 +102,7 @@ Deno.serve(async (req) => {
     }
 
     const promptTemplate =
-      (await getAppConfigValue(supabase, 'prompt_personalized_nudge_it')) ||
-      '';
+      (await getPromptContent(supabase, 'personalized_nudge')) || '';
 
     if (!promptTemplate) {
       return new Response(

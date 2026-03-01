@@ -47,6 +47,7 @@ The agent should inspect the existing DB schema and create/modify tables as need
 
 Notification log — every notification sent: recipient, type, title, body, sent_at, opened_at, ai_generated flag
 User notification state — per user: last notification sent at, notifications this week count, last active at, completed challenge count, current streak
+Prompt templates — stored in a `prompts` table (not `app_config`) so copy can be updated without code changes
 Pre-generated highlights — source post, Italian title/body, generated at, used flag (shared copy for all recipients)
 Post-user tracking — which highlight posts have been sent to which users (avoid repeats)
 Last open timestamp — per user `last_open_at` updated by the app when opened/foregrounded

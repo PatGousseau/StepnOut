@@ -3,7 +3,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import OpenAI from 'https://esm.sh/openai@4.86.1';
 import { corsHeaders } from '../_shared/cors.ts';
-import { getAppConfigValue, applyTemplate } from '../_shared/appConfig.ts';
+import { getPromptContent, applyTemplate } from '../_shared/prompts.ts';
 import { safeParseJson, truncate } from '../_shared/utils.ts';
 
 type PopularPostRow = { post_id: number };
@@ -130,8 +130,7 @@ Deno.serve(async (req) => {
     const postBody = truncate(candidate.body || '', 500);
 
     const template =
-      (await getAppConfigValue(supabase, 'prompt_community_highlight_it')) ||
-      '';
+      (await getPromptContent(supabase, 'community_highlight')) || '';
 
     if (!template) {
       return new Response(
