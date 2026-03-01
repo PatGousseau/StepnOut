@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { sendExpoPushBatches, PushMessage } from '../_shared/notifications.ts';
 import { getPromptContent } from '../_shared/prompts.ts';
-import { pickRandom, safeParseJson } from '../_shared/utils.ts';
+import { pickRandom } from '../_shared/utils.ts';
 
 type CandidateRow = {
   user_id: string;
@@ -32,7 +32,12 @@ const FALLBACK_TEMPLATES: Template[] = [
 
 function parseTemplates(raw: string | null): Template[] {
   if (!raw) return FALLBACK_TEMPLATES;
-  const parsed = safeParseJson(raw);
+  let parsed: unknown = null;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = null;
+  }
   if (!Array.isArray(parsed)) return FALLBACK_TEMPLATES;
   const valid = parsed.filter((item) => item?.title && item?.body);
   return valid.length ? valid : FALLBACK_TEMPLATES;

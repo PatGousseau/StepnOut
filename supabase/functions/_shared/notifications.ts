@@ -6,7 +6,21 @@ export type PushMessage = {
   data?: Record<string, unknown>;
 };
 
-export async function sendExpoPush(messages: PushMessage[]) {
+type ExpoPushTicket = {
+  status: 'ok' | 'error';
+  id?: string;
+  message?: string;
+  details?: Record<string, unknown>;
+};
+
+type ExpoPushResponse = {
+  data: ExpoPushTicket[];
+  errors?: { code?: string; message?: string }[];
+};
+
+export async function sendExpoPush(
+  messages: PushMessage[],
+): Promise<ExpoPushResponse> {
   const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: {
@@ -29,7 +43,7 @@ export async function sendExpoPushBatches(
   messages: PushMessage[],
   batchSize = 100,
 ) {
-  const receipts: unknown[] = [];
+  const receipts: ExpoPushResponse[] = [];
   for (let i = 0; i < messages.length; i += batchSize) {
     const batch = messages.slice(i, i + batchSize);
     const receipt = await sendExpoPush(batch);

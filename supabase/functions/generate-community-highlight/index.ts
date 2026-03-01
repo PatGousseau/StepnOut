@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 import OpenAI from 'https://esm.sh/openai@4.86.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getPromptContent, applyTemplate } from '../_shared/prompts.ts';
-import { safeParseJson, truncate } from '../_shared/utils.ts';
+import { truncate } from '../_shared/utils.ts';
 
 type PopularPostRow = { post_id: number };
 
@@ -166,7 +166,12 @@ Deno.serve(async (req) => {
     });
 
     const content = response.choices[0]?.message?.content || '';
-    const parsed = safeParseJson(content);
+    let parsed: { title?: string; body?: string } | null = null;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      parsed = null;
+    }
 
     if (!parsed?.title || !parsed?.body) {
       return new Response(

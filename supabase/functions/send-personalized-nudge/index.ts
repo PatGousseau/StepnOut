@@ -5,7 +5,7 @@ import OpenAI from 'https://esm.sh/openai@4.86.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getPromptContent, applyTemplate } from '../_shared/prompts.ts';
 import { sendExpoPushBatches, PushMessage } from '../_shared/notifications.ts';
-import { safeParseJson, truncate } from '../_shared/utils.ts';
+import { truncate } from '../_shared/utils.ts';
 
 type CandidateRow = {
   user_id: string;
@@ -43,7 +43,12 @@ async function generatePersonalizedCopy(
   const text = res.choices[0]?.message?.content;
   if (!text) return null;
 
-  const parsed = safeParseJson(text);
+  let parsed: { title?: string; body?: string } | null = null;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = null;
+  }
   if (!parsed?.title || !parsed?.body) return null;
 
   return {
