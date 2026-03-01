@@ -33,6 +33,9 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
   try {
+    const url = new URL(req.url);
+    const isDryRun = url.searchParams.get('dryRun') === '1';
+
     const { data: highlight, error: highlightError } = await supabase.rpc(
       'get_latest_community_highlight',
     );
@@ -61,7 +64,7 @@ Deno.serve(async (req) => {
       throw new Error(`candidates rpc error: ${candidatesError.message}`);
     }
 
-    const maxUsers = Number(new URL(req.url).searchParams.get('maxUsers') || '0');
+    const maxUsers = Number(url.searchParams.get('maxUsers') || '0');
     const allCandidates = (candidates || []) as CandidateRow[];
     const selected = maxUsers > 0 ? allCandidates.slice(0, maxUsers) : allCandidates;
 
@@ -82,6 +85,22 @@ Deno.serve(async (req) => {
       body: row.body,
       data: { type: 'community_highlight', post_id: row.post_id },
     }));
+
+    if (isDryRun) {
+      return new Response(
+        JSON.stringify({
+          sent: 0,
+          dryRun: true,
+          highlight: row,
+          candidates: selected.length,
+          messages,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
 
     const receipts = await sendExpoPushBatches(messages);
 

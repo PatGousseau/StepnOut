@@ -99,6 +99,9 @@ Deno.serve(async (req) => {
   const openai = new OpenAI({ apiKey: openaiApiKey });
 
   try {
+    const url = new URL(req.url);
+    const isDryRun = url.searchParams.get('dryRun') === '1';
+
     const candidate = await getTopPostCandidate(supabase);
     if (!candidate) {
       return new Response(
@@ -186,23 +189,30 @@ Deno.serve(async (req) => {
     const title = truncate(String(parsed.title), 40);
     const body = truncate(String(parsed.body), 100);
 
-    const { error: insertError } = await supabase
-      .from('community_highlights')
-      .upsert(
-        {
-          post_id: candidate.id,
-          title,
-          body,
-        },
-        { onConflict: 'post_id', ignoreDuplicates: true },
-      );
+    if (!isDryRun) {
+      const { error: insertError } = await supabase
+        .from('community_highlights')
+        .upsert(
+          {
+            post_id: candidate.id,
+            title,
+            body,
+          },
+          { onConflict: 'post_id', ignoreDuplicates: true },
+        );
 
-    if (insertError) {
-      throw new Error(`highlight insert error: ${insertError.message}`);
+      if (insertError) {
+        throw new Error(`highlight insert error: ${insertError.message}`);
+      }
     }
 
     return new Response(
-      JSON.stringify({ status: 'generated', post_id: candidate.id }),
+      JSON.stringify({
+        status: isDryRun ? 'dry_run' : 'generated',
+        post_id: candidate.id,
+        title,
+        body,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

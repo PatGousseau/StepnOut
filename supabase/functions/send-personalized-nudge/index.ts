@@ -84,6 +84,9 @@ Deno.serve(async (req) => {
   const openai = new OpenAI({ apiKey: openaiApiKey });
 
   try {
+    const url = new URL(req.url);
+    const isDryRun = url.searchParams.get('dryRun') === '1';
+
     const { data: candidates, error: candidatesError } = await supabase.rpc(
       'get_personalized_nudge_candidates',
     );
@@ -92,7 +95,7 @@ Deno.serve(async (req) => {
       throw new Error(`candidates rpc error: ${candidatesError.message}`);
     }
 
-    const maxUsers = Number(new URL(req.url).searchParams.get('maxUsers') || '0');
+    const maxUsers = Number(url.searchParams.get('maxUsers') || '0');
     const allCandidates = (candidates || []) as CandidateRow[];
     const selected = maxUsers > 0 ? allCandidates.slice(0, maxUsers) : allCandidates;
 
@@ -159,6 +162,21 @@ Deno.serve(async (req) => {
     if (messages.length === 0) {
       return new Response(
         JSON.stringify({ sent: 0, reason: 'no_valid_ai_copy' }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
+    if (isDryRun) {
+      return new Response(
+        JSON.stringify({
+          sent: 0,
+          dryRun: true,
+          candidates: selected.length,
+          messages,
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

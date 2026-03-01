@@ -61,6 +61,9 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
   try {
+    const url = new URL(req.url);
+    const isDryRun = url.searchParams.get('dryRun') === '1';
+
     const { data: candidates, error: candidatesError } = await supabase.rpc(
       'get_streak_at_risk_candidates',
     );
@@ -69,7 +72,7 @@ Deno.serve(async (req) => {
       throw new Error(`candidates rpc error: ${candidatesError.message}`);
     }
 
-    const maxUsers = Number(new URL(req.url).searchParams.get('maxUsers') || '0');
+    const maxUsers = Number(url.searchParams.get('maxUsers') || '0');
     const allCandidates = (candidates || []) as CandidateRow[];
     const selected = maxUsers > 0 ? allCandidates.slice(0, maxUsers) : allCandidates;
 
@@ -114,6 +117,21 @@ Deno.serve(async (req) => {
         ai_generated: false,
         data: { type: 'streak_at_risk', challenge_id: c.challenge_id },
       });
+    }
+
+    if (isDryRun) {
+      return new Response(
+        JSON.stringify({
+          sent: 0,
+          dryRun: true,
+          candidates: selected.length,
+          messages,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     const receipts = await sendExpoPushBatches(messages);
