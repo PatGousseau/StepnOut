@@ -103,7 +103,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   const renderNotification = ({ item }: { item: Notification }) => {
     const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || t('StepnOut');
 
-    const challengeTitle = item.challenge?.title || '';
+    const challengeTitle = item.challenge?.title_it || item.challenge?.title || '';
 
     let notificationText = '';
     if (item.action_type === 'new_challenge') {
