@@ -101,10 +101,16 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
   ).current;
 
   const renderNotification = ({ item }: { item: Notification }) => {
-    const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || t('Unknown User');
-    
+    const triggerUserName = item.trigger_profile?.username || item.trigger_profile?.name || t('StepnOut');
+
+    const challengeTitle = item.challenge?.title || '';
+
     let notificationText = '';
-    if (item.action_type === 'reaction') {
+    if (item.action_type === 'new_challenge') {
+      notificationText = challengeTitle
+        ? t('New weekly challenge: (title)', { title: challengeTitle })
+        : t('New weekly challenge');
+    } else if (item.action_type === 'reaction') {
       const emoji = item.emoji || '';
       notificationText = item.comment_id
         ? t('reacted (emoji) to your comment', { emoji })
@@ -115,28 +121,39 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
       const commentText = item.comment?.body || '';
       notificationText = t('commented: "(comment)"', { comment: commentText });
     }
-    
-    const handlePostPress = () => {
+
+    const handlePress = () => {
       handleClose();
-      router.push(`/post/${item.post_id}`);
+      if (item.action_type === 'new_challenge') {
+        const id = item.challenge_id;
+        if (typeof id === 'string' || typeof id === 'number') {
+          router.push(`/challenge/${String(id)}`);
+        }
+        return;
+      }
+
+      if (item.post_id) {
+        router.push(`/post/${item.post_id}`);
+      }
     };
 
     const handleProfilePress = () => {
+      if (!item.trigger_user_id) return;
       handleClose();
       router.push(`/profile/${item.trigger_user_id}`);
     };
-    
+
     return (
       <TouchableOpacity 
         style={styles.notificationItem} 
-        onPress={handlePostPress}
+        onPress={handlePress}
         activeOpacity={0.7}
       >
         <View style={styles.notificationContent}>
           <Text style={styles.notificationText}>
             <Text 
               style={styles.userName} 
-              onPress={handleProfilePress}
+              onPress={item.trigger_user_id ? handleProfilePress : undefined}
               suppressHighlighting={false}
             >
               {triggerUserName}

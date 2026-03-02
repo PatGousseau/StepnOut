@@ -160,6 +160,22 @@ export async function sendCommentNotification(
 
 // Handle sending notifications for new challenges
 export async function sendNewChallengeNotification(recipientId: string, challengeId: string, challengeTitle: string) {
+    // Save notification to database so it persists (and shows in the in-app badge)
+    const { error: dbError } = await supabase
+        .from('notifications')
+        .insert([{
+            user_id: recipientId,
+            trigger_user_id: null,
+            action_type: 'new_challenge',
+            is_read: false,
+            challenge_id: challengeId,
+        }]);
+
+    if (dbError) {
+        console.error('Error saving new challenge notification to database:', dbError);
+        // still try to send push
+    }
+
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
