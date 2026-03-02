@@ -192,6 +192,14 @@ function RootLayoutNav() {
     };
   }, []);
 
+  useEffect(() => {
+    // keep OS app icon badge in sync with in-app unread notifications
+    // ios supports this reliably; android depends on launcher support
+    Notifications.setBadgeCountAsync(unreadCount).catch((e) => {
+      console.error('Error setting badge count:', e);
+    });
+  }, [unreadCount]);
+
   const handleNotificationPress = () => {
     markAllAsRead();
     setShowNotifications(true);
