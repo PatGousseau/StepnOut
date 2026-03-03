@@ -109,3 +109,10 @@ export interface Challenge {
     count: number;
     reacted: boolean;
   }
+
+  export interface ReactionUser {
+    id: string;
+    username: string;
+    name: string;
+    profileImageUrl: string | null;
+  }

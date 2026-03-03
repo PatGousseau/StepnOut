@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { sendLikeNotification, sendReactionNotification } from "../lib/notificationsService";
-import { LikeableItem, Post, ReactionSummary } from "../types";
+import { imageService } from "../services/imageService";
+import { LikeableItem, Post, ReactionSummary, ReactionUser } from "../types";
 
 interface PostDataComment {
   id: number;
@@ -203,6 +204,77 @@ export const postService = {
       console.error(`Error fetching ${type} reactions:`, error);
       return {};
     }
+  },
+
+  async fetchReactionUsersForItem(item: LikeableItem): Promise<Record<string, ReactionUser[]>> {
+    const idField = `${item.type}_id` as const;
+
+    const { data: likeRows, error: likesError } = await supabase
+      .from("likes")
+      .select("user_id, emoji, created_at")
+      .eq(idField, item.id)
+      .order("created_at", { ascending: false });
+
+    if (likesError) throw likesError;
+
+    type LikeRow = { user_id: string; emoji: string; created_at: string };
+    const rows = (likeRows || []) as unknown as LikeRow[];
+
+    const orderedUserIds = rows.map((r) => r.user_id).filter(Boolean);
+    const uniqueUserIds = Array.from(new Set(orderedUserIds));
+
+    if (uniqueUserIds.length === 0) return {};
+
+    const { data: profileRows, error: profilesError } = await supabase
+      .from("profiles")
+      .select(
+        `
+        id,
+        username,
+        name,
+        profile_media:media!profiles_profile_media_id_fkey (
+          file_path
+        )
+      `
+      )
+      .in("id", uniqueUserIds);
+
+    if (profilesError) throw profilesError;
+
+    type ProfileRow = {
+      id: string;
+      username: string;
+      name: string;
+      profile_media: { file_path: string } | null;
+    };
+
+    const profiles = (profileRows || []) as unknown as ProfileRow[];
+    const profileMap = new Map(
+      profiles.map((p) => [
+        p.id,
+        {
+          id: p.id,
+          username: p.username || "unknown",
+          name: p.name || "Unknown",
+          profileImageUrl: p.profile_media?.file_path
+            ? imageService.getProfileImageUrlSync(p.profile_media.file_path, "small")
+            : null,
+        } satisfies ReactionUser,
+      ])
+    );
+
+    const result: Record<string, ReactionUser[]> = {};
+    for (const row of rows) {
+      const emoji = row.emoji;
+      if (!emoji) continue;
+      const u = profileMap.get(row.user_id);
+      if (!u) continue;
+      if (!result[emoji]) result[emoji] = [];
+      if (result[emoji].some((x) => x.id === u.id)) continue;
+      result[emoji].push(u);
+    }
+
+    return result;
   },
 
   async toggleReaction(
