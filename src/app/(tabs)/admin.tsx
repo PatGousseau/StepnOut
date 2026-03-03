@@ -154,24 +154,37 @@ const ChallengeCreation: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const pageSize = 1000;
-      let from = 0;
       const users: UserProfile[] = [];
+      let lastId: string | null = null;
 
       while (true) {
-        const { data, error } = await supabase
+        let query = supabase
           .from("profiles")
           .select("id, username, name")
-          .order("username", { ascending: true })
-          .range(from, from + pageSize - 1);
+          .order("id", { ascending: true })
+          .limit(pageSize);
 
+        if (lastId) {
+          query = query.gt("id", lastId);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
 
         const page = (data || []) as UserProfile[];
+        if (page.length === 0) break;
+
         users.push(...page);
+        lastId = page[page.length - 1].id;
 
         if (page.length < pageSize) break;
-        from += pageSize;
       }
+
+      users.sort((a, b) => {
+        const aKey = (a.username || a.name || "").toLowerCase();
+        const bKey = (b.username || b.name || "").toLowerCase();
+        return aKey.localeCompare(bKey);
+      });
 
       setAllUsers(users);
     } catch (error) {
