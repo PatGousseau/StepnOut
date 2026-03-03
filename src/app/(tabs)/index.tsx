@@ -23,7 +23,7 @@ import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
 import { PostsListSkeleton } from "@/src/components/Skeleton";
 import { useLanguage } from "../../contexts/LanguageContext";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Post as PostType, FeedSort } from "../../types";
 
 // Discriminated union for FlatList items
@@ -64,6 +64,7 @@ const prepareFeedItems = (posts: PostType[], keyPrefix: string): FeedItem[] => {
 
 const Home = () => {
   const { t } = useLanguage();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { firstTime } = useLocalSearchParams<{ firstTime?: string }>();
   const defaultSort: FeedSort = firstTime === "true" ? "popular" : "recent";
@@ -89,9 +90,20 @@ const Home = () => {
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
+  const hasConsumedFirstTime = useRef(false);
 
   const pagerRef = useRef<PagerView>(null);
   const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (hasConsumedFirstTime.current) return;
+    if (firstTime !== "true") return;
+
+    hasConsumedFirstTime.current = true;
+    setSubmissionSort("popular");
+    setDiscussionSort("popular");
+    router.setParams({ firstTime: undefined });
+  }, [firstTime, router]);
 
   // Animate tab indicator when activeTab changes
   useEffect(() => {
