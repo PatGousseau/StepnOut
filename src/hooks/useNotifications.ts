@@ -18,12 +18,17 @@ export const useNotifications = () => {
         .select(`
           *,
           post_id,
+          challenge_id,
           trigger_profile:profiles!notifications_trigger_user_id_fkey (
             username,
             name
           ),
           comment:comments (
             body
+          ),
+          challenge:challenges (
+            title,
+            title_it
           )
         `)
         .eq('user_id', user.id)
@@ -115,12 +120,17 @@ export const useNotifications = () => {
               .select(`
                 *,
                 post_id,
+                challenge_id,
                 trigger_profile:profiles!notifications_trigger_user_id_fkey (
                   username,
                   name
                 ),
                 comment:comments (
                   body
+                ),
+                challenge:challenges (
+                  title,
+                  title_it
                 )
               `)
               .eq('notification_id', payload.new.notification_id)

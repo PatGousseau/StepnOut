@@ -49,6 +49,8 @@ export const translations = {
   "reacted (emoji) to your post": "ha reagito (emoji) al tuo post",
   "reacted (emoji) to your comment": "ha reagito (emoji) al tuo commento",
   'commented: "(comment)"': 'ha commentato: "(comment)"',
+  "New weekly challenge": "Nuova sfida settimanale",
+  "New weekly challenge: (title)": "Nuova sfida settimanale: (title)",
   Notifications: "Notifiche",
   "No notifications yet": "Nessuna notifica",
   "Share my experience": "Condividi la mia esperienza",
