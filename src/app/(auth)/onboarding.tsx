@@ -10,8 +10,8 @@ export default function OnboardingScreen() {
 
   return (
     <Onboarding
-      onSkip={() => router.replace('/(tabs)')}
-      onDone={() => router.replace('/(tabs)')}
+      onSkip={() => router.replace('/(tabs)?firstTime=true')}
+      onDone={() => router.replace('/(tabs)?firstTime=true')}
       showNext={true}
       showSkip={false}
       nextLabel={t('Next')}
