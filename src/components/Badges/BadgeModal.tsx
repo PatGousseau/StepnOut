@@ -53,9 +53,6 @@ export const BadgeModal: React.FC<BadgeModalProps> = ({
                                 badge={badge}
                                 unlocked={unlocked}
                                 size="large"
-                                showShadow={false}
-                                showInsetShadow={false}
-                                flat={true}
                             />
                         </View>
 

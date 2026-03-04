@@ -284,9 +284,6 @@ interface BadgeIconProps {
     size?: 'small' | 'medium' | 'large';
     onPress?: () => void;
     showLevelColor?: boolean;
-    showShadow?: boolean;
-    showInsetShadow?: boolean;
-    flat?: boolean;
 }
 
 export const BadgeIcon: React.FC<BadgeIconProps> = ({
@@ -295,9 +292,6 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
     size = 'medium',
     onPress,
     showLevelColor = true,
-    showShadow = true,
-    showInsetShadow = true,
-    flat = false,
 }) => {
     const { total, icon: iconPx } = SIZES[size];
     const cx = total / 2;
@@ -326,9 +320,6 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
 
     // Unique IDs per palette key (prevent react-native-svg gradient collision)
     const uid = palKey;
-    const rimFill = flat ? pal.rim[Math.min(1, pal.rim.length - 1)][1] : `url(#rm_${uid})`;
-    const faceFill = flat ? pal.radial[Math.min(2, pal.radial.length - 1)][1] : `url(#rg_${uid})`;
-    const showShine = !flat && pal.shineOpacity > 0;
 
     // ── Specular geometry — blurred RadialGradient hot-spot ──
     //  Positioned at ~11 o'clock.
@@ -342,7 +333,7 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
             disabled={!onPress}
             activeOpacity={onPress ? 0.78 : 1}
             style={[
-                showShadow ? styles.touchable : styles.noShadow,
+                styles.touchable,
                 { width: total, height: total },
                 // Locked state: entire badge becomes a ghost silhouette
                 !unlocked && styles.ghostOpacity,
@@ -449,15 +440,13 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
                 </Defs>
 
                 {/* ── Layer 0: ambient drop-shadow behind medal ── */}
-                {showShadow && (
-                    <Ellipse
-                        cx={cx + 1}
-                        cy={cy + 4}
-                        rx={rimR - 1}
-                        ry={rimR - 3}
-                        fill="rgba(0,0,0,0.30)"
-                    />
-                )}
+                <Ellipse
+                    cx={cx + 1}
+                    cy={cy + 4}
+                    rx={rimR - 1}
+                    ry={rimR - 3}
+                    fill="rgba(0,0,0,0.30)"
+                />
 
                 {/* ══ PLATINUM — gear edge with its own pop shadow ══ */}
                 {pal.scalloped ? (
@@ -468,43 +457,35 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
                          * feGaussianBlur on SourceAlpha inherently pushes colour
                          * outside the shape boundary, giving the impression of depth.
                          */}
-                        {showShadow && (
-                            <Path
-                                d={gearPath(cx, cy, gearPeakR, gearValleyR, TEETH)}
-                                fill="rgba(0,0,0,0.45)"
-                                filter="url(#ptShadow)"
-                                transform={`translate(1.5, 2.5)`}
-                            />
-                        )}
+                        <Path
+                            d={gearPath(cx, cy, gearPeakR, gearValleyR, TEETH)}
+                            fill="rgba(0,0,0,0.45)"
+                            filter="url(#ptShadow)"
+                            transform={`translate(1.5, 2.5)`}
+                        />
                         {/* Gear shape — rim gradient, perfectly centred */}
                         <Path
                             d={gearPath(cx, cy, gearPeakR, gearValleyR, TEETH)}
-                            fill={rimFill}
+                            fill={`url(#rm_${uid})`}
                         />
                         {/* Face disc — sits inside the valleys */}
-                        <Circle cx={cx} cy={cy} r={gearFaceR} fill={faceFill} />
-                        {!flat && (
-                            <Circle cx={cx} cy={cy} r={gearFaceR} fill={`url(#lg_${uid})`} />
-                        )}
+                        <Circle cx={cx} cy={cy} r={gearFaceR} fill={`url(#rg_${uid})`} />
+                        <Circle cx={cx} cy={cy} r={gearFaceR} fill={`url(#lg_${uid})`} />
                     </G>
                 ) : (
                     /* ══ ALL OTHER TIERS — circular medal ══ */
                     <G>
                         {/* Outer rim */}
-                        <Circle cx={cx} cy={cy} r={rimR} fill={rimFill} />
+                        <Circle cx={cx} cy={cy} r={rimR} fill={`url(#rm_${uid})`} />
                         {/* Face — radial */}
-                        <Circle cx={cx} cy={cy} r={faceR} fill={faceFill} />
+                        <Circle cx={cx} cy={cy} r={faceR} fill={`url(#rg_${uid})`} />
                         {/* Face — directional overlay */}
-                        {!flat && (
-                            <Circle cx={cx} cy={cy} r={faceR} fill={`url(#lg_${uid})`} />
-                        )}
+                        <Circle cx={cx} cy={cy} r={faceR} fill={`url(#lg_${uid})`} />
                     </G>
                 )}
 
                 {/* ── Layer 4: inset shadow vignette ── */}
-                {showInsetShadow && (
-                    <Circle cx={cx} cy={cy} r={effFaceR} fill={`url(#is_${uid})`} />
-                )}
+                <Circle cx={cx} cy={cy} r={effFaceR} fill={`url(#is_${uid})`} />
 
                 {/*
                  * ── Layer 5: specular bloom (gaussian-blurred) ──
@@ -512,7 +493,7 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
                  *  The blur filter makes the gradient boundary invisible —
                  *  the light simply "fades into" the metal surface.
                  */}
-                {showShine && (
+                {pal.shineOpacity > 0 && (
                     <G opacity={pal.shineOpacity}>
                         {/* Blurred soft bloom */}
                         <Circle
@@ -537,11 +518,11 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
                     name={badge.icon as any}
                     size={iconPx}
                     color={pal.icon}
-                    style={showShadow ? {
+                    style={{
                         textShadowColor: pal.iconShadow,
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 5,
-                    } : undefined}
+                    }}
                 />
             </View>
         </TouchableOpacity>
@@ -557,11 +538,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.30,
         shadowRadius: 7,
         elevation: 8,
-    },
-    noShadow: {
-        shadowOpacity: 0,
-        shadowRadius: 0,
-        elevation: 0,
     },
     /** 40% opacity makes the locked badge a clear ghost / silhouette */
     ghostOpacity: {
