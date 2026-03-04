@@ -8,6 +8,7 @@ import { BadgeIcon, SIZES } from './BadgeIcon';
 import { BadgeModal } from './BadgeModal';
 import { colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { Skeleton } from '../Skeleton';
 
 interface BadgePreviewSectionProps {
     userId: string;
@@ -27,7 +28,10 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
     useEffect(() => {
         const fetchBadges = async () => {
-            if (!userId || !userProfile) return;
+            if (!userId || !userProfile) {
+                setLoading(false);
+                return;
+            }
             try {
                 setLoading(true);
                 const stats = await BadgeService.getUserStats(userId);
@@ -62,11 +66,10 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
             const n = Math.floor((availableWidth + BADGE_GAP) / (ITEM_SIZE + BADGE_GAP));
             setPreviewCount(Math.min(allBadges.length, Math.max(0, n)));
         }
-    }, [containerWidth, allBadges.length]);
-
-    if (loading) return null;
+    }, [ITEM_SIZE, containerWidth, allBadges.length]);
 
     const previewBadges = allBadges.slice(0, previewCount);
+    const skeletonCount = Math.max(previewCount, 3);
 
     const handleSeeAll = () => {
         router.push({
@@ -79,21 +82,40 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
         <View style={styles.container}>
             <View style={styles.stripRow} onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
                 <View style={styles.listContainer}>
-                    {previewBadges.map(badge => (
-                        <View key={badge.id} style={styles.badgeWrapper}>
-                            <BadgeIcon
-                                badge={badge}
-                                unlocked={badge.unlocked}
-                                size="small"
-                                onPress={() => setSelectedBadge(badge)}
+                    {loading
+                        ? Array.from({ length: skeletonCount }).map((_, index) => (
+                            <Skeleton
+                                key={`badge-skeleton-${index}`}
+                                width={ITEM_SIZE}
+                                height={ITEM_SIZE}
+                                borderRadius={ITEM_SIZE / 2}
+                                style={styles.skeletonBadge}
                             />
-                        </View>
-                    ))}
+                        ))
+                        : previewBadges.map(badge => (
+                            <View key={badge.id} style={styles.badgeWrapper}>
+                                <BadgeIcon
+                                    badge={badge}
+                                    unlocked={badge.unlocked}
+                                    size="small"
+                                    onPress={() => setSelectedBadge(badge)}
+                                />
+                            </View>
+                        ))}
                 </View>
 
-                <TouchableOpacity style={styles.chevronButton} onPress={handleSeeAll}>
-                    <Ionicons name="chevron-forward" size={18} color={colors.light.primary} />
-                </TouchableOpacity>
+                {loading ? (
+                    <Skeleton
+                        width={CHEVRON_SLOT_WIDTH}
+                        height={28}
+                        borderRadius={8}
+                        style={styles.skeletonChevron}
+                    />
+                ) : (
+                    <TouchableOpacity style={styles.chevronButton} onPress={handleSeeAll}>
+                        <Ionicons name="chevron-forward" size={18} color={colors.light.primary} />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <BadgeModal
@@ -137,5 +159,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginLeft: 0,
         width: CHEVRON_SLOT_WIDTH,
+    },
+    skeletonBadge: {
+    },
+    skeletonChevron: {
+        marginLeft: 0,
     },
 });
