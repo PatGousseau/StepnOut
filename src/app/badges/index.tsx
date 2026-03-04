@@ -99,15 +99,6 @@ export default function BadgesScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-
-                {/* Summary Card */}
-                <View style={styles.summaryCard}>
-                    <Text style={styles.summaryValue}>
-                        {allBadges.filter(b => b.unlocked).length} / {allBadges.length}
-                    </Text>
-                    <Text style={styles.summaryLabel}>{t('Unlocked')}</Text>
-                </View>
-
                 {Object.entries(categories).map(([category, badges]) => (
                     <View key={category} style={styles.categorySection}>
                         <Text style={styles.categoryTitle}>{getCategoryTitle(category)}</Text>
@@ -172,28 +163,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 20,
         paddingBottom: 40,
-    },
-    summaryCard: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 24,
-        alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    summaryValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.light.primary,
-    },
-    summaryLabel: {
-        marginTop: 4,
-        fontSize: 14,
-        color: '#666',
     },
     categorySection: {
         marginBottom: 32,
