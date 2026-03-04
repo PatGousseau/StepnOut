@@ -287,4 +287,5 @@ export const translations = {
   "Locked": "Bloccato",
   "Unlocked": "Sbloccati",
   "Obtained": "Ottenuto",
+  "All badges": "Tutti i badge",
 };

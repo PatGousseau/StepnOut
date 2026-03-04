@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
 import { Badge, UserBadge } from '../../types/badges';
@@ -9,6 +9,7 @@ import { BadgeModal } from './BadgeModal';
 import { colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Text } from '../StyledText';
 
 interface BadgePreviewSectionProps {
     userId: string;
@@ -59,19 +60,8 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
     useEffect(() => {
         if (containerWidth > 0) {
             const n = Math.floor((containerWidth + G_MIN) / (ITEM_SIZE + G_MIN));
-
-            let currentPreviewCount = 0;
-            let totalItemsForGap = 0;
-
-            if (allBadges.length > n) {
-                // More badges than capacity, show n-1 badges + plus button
-                currentPreviewCount = Math.max(0, n - 1);
-                totalItemsForGap = currentPreviewCount + 1;
-            } else {
-                // All badges fit
-                currentPreviewCount = allBadges.length;
-                totalItemsForGap = currentPreviewCount;
-            }
+            const currentPreviewCount = Math.min(allBadges.length, Math.max(0, n));
+            const totalItemsForGap = currentPreviewCount;
 
             setPreviewCount(currentPreviewCount);
 
@@ -87,7 +77,6 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
     if (loading) return null;
 
     const previewBadges = allBadges.slice(0, previewCount);
-    const hasMore = allBadges.length > previewCount;
 
     const handleSeeAll = () => {
         router.push({
@@ -98,7 +87,10 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
     return (
         <View style={styles.container}>
-            <Text style={styles.sectionTitle}>{t('Badges') || 'LocalBadges'}</Text>
+            <View style={styles.headerRow}>
+                <Text style={styles.sectionTitle}>{t('Badges') || 'LocalBadges'}</Text>
+                <Text style={styles.badgeCount}>{earnedBadges.length}</Text>
+            </View>
 
             <View
                 style={[styles.listContainer, { gap: dynamicGap }]}
@@ -114,13 +106,12 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
                         />
                     </View>
                 ))}
-
-                {hasMore && (
-                    <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAll}>
-                        <Ionicons name="add" size={24} color={colors.light.primary} />
-                    </TouchableOpacity>
-                )}
             </View>
+
+            <TouchableOpacity style={styles.viewAllRow} onPress={handleSeeAll}>
+                <Text style={styles.viewAllText}>{t('All badges')}</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.light.primary} />
+            </TouchableOpacity>
 
             <BadgeModal
                 visible={!!selectedBadge}
@@ -144,7 +135,17 @@ const styles = StyleSheet.create({
         color: '#0D1B1E',
         fontSize: 20,
         fontWeight: 'bold',
+    },
+    headerRow: {
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         marginBottom: 12,
+    },
+    badgeCount: {
+        color: '#0D1B1E',
+        fontSize: 20,
+        fontWeight: '400',
     },
     listContainer: {
         flexDirection: 'row',
@@ -154,15 +155,19 @@ const styles = StyleSheet.create({
     badgeWrapper: {
         alignItems: 'center',
     },
-    seeAllButton: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#F0F0F0',
-        justifyContent: 'center',
+    viewAllRow: {
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-        borderStyle: 'dashed',
-    }
+        borderTopColor: '#E8EDF2',
+        borderTopWidth: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 16,
+        paddingTop: 14,
+        width: '100%',
+    },
+    viewAllText: {
+        color: colors.light.primary,
+        fontSize: 14,
+        fontWeight: '600',
+    },
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
@@ -16,15 +16,17 @@ const GRID_GAP = 16;
 const MIN_GRID_CELL_WIDTH = 84;
 const MIN_GRID_COLUMNS = 3;
 const MAX_GRID_COLUMNS = 5;
+const SCREEN_PADDING = 20;
 
 export default function BadgesScreen() {
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { t } = useLanguage();
+    const { width: screenWidth } = useWindowDimensions();
 
     const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number })[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedBadge, setSelectedBadge] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number }) | null>(null);
-    const [gridWidth, setGridWidth] = useState(0);
+    const [gridWidth, setGridWidth] = useState(Math.max(0, screenWidth - SCREEN_PADDING * 2));
 
     useEffect(() => {
         const loadData = async () => {
@@ -57,6 +59,10 @@ export default function BadgesScreen() {
 
         loadData();
     }, [userId]);
+
+    useEffect(() => {
+        setGridWidth(Math.max(0, screenWidth - SCREEN_PADDING * 2));
+    }, [screenWidth]);
 
     if (loading) {
         return (
@@ -113,7 +119,7 @@ export default function BadgesScreen() {
                                     key={badge.id}
                                     style={[
                                         styles.gridItem,
-                                        gridItemWidth ? { width: gridItemWidth } : styles.gridItemFallback,
+                                        { width: gridItemWidth },
                                     ]}
                                     onPress={() => setSelectedBadge(badge)}
                                 >
@@ -150,7 +156,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.light.background,
     },
     scrollContent: {
-        padding: 20,
+        padding: SCREEN_PADDING,
         paddingBottom: 40,
     },
     categorySection: {
@@ -171,9 +177,6 @@ const styles = StyleSheet.create({
     gridItem: {
         alignItems: 'center',
         gap: 8,
-    },
-    gridItemFallback: {
-        width: '25%',
     },
     badgeName: {
         fontSize: 11,
