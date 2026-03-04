@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
 import { Badge } from '../../types/badges';
 import { BadgeIcon } from '../../components/Badges/BadgeIcon';
 import { BadgeModal } from '../../components/Badges/BadgeModal';
 import { colors } from '../../constants/Colors';
-import { Ionicons } from '@expo/vector-icons';
 import { Loader } from '../../components/Loader';
 import { profileService } from '../../services/profileService';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -15,7 +14,6 @@ import { UserProfile } from '../../models/User';
 
 export default function BadgesScreen() {
     const { userId } = useLocalSearchParams<{ userId: string }>();
-    const router = useRouter();
     const { t } = useLanguage();
 
     const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number })[]>([]);
@@ -58,13 +56,6 @@ export default function BadgesScreen() {
         return (
             <SafeAreaView style={styles.container} edges={['bottom']}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{t('Badges')}</Text>
-                    <View style={{ width: 24 }} />
-                </View>
                 <Loader />
             </SafeAreaView>
         );
@@ -89,14 +80,6 @@ export default function BadgesScreen() {
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
             <Stack.Screen options={{ headerShown: false }} />
-
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#000" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('Badges')}</Text>
-                <View style={{ width: 24 }} />
-            </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {Object.entries(categories).map(([category, badges]) => (
@@ -143,22 +126,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.light.background,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    backButton: {
-        padding: 4,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
     },
     scrollContent: {
         padding: 20,
