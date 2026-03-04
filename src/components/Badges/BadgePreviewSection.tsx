@@ -109,11 +109,8 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
 const styles = StyleSheet.create({
     container: {
-        borderBottomColor: '#ccc',
-        borderBottomWidth: 1,
-        borderTopColor: '#ccc',
-        borderTopWidth: 1,
-        marginVertical: 8,
+        marginTop: 4,
+        marginBottom: 4,
         paddingVertical: 10,
     },
     stripRow: {

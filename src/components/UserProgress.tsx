@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from './StyledText';
-import { FontAwesome } from '@expo/vector-icons'; 
 import { colors } from '../constants/Colors';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -26,12 +25,13 @@ interface WeekData {
 
 const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
   const { t } = useLanguage();
-  
+  const recentWeeks = [...weekData].slice(0, 7).reverse();
+
   const getBoxStyle = (week: WeekData) => {
     if (week.isCompleted) {
       return {
-        backgroundColor: '#66BB6A',
-        borderColor: '#66BB6A',
+        backgroundColor: colors.light.primary,
+        borderColor: colors.light.primary,
       };
     }
     if (week.isActive) {
@@ -42,30 +42,28 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
     }
     // Past uncompleted challenges
     return {
-      backgroundColor: 'transparent',
-      borderColor: colors.light.primary,
+      backgroundColor: '#EEF1F6',
+      borderColor: '#D7DDE8',
     };
   };
 
   return (
     <View style={styles.streakCalendarContainer}>
-      <View style={styles.streakHeader}>
-        <View style={styles.streakTitle}>
-          <FontAwesome name="calendar" size={14} color={colors.light.primary} />
-          <Text style={styles.streakTitleText}>{t('Latest Challenges')}</Text>
-        </View>
-      </View>
+      <Text style={styles.streakEyebrow}>{t('Past 7 weeks')}</Text>
       <View style={styles.calendarGrid}>
-        {[...weekData].reverse().map((week, index) => (
-          <TouchableOpacity
-            key={index}
+        {recentWeeks.map((week, index) => (
+          <View
+            key={`${week.challengeId}-${index}`}
             style={[
               styles.calendarBox,
               getBoxStyle(week),
             ]}
-            activeOpacity={0.8}
           />
         ))}
+      </View>
+      <View style={styles.streakAxis}>
+        <Text style={styles.streakAxisLabel}>{t('7 weeks ago')}</Text>
+        <Text style={styles.streakAxisLabel}>{t('Last week')}</Text>
       </View>
     </View>
   );
@@ -73,36 +71,49 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
 
 const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) => {
   const { t } = useLanguage();
-  const total = challengeData.easy + challengeData.medium + challengeData.hard;
+  const breakdown = [
+    { key: 'easy', label: t('Easy'), count: challengeData.easy, color: '#66BB6A' },
+    { key: 'medium', label: t('Medium'), count: challengeData.medium, color: '#FFA726' },
+    { key: 'hard', label: t('Hard'), count: challengeData.hard, color: '#EF5350' },
+  ];
+  const total = breakdown.reduce((sum, level) => sum + level.count, 0);
 
   return (
     <View style={styles.container}>
       <Text style={styles.yourProgressText}>{t('Your Progress')}</Text>
-      <View style={styles.rowContainer}>
-        <View style={styles.totalContainer}>
-          <FontAwesome name="trophy" size={32} color="#4D5382" />
-          <View style={styles.totalTextContainer}>
-            <Text style={styles.totalText}>{total}</Text>
-            <Text style={styles.totalLabel}>{t('Total')}</Text>
-          </View>
-        </View>
-
-        <View style={styles.streakContainer}>
-          <StreakCalendar weekData={weekData} />
-        </View>
+      <View style={styles.progressBarTrack}>
+        {total === 0 ? (
+          <View style={styles.emptyProgressFill} />
+        ) : (
+          breakdown
+            .filter((level) => level.count > 0)
+            .map((level) => (
+              <View
+                key={level.key}
+                style={[
+                  styles.progressBarSegment,
+                  {
+                    backgroundColor: level.color,
+                    flex: level.count,
+                  },
+                ]}
+              />
+            ))
+        )}
       </View>
 
       <View style={styles.breakdownContainer}>
-        {[
-          { label: t('Easy'), count: challengeData.easy, color: '#E8F5E9', textColor: '#66BB6A' },
-          { label: t('Medium'), count: challengeData.medium, color: '#FFF3E0', textColor: '#FFA726' },
-          { label: t('Hard'), count: challengeData.hard, color: '#FFEBEE', textColor: '#EF5350' },
-        ].map((level) => (
-          <View key={level.label} style={[styles.challengeBox, { backgroundColor: level.color }]}>
-            <Text style={[styles.challengeCount, { color: level.textColor }]}>{level.count}</Text>
-            <Text style={[styles.challengeLabel, { color: level.textColor}]}>{level.label}</Text>
+        {breakdown.map((level) => (
+          <View key={level.key} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: level.color }]} />
+            <Text style={styles.challengeLabel}>{level.label}</Text>
+            <Text style={styles.challengeCount}>{level.count}</Text>
           </View>
         ))}
+      </View>
+
+      <View style={styles.streakRow}>
+        <StreakCalendar weekData={weekData} />
       </View>
     </View>
   );
@@ -112,104 +123,95 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginVertical: 16,
+    marginTop: 4,
+    marginBottom: 16,
     padding: 16,
   },
   yourProgressText: {
     color: '#0D1B1E',
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  rowContainer: {
+  progressBarTrack: {
+    backgroundColor: '#E6E8EC',
+    borderRadius: 999,
     flexDirection: 'row',
+    height: 12,
     marginBottom: 16,
+    overflow: 'hidden',
   },
-  totalContainer: {
-    alignItems: 'center',
-    backgroundColor: '#B6B8CB',
-    borderRadius: 12,
+  progressBarSegment: {
+    height: '100%',
+  },
+  emptyProgressFill: {
+    backgroundColor: '#D5D9E0',
     flex: 1,
-    flexDirection: 'row',
-    marginRight: 12,
-    padding: 12
   },
-  totalTextContainer: {
-    alignItems: 'flex-start',
-    flexDirection: 'column',
-    marginLeft: 12,
-  },
-  totalText: {
-    color: '#0D1B1E',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  totalLabel: {
-    color: 'black',
-    fontSize: 14,
-  },
-  streakContainer: {
-    flex: 2,
-    justifyContent: 'center',
+  streakRow: {
+    marginTop: 16,
   },
   breakdownContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginHorizontal: -2,
   },
-  challengeBox: {
+  legendItem: {
     alignItems: 'center',
-    borderRadius: 12,
     flex: 1,
-    marginHorizontal: 4,
-    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginHorizontal: 2,
   },
-  challengeCount: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  legendDot: {
+    borderRadius: 4,
+    height: 8,
+    marginRight: 6,
+    width: 8,
   },
   challengeLabel: {
     color: '#0D1B1E',
     fontSize: 14,
+    marginRight: 4,
+  },
+  challengeCount: {
+    color: '#0D1B1E',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   
   // Streak Calendar Styles
   streakCalendarContainer: {
-    backgroundColor: '#B6B8CB',
-    borderRadius: 12,
+    backgroundColor: '#F8F9FC',
+    borderColor: '#E6E8EC',
+    borderRadius: 10,
+    borderWidth: 1,
     padding: 12,
+    width: '100%',
   },
-  streakHeader: {
-    alignItems: 'center',
+  streakEyebrow: {
+    color: '#5F6B7A',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  calendarGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  streakTitle: {
-    alignItems: 'center',
+  calendarBox: {
+    aspectRatio: 1,
+    borderRadius: 4,
+    borderWidth: 1,
+    width: '11%',
+  },
+  streakAxis: {
     flexDirection: 'row',
-  },
-  streakTitleText: {
-    color: colors.light.text,
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 6,
-  },
-  streakCountText: {
-    color: colors.light.primary,
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginLeft: 16,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  calendarBox: {
-    borderRadius: 3,
-    borderWidth: 1,
-    paddingBottom: '11%',
-    width: '11%',
+  streakAxisLabel: {
+    color: '#7F8C8D',
+    fontSize: 11,
   },
 });
 

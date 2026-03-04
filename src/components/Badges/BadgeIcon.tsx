@@ -38,7 +38,6 @@ import Svg, {
 } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '../../types/badges';
-import { colors } from '../../constants/Colors';
 
 // ─── Palette definition ───────────────────────────────────────────────────────
 
@@ -533,13 +532,7 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-    touchable: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.30,
-        shadowRadius: 7,
-        elevation: 8,
-    },
+    touchable: {},
     /** 40% opacity makes the locked badge a clear ghost / silhouette */
     ghostOpacity: {
         opacity: 0.40,
