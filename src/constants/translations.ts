@@ -225,6 +225,10 @@ export const translations = {
   "Please enable photo library access in Settings to share photos and videos.":
     "Abilita l'accesso alla libreria foto nelle Impostazioni per condividere foto e video.",
   "Open Settings": "Apri Impostazioni",
+  "Enable notifications": "Attiva notifiche",
+  "To enable push notifications, please allow notifications in your device settings.": "Per attivare le notifiche push, abilita le notifiche nelle impostazioni del dispositivo.",
+  "Push notifications enabled": "Notifiche push attivate",
+  "Failed to enable push notifications": "Impossibile attivare le notifiche push",
   "Error selecting media": "Errore nella selezione del media",
   "Please add either a description or media": "Aggiungi una descrizione o un media",
   "Please wait for media selection to complete": "Attendi il completamento della selezione del media",

@@ -36,6 +36,8 @@ import { imageService } from "../services/imageService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
+import * as Notifications from "expo-notifications";
+import { registerForPushNotificationsAsync } from "../lib/notifications";
 
 type ProfilePageProps = {
   userId?: string;
@@ -203,6 +205,34 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       await signOut();
     } catch (error) {
       console.error("Error signing out:", error);
+    }
+  };
+
+  const handleEnablePushNotifications = async () => {
+    try {
+      if (!user?.id) return;
+
+      const { status } = await Notifications.getPermissionsAsync();
+
+      if (status === "granted") {
+        const token = await registerForPushNotificationsAsync(user.id);
+        if (token) {
+          Alert.alert(t("Success"), t("Push notifications enabled"));
+        }
+        return;
+      }
+
+      Alert.alert(
+        t("Enable notifications"),
+        t("To enable push notifications, please allow notifications in your device settings."),
+        [
+          { text: t("Cancel"), style: "cancel" },
+          { text: t("Open Settings"), onPress: () => Linking.openSettings() },
+        ]
+      );
+    } catch (error) {
+      console.error("Error enabling push notifications:", error);
+      Alert.alert(t("Error"), t("Failed to enable push notifications"));
     }
   };
 
@@ -463,6 +493,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           <View style={styles.bioSection}>
             <Text style={styles.bioText}>{userProfile.bio}</Text>
           </View>
+        )}
+
+        {isOwnProfile && (
+          <TouchableOpacity style={styles.enablePushButton} onPress={handleEnablePushNotifications}>
+            <Icon name="notifications-outline" size={16} color={colors.light.primary} />
+            <Text style={styles.enablePushButtonText}>{t("Enable notifications")}</Text>
+          </TouchableOpacity>
         )}
 
         {isOwnProfile && data && (
@@ -749,6 +786,24 @@ const styles = StyleSheet.create({
     color: "#7F8C8D",
     fontSize: 14,
     lineHeight: 20,
+  },
+  enablePushButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    borderColor: colors.light.primary,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+    marginLeft: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  enablePushButtonText: {
+    color: colors.light.primary,
+    fontSize: 13,
+    fontWeight: "600",
   },
   username: {
     color: "#0D1B1E",
