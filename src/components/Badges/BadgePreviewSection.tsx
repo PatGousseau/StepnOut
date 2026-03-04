@@ -16,6 +16,8 @@ interface BadgePreviewSectionProps {
     userProfile?: UserProfile;
 }
 
+const ROW_HORIZONTAL_PADDING = 16;
+
 export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId, userProfile }) => {
     const router = useRouter();
     const { t } = useLanguage();
@@ -59,14 +61,15 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
     useEffect(() => {
         if (containerWidth > 0) {
-            const n = Math.floor((containerWidth + G_MIN) / (ITEM_SIZE + G_MIN));
+            const availableWidth = Math.max(0, containerWidth - ROW_HORIZONTAL_PADDING * 2);
+            const n = Math.floor((availableWidth + G_MIN) / (ITEM_SIZE + G_MIN));
             const currentPreviewCount = Math.min(allBadges.length, Math.max(0, n));
             const totalItemsForGap = currentPreviewCount;
 
             setPreviewCount(currentPreviewCount);
 
             if (totalItemsForGap > 1) {
-                const gap = (containerWidth - (totalItemsForGap * ITEM_SIZE)) / (totalItemsForGap - 1);
+                const gap = (availableWidth - (totalItemsForGap * ITEM_SIZE)) / (totalItemsForGap - 1);
                 setDynamicGap(gap);
             } else {
                 setDynamicGap(0);
@@ -126,10 +129,12 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginVertical: 16,
-        padding: 16,
+        borderBottomColor: '#ccc',
+        borderBottomWidth: 1,
+        borderTopColor: '#ccc',
+        borderTopWidth: 1,
+        marginVertical: 8,
+        paddingVertical: 16,
     },
     sectionTitle: {
         color: '#0D1B1E',
@@ -141,6 +146,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 12,
+        paddingHorizontal: 16,
     },
     badgeCount: {
         color: '#0D1B1E',
@@ -151,17 +157,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',
+        paddingHorizontal: ROW_HORIZONTAL_PADDING,
     },
     badgeWrapper: {
         alignItems: 'center',
     },
     viewAllRow: {
         alignItems: 'center',
-        borderTopColor: '#E8EDF2',
-        borderTopWidth: 1,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 16,
+        marginTop: 4,
+        paddingHorizontal: 16,
         paddingTop: 14,
         width: '100%',
     },
