@@ -284,7 +284,7 @@ export const translations = {
   "Maintain a 2-week challenge streak": "Mantieni una serie di sfide consecutive per 2 settimane",
   "Maintain a 4-week challenge streak": "Mantieni una serie di sfide consecutive per 4 settimane",
   "Return after a week of inactivity": "Ritorna dopo una settimana di inattività",
-  "Share (threshold) updates": "Condividi (threshold) aggiornamenti",
+  "Share (threshold) posts": "Condividi (threshold) post",
   "Like (threshold) posts": "Metti like a (threshold) post",
   "Comment (threshold) times": "Commenta (threshold) volte",
   "Locked": "Bloccato",

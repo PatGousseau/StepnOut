@@ -55,7 +55,7 @@ export const BADGES: Badge[] = [
     {
         id: 'storyteller_bronze',
         name: 'Storyteller Bronze',
-        description: 'Share (threshold) updates',
+        description: 'Share (threshold) posts',
         category: 'community',
         icon: 'pencil-outline',
         level: 'bronze',
@@ -64,7 +64,7 @@ export const BADGES: Badge[] = [
     {
         id: 'storyteller_silver',
         name: 'Storyteller Silver',
-        description: 'Share (threshold) updates',
+        description: 'Share (threshold) posts',
         category: 'community',
         icon: 'pencil',
         level: 'silver',
@@ -73,7 +73,7 @@ export const BADGES: Badge[] = [
     {
         id: 'storyteller_gold',
         name: 'Storyteller Gold',
-        description: 'Share (threshold) updates',
+        description: 'Share (threshold) posts',
         category: 'community',
         icon: 'pencil',
         level: 'gold',
