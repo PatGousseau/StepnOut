@@ -320,6 +320,7 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
 
     // Unique IDs per palette key (prevent react-native-svg gradient collision)
     const uid = palKey;
+    const insetShadowColor = pal.rim[pal.rim.length - 1]?.[1] ?? '#000000';
 
     // ── Specular geometry — blurred RadialGradient hot-spot ──
     //  Positioned at ~11 o'clock.
@@ -387,9 +388,9 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({
                         r="50%"
                         fx="50%" fy="50%"
                     >
-                        <Stop offset="60%" stopColor="rgba(0,0,0,0)" stopOpacity="0" />
-                        <Stop offset="88%" stopColor="rgba(0,0,0,0.28)" stopOpacity="1" />
-                        <Stop offset="100%" stopColor="rgba(0,0,0,0.55)" stopOpacity="1" />
+                        <Stop offset="60%" stopColor={insetShadowColor} stopOpacity="0" />
+                        <Stop offset="84%" stopColor={insetShadowColor} stopOpacity="0.46" />
+                        <Stop offset="100%" stopColor={insetShadowColor} stopOpacity="0.74" />
                     </RadialGradient>
 
                     {/*

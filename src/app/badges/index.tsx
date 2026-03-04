@@ -12,6 +12,11 @@ import { profileService } from '../../services/profileService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { UserProfile } from '../../models/User';
 
+const GRID_GAP = 16;
+const MIN_GRID_CELL_WIDTH = 84;
+const MIN_GRID_COLUMNS = 3;
+const MAX_GRID_COLUMNS = 5;
+
 export default function BadgesScreen() {
     const { userId } = useLocalSearchParams<{ userId: string }>();
     const { t } = useLanguage();
@@ -19,6 +24,7 @@ export default function BadgesScreen() {
     const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number })[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedBadge, setSelectedBadge] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number }) | null>(null);
+    const [gridWidth, setGridWidth] = useState(0);
 
     useEffect(() => {
         const loadData = async () => {
@@ -77,6 +83,19 @@ export default function BadgesScreen() {
         }
     };
 
+    const columnCount = gridWidth > 0
+        ? Math.max(
+            MIN_GRID_COLUMNS,
+            Math.min(
+                MAX_GRID_COLUMNS,
+                Math.floor((gridWidth + GRID_GAP) / (MIN_GRID_CELL_WIDTH + GRID_GAP)),
+            ),
+        )
+        : 4;
+    const gridItemWidth = gridWidth > 0
+        ? (gridWidth - GRID_GAP * (columnCount - 1)) / columnCount
+        : undefined;
+
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
             <Stack.Screen options={{ headerShown: false }} />
@@ -85,17 +104,23 @@ export default function BadgesScreen() {
                 {Object.entries(categories).map(([category, badges]) => (
                     <View key={category} style={styles.categorySection}>
                         <Text style={styles.categoryTitle}>{getCategoryTitle(category)}</Text>
-                        <View style={styles.grid}>
+                        <View
+                            style={styles.grid}
+                            onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
+                        >
                             {badges.map(badge => (
                                 <TouchableOpacity
                                     key={badge.id}
-                                    style={styles.gridItem}
+                                    style={[
+                                        styles.gridItem,
+                                        gridItemWidth ? { width: gridItemWidth } : styles.gridItemFallback,
+                                    ]}
                                     onPress={() => setSelectedBadge(badge)}
                                 >
                                     <BadgeIcon
                                         badge={badge}
                                         unlocked={badge.unlocked}
-                                        size="large"
+                                        size="medium"
                                         showLevelColor={true}
                                     />
                                     <Text style={styles.badgeName} numberOfLines={2}>
@@ -140,18 +165,20 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        columnGap: 16, // Requires newer RN, fallback to margin if issues
-        rowGap: 16,
+        columnGap: GRID_GAP,
+        rowGap: GRID_GAP,
     },
     gridItem: {
-        width: '30%',
         alignItems: 'center',
-        marginBottom: 0,
+        gap: 8,
+    },
+    gridItemFallback: {
+        width: '25%',
     },
     badgeName: {
         fontSize: 11,
         textAlign: 'center',
-        marginTop: 8,
+        maxWidth: 72,
         color: '#666',
         fontWeight: '500',
     },
