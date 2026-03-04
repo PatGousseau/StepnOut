@@ -2,32 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
-import { Badge, UserBadge } from '../../types/badges';
+import { Badge } from '../../types/badges';
 import { UserProfile } from '../../models/User';
 import { BadgeIcon, SIZES } from './BadgeIcon';
 import { BadgeModal } from './BadgeModal';
 import { colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { Text } from '../StyledText';
 
 interface BadgePreviewSectionProps {
     userId: string;
     userProfile?: UserProfile;
 }
 
-const ROW_HORIZONTAL_PADDING = 16;
+const CHEVRON_SLOT_WIDTH = 28;
+const BADGE_GAP = 4;
 
 export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId, userProfile }) => {
     const router = useRouter();
-    const { t } = useLanguage();
-    const [earnedBadges, setEarnedBadges] = useState<UserBadge[]>([]);
     const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean })[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedBadge, setSelectedBadge] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number }) | null>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [previewCount, setPreviewCount] = useState(3);
-    const [dynamicGap, setDynamicGap] = useState(16);
 
     useEffect(() => {
         const fetchBadges = async () => {
@@ -36,7 +32,6 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
                 setLoading(true);
                 const stats = await BadgeService.getUserStats(userId);
                 const earned = BadgeService.calculateBadges(stats, userProfile);
-                setEarnedBadges(earned);
 
                 const allWithStatus = BadgeService.getAllBadgesWithStatus(stats, earned);
                 allWithStatus.sort((a, b) => {
@@ -56,24 +51,16 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
         fetchBadges();
     }, [userId, userProfile]);
 
-    const G_MIN = 10;
-    const ITEM_SIZE = SIZES.medium.total;
+    const ITEM_SIZE = SIZES.small.total;
 
     useEffect(() => {
         if (containerWidth > 0) {
-            const availableWidth = Math.max(0, containerWidth - ROW_HORIZONTAL_PADDING * 2);
-            const n = Math.floor((availableWidth + G_MIN) / (ITEM_SIZE + G_MIN));
-            const currentPreviewCount = Math.min(allBadges.length, Math.max(0, n));
-            const totalItemsForGap = currentPreviewCount;
-
-            setPreviewCount(currentPreviewCount);
-
-            if (totalItemsForGap > 1) {
-                const gap = (availableWidth - (totalItemsForGap * ITEM_SIZE)) / (totalItemsForGap - 1);
-                setDynamicGap(gap);
-            } else {
-                setDynamicGap(0);
-            }
+            const availableWidth = Math.max(
+                0,
+                containerWidth - CHEVRON_SLOT_WIDTH,
+            );
+            const n = Math.floor((availableWidth + BADGE_GAP) / (ITEM_SIZE + BADGE_GAP));
+            setPreviewCount(Math.min(allBadges.length, Math.max(0, n)));
         }
     }, [containerWidth, allBadges.length]);
 
@@ -90,31 +77,24 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
 
     return (
         <View style={styles.container}>
-            <View style={styles.headerRow}>
-                <Text style={styles.sectionTitle}>{t('Badges') || 'LocalBadges'}</Text>
-                <Text style={styles.badgeCount}>{earnedBadges.length}</Text>
-            </View>
+            <View style={styles.stripRow} onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}>
+                <View style={styles.listContainer}>
+                    {previewBadges.map(badge => (
+                        <View key={badge.id} style={styles.badgeWrapper}>
+                            <BadgeIcon
+                                badge={badge}
+                                unlocked={badge.unlocked}
+                                size="small"
+                                onPress={() => setSelectedBadge(badge)}
+                            />
+                        </View>
+                    ))}
+                </View>
 
-            <View
-                style={[styles.listContainer, { gap: dynamicGap }]}
-                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-            >
-                {previewBadges.map(badge => (
-                    <View key={badge.id} style={styles.badgeWrapper}>
-                        <BadgeIcon
-                            badge={badge}
-                            unlocked={badge.unlocked}
-                            size="medium"
-                            onPress={() => setSelectedBadge(badge)}
-                        />
-                    </View>
-                ))}
+                <TouchableOpacity style={styles.chevronButton} onPress={handleSeeAll}>
+                    <Ionicons name="chevron-forward" size={18} color={colors.light.primary} />
+                </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={styles.viewAllRow} onPress={handleSeeAll}>
-                <Text style={styles.viewAllText}>{t('All badges')}</Text>
-                <Ionicons name="chevron-forward" size={18} color={colors.light.primary} />
-            </TouchableOpacity>
 
             <BadgeModal
                 visible={!!selectedBadge}
@@ -134,46 +114,31 @@ const styles = StyleSheet.create({
         borderTopColor: '#ccc',
         borderTopWidth: 1,
         marginVertical: 8,
-        paddingVertical: 16,
+        paddingVertical: 10,
     },
-    sectionTitle: {
-        color: '#0D1B1E',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-    headerRow: {
+    stripRow: {
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 12,
-        paddingHorizontal: 16,
-    },
-    badgeCount: {
-        color: '#0D1B1E',
-        fontSize: 20,
-        fontWeight: '400',
+        paddingLeft: 0,
+        paddingRight: 0,
     },
     listContainer: {
-        flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
+        flexDirection: 'row',
         justifyContent: 'flex-start',
-        paddingHorizontal: ROW_HORIZONTAL_PADDING,
+        gap: BADGE_GAP,
     },
     badgeWrapper: {
         alignItems: 'center',
     },
-    viewAllRow: {
+    chevronButton: {
         alignItems: 'center',
+        height: 28,
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 4,
-        paddingHorizontal: 16,
-        paddingTop: 14,
-        width: '100%',
-    },
-    viewAllText: {
-        color: colors.light.primary,
-        fontSize: 14,
-        fontWeight: '600',
+        justifyContent: 'center',
+        marginLeft: 0,
+        width: CHEVRON_SLOT_WIDTH,
     },
 });
