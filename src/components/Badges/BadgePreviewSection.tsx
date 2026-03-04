@@ -111,6 +111,9 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
                             unlocked={badge.unlocked}
                             size="medium"
                             onPress={() => setSelectedBadge(badge)}
+                            showShadow={false}
+                            showInsetShadow={false}
+                            flat={true}
                         />
                     </View>
                 ))}

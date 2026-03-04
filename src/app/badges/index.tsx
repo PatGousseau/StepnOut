@@ -121,8 +121,11 @@ export default function BadgesScreen() {
                                     <BadgeIcon
                                         badge={badge}
                                         unlocked={badge.unlocked}
-                                        size="large"
+                                        size="medium"
                                         showLevelColor={true}
+                                        showShadow={false}
+                                        showInsetShadow={false}
+                                        flat={true}
                                     />
                                     <Text style={styles.badgeName} numberOfLines={2}>
                                         {badge.name}
@@ -208,14 +211,13 @@ const styles = StyleSheet.create({
         rowGap: 16,
     },
     gridItem: {
-        width: '30%',
         alignItems: 'center',
-        marginBottom: 0,
+        gap: 8,
     },
     badgeName: {
         fontSize: 11,
         textAlign: 'center',
-        marginTop: 8,
+        maxWidth: 72,
         color: '#666',
         fontWeight: '500',
     },
