@@ -16,15 +16,15 @@ type Template = { title: string; body: string };
 const FALLBACK_TEMPLATES: Template[] = [
   {
     title: 'Non perdere la serie',
-    body: 'Mancano 2 giorni alla sfida: se la salti perdi la tua serie. Ci sei?',
+    body: 'Mancano 3 giorni alla sfida: se la salti perdi la tua serie. Ci sei?',
   },
   {
     title: 'Serie a rischio',
-    body: 'Ti restano 2 giorni per completare la sfida e salvare la tua serie.',
+    body: 'Ti restano 3 giorni per completare la sfida e salvare la tua serie.',
   },
   {
     title: 'Ultimo avviso',
-    body: 'Ancora 2 giorni: fai la sfida di oggi e tieni viva la tua serie.',
+    body: 'Ancora 3 giorni: fai la sfida di oggi e tieni viva la tua serie.',
   },
 ];
 

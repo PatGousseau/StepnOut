@@ -56,6 +56,7 @@ async function getTopPostCandidate(
   const postMap = new Map<number, PostRow>();
   (posts || []).forEach((post: PostRow) => postMap.set(post.id, post));
 
+  const DEFAULT_POST_BODY = 'Ho appena completato la sfida settimanale!';
   const cutoff = Date.now() - 48 * 60 * 60 * 1000;
   for (const id of ids) {
     const post = postMap.get(id);
@@ -64,6 +65,7 @@ async function getTopPostCandidate(
     const createdAt = new Date(post.created_at).getTime();
     if (Number.isNaN(createdAt)) continue;
     if (createdAt < cutoff) continue;
+    if (!post.body || post.body.trim() === DEFAULT_POST_BODY) continue;
     return post;
   }
 

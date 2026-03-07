@@ -79,7 +79,7 @@ VALUES
   (
     'streak_at_risk_templates',
     'it',
-    '[{"title":"Non perdere la serie","body":"Mancano 2 giorni alla sfida: se la salti perdi la tua serie. Ci sei?"},{"title":"Serie a rischio","body":"Ti restano 2 giorni per completare la sfida e salvare la tua serie."},{"title":"Ultimo avviso","body":"Ancora 2 giorni: fai la sfida di oggi e tieni viva la tua serie."}]'
+    '[{"title":"Non perdere la serie","body":"Mancano 3 giorni alla sfida: se la salti perdi la tua serie. Ci sei?"},{"title":"Serie a rischio","body":"Ti restano 3 giorni per completare la sfida e salvare la tua serie."},{"title":"Ultimo avviso","body":"Ancora 3 giorni: fai la sfida di oggi e tieni viva la tua serie."}]'
   )
 ON CONFLICT (key) DO UPDATE SET content = EXCLUDED.content;
 
@@ -140,7 +140,7 @@ LANGUAGE sql STABLE AS $$
   JOIN public.user_progress up ON up.user_id = p.id
   WHERE up.total_challenges_completed >= 1
     AND ac.end_date > now()
-    AND ac.end_date <= now() + interval '2 days'
+    AND ac.end_date <= now() + interval '3 days'
     AND coalesce(p.last_open_at, p.created_at) >= now() - interval '14 days'
     AND NOT EXISTS (
       SELECT 1
