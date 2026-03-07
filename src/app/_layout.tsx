@@ -24,6 +24,7 @@ import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
 import { UI_EVENTS } from '../constants/analyticsEvents';
 import { supabase } from '../lib/supabase';
+import { useAppOpenTracker } from '../hooks/useAppOpenTracker';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -71,6 +72,7 @@ function RootLayoutNav() {
 
   // hide recently active banner on onboarding
   const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
+  useAppOpenTracker(session?.user?.id, loading);
 
   // Track screen views when pathname changes
   useEffect(() => {
@@ -110,6 +112,7 @@ function RootLayoutNav() {
     }
     requestUsernameIfMissing();
   }, [pathname, isDetailPage, hideLogo]);
+
 
   // Simplified onLayoutRootView
   const onLayoutRootView = useCallback(async () => {
