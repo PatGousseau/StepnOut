@@ -1,9 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
-import OpenAI from 'https://esm.sh/openai@4.86.1';
+import OpenAI from 'https://esm.sh/openai@6.27.0';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getPromptContent, applyTemplate } from '../_shared/prompts.ts';
 import { sendExpoPushBatches, PushMessage } from '../_shared/notifications.ts';
-import { truncate } from '../_shared/utils.ts';
+
 
 type CandidateRow = {
   user_id: string;
@@ -21,10 +21,10 @@ async function generatePersonalizedCopy(
   openai: OpenAI,
   prompt: string,
 ): Promise<Copy | null> {
-  const res = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const res = await openai.responses.create({
+    model: 'gpt-4.1-mini',
     temperature: 0.8,
-    messages: [
+    input: [
       {
         role: 'system',
         content:
@@ -35,10 +35,25 @@ async function generatePersonalizedCopy(
         content: prompt,
       },
     ],
-    response_format: { type: 'json_object' },
+    text: {
+      format: {
+        type: 'json_schema',
+        name: 'push_notification',
+        strict: true,
+        schema: {
+          type: 'object',
+          properties: {
+            title: { type: 'string', maxLength: 40 },
+            body: { type: 'string', maxLength: 100 },
+          },
+          required: ['title', 'body'],
+          additionalProperties: false,
+        },
+      },
+    },
   });
 
-  const text = res.choices[0]?.message?.content;
+  const text = res.output_text;
   if (!text) return null;
 
   let parsed: { title?: string; body?: string } | null = null;
@@ -50,8 +65,8 @@ async function generatePersonalizedCopy(
   if (!parsed?.title || !parsed?.body) return null;
 
   return {
-    title: truncate(String(parsed.title), 40),
-    body: truncate(String(parsed.body), 100),
+    title: parsed.title,
+    body: parsed.body,
   };
 }
 
