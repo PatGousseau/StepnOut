@@ -26,7 +26,6 @@ interface WeekData {
 }
 
 const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
-  const { t } = useLanguage();
   const router = useRouter();
   const allWeeks = [...weekData].reverse();
 
@@ -52,7 +51,6 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
 
   return (
     <View style={styles.streakCalendarContainer}>
-      <Text style={styles.streakEyebrow}>{t('Your Challenge History')}</Text>
       <View style={styles.calendarGrid}>
         {allWeeks.map((week, index) => (
           <TouchableOpacity
@@ -67,7 +65,9 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
               styles.calendarBox,
               getBoxStyle(week),
             ]}
-          />
+          >
+            {week.isCompleted ? <Text style={styles.calendarCheckmark}>✓</Text> : null}
+          </TouchableOpacity>
         ))}
       </View>
     </View>
@@ -85,7 +85,11 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.yourProgressText}>{t('Your Progress')}</Text>
+      <Text style={styles.yourProgressText}>{t('Your Challenge History')}</Text>
+      <View style={styles.streakRow}>
+        <StreakCalendar weekData={weekData} />
+      </View>
+
       <View style={styles.progressBarTrack}>
         {total === 0 ? (
           <View style={styles.emptyProgressFill} />
@@ -116,17 +120,15 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
           </View>
         ))}
       </View>
-
-      <View style={styles.streakRow}>
-        <StreakCalendar weekData={weekData} />
-      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F6F7FA',
+    borderColor: '#D7DDE8',
+    borderWidth: 1,
     borderRadius: 12,
     marginTop: 4,
     marginBottom: 16,
@@ -134,15 +136,16 @@ const styles = StyleSheet.create({
   },
   yourProgressText: {
     color: '#0D1B1E',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 18,
   },
   progressBarTrack: {
     backgroundColor: '#E6E8EC',
     borderRadius: 999,
     flexDirection: 'row',
     height: 12,
+    marginTop: 20,
     marginBottom: 16,
     overflow: 'hidden',
   },
@@ -154,7 +157,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   streakRow: {
-    marginTop: 16,
+    marginTop: 0,
   },
   breakdownContainer: {
     flexDirection: 'row',
@@ -187,17 +190,9 @@ const styles = StyleSheet.create({
   
   // Streak Calendar Styles
   streakCalendarContainer: {
-    backgroundColor: '#F8F9FC',
-    borderColor: '#E6E8EC',
     borderRadius: 10,
-    borderWidth: 1,
-    padding: 12,
+    padding: 0,
     width: '100%',
-  },
-  streakEyebrow: {
-    color: '#5F6B7A',
-    fontSize: 14,
-    marginBottom: 10,
   },
   calendarGrid: {
     flexDirection: 'row',
@@ -205,12 +200,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   calendarBox: {
+    alignItems: 'center',
     borderRadius: 4,
     borderWidth: 1,
     height: 28,
+    justifyContent: 'center',
     marginBottom: 6,
     marginRight: 6,
     width: 28,
+  },
+  calendarCheckmark: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 14,
   },
 });
 
