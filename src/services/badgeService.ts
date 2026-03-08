@@ -4,8 +4,9 @@ import { BADGES } from '../constants/badges';
 import { UserProfile } from '../models/User';
 import { Challenge } from '../types';
 
-const CACHE_TIMEOUT = 15 * 1000;
+const CACHE_TIMEOUT = 2 * 60 * 1000;
 const statsCache: Record<string, { stats: UserStats, timestamp: number }> = {};
+const challengeLadderCache: { challenges: Challenge[]; timestamp: number } = { challenges: [], timestamp: 0 };
 
 export const BadgeService = {
     /**
@@ -30,89 +31,84 @@ export const BadgeService = {
         };
 
         try {
-            // Posts Count
-            const { count: postsCount, error: postsError } = await supabase
-                .from('post')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .neq('body', '');
+            const maxStreakThreshold = Math.max(
+                ...BADGES.filter(b => b.id.startsWith('streak')).map(b => b.threshold || 0),
+                1
+            );
 
-            if (!postsError) stats.postsCount = postsCount || 0;
+            // Fetch independent stats in parallel
+            const [
+                userPostsRes,
+                commentsRes,
+                likesRes,
+            ] = await Promise.all([
+                supabase
+                    .from('post')
+                    .select('body, media_id, challenge_id')
+                    .eq('user_id', userId),
+                supabase
+                    .from('comments')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId),
+                supabase
+                    .from('likes')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId),
+            ]);
 
-            const { count: postsWithImageCount, error: postsWithImageError } = await supabase
-                .from('post')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .neq('body', '')
-                .not('media_id', 'is', null);
+            if (userPostsRes.error) throw userPostsRes.error;
+            const userPosts = userPostsRes.data || [];
 
-            if (!postsWithImageError) stats.postsWithImageCount = postsWithImageCount || 0;
+            stats.postsCount = userPosts.filter((p) => (p.body || '').trim() !== '').length;
+            stats.postsWithImageCount = userPosts.filter(
+                (p) => (p.body || '').trim() !== '' && p.media_id !== null
+            ).length;
+            stats.challengesCount = userPosts.filter((p) => p.challenge_id !== null).length;
+            stats.firstChallengeCompleted = stats.challengesCount > 0;
 
-            // Comments Given Count
-            const { count: commentsCount, error: commentsError } = await supabase
-                .from('comments')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId);
+            if (!commentsRes.error) stats.commentsGivenCount = commentsRes.count || 0;
+            if (!likesRes.error) stats.likesGivenCount = likesRes.count || 0;
 
-            if (!commentsError) stats.commentsGivenCount = commentsCount || 0;
+            // Reuse challenge ladder cache (same for all users)
+            const ladderFresh = challengeLadderCache.challenges.length > 0
+                && (now - challengeLadderCache.timestamp < CACHE_TIMEOUT);
 
-            // Likes Given Count
-            const { count: likesGivenCount, error: likesGivenError } = await supabase
-                .from('likes')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId);
+            let orderedChallenges = challengeLadderCache.challenges;
 
-            if (!likesGivenError) stats.likesGivenCount = likesGivenCount || 0;
+            if (!ladderFresh) {
+                const { data: activeChallenge, error: activeChallengeError } = await supabase
+                    .from('challenges')
+                    .select('*')
+                    .eq('is_active', true)
+                    .single();
 
-            // Challenges
-            const { count: challengesCompletedCount } = await supabase
-                .from('post')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .not('challenge_id', 'is', null);
+                if (activeChallengeError) throw activeChallengeError;
+                if (!activeChallenge) throw new Error('No active challenge found');
 
-            if (challengesCompletedCount && challengesCompletedCount > 0) {
-                stats.firstChallengeCompleted = true;
-                stats.challengesCount = challengesCompletedCount;
+                const { data: previousChallenges, error: prevError } = await supabase
+                    .from('challenges')
+                    .select('*')
+                    .lt('created_at', activeChallenge.created_at)
+                    .order('created_at', { ascending: false })
+                    .limit(maxStreakThreshold + 1);
+
+                if (prevError) throw prevError;
+
+                orderedChallenges = [activeChallenge, ...(previousChallenges || [])];
+                challengeLadderCache.challenges = orderedChallenges;
+                challengeLadderCache.timestamp = now;
             }
 
-            // Streak calculation
-            // - Get active challenge
-            const { data: activeChallenge, error: activeChallengeError } = await supabase
-                .from('challenges')
-                .select('*')
-                .eq('is_active', true)
-                .single();
-
-            if (activeChallengeError) throw activeChallengeError;
+            const activeChallenge = orderedChallenges[0];
             if (!activeChallenge) throw new Error('No active challenge found');
 
-            // - Get previous challenges (enough to compute max streak)
-            const maxStreakThreshold = Math.max(...BADGES.filter(b => b.id.startsWith('streak')).map(b => b.threshold || 0), 1);
-            const { data: previousChallenges, error: prevError } = await supabase
-                .from('challenges')
-                .select('*')
-                .lt('created_at', activeChallenge.created_at)
-                .order('created_at', { ascending: false })
-                .limit(maxStreakThreshold + 1);
-
-            if (prevError) throw prevError;
-
-            // - Build full ordered list (active first)
-            const orderedChallenges = [activeChallenge, ...previousChallenges];
-
             const challengeIds = orderedChallenges.map(c => c.id);
+            const completedSet = new Set(
+                userPosts
+                    .map((p) => p.challenge_id)
+                    .filter((id): id is number => typeof id === 'number' && challengeIds.includes(id))
+            );
 
-            // - Get user completions
-            const { data: userPosts, error: postsChallengeError } = await supabase
-                .from('post')
-                .select('challenge_id')
-                .eq('user_id', userId)
-                .in('challenge_id', challengeIds);
-
-            if (postsChallengeError) throw postsChallengeError;
-
-            const completedSet = new Set(userPosts.map(p => p.challenge_id));
             stats.streakCurrent = this.computeStreak(completedSet, activeChallenge, orderedChallenges);
         } catch (error) {
             console.error('Error fetching user stats for badges:', error);
