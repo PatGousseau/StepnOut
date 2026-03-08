@@ -54,6 +54,7 @@ export interface Challenge {
     week: number;
     hasStreak: boolean;
     challengeId: number;
+    postId?: number;
     startDate: string;
     endDate: string;
     isActive: boolean;

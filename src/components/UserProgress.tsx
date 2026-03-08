@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useRouter } from 'expo-router';
 
 interface UserProgressProps {
   challengeData: {
@@ -17,6 +18,7 @@ interface WeekData {
   week: number;
   hasStreak: boolean;
   challengeId: number;
+  postId?: number;
   startDate: string;
   endDate: string;
   isActive: boolean;
@@ -25,6 +27,7 @@ interface WeekData {
 
 const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
   const { t } = useLanguage();
+  const router = useRouter();
   const allWeeks = [...weekData].reverse();
 
   const getBoxStyle = (week: WeekData) => {
@@ -52,8 +55,14 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
       <Text style={styles.streakEyebrow}>{t('Your Challenge History')}</Text>
       <View style={styles.calendarGrid}>
         {allWeeks.map((week, index) => (
-          <View
+          <TouchableOpacity
             key={`${week.challengeId}-${index}`}
+            activeOpacity={week.isCompleted && week.postId ? 0.8 : 1}
+            onPress={() => {
+              if (week.isCompleted && week.postId) {
+                router.push(`/post/${week.postId}`);
+              }
+            }}
             style={[
               styles.calendarBox,
               getBoxStyle(week),

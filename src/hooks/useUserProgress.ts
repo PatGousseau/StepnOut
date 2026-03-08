@@ -155,7 +155,9 @@ const useUserProgress = (targetUserId: string) => {
         const { data: submissionData, error: submissionError } = await supabase
           .from('post')
           .select(`
+            id,
             challenge_id,
+            created_at,
             media (
               file_path,
               upload_status
@@ -169,12 +171,26 @@ const useUserProgress = (targetUserId: string) => {
         if (submissionError) throw submissionError;
 
         const completedChallengeIds = submissionData?.map(s => s.challenge_id) || [];
+        const latestSubmissionByChallenge = new Map<number, { postId: number; createdAtMs: number }>();
+
+        for (const submission of submissionData || []) {
+          if (!submission.challenge_id) continue;
+          const createdAtMs = new Date(submission.created_at).getTime();
+          const existing = latestSubmissionByChallenge.get(submission.challenge_id);
+          if (!existing || createdAtMs > existing.createdAtMs) {
+            latestSubmissionByChallenge.set(submission.challenge_id, {
+              postId: submission.id,
+              createdAtMs,
+            });
+          }
+        }
 
         // Create week data array from challenges
         const weekData: WeekData[] = challenges.slice(1).map((challenge, index) => ({
           week: index + 1,
           hasStreak: completedChallengeIds.includes(challenge.id),
           challengeId: challenge.id,
+          postId: latestSubmissionByChallenge.get(challenge.id)?.postId,
           startDate: challenge.created_at,
           endDate: challenge.updated_at,
           isActive: challenge.is_active,
