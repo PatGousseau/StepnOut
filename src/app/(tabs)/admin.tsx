@@ -153,13 +153,27 @@ const ChallengeCreation: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, name")
-        .order("username", { ascending: true });
+      const pageSize = 1000;
+      let from = 0;
+      const users: UserProfile[] = [];
 
-      if (error) throw error;
-      setAllUsers(data || []);
+      while (true) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, username, name")
+          .order("username", { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+
+        const page = (data || []) as UserProfile[];
+        users.push(...page);
+
+        if (page.length < pageSize) break;
+        from += pageSize;
+      }
+
+      setAllUsers(users);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -474,8 +488,8 @@ const ChallengeCreation: React.FC = () => {
     try {
       const result = await sendCustomNotification(notifTitle.trim(), notifBody.trim(), targetUserIds);
       Alert.alert(
-        "Success",
-        `Notifications sent: ${result.sent} successful, ${result.failed} failed`
+        "Done",
+        `Sent: ${result.sent}\nFailed: ${result.failed}\nNo push token: ${result.noToken}`
       );
       setNotifTitle("");
       setNotifBody("");

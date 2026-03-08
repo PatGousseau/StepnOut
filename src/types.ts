@@ -69,17 +69,22 @@ export interface Challenge {
   export interface Notification {
     notification_id: number;
     user_id: string;
-    trigger_user_id: string;
-    action_type: 'like' | 'comment' | 'reaction';
+    trigger_user_id: string | null;
+    action_type: 'like' | 'comment' | 'reaction' | 'new_challenge';
     emoji?: string;
     created_at: string;
     is_read: boolean;
-    post_id: string;
-    comment_id?: string;
+    post_id: string | null;
+    comment_id?: string | null;
+    challenge_id?: string | number | null;
     trigger_profile?: {
       username: string;
       name: string;
-    };
+    } | null;
+    challenge?: {
+      title: string;
+      title_it: string;
+    } | null;
     body?: string;
     comment?: {
       body: string;
@@ -109,4 +114,11 @@ export interface Challenge {
     emoji: string;
     count: number;
     reacted: boolean;
+  }
+
+  export interface ReactionUser {
+    id: string;
+    username: string;
+    name: string;
+    profileImageUrl: string | null;
   }

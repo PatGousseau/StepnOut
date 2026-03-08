@@ -160,6 +160,22 @@ export async function sendCommentNotification(
 
 // Handle sending notifications for new challenges
 export async function sendNewChallengeNotification(recipientId: string, challengeId: string, challengeTitle: string) {
+    // Save notification to database so it persists (and shows in the in-app badge)
+    const { error: dbError } = await supabase
+        .from('notifications')
+        .insert([{
+            user_id: recipientId,
+            trigger_user_id: null,
+            action_type: 'new_challenge',
+            is_read: false,
+            challenge_id: challengeId,
+        }]);
+
+    if (dbError) {
+        console.error('Error saving new challenge notification to database:', dbError);
+        // still try to send push
+    }
+
     const pushToken = await getPushToken(recipientId);
     if (!pushToken) return;
 
@@ -172,16 +188,28 @@ export async function sendNewChallengeNotification(recipientId: string, challeng
 
 // Fetch all user IDs
 async function getAllUserIds(): Promise<string[]> {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('id');
+    const allIds: string[] = [];
+    const pageSize = 1000;
+    let from = 0;
 
-    if (error) {
-        console.error('Error fetching user IDs:', error);
-        return [];
+    while (true) {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .range(from, from + pageSize - 1);
+
+        if (error) {
+            console.error('Error fetching user IDs:', error);
+            return allIds;
+        }
+
+        allIds.push(...data.map(profile => profile.id));
+
+        if (data.length < pageSize) break;
+        from += pageSize;
     }
 
-    return data.map(profile => profile.id);
+    return allIds;
 }
 
 // Handle sending notifications to all users about a new challenge
@@ -201,14 +229,15 @@ export async function sendCustomNotification(
     title: string,
     body: string,
     userIds: string[]
-): Promise<{ sent: number; failed: number }> {
+): Promise<{ sent: number; failed: number; noToken: number }> {
     let sent = 0;
     let failed = 0;
+    let noToken = 0;
 
     const notifications = userIds.map(async (userId) => {
         const pushToken = await getPushToken(userId);
         if (!pushToken) {
-            failed++;
+            noToken++;
             return;
         }
         try {
@@ -220,7 +249,7 @@ export async function sendCustomNotification(
     });
 
     await Promise.all(notifications);
-    return { sent, failed };
+    return { sent, failed, noToken };
 }
 
 export { getAllUserIds };

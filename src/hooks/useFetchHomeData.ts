@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useCallback, useMemo, useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { Post, FeedSort } from "../types";
 import { User, UserProfile } from "../models/User";
@@ -33,6 +33,7 @@ interface LoadingDiagnostics {
 }
 
 const SLOW_LOADING_THRESHOLD_MS = 10000; // 10 seconds
+const EMPTY_LIKED_POSTS: PostLikes = {};
 
 interface UserMap {
   [key: string]: User | UserProfile;
@@ -86,7 +87,6 @@ export const useFetchHomeData = (
   submissionSort: FeedSort = "recent",
   discussionSort: FeedSort = "recent"
 ) => {
-  const [likedPosts, setLikedPosts] = useState<PostLikes>({});
   const { user } = useAuth();
   const { initializePostLikes } = useLikes();
   const { initializePostReactions } = useReactions();
@@ -194,6 +194,32 @@ export const useFetchHomeData = (
   });
 
   const blockedUserIds = blockedUsers ?? [];
+
+  // Pre-fetch user's liked post IDs so hearts render correctly on first paint
+  const { data: userLikedPostIds } = useQuery({
+    queryKey: ["user-liked-posts", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return {};
+      const { data, error } = await supabase
+        .from("likes")
+        .select("post_id")
+        .eq("user_id", user.id)
+        .eq("emoji", "❤️")
+        .not("post_id", "is", null);
+      if (error) throw error;
+      const likedMap: PostLikes = {};
+      for (const row of data ?? []) {
+        if (row.post_id != null) likedMap[row.post_id] = true;
+      }
+      return likedMap;
+    },
+    enabled: !!user?.id,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  const likedPosts: PostLikes = userLikedPostIds ?? EMPTY_LIKED_POSTS;
 
   useEffect(() => {
     const status = blockedUsersLoading ? 'loading' : (blockedUsersError ? 'error' : 'success');

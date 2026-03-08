@@ -540,6 +540,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         <View style={footerStyle}>
           <View style={{ flex: 1 }}>
             <ReactionsBar
+              item={{ id: post.id, type: "post" }}
               reactions={postReactions[post.id] || []}
               onToggle={(emoji) => {
                 if (!user) return;
