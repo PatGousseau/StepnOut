@@ -188,15 +188,15 @@ export const BadgeService = {
         // Supporter (Likes Given)
         this.checkLevelBadge(earnedBadges, stats.likesGivenCount, 'supporter');
 
-        // Conversationalist (Comments Given)
-        this.checkLevelBadge(earnedBadges, stats.commentsGivenCount, 'conversationalist');
+        // Chatter (Comments Given)
+        this.checkLevelBadge(earnedBadges, stats.commentsGivenCount, 'chatter');
 
         return earnedBadges;
     },
 
-    checkLevelBadge(earnedBadges: UserBadge[], value: number, baseId: string) {
-        // Find all badges with this baseId (e.g. storyteller_bronze, storyteller_silver...)
-        const relatedBadges = BADGES.filter(b => b.id.startsWith(baseId + '_'));
+    checkLevelBadge(earnedBadges: UserBadge[], value: number, type: string) {
+        // Find all badges in the same tiered group.
+        const relatedBadges = BADGES.filter(b => b.type === type && !!b.level);
 
         // Sort by threshold desc to find highest unlocked
         relatedBadges.sort((a, b) => (b.threshold || 0) - (a.threshold || 0));
@@ -229,10 +229,10 @@ export const BadgeService = {
 
             // If not earned, we can still show progress for threshold badges
             if (currentProgress === undefined && badge.threshold) {
-                if (badge.id.startsWith('storyteller')) currentProgress = stats.postsCount;
-                else if (badge.id.startsWith('supporter')) currentProgress = stats.likesGivenCount;
-                else if (badge.id.startsWith('conversationalist')) currentProgress = stats.commentsGivenCount;
-                else if (badge.id.startsWith('streak')) currentProgress = stats.streakCurrent;
+                if (badge.type === 'storyteller') currentProgress = stats.postsCount;
+                else if (badge.type === 'supporter') currentProgress = stats.likesGivenCount;
+                else if (badge.type === 'chatter') currentProgress = stats.commentsGivenCount;
+                else if (badge.type === 'streak') currentProgress = stats.streakCurrent;
             }
 
             return {

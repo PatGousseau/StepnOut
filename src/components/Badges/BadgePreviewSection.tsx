@@ -17,12 +17,43 @@ interface BadgePreviewSectionProps {
 
 const CHEVRON_SLOT_WIDTH = 28;
 const BADGE_GAP = 4;
+type BadgeWithStatus = Badge & { unlocked: boolean; earnedDate?: string; currentProgress?: number };
+
+const getPreviewBadgeSet = (badges: BadgeWithStatus[]): BadgeWithStatus[] => {
+    const standaloneBadges = badges.filter((badge) => !badge.level);
+    const tieredGroups = new Map<string, BadgeWithStatus[]>();
+
+    badges.forEach((badge) => {
+        if (!badge.level) return;
+        const existing = tieredGroups.get(badge.type) || [];
+        existing.push(badge);
+        tieredGroups.set(badge.type, existing);
+    });
+
+    const mostRelevantTierBadges = Array.from(tieredGroups.values()).map((group) => {
+        const unlocked = group.filter((badge) => badge.unlocked);
+        if (unlocked.length > 0) {
+            return [...unlocked].sort((a, b) => (b.threshold || 0) - (a.threshold || 0))[0];
+        }
+        // If none are unlocked yet, show the first target tier (lowest threshold).
+        return [...group].sort((a, b) => (a.threshold || 0) - (b.threshold || 0))[0];
+    });
+
+    const collapsed = [...standaloneBadges, ...mostRelevantTierBadges];
+    collapsed.sort((a, b) => {
+        if (a.unlocked && !b.unlocked) return -1;
+        if (!a.unlocked && b.unlocked) return 1;
+        return 0;
+    });
+
+    return collapsed;
+};
 
 export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId, userProfile }) => {
     const router = useRouter();
-    const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean })[]>([]);
+    const [allBadges, setAllBadges] = useState<BadgeWithStatus[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedBadge, setSelectedBadge] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number }) | null>(null);
+    const [selectedBadge, setSelectedBadge] = useState<BadgeWithStatus | null>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const [previewCount, setPreviewCount] = useState(3);
 
@@ -38,13 +69,7 @@ export const BadgePreviewSection: React.FC<BadgePreviewSectionProps> = ({ userId
                 const earned = BadgeService.calculateBadges(stats, userProfile);
 
                 const allWithStatus = BadgeService.getAllBadgesWithStatus(stats, earned);
-                allWithStatus.sort((a, b) => {
-                    if (a.unlocked && !b.unlocked) return -1;
-                    if (!a.unlocked && b.unlocked) return 1;
-                    return 0;
-                });
-
-                setAllBadges(allWithStatus);
+                setAllBadges(getPreviewBadgeSet(allWithStatus));
             } catch (error) {
                 console.error("Error loading badges:", error);
             } finally {
