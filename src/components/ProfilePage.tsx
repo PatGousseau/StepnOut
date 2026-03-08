@@ -36,6 +36,7 @@ import { imageService } from "../services/imageService";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
+import { BadgePreviewSection } from "./Badges/BadgePreviewSection";
 
 type ProfilePageProps = {
   userId?: string;
@@ -468,6 +469,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
+
+        <BadgePreviewSection userId={targetUserId!} userProfile={userProfile} />
+
         <View style={styles.filterRow}>
           {(["all", "post", "comment"] as const).map((filter) => (
             <TouchableOpacity
@@ -488,8 +492,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 key={`post-${item.post.id}`}
                 post={item.post}
                 postUser={userProfile}
-                setPostCounts={() => {}}
-                onPostDeleted={() => {}}
+                setPostCounts={() => { }}
+                onPostDeleted={() => { }}
               />
             );
           }
