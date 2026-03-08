@@ -1,9 +1,10 @@
-import { Badge, BadgeCategory } from '../types/badges';
+import { Badge } from '../types/badges';
 
 export const BADGES: Badge[] = [
     // --- Onboarding / Getting Started ---
     {
         id: 'first_challenger',
+        type: 'first_challenger',
         name: 'First Challenger',
         description: 'Complete your first challenge',
         category: 'onboarding',
@@ -11,6 +12,7 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'documenter',
+        type: 'documenter',
         name: 'Documenter',
         description: 'Log your first challenge adding text and image',
         category: 'onboarding',
@@ -18,6 +20,7 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'icebreaker',
+        type: 'icebreaker',
         name: 'Icebreaker',
         description: 'Post your first comment to start a discussion',
         category: 'onboarding',
@@ -25,6 +28,7 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'open_book',
+        type: 'open_book',
         name: 'Open Book',
         description: 'Fully complete your profile details',
         category: 'onboarding',
@@ -34,6 +38,7 @@ export const BADGES: Badge[] = [
     // --- Consistency ---
     {
         id: 'streak_2',
+        type: 'streak',
         name: 'Half Month Streak',
         description: 'Maintain a 2-week challenge streak',
         category: 'consistency',
@@ -42,6 +47,7 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'streak_4',
+        type: 'streak',
         name: 'Month Streak',
         description: 'Maintain a 4-week challenge streak',
         category: 'consistency',
@@ -54,8 +60,9 @@ export const BADGES: Badge[] = [
     // Storyteller (Text Posts) - Simplify to just "Posts" for now as we track general posts
     {
         id: 'storyteller_bronze',
+        type: 'storyteller',
         name: 'Storyteller Bronze',
-        description: 'Share (threshold) updates',
+        description: 'Share (threshold) posts',
         category: 'community',
         icon: 'pencil-outline',
         level: 'bronze',
@@ -63,8 +70,9 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'storyteller_silver',
+        type: 'storyteller',
         name: 'Storyteller Silver',
-        description: 'Share (threshold) updates',
+        description: 'Share (threshold) posts',
         category: 'community',
         icon: 'pencil',
         level: 'silver',
@@ -72,8 +80,9 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'storyteller_gold',
+        type: 'storyteller',
         name: 'Storyteller Gold',
-        description: 'Share (threshold) updates',
+        description: 'Share (threshold) posts',
         category: 'community',
         icon: 'pencil',
         level: 'gold',
@@ -83,6 +92,7 @@ export const BADGES: Badge[] = [
     // Supporter (Likes Given)
     {
         id: 'supporter_bronze',
+        type: 'supporter',
         name: 'Supporter Bronze',
         description: 'Like (threshold) posts',
         category: 'community',
@@ -92,6 +102,7 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'supporter_silver',
+        type: 'supporter',
         name: 'Supporter Silver',
         description: 'Like (threshold) posts',
         category: 'community',
@@ -101,6 +112,7 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'supporter_gold',
+        type: 'supporter',
         name: 'Supporter Gold',
         description: 'Like (threshold) posts',
         category: 'community',
@@ -109,10 +121,11 @@ export const BADGES: Badge[] = [
         threshold: 250,
     },
 
-    // Conversationalist (comments given)
+    // Chatter (comments given)
     {
         id: 'conversationalist_bronze',
-        name: 'Conversationalist Bronze',
+        type: 'chatter',
+        name: 'Chatter Bronze',
         description: 'Comment (threshold) times',
         category: 'community',
         icon: 'chatbubbles-outline',
@@ -121,7 +134,8 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'conversationalist_silver',
-        name: 'Conversationalist Silver',
+        type: 'chatter',
+        name: 'Chatter Silver',
         description: 'Comment (threshold) times',
         category: 'community',
         icon: 'chatbubbles-outline',
@@ -130,7 +144,8 @@ export const BADGES: Badge[] = [
     },
     {
         id: 'conversationalist_gold',
-        name: 'Conversationalist Gold',
+        type: 'chatter',
+        name: 'Chatter Gold',
         description: 'Comment (threshold) times',
         category: 'community',
         icon: 'chatbubbles-outline',

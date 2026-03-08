@@ -53,6 +53,12 @@ export interface Challenge {
   export interface WeekData {
     week: number;
     hasStreak: boolean;
+    challengeId: number;
+    postId?: number;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+    isCompleted: boolean;
   }
   
   export interface UserProgress {

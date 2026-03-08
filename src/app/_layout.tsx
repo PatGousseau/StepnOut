@@ -64,7 +64,8 @@ function RootLayoutNav() {
   // Check if we're on a detail page
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
-    pathname.includes('/challenge/');
+    pathname.includes('/challenge/') ||
+    pathname === '/badges';
 
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';

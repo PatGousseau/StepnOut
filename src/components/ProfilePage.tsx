@@ -466,11 +466,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </View>
         )}
 
+        <BadgePreviewSection userId={targetUserId!} userProfile={userProfile} />
+
         {isOwnProfile && data && (
           <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
         )}
-
-        <BadgePreviewSection userId={targetUserId!} userProfile={userProfile} />
 
         <View style={styles.filterRow}>
           {(["all", "post", "comment"] as const).map((filter) => (
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
   },
   bioSection: {
     width: "100%",
-    marginBottom: 16,
+    marginBottom: 8,
     paddingHorizontal: 12,
   },
   bioText: {

@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     },
     progressTextInside: {
         fontSize: 12,
-        color: '#333',
+        color: '#FFFFFF',
         fontWeight: 'bold',
         textAlign: 'center',
         zIndex: 1,

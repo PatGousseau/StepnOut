@@ -1,26 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { BadgeService } from '../../services/badgeService';
 import { Badge } from '../../types/badges';
 import { BadgeIcon } from '../../components/Badges/BadgeIcon';
 import { BadgeModal } from '../../components/Badges/BadgeModal';
 import { colors } from '../../constants/Colors';
-import { Ionicons } from '@expo/vector-icons';
 import { Loader } from '../../components/Loader';
 import { profileService } from '../../services/profileService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { UserProfile } from '../../models/User';
 
+const GRID_GAP = 16;
+const MIN_GRID_CELL_WIDTH = 84;
+const MIN_GRID_COLUMNS = 3;
+const MAX_GRID_COLUMNS = 5;
+const SCREEN_PADDING = 20;
+
 export default function BadgesScreen() {
     const { userId } = useLocalSearchParams<{ userId: string }>();
-    const router = useRouter();
     const { t } = useLanguage();
+    const { width: screenWidth } = useWindowDimensions();
 
     const [allBadges, setAllBadges] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number })[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedBadge, setSelectedBadge] = useState<(Badge & { unlocked: boolean, earnedDate?: string, currentProgress?: number }) | null>(null);
+    const [gridWidth, setGridWidth] = useState(Math.max(0, screenWidth - SCREEN_PADDING * 2));
 
     useEffect(() => {
         const loadData = async () => {
@@ -54,17 +60,14 @@ export default function BadgesScreen() {
         loadData();
     }, [userId]);
 
+    useEffect(() => {
+        setGridWidth(Math.max(0, screenWidth - SCREEN_PADDING * 2));
+    }, [screenWidth]);
+
     if (loading) {
         return (
             <SafeAreaView style={styles.container} edges={['bottom']}>
                 <Stack.Screen options={{ headerShown: false }} />
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>{t('Badges')}</Text>
-                    <View style={{ width: 24 }} />
-                </View>
                 <Loader />
             </SafeAreaView>
         );
@@ -86,42 +89,44 @@ export default function BadgesScreen() {
         }
     };
 
+    const columnCount = gridWidth > 0
+        ? Math.max(
+            MIN_GRID_COLUMNS,
+            Math.min(
+                MAX_GRID_COLUMNS,
+                Math.floor((gridWidth + GRID_GAP) / (MIN_GRID_CELL_WIDTH + GRID_GAP)),
+            ),
+        )
+        : 4;
+    const gridItemWidth = gridWidth > 0
+        ? (gridWidth - GRID_GAP * (columnCount - 1)) / columnCount
+        : undefined;
+
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
             <Stack.Screen options={{ headerShown: false }} />
 
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#000" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{t('Badges')}</Text>
-                <View style={{ width: 24 }} />
-            </View>
-
             <ScrollView contentContainerStyle={styles.scrollContent}>
-
-                {/* Summary Card */}
-                <View style={styles.summaryCard}>
-                    <Text style={styles.summaryValue}>
-                        {allBadges.filter(b => b.unlocked).length} / {allBadges.length}
-                    </Text>
-                    <Text style={styles.summaryLabel}>{t('Unlocked')}</Text>
-                </View>
-
                 {Object.entries(categories).map(([category, badges]) => (
                     <View key={category} style={styles.categorySection}>
                         <Text style={styles.categoryTitle}>{getCategoryTitle(category)}</Text>
-                        <View style={styles.grid}>
+                        <View
+                            style={styles.grid}
+                            onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
+                        >
                             {badges.map(badge => (
                                 <TouchableOpacity
                                     key={badge.id}
-                                    style={styles.gridItem}
+                                    style={[
+                                        styles.gridItem,
+                                        { width: gridItemWidth },
+                                    ]}
                                     onPress={() => setSelectedBadge(badge)}
                                 >
                                     <BadgeIcon
                                         badge={badge}
                                         unlocked={badge.unlocked}
-                                        size="large"
+                                        size="medium"
                                         showLevelColor={true}
                                     />
                                     <Text style={styles.badgeName} numberOfLines={2}>
@@ -150,47 +155,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.light.background,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    backButton: {
-        padding: 4,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
     scrollContent: {
-        padding: 20,
+        padding: SCREEN_PADDING,
         paddingBottom: 40,
-    },
-    summaryCard: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 24,
-        alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    summaryValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.light.primary,
-    },
-    summaryLabel: {
-        marginTop: 4,
-        fontSize: 14,
-        color: '#666',
     },
     categorySection: {
         marginBottom: 32,
@@ -204,18 +171,17 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        columnGap: 16, // Requires newer RN, fallback to margin if issues
-        rowGap: 16,
+        columnGap: GRID_GAP,
+        rowGap: GRID_GAP,
     },
     gridItem: {
-        width: '30%',
         alignItems: 'center',
-        marginBottom: 0,
+        gap: 8,
     },
     badgeName: {
         fontSize: 11,
         textAlign: 'center',
-        marginTop: 8,
+        maxWidth: 72,
         color: '#666',
         fontWeight: '500',
     },

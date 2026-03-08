@@ -3,6 +3,7 @@ export type BadgeLevel = 'bronze' | 'silver' | 'gold' | 'platinum';
 
 export interface Badge {
     id: string;
+    type: string; // Shared grouping key for related badges (e.g. storyteller bronze/silver/gold)
     name: string;
     description: string;
     category: BadgeCategory;
