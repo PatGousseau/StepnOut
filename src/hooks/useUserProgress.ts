@@ -136,13 +136,15 @@ const useUserProgress = (targetUserId: string) => {
         if (activeChallengeError) throw activeChallengeError;
         if (!activeChallenge) throw new Error('No active challenge found');
 
-        // Then get 8 previous challenges before the active one
+        const joinedAt = user.created_at;
+
+        // Then get all previous challenges before the active one, since the user joined
         const { data: previousChallenges, error: previousChallengesError } = await supabase
           .from('challenges')
           .select('*')
           .lt('created_at', activeChallenge.created_at)
-          .order('created_at', { ascending: false })
-          .limit(8);
+          .gte('created_at', joinedAt)
+          .order('created_at', { ascending: false });
 
         if (previousChallengesError) throw previousChallengesError;
 
@@ -213,7 +215,7 @@ const useUserProgress = (targetUserId: string) => {
     };
 
     fetchData();
-  }, [user?.id]);
+  }, [user?.created_at, user?.id]);
 
   useEffect(() => {
     if (user?.id) {

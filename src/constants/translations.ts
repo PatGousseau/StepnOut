@@ -97,6 +97,7 @@ export const translations = {
   "Past 7 weeks": "Ultime 7 settimane",
   "7 weeks ago": "7 settimane fa",
   "Last week": "Scorsa settimana",
+  "Your Challenge History": "La tua cronologia sfide",
   "Your Progress": "I Tuoi Progressi",
   Total: "Totale",
   Easy: "Facile",

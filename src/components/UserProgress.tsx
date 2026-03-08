@@ -25,7 +25,7 @@ interface WeekData {
 
 const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
   const { t } = useLanguage();
-  const recentWeeks = [...weekData].slice(0, 7).reverse();
+  const allWeeks = [...weekData].reverse();
 
   const getBoxStyle = (week: WeekData) => {
     if (week.isCompleted) {
@@ -49,9 +49,9 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
 
   return (
     <View style={styles.streakCalendarContainer}>
-      <Text style={styles.streakEyebrow}>{t('Past 7 weeks')}</Text>
+      <Text style={styles.streakEyebrow}>{t('Your Challenge History')}</Text>
       <View style={styles.calendarGrid}>
-        {recentWeeks.map((week, index) => (
+        {allWeeks.map((week, index) => (
           <View
             key={`${week.challengeId}-${index}`}
             style={[
@@ -60,10 +60,6 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
             ]}
           />
         ))}
-      </View>
-      <View style={styles.streakAxis}>
-        <Text style={styles.streakAxisLabel}>{t('7 weeks ago')}</Text>
-        <Text style={styles.streakAxisLabel}>{t('Last week')}</Text>
       </View>
     </View>
   );
@@ -191,27 +187,21 @@ const styles = StyleSheet.create({
   },
   streakEyebrow: {
     color: '#5F6B7A',
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 10,
   },
   calendarGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
   },
   calendarBox: {
-    aspectRatio: 1,
     borderRadius: 4,
     borderWidth: 1,
-    width: '11%',
-  },
-  streakAxis: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  streakAxisLabel: {
-    color: '#7F8C8D',
-    fontSize: 11,
+    height: 28,
+    marginBottom: 6,
+    marginRight: 6,
+    width: 28,
   },
 });
 
