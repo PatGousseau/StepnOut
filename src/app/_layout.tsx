@@ -317,11 +317,11 @@ function RootLayoutNav() {
           </View>
 
           <View style={styles.notificationsBannerFooter}>
-            <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
-              <Text style={styles.notificationsBannerSecondary}>{t('Not now')}</Text>
+            <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleIgnoreNotificationsBanner}>
+              <Text style={styles.notificationsBannerGhostButtonText}>{t('Not now')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDisableNotificationsBanner}>
-              <Text style={styles.notificationsBannerSecondary}>{t("Don't ask again")}</Text>
+            <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleDisableNotificationsBanner}>
+              <Text style={styles.notificationsBannerGhostButtonText}>{t("Don't ask again")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -378,54 +378,62 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.accent2,
     borderBottomColor: colors.neutral.grey2,
     borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   notificationsBannerLeft: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   notificationsBannerTextWrap: {
     flex: 1,
   },
   notificationsBannerTitle: {
     color: colors.light.text,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
+    lineHeight: 16,
   },
   notificationsBannerSubtitle: {
     color: colors.light.lightText,
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 1,
   },
   notificationsBannerActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 6,
   },
   notificationsBannerButton: {
     backgroundColor: colors.light.primary,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   notificationsBannerButtonText: {
     color: colors.neutral.white,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   notificationsBannerFooter: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: 8,
+    marginTop: 6,
   },
-  notificationsBannerSecondary: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    textDecorationLine: 'underline',
+  notificationsBannerGhostButton: {
+    backgroundColor: '#ECECEC',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  notificationsBannerGhostButtonText: {
+    color: '#666',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 
