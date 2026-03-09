@@ -298,7 +298,12 @@ function RootLayoutNav() {
       {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
-            <Ionicons name="notifications-outline" size={16} color={colors.light.primary} />
+            <Ionicons
+              name="notifications-outline"
+              size={16}
+              color={colors.light.primary}
+              style={styles.notificationsBannerIcon}
+            />
             <View style={styles.notificationsBannerTextWrap}>
               <Text style={styles.notificationsBannerTitle}>{t('Enable notifications')}</Text>
               <Text style={styles.notificationsBannerSubtitle} numberOfLines={2}>
@@ -316,9 +321,6 @@ function RootLayoutNav() {
             </TouchableOpacity>
             <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleDisableNotificationsBanner}>
               <Text style={styles.notificationsBannerGhostButtonText}>{t("Don't ask again")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
-              <Ionicons name="close" size={18} color={colors.light.lightText} />
             </TouchableOpacity>
           </View>
         </View>
@@ -379,9 +381,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   notificationsBannerLeft: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
     gap: 8,
+  },
+  notificationsBannerIcon: {
+    marginTop: 1,
   },
   notificationsBannerTextWrap: {
     flex: 1,
