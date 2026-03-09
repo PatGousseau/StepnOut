@@ -1,6 +1,8 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -38,6 +40,8 @@ Notifications.setNotificationHandler({
 SplashScreen.preventAutoHideAsync();
 
 // Create a QueryClient instance with defaults
+const NOTIF_BANNER_DISABLED_KEY = 'notifications_banner_disabled';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -59,6 +63,7 @@ function RootLayoutNav() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showNotificationsBanner, setShowNotificationsBanner] = useState(false);
   const pathname = usePathname();
 
   // Check if we're on a detail page
@@ -145,6 +150,38 @@ function RootLayoutNav() {
   }, [session]);
 
   useEffect(() => {
+    const maybeShowNotificationsBanner = async () => {
+      if (!session?.user?.id || loading) return;
+
+      const isAuthRoute =
+        pathname === '/login' ||
+        pathname === '/register' ||
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password' ||
+        pathname === '/(auth)/onboarding' ||
+        pathname === '/onboarding' ||
+        pathname === '/(auth)/register-profile' ||
+        pathname === '/register-profile';
+
+      if (isAuthRoute) {
+        setShowNotificationsBanner(false);
+        return;
+      }
+
+      const disabled = await AsyncStorage.getItem(NOTIF_BANNER_DISABLED_KEY);
+      if (disabled === '1') {
+        setShowNotificationsBanner(false);
+        return;
+      }
+
+      const { status } = await Notifications.getPermissionsAsync();
+      setShowNotificationsBanner(status !== 'granted');
+    };
+
+    maybeShowNotificationsBanner();
+  }, [session?.user?.id, loading, pathname]);
+
+  useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
     });
@@ -213,6 +250,29 @@ function RootLayoutNav() {
     captureEvent(UI_EVENTS.MENU_OPENED);
   };
 
+  const handleEnableNotifications = async () => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') {
+      await registerForPushNotificationsAsync(userId);
+      setShowNotificationsBanner(false);
+      return;
+    }
+
+    await Linking.openSettings();
+  };
+
+  const handleIgnoreNotificationsBanner = () => {
+    setShowNotificationsBanner(false);
+  };
+
+  const handleDisableNotificationsBanner = async () => {
+    await AsyncStorage.setItem(NOTIF_BANNER_DISABLED_KEY, '1');
+    setShowNotificationsBanner(false);
+  };
+
   if (loading) {
     return null;
   }
@@ -232,6 +292,26 @@ function RootLayoutNav() {
         isDetailPage={isDetailPage}
         hideLogo={hideLogo}
       />
+
+      {showNotificationsBanner && !hideLogo && (
+        <View style={styles.notificationsBanner}>
+          <Text style={styles.notificationsBannerText} numberOfLines={2}>
+            {t("Turn on notifications so you don't miss challenge updates and activity.")}
+          </Text>
+          <View style={styles.notificationsBannerActions}>
+            <TouchableOpacity onPress={handleEnableNotifications}>
+              <Text style={styles.notificationsBannerPrimary}>{t('Enable')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
+              <Text style={styles.notificationsBannerSecondary}>{t('Not now')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDisableNotificationsBanner}>
+              <Text style={styles.notificationsBannerSecondary}>{t("Don't ask again")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
       <Stack
         screenOptions={{
@@ -277,6 +357,36 @@ function RootLayoutNav() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  notificationsBanner: {
+    backgroundColor: '#FFF4DD',
+    borderBottomColor: '#F1D49A',
+    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  notificationsBannerText: {
+    color: '#5A4300',
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  notificationsBannerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  notificationsBannerPrimary: {
+    color: colors.light.primary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  notificationsBannerSecondary: {
+    color: '#7A6A3A',
+    fontSize: 12,
+    textDecorationLine: 'underline',
+  },
+});
 
 export default function Layout() {
   // Get API key from environment variable
