@@ -13,6 +13,7 @@ import {
   TextInput,
   Linking,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import UserProgress from "./UserProgress";
 import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
@@ -43,6 +44,8 @@ type ProfilePageProps = {
   userId?: string;
 };
 
+const NOTIF_PROMPT_DISABLED_KEY = "notifications_prompt_disabled";
+
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -72,7 +75,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [editedBio, setEditedBio] = useState("");
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
-
+  const [showNotificationsPrompt, setShowNotificationsPrompt] = useState(false);
 
   // Use React Query to fetch profile data
   const {
@@ -212,6 +215,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     try {
       if (!user?.id) return;
 
+      setShowNotificationsPrompt(false);
       const { status } = await Notifications.getPermissionsAsync();
 
       if (status === "granted") {
@@ -234,6 +238,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       console.error("Error enabling push notifications:", error);
       Alert.alert(t("Error"), t("Failed to enable push notifications"));
     }
+  };
+
+  const handleIgnoreNotificationsPrompt = () => {
+    setShowNotificationsPrompt(false);
+  };
+
+  const handleDisableNotificationsPrompt = async () => {
+    await AsyncStorage.setItem(NOTIF_PROMPT_DISABLED_KEY, "1");
+    setShowNotificationsPrompt(false);
   };
 
   const handleDeleteAccount = async () => {
@@ -275,6 +288,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       setFullResImageUrl(null);
     }
   }, [showFullImage, loadFullResImage]);
+
+  useEffect(() => {
+    const maybeShowNotificationsPrompt = async () => {
+      if (!isOwnProfile || !user?.id) return;
+
+      const disabled = await AsyncStorage.getItem(NOTIF_PROMPT_DISABLED_KEY);
+      if (disabled === "1") return;
+
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== "granted") {
+        setShowNotificationsPrompt(true);
+      }
+    };
+
+    maybeShowNotificationsPrompt();
+  }, [isOwnProfile, user?.id]);
 
   // Track profile viewed when profile data loads
   useEffect(() => {
@@ -563,6 +592,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </View>
         )}
       </ScrollView>
+
+      <Modal
+        visible={showNotificationsPrompt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleIgnoreNotificationsPrompt}
+      >
+        <View style={styles.notificationsPromptOverlay}>
+          <View style={styles.notificationsPromptCard}>
+            <Text style={styles.notificationsPromptTitle}>{t("Enable notifications")}</Text>
+            <Text style={styles.notificationsPromptBody}>
+              {t("Turn on notifications so you don't miss challenge updates and activity.")}
+            </Text>
+
+            <View style={styles.notificationsPromptActions}>
+              <TouchableOpacity style={styles.notificationsPromptGhostButton} onPress={handleIgnoreNotificationsPrompt}>
+                <Text style={styles.notificationsPromptGhostText}>{t("Not now")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.notificationsPromptPrimaryButton} onPress={handleEnablePushNotifications}>
+                <Text style={styles.notificationsPromptPrimaryText}>{t("Enable")}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={handleDisableNotificationsPrompt}>
+              <Text style={styles.notificationsPromptNeverText}>{t("Don't ask again")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showFullImage}
@@ -862,5 +920,67 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.3)",
+  },
+  notificationsPromptOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  notificationsPromptCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 18,
+    width: "100%",
+    maxWidth: 420,
+  },
+  notificationsPromptTitle: {
+    color: colors.light.text,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  notificationsPromptBody: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  notificationsPromptActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+  },
+  notificationsPromptGhostButton: {
+    borderColor: "#ddd",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 10,
+  },
+  notificationsPromptGhostText: {
+    color: colors.light.text,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  notificationsPromptPrimaryButton: {
+    backgroundColor: colors.light.primary,
+    borderRadius: 10,
+    flex: 1,
+    paddingVertical: 10,
+  },
+  notificationsPromptPrimaryText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  notificationsPromptNeverText: {
+    color: colors.light.lightText,
+    fontSize: 13,
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
 });
