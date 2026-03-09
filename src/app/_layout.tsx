@@ -175,7 +175,8 @@ function RootLayoutNav() {
       }
 
       const { status } = await Notifications.getPermissionsAsync();
-      setShowNotificationsBanner(status !== 'granted');
+      // TEMP for QA: force banner visible regardless of permission.
+      setShowNotificationsBanner(true || status !== 'granted');
     };
 
     maybeShowNotificationsBanner();
