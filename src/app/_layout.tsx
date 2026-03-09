@@ -311,17 +311,14 @@ function RootLayoutNav() {
             <TouchableOpacity style={styles.notificationsBannerButton} onPress={handleEnableNotifications}>
               <Text style={styles.notificationsBannerButtonText}>{t('Enable')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
-              <Ionicons name="close" size={18} color={colors.light.lightText} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.notificationsBannerFooter}>
             <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleIgnoreNotificationsBanner}>
               <Text style={styles.notificationsBannerGhostButtonText}>{t('Not now')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleDisableNotificationsBanner}>
               <Text style={styles.notificationsBannerGhostButtonText}>{t("Don't ask again")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
+              <Ionicons name="close" size={18} color={colors.light.lightText} />
             </TouchableOpacity>
           </View>
         </View>
@@ -404,8 +401,8 @@ const styles = StyleSheet.create({
   notificationsBannerActions: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
-    justifyContent: 'space-between',
     marginTop: 6,
   },
   notificationsBannerButton: {
@@ -418,11 +415,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.white,
     fontSize: 11,
     fontWeight: '600',
-  },
-  notificationsBannerFooter: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
   },
   notificationsBannerGhostButton: {
     backgroundColor: '#ECECEC',
