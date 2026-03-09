@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   notificationsBannerGhostButton: {
-    backgroundColor: '#ECECEC',
+    backgroundColor: '#FFFFFF',
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
