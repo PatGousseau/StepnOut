@@ -3,6 +3,7 @@ import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -296,13 +297,26 @@ function RootLayoutNav() {
 
       {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
-          <Text style={styles.notificationsBannerText} numberOfLines={2}>
-            {t("Turn on notifications so you don't miss challenge updates and activity.")}
-          </Text>
+          <View style={styles.notificationsBannerLeft}>
+            <Ionicons name="notifications-outline" size={16} color={colors.light.primary} />
+            <View style={styles.notificationsBannerTextWrap}>
+              <Text style={styles.notificationsBannerTitle}>{t('Enable notifications')}</Text>
+              <Text style={styles.notificationsBannerSubtitle} numberOfLines={2}>
+                {t("Turn on notifications so you don't miss challenge updates and activity.")}
+              </Text>
+            </View>
+          </View>
+
           <View style={styles.notificationsBannerActions}>
-            <TouchableOpacity onPress={handleEnableNotifications}>
-              <Text style={styles.notificationsBannerPrimary}>{t('Enable')}</Text>
+            <TouchableOpacity style={styles.notificationsBannerButton} onPress={handleEnableNotifications}>
+              <Text style={styles.notificationsBannerButtonText}>{t('Enable')}</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
+              <Ionicons name="close" size={18} color={colors.light.lightText} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.notificationsBannerFooter}>
             <TouchableOpacity onPress={handleIgnoreNotificationsBanner}>
               <Text style={styles.notificationsBannerSecondary}>{t('Not now')}</Text>
             </TouchableOpacity>
@@ -361,29 +375,55 @@ function RootLayoutNav() {
 
 const styles = StyleSheet.create({
   notificationsBanner: {
-    backgroundColor: '#FFF4DD',
-    borderBottomColor: '#F1D49A',
+    backgroundColor: colors.light.accent2,
+    borderBottomColor: colors.neutral.grey2,
     borderBottomWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  notificationsBannerText: {
-    color: '#5A4300',
-    fontSize: 13,
-    marginBottom: 6,
+  notificationsBannerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  notificationsBannerTextWrap: {
+    flex: 1,
+  },
+  notificationsBannerTitle: {
+    color: colors.light.text,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  notificationsBannerSubtitle: {
+    color: colors.light.lightText,
+    fontSize: 12,
+    marginTop: 2,
   },
   notificationsBannerActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    justifyContent: 'space-between',
+    marginTop: 8,
   },
-  notificationsBannerPrimary: {
-    color: colors.light.primary,
-    fontSize: 13,
-    fontWeight: '700',
+  notificationsBannerButton: {
+    backgroundColor: colors.light.primary,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  notificationsBannerButtonText: {
+    color: colors.neutral.white,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  notificationsBannerFooter: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
   },
   notificationsBannerSecondary: {
-    color: '#7A6A3A',
+    color: colors.light.lightText,
     fontSize: 12,
     textDecorationLine: 'underline',
   },
