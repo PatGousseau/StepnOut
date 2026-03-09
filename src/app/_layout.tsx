@@ -298,12 +298,7 @@ function RootLayoutNav() {
       {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
-            <Ionicons
-              name="notifications-outline"
-              size={16}
-              color={colors.light.primary}
-              style={styles.notificationsBannerIcon}
-            />
+            <Ionicons name="notifications-outline" size={16} color={colors.light.primary} />
             <View style={styles.notificationsBannerTextWrap}>
               <Text style={styles.notificationsBannerTitle}>{t('Enable notifications')}</Text>
               <Text style={styles.notificationsBannerSubtitle} numberOfLines={2}>
@@ -381,12 +376,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   notificationsBannerLeft: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
-  },
-  notificationsBannerIcon: {
-    marginTop: 1,
   },
   notificationsBannerTextWrap: {
     flex: 1,
@@ -408,7 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginTop: 6,
+    marginTop: 10,
   },
   notificationsBannerButton: {
     backgroundColor: colors.light.primary,
