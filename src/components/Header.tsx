@@ -97,8 +97,7 @@ const Header = ({
       )}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.leadingButton}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           onPress={() => {
             if (isDetailPage) {
               router.back();
@@ -179,12 +178,6 @@ const styles = StyleSheet.create({
   headerRight: {
     alignItems: 'center',
     flexDirection: 'row',
-  },
-  leadingButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 40,
-    minWidth: 40,
   },
   logo: {
     height: 28,

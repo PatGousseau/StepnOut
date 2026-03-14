@@ -406,7 +406,7 @@ const emojiStyle: TextStyle = {
 
 const countStyle: TextStyle = {
   marginLeft: 4,
-  fontSize: 14,
+  fontSize: 13,
   color: colors.light.text,
 };
 
