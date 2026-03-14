@@ -8,7 +8,7 @@ import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
-import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
+import { LanguageProvider } from '../contexts/LanguageContext';
 import * as SplashScreen from 'expo-splash-screen';
 import NotificationSidebar from '../components/NotificationSidebar';
 import MenuSidebar from '../components/MenuSidebar';
@@ -53,7 +53,6 @@ const queryClient = new QueryClient({
 });
 
 function RootLayoutNav() {
-  const { t } = useLanguage();
   const { session, loading } = useAuth();
   const { markAllAsRead, notifications, unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -233,7 +232,7 @@ function RootLayoutNav() {
         isDetailPage={isDetailPage}
         hideLogo={hideLogo}
       />
-      {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
+      {!hideLogo && !hideRecentlyActive && <RecentlyActiveBanner hidden={isDetailPage} />}
       <Stack
         screenOptions={{
           headerShown: false,

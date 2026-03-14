@@ -235,12 +235,11 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
           openUsers("❤️");
         }}
         delayLongPress={350}
-        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         style={pillStyle}
       >
         <Icon
           name={isLiked ? "heart" : "heart-o"}
-          size={14}
+          size={28}
           color={isLiked ? "#eb656b" : colors.neutral.grey1}
         />
         <Text style={countStyle}>{likeCount}</Text>
@@ -255,7 +254,6 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
             openUsers(r.emoji);
           }}
           delayLongPress={350}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           style={getReactionPillStyle(r.reacted)}
         >
           <Text style={emojiStyle}>{r.emoji}</Text>
@@ -264,14 +262,10 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
       ))}
 
       <View ref={buttonRef} collapsable={false}>
-        <TouchableOpacity
-          onPress={handleOpen}
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          style={addButtonStyle}
-        >
+        <TouchableOpacity onPress={handleOpen} style={addButtonStyle}>
           <MaterialCommunityIcons
             name="emoticon-happy-outline"
-            size={16}
+            size={32}
             color={"#888"}
           />
           <Text style={addPlusStyle}>+</Text>
@@ -402,15 +396,12 @@ const containerStyle: ViewStyle = {
 const pillStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
-  justifyContent: "center",
-  minHeight: 32,
-  minWidth: 32,
-  paddingHorizontal: 6,
-  paddingVertical: 4,
+  paddingHorizontal: 2,
+  paddingVertical: 2,
 };
 
 const emojiStyle: TextStyle = {
-  fontSize: 12,
+  fontSize: 24,
 };
 
 const countStyle: TextStyle = {
@@ -420,12 +411,8 @@ const countStyle: TextStyle = {
 };
 
 const addButtonStyle: ViewStyle = {
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: 32,
-  minWidth: 32,
-  paddingHorizontal: 6,
-  paddingVertical: 4,
+  paddingHorizontal: 4,
+  paddingVertical: 2,
 };
 
 const addPlusStyle: TextStyle = {

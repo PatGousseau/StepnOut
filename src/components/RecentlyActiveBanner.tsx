@@ -6,6 +6,8 @@ import {
   Animated,
   ScrollView,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -90,7 +92,7 @@ const UserAvatar = ({ user, onPress, variant, zIndex }: UserAvatarProps) => {
   );
 };
 
-export const RecentlyActiveBanner = () => {
+export const RecentlyActiveBanner = ({ hidden = false }: { hidden?: boolean }) => {
   const { t } = useLanguage();
   const { activeUsers, activeTodayCount, loading, loadingMore, hasMore, fetchUsers, loadMore } = useRecentlyActiveUsers();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -130,7 +132,7 @@ export const RecentlyActiveBanner = () => {
     router.push(`/profile/${userId}`);
   }, []);
 
-  const handleScrollEnd = useCallback(({ nativeEvent: e }: any) => {
+  const handleScrollEnd = useCallback(({ nativeEvent: e }: NativeSyntheticEvent<NativeScrollEvent>) => {
     const nearEnd = e.layoutMeasurement.width + e.contentOffset.x >= e.contentSize.width - 100;
     if (nearEnd && hasMore && !loadingMore) loadMore();
   }, [hasMore, loadingMore, loadMore]);
@@ -140,7 +142,7 @@ export const RecentlyActiveBanner = () => {
   }
 
   return (
-    <Animated.View style={[styles.container, { height: heightAnimation }]}>
+    <Animated.View style={[styles.container, { height: heightAnimation }, hidden && styles.hidden]}>
       <TouchableOpacity
         style={styles.header}
         onPress={toggleExpanded}
@@ -333,6 +335,9 @@ const styles = StyleSheet.create({
     height: AVATAR_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hidden: {
+    display: 'none',
   },
 });
 
