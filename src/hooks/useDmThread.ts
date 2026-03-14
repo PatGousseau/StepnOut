@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useFocusEffect } from "@react-navigation/native";
+import { LayoutAnimation, Platform, UIManager } from "react-native";
 import {
   InfiniteData,
   useInfiniteQuery,
@@ -38,8 +39,18 @@ const appendMessageToPages = (
   };
 };
 
+const animateMessageInsertion = () => {
+  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+};
+
 export const useDmThread = (conversationId?: string, userId?: string) => {
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
 
   const metaQuery = useQuery({
     queryKey:
@@ -108,6 +119,7 @@ export const useDmThread = (conversationId?: string, userId?: string) => {
     onSuccess: async (message) => {
       if (!conversationId || !userId) return;
 
+      animateMessageInsertion();
       queryClient.setQueryData<InfiniteData<DmMessage[], string | null>>(
         dmQueryKeys.threadMessages(conversationId),
         (current) => appendMessageToPages(current, message)
@@ -145,6 +157,7 @@ export const useDmThread = (conversationId?: string, userId?: string) => {
         (payload) => {
           const next = payload.new as DmMessage;
 
+          animateMessageInsertion();
           queryClient.setQueryData<InfiniteData<DmMessage[], string | null>>(
             dmQueryKeys.threadMessages(conversationId),
             (current) => appendMessageToPages(current, next)

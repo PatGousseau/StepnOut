@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Animated,
   Alert,
   FlatList,
   Image,
@@ -27,6 +28,62 @@ import { useDmThread } from "../../hooks/useDmThread";
 import { imageService } from "../../services/imageService";
 import { dmQueryKeys } from "../../services/dmQueryKeys";
 import { postService } from "../../services/postService";
+import { DmMessage } from "../../services/dmService";
+
+function AnimatedMessageBubble({
+  item,
+  isMine,
+}: {
+  item: DmMessage;
+  isMine: boolean;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(10)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, translateY]);
+
+  const createdAt = new Date(item.created_at);
+  const timeText = createdAt.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <Animated.View
+      style={[
+        styles.messageAnimationWrap,
+        {
+          opacity,
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <View style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
+        <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
+          <Text style={[styles.bubbleText, isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs]}>
+            {item.body}
+          </Text>
+          <Text style={[styles.bubbleTime, isMine ? styles.bubbleTimeMine : styles.bubbleTimeTheirs]}>
+            {timeText}
+          </Text>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
 
 export default function DmThreadScreen() {
   const { id } = useLocalSearchParams();
@@ -226,24 +283,7 @@ export default function DmThreadScreen() {
               }
               renderItem={({ item }) => {
                 const isMine = item.sender_id === myUserId;
-                const createdAt = new Date(item.created_at);
-                const timeText = createdAt.toLocaleTimeString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-
-                return (
-                  <View style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
-                    <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                      <Text style={[styles.bubbleText, isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs]}>
-                        {item.body}
-                      </Text>
-                      <Text style={[styles.bubbleTime, isMine ? styles.bubbleTimeMine : styles.bubbleTimeTheirs]}>
-                        {timeText}
-                      </Text>
-                    </View>
-                  </View>
-                );
+                return <AnimatedMessageBubble item={item} isMine={isMine} />;
               }}
             />
 
@@ -260,8 +300,9 @@ export default function DmThreadScreen() {
                   placeholder="Message"
                   placeholderTextColor={colors.light.lightText}
                   style={styles.input}
-                  editable={!sending}
+                  editable
                   multiline
+                  blurOnSubmit={false}
                 />
                 <View style={styles.sendButtonWrap}>
                   <AnimatedSendButton
@@ -370,6 +411,9 @@ const styles = StyleSheet.create({
   },
   bubbleRow: {
     flexDirection: "row",
+  },
+  messageAnimationWrap: {
+    width: "100%",
   },
   bubbleRowMine: {
     justifyContent: "flex-end",
