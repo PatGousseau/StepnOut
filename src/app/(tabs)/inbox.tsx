@@ -154,8 +154,40 @@ export default function InboxScreen() {
           schema: "public",
           table: "dm_messages",
         },
-        () => {
-          scheduleRealtimeRefresh();
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            conversation_id: string;
+            sender_id: string;
+            body: string;
+            created_at: string;
+          };
+
+          if (!row?.conversation_id) {
+            scheduleRealtimeRefresh();
+            return;
+          }
+
+          setItems((prev) => {
+            const index = prev.findIndex((i) => i.conversation_id === row.conversation_id);
+            if (index === -1) {
+              scheduleRealtimeRefresh();
+              return prev;
+            }
+
+            const current = prev[index];
+            const unreadIncrement = row.sender_id !== user.id ? 1 : 0;
+
+            const nextItem: DmInboxItem = {
+              ...current,
+              last_message_body: row.body,
+              last_message_at: row.created_at,
+              unread_count: Math.max(0, (current.unread_count ?? 0) + unreadIncrement),
+            };
+
+            const without = prev.filter((_, i) => i !== index);
+            return [nextItem, ...without];
+          });
         }
       )
       .on(
@@ -166,8 +198,35 @@ export default function InboxScreen() {
           table: "dm_conversation_members",
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
-          scheduleRealtimeRefresh();
+        (payload) => {
+          const row = payload.new as {
+            conversation_id: string;
+            user_id: string;
+            last_read_at: string | null;
+            archived: boolean;
+          };
+
+          if (!row?.conversation_id) {
+            scheduleRealtimeRefresh();
+            return;
+          }
+
+          setItems((prev) => {
+            const index = prev.findIndex((i) => i.conversation_id === row.conversation_id);
+            if (index === -1) return prev;
+
+            if (row.archived) {
+              return prev.filter((i) => i.conversation_id !== row.conversation_id);
+            }
+
+            const current = prev[index];
+            const nextItem: DmInboxItem = {
+              ...current,
+              unread_count: 0,
+            };
+
+            return prev.map((i) => (i.conversation_id === row.conversation_id ? nextItem : i));
+          });
         }
       )
       .subscribe();
