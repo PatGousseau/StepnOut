@@ -30,12 +30,20 @@ export default function DmThreadScreen() {
   const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherUserName, setOtherUserName] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   const myUserId = user?.id;
 
   const sorted = useMemo(() => {
     return [...messages].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  }, [messages]);
+
+  const oldestCreatedAt = useMemo(() => {
+    if (!messages.length) return null;
+    return messages.reduce((oldest, m) => (m.created_at < oldest ? m.created_at : oldest), messages[0].created_at);
   }, [messages]);
 
   useEffect(() => {
@@ -51,7 +59,7 @@ export default function DmThreadScreen() {
           .from("dm_conversation_members")
           .select("user_id")
           .eq("conversation_id", conversationId),
-        dmService.fetchMessages(conversationId),
+        dmService.fetchMessages(conversationId, { limit: 50 }),
       ]);
 
       if (!cancelled) {
@@ -60,6 +68,8 @@ export default function DmThreadScreen() {
         } else {
           const otherId = (memberRows ?? []).map((r) => r.user_id).find((uid) => uid !== myUserId);
           if (otherId) {
+            setOtherUserId(otherId);
+
             const { data: profileRows, error: profileError } = await supabase
               .from("profiles")
               .select("name, username")
@@ -137,6 +147,33 @@ export default function DmThreadScreen() {
     setSending(false);
   };
 
+  const loadMore = async () => {
+    if (!conversationId || loadingMore || !hasMore || !oldestCreatedAt) return;
+
+    setLoadingMore(true);
+    const result = await dmService.fetchMessages(conversationId, {
+      limit: 50,
+      beforeCreatedAt: oldestCreatedAt,
+    });
+
+    if (result.error) {
+      console.error("Error loading more dm messages:", result.error);
+      setLoadingMore(false);
+      return;
+    }
+
+    const next = result.data ?? [];
+    setMessages((prev) => {
+      const existingIds = new Set(prev.map((m) => m.id));
+      const deduped = next.filter((m) => !existingIds.has(m.id));
+      return [...prev, ...deduped];
+    });
+
+    if (next.length < 50) setHasMore(false);
+
+    setLoadingMore(false);
+  };
+
   if (!conversationId) {
     return (
       <SafeAreaView style={styles.container}>
@@ -162,11 +199,22 @@ export default function DmThreadScreen() {
           <Pressable onPress={() => router.back()} style={styles.headerBack}>
             <Icon name="chevron-back" size={28} color={colors.light.text} />
           </Pressable>
-          <View style={styles.headerTitleWrap}>
+
+          <Pressable
+            onPress={() => {
+              if (otherUserId) router.push(`/profile/${otherUserId}`);
+            }}
+            disabled={!otherUserId}
+            style={({ pressed }) => [
+              styles.headerTitleWrap,
+              pressed && otherUserId ? styles.headerTitlePressed : undefined,
+            ]}
+          >
             <Text style={styles.headerTitle} numberOfLines={1}>
               {otherUserName || "Message"}
             </Text>
-          </View>
+          </Pressable>
+
           <View style={styles.headerSpacer} />
         </View>
 
@@ -184,6 +232,20 @@ export default function DmThreadScreen() {
               inverted
               contentContainerStyle={styles.listContent}
               keyboardShouldPersistTaps="handled"
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.2}
+              ListEmptyComponent={
+                <View style={styles.emptyWrap}>
+                  <Text style={styles.emptyText}>Say hi.</Text>
+                </View>
+              }
+              ListFooterComponent={
+                loadingMore ? (
+                  <View style={styles.loadingMoreWrap}>
+                    <Text style={styles.loadingMoreText}>Loading…</Text>
+                  </View>
+                ) : null
+              }
               renderItem={({ item }) => {
                 const isMine = item.sender_id === myUserId;
                 const createdAt = new Date(item.created_at);
@@ -259,6 +321,11 @@ const styles = StyleSheet.create({
   headerTitleWrap: {
     flex: 1,
     paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  headerTitlePressed: {
+    backgroundColor: "rgba(0,0,0,0.04)",
   },
   headerTitle: {
     fontSize: 17,
@@ -329,6 +396,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.neutral.grey1 + "90",
     backgroundColor: colors.light.background,
+  },
+  emptyWrap: {
+    paddingVertical: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    color: colors.light.lightText,
+  },
+  loadingMoreWrap: {
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingMoreText: {
+    color: colors.light.lightText,
+    fontSize: 12,
   },
   input: {
     flex: 1,

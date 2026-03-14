@@ -56,10 +56,12 @@ export const dmService = {
 
   async fetchMessages(
     conversationId: string,
-    limit = 50
+    opts?: { limit?: number; beforeCreatedAt?: string }
   ): Promise<{ data?: DmMessage[]; error?: string }> {
     try {
-      const { data, error } = await supabase
+      const limit = opts?.limit ?? 50;
+
+      let query = supabase
         .from("dm_messages")
         .select("id, conversation_id, sender_id, body, created_at, deleted_at")
         .eq("conversation_id", conversationId)
@@ -67,6 +69,11 @@ export const dmService = {
         .order("created_at", { ascending: false })
         .limit(limit);
 
+      if (opts?.beforeCreatedAt) {
+        query = query.lt("created_at", opts.beforeCreatedAt);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
 
       return { data: (data ?? []) as DmMessage[] };
