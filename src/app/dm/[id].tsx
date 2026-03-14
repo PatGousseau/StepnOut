@@ -3,6 +3,8 @@ import {
   Animated,
   Alert,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -33,9 +35,13 @@ import { DmMessage } from "../../services/dmService";
 function AnimatedMessageBubble({
   item,
   isMine,
+  showTimestamp,
+  onToggleTimestamp,
 }: {
   item: DmMessage;
   isMine: boolean;
+  showTimestamp: boolean;
+  onToggleTimestamp: () => void;
 }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(10)).current;
@@ -72,14 +78,18 @@ function AnimatedMessageBubble({
       ]}
     >
       <View style={[styles.bubbleRow, isMine ? styles.bubbleRowMine : styles.bubbleRowTheirs]}>
-        <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
+        <Pressable onPress={onToggleTimestamp} style={styles.bubblePressable}>
+          <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleTheirs]}>
           <Text style={[styles.bubbleText, isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs]}>
             {item.body}
           </Text>
-          <Text style={[styles.bubbleTime, isMine ? styles.bubbleTimeMine : styles.bubbleTimeTheirs]}>
-            {timeText}
-          </Text>
-        </View>
+            {showTimestamp ? (
+              <Text style={[styles.bubbleTime, isMine ? styles.bubbleTimeMine : styles.bubbleTimeTheirs]}>
+                {timeText}
+              </Text>
+            ) : null}
+          </View>
+        </Pressable>
       </View>
     </Animated.View>
   );
@@ -96,6 +106,10 @@ export default function DmThreadScreen() {
 
   const [text, setText] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [visibleTimestampIds, setVisibleTimestampIds] = useState<Record<string, boolean>>({});
+  const flatListRef = useRef<FlatList<DmMessage>>(null);
+  const shouldStickToBottomRef = useRef(true);
+  const initialScrollDoneRef = useRef(false);
 
   const myUserId = user?.id;
   const {
@@ -111,8 +125,8 @@ export default function DmThreadScreen() {
     fetchNextPage,
   } = useDmThread(conversationId, myUserId);
 
-  const sorted = useMemo(() => {
-    return [...messages].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  const orderedMessages = useMemo(() => {
+    return [...messages].reverse();
   }, [messages]);
 
   const avatarUri = otherUserProfileMediaPath
@@ -144,6 +158,12 @@ export default function DmThreadScreen() {
   const loadMore = async () => {
     if (!hasMore || loadingMore) return;
     await fetchNextPage();
+  };
+
+  const scrollToBottom = (animated = true) => {
+    requestAnimationFrame(() => {
+      flatListRef.current?.scrollToEnd({ animated });
+    });
   };
 
   const handleBlock = () => {
@@ -187,6 +207,29 @@ export default function DmThreadScreen() {
       hideSub.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (!orderedMessages.length || initialScrollDoneRef.current) return;
+    initialScrollDoneRef.current = true;
+    scrollToBottom(false);
+  }, [orderedMessages.length]);
+
+  useEffect(() => {
+    if (!orderedMessages.length || !shouldStickToBottomRef.current) return;
+    scrollToBottom(initialScrollDoneRef.current);
+  }, [orderedMessages.length]);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom =
+      contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+    shouldStickToBottomRef.current = distanceFromBottom < 80;
+
+    if (contentOffset.y < 80 && hasMore && !loadingMore) {
+      loadMore().catch(() => null);
+    }
+  };
 
   if (!conversationId) {
     return (
@@ -262,19 +305,22 @@ export default function DmThreadScreen() {
             </View>
 
             <FlatList
-              data={sorted}
+              ref={flatListRef}
+              data={orderedMessages}
               keyExtractor={(item) => item.id}
-              inverted
               contentContainerStyle={styles.listContent}
               keyboardShouldPersistTaps="handled"
-              onEndReached={loadMore}
-              onEndReachedThreshold={0.2}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
                   <Text style={styles.emptyText}>Say hi.</Text>
                 </View>
               }
               ListFooterComponent={
+                null
+              }
+              ListHeaderComponent={
                 loadingMore ? (
                   <View style={styles.loadingMoreWrap}>
                     <Text style={styles.loadingMoreText}>Loading…</Text>
@@ -283,7 +329,19 @@ export default function DmThreadScreen() {
               }
               renderItem={({ item }) => {
                 const isMine = item.sender_id === myUserId;
-                return <AnimatedMessageBubble item={item} isMine={isMine} />;
+                return (
+                  <AnimatedMessageBubble
+                    item={item}
+                    isMine={isMine}
+                    showTimestamp={!!visibleTimestampIds[item.id]}
+                    onToggleTimestamp={() => {
+                      setVisibleTimestampIds((prev) => ({
+                        ...prev,
+                        [item.id]: !prev[item.id],
+                      }));
+                    }}
+                  />
+                );
               }}
             />
 
@@ -412,6 +470,9 @@ const styles = StyleSheet.create({
   bubbleRow: {
     flexDirection: "row",
   },
+  bubblePressable: {
+    maxWidth: "82%",
+  },
   messageAnimationWrap: {
     width: "100%",
   },
@@ -422,7 +483,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
   },
   bubble: {
-    maxWidth: "82%",
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 8,
