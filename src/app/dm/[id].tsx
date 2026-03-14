@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,11 +16,11 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 
 import { Text } from "../../components/StyledText";
 import { Loader } from "../../components/Loader";
+import { AnimatedSendButton } from "../../components/AnimatedSendButton";
 import { colors } from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDmThread } from "../../hooks/useDmThread";
 import { imageService } from "../../services/imageService";
-import Icon from "react-native-vector-icons/Ionicons";
 
 export default function DmThreadScreen() {
   const { id } = useLocalSearchParams();
@@ -29,6 +30,7 @@ export default function DmThreadScreen() {
   const { user } = useAuth();
 
   const [text, setText] = useState("");
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const myUserId = user?.id;
   const {
@@ -78,6 +80,23 @@ export default function DmThreadScreen() {
     if (!hasMore || loadingMore) return;
     await fetchNextPage();
   };
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, () => {
+      setKeyboardVisible(true);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   if (!conversationId) {
     return (
@@ -178,27 +197,31 @@ export default function DmThreadScreen() {
               }}
             />
 
-            <View style={styles.composer}>
-              <TextInput
-                value={text}
-                onChangeText={setText}
-                placeholder="Message"
-                placeholderTextColor={colors.light.lightText}
-                style={styles.input}
-                editable={!sending}
-                multiline
-              />
-              <Pressable
-                onPress={onSend}
-                disabled={sending || !text.trim()}
-                style={({ pressed }) => [
-                  styles.sendButton,
-                  pressed ? styles.sendPressed : undefined,
-                  sending || !text.trim() ? styles.sendDisabled : undefined,
-                ]}
-              >
-                <Icon name="send" size={18} color={colors.neutral.white} style={styles.sendIcon} />
-              </Pressable>
+            <View
+              style={[
+                styles.composer,
+                keyboardVisible ? styles.composerKeyboardOpen : styles.composerKeyboardClosed,
+              ]}
+            >
+              <View style={styles.inputShell}>
+                <TextInput
+                  value={text}
+                  onChangeText={setText}
+                  placeholder="Message"
+                  placeholderTextColor={colors.light.lightText}
+                  style={styles.input}
+                  editable={!sending}
+                  multiline
+                />
+                <View style={styles.sendButtonWrap}>
+                  <AnimatedSendButton
+                    hasContent={text.trim().length > 0}
+                    onPress={onSend}
+                    disabled={sending}
+                    size="medium"
+                  />
+                </View>
+              </View>
             </View>
           </KeyboardAvoidingView>
         )}
@@ -313,13 +336,18 @@ const styles = StyleSheet.create({
   },
   composer: {
     flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 12,
+    alignItems: "flex-end",
+    paddingHorizontal: 14,
     paddingTop: 10,
-    paddingBottom: Platform.OS === "ios" ? 12 : 10,
     borderTopWidth: 1,
     borderTopColor: colors.neutral.grey1 + "90",
     backgroundColor: colors.light.background,
+  },
+  composerKeyboardClosed: {
+    paddingBottom: Platform.OS === "ios" ? 10 : 8,
+  },
+  composerKeyboardOpen: {
+    paddingBottom: Platform.OS === "ios" ? 20 : 14,
   },
   emptyWrap: {
     paddingVertical: 60,
@@ -340,31 +368,26 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: colors.neutral.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.neutral.grey1 + "60",
-    paddingHorizontal: 12,
-    paddingVertical: Platform.OS === "ios" ? 10 : 8,
+    paddingRight: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     color: colors.light.text,
-    maxHeight: 120,
+    minHeight: 40,
+    maxHeight: 100,
   },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: colors.light.primary,
-    alignItems: "center",
-    justifyContent: "center",
+  inputShell: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    paddingRight: 6,
   },
-  sendIcon: {
-    transform: [{ rotate: "-45deg" }],
-    marginLeft: 2,
-  },
-  sendPressed: {
-    opacity: 0.9,
-  },
-  sendDisabled: {
-    opacity: 0.5,
+  sendButtonWrap: {
+    alignSelf: "flex-end",
+    paddingBottom: 6,
+    paddingRight: 2,
   },
 });

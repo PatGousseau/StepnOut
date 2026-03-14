@@ -7,7 +7,7 @@ interface AnimatedSendButtonProps {
   hasContent: boolean;
   onPress: () => void;
   disabled?: boolean;
-  size?: "small" | "medium";
+  size?: "small" | "medium" | "large";
 }
 
 export const AnimatedSendButton = ({
@@ -41,10 +41,10 @@ export const AnimatedSendButton = ({
     ],
   };
 
-  const iconSize = size === "small" ? 12 : 16;
+  const iconSize = size === "small" ? 12 : size === "large" ? 18 : 16;
   const buttonStyle: ViewStyle = {
-    borderRadius: size === "small" ? 10 : 14,
-    padding: size === "small" ? 4 : 6,
+    borderRadius: size === "small" ? 10 : size === "large" ? 16 : 14,
+    padding: size === "small" ? 4 : size === "large" ? 7 : 6,
     alignItems: "center",
     justifyContent: "center",
   };

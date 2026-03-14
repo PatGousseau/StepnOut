@@ -44,12 +44,9 @@ export default function InboxScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Messages</Text>
-      </View>
-
       <FlatList
         data={items}
+        style={styles.list}
         keyExtractor={(item) => item.conversation_id}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         contentContainerStyle={[styles.listContent, items.length ? undefined : styles.emptyContainer]}
@@ -57,6 +54,7 @@ export default function InboxScreen() {
         renderItem={({ item }) => {
           const other = item.profile;
           const displayName = other?.name || other?.username || "Unknown";
+          const username = other?.username ? `@${other.username}` : null;
           const initials = (displayName || "?")
             .split(" ")
             .filter(Boolean)
@@ -88,9 +86,16 @@ export default function InboxScreen() {
 
               <View style={styles.rowMain}>
                 <View style={styles.rowTop}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {displayName}
-                  </Text>
+                  <View style={styles.rowIdentity}>
+                    <Text style={styles.rowTitle} numberOfLines={1}>
+                      {displayName}
+                    </Text>
+                    {username ? (
+                      <Text style={styles.rowUsername} numberOfLines={1}>
+                        {username}
+                      </Text>
+                    ) : null}
+                  </View>
                   {!!timeText && <Text style={styles.rowTime}>{timeText}</Text>}
                 </View>
 
@@ -118,15 +123,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light.background,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
+  list: {
+    flex: 1,
   },
   listContent: {
+    flexGrow: 1,
     padding: 16,
     gap: 12,
   },
@@ -134,11 +135,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.neutral.grey1 + "90",
-    backgroundColor: colors.neutral.white,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.neutral.grey1 + "60",
   },
   cardPressed: {
     opacity: 0.9,
@@ -169,9 +168,13 @@ const styles = StyleSheet.create({
   },
   rowTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 8,
+  },
+  rowIdentity: {
+    flex: 1,
+    minWidth: 0,
   },
   rowBottom: {
     flexDirection: "row",
@@ -180,14 +183,19 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   rowTitle: {
-    flex: 1,
     fontSize: 16,
     fontWeight: "bold",
     color: colors.light.text,
   },
+  rowUsername: {
+    fontSize: 12,
+    color: colors.light.lightText,
+    marginTop: 1,
+  },
   rowTime: {
     fontSize: 12,
     color: colors.light.lightText,
+    paddingTop: 2,
   },
   rowSubtitle: {
     flex: 1,
