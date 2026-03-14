@@ -37,12 +37,15 @@ export const dmService = {
       const { data, error } = await supabase.rpc("list_dm_inbox");
       if (error) throw error;
 
+      const rows = (data ?? []) as Array<Record<string, unknown>>;
+
       return {
-        data: (data ?? []).map((row: any) => ({
-          conversation_id: row.conversation_id,
-          other_user_id: row.other_user_id,
-          last_message_body: row.last_message_body,
-          last_message_at: row.last_message_at,
+        data: rows.map((row) => ({
+          conversation_id: String(row.conversation_id),
+          other_user_id: String(row.other_user_id),
+          last_message_body:
+            typeof row.last_message_body === "string" ? row.last_message_body : null,
+          last_message_at: typeof row.last_message_at === "string" ? row.last_message_at : null,
           unread_count: Number(row.unread_count ?? 0),
         })),
       };
