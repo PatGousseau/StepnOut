@@ -417,9 +417,9 @@ const addButtonStyle: ViewStyle = {
 
 const addPlusStyle: TextStyle = {
   position: "absolute",
-  top: -1,
-  right: 0,
-  fontSize: 9,
+  top: -2,
+  right: -1,
+  fontSize: 12,
   color: "#888",
   fontWeight: "700",
 };
