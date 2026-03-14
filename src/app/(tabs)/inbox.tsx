@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  Image,
   Pressable,
   RefreshControl,
   SafeAreaView,
@@ -13,6 +14,7 @@ import { Text } from "../../components/StyledText";
 import { Loader } from "../../components/Loader";
 import { colors } from "../../constants/Colors";
 import { supabase } from "../../lib/supabase";
+import { imageService } from "../../services/imageService";
 import { useAuth } from "../../contexts/AuthContext";
 import { dmService, DmInboxItem } from "../../services/dmService";
 
@@ -20,6 +22,24 @@ type ProfilePreview = {
   id: string;
   username: string | null;
   name: string | null;
+  profile_media: { file_path: string | null } | null;
+};
+
+const formatInboxTime = (date: Date) => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(diffMs / 3600000);
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(diffMs / 86400000);
+  if (days < 7) return `${days}d`;
+
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
 export default function InboxScreen() {
@@ -40,7 +60,16 @@ export default function InboxScreen() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, username, name")
+      .select(
+        `
+        id,
+        username,
+        name,
+        profile_media:media!profiles_profile_media_id_fkey (
+          file_path
+        )
+        `
+      )
       .in("id", userIds);
 
     if (error) {
@@ -54,6 +83,7 @@ export default function InboxScreen() {
         id: p.id,
         username: p.username,
         name: p.name,
+        profile_media: p.profile_media ?? null,
       };
     });
 
@@ -131,9 +161,7 @@ export default function InboxScreen() {
 
           const lastMessage = item.last_message_body ?? "";
           const lastAt = item.last_message_at ? new Date(item.last_message_at) : null;
-          const timeText = lastAt
-            ? lastAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-            : "";
+          const timeText = lastAt ? formatInboxTime(lastAt) : "";
 
           return (
             <Pressable
@@ -141,7 +169,16 @@ export default function InboxScreen() {
               style={({ pressed }) => [styles.card, pressed ? styles.cardPressed : undefined]}
             >
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initials || "?"}</Text>
+                {other?.profile_media?.file_path ? (
+                  <Image
+                    source={{
+                      uri: imageService.getProfileImageUrlSync(other.profile_media.file_path, "small"),
+                    }}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <Text style={styles.avatarText}>{initials || "?"}</Text>
+                )}
               </View>
 
               <View style={styles.rowMain}>
@@ -205,11 +242,16 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
+    overflow: "hidden",
     backgroundColor: colors.light.accent2,
     borderWidth: 1,
     borderColor: colors.neutral.grey1 + "60",
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarImage: {
+    width: 42,
+    height: 42,
   },
   avatarText: {
     fontSize: 14,

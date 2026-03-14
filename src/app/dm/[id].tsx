@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -141,6 +142,7 @@ export default function DmThreadScreen() {
     const result = await dmService.sendMessage(conversationId, myUserId, body);
     if (result.error) {
       console.error("Error sending dm message:", result.error);
+      Alert.alert("Couldn’t send", result.error);
       setText(body);
     }
 
