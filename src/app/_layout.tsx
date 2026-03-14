@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
@@ -176,10 +176,31 @@ function RootLayoutNav() {
       }
 
       const { status } = await Notifications.getPermissionsAsync();
-      setShowNotificationsBanner(status !== 'granted');
+      if (status !== 'granted') {
+        setShowNotificationsBanner(true);
+        return;
+      }
+
+      // Permission granted — ensure push token is registered
+      await registerForPushNotificationsAsync(session.user.id);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('push_token')
+        .eq('id', session.user.id)
+        .single();
+      setShowNotificationsBanner(!profile?.push_token);
     };
 
     maybeShowNotificationsBanner();
+
+    // Re-check when returning from Settings (app comes back to foreground)
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        maybeShowNotificationsBanner();
+      }
+    });
+
+    return () => appStateSubscription.remove();
   }, [session?.user?.id, loading, pathname]);
 
   useEffect(() => {
