@@ -401,7 +401,7 @@ const pillStyle: ViewStyle = {
 };
 
 const emojiStyle: TextStyle = {
-  fontSize: 16,
+  fontSize: 14,
 };
 
 const countStyle: TextStyle = {
