@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Image,
@@ -51,6 +51,8 @@ export default function InboxScreen() {
   const [items, setItems] = useState<DmInboxItem[]>([]);
   const [profilesById, setProfilesById] = useState<Record<string, ProfilePreview>>({});
 
+  const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const otherUserIds = useMemo(() => {
     return Array.from(new Set(items.map((i) => i.other_user_id)));
   }, [items]);
@@ -101,6 +103,25 @@ export default function InboxScreen() {
     setRefreshing(false);
   }, []);
 
+  const refreshInboxSilently = useCallback(async () => {
+    const result = await dmService.listInbox();
+    if (result.error) {
+      console.error("Error fetching dm inbox:", result.error);
+    } else {
+      setItems(result.data ?? []);
+    }
+  }, []);
+
+  const scheduleRealtimeRefresh = useCallback(() => {
+    if (realtimeRefreshTimeoutRef.current) {
+      clearTimeout(realtimeRefreshTimeoutRef.current);
+    }
+
+    realtimeRefreshTimeoutRef.current = setTimeout(() => {
+      refreshInboxSilently().catch(() => null);
+    }, 250);
+  }, [refreshInboxSilently]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -120,6 +141,44 @@ export default function InboxScreen() {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`dm_inbox:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "dm_messages",
+        },
+        () => {
+          scheduleRealtimeRefresh();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "dm_conversation_members",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          scheduleRealtimeRefresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (realtimeRefreshTimeoutRef.current) {
+        clearTimeout(realtimeRefreshTimeoutRef.current);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [user, scheduleRealtimeRefresh]);
 
   useEffect(() => {
     fetchProfiles(otherUserIds);
