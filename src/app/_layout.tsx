@@ -1,6 +1,9 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
@@ -38,6 +41,8 @@ Notifications.setNotificationHandler({
 SplashScreen.preventAutoHideAsync();
 
 // Create a QueryClient instance with defaults
+const NOTIF_BANNER_DISABLED_KEY = 'notifications_banner_disabled';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -59,6 +64,7 @@ function RootLayoutNav() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showNotificationsBanner, setShowNotificationsBanner] = useState(false);
   const pathname = usePathname();
 
   // Check if we're on a detail page
@@ -146,6 +152,59 @@ function RootLayoutNav() {
   }, [session]);
 
   useEffect(() => {
+    const maybeShowNotificationsBanner = async () => {
+      if (!session?.user?.id || loading) return;
+
+      const isAuthRoute =
+        pathname === '/login' ||
+        pathname === '/register' ||
+        pathname === '/forgot-password' ||
+        pathname === '/reset-password' ||
+        pathname === '/(auth)/onboarding' ||
+        pathname === '/onboarding' ||
+        pathname === '/(auth)/register-profile' ||
+        pathname === '/register-profile';
+
+      if (isAuthRoute) {
+        setShowNotificationsBanner(false);
+        return;
+      }
+
+      const disabled = await AsyncStorage.getItem(NOTIF_BANNER_DISABLED_KEY);
+      if (disabled === '1') {
+        setShowNotificationsBanner(false);
+        return;
+      }
+
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        setShowNotificationsBanner(true);
+        return;
+      }
+
+      // Permission granted — ensure push token is registered
+      await registerForPushNotificationsAsync(session.user.id);
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('push_token')
+        .eq('id', session.user.id)
+        .single();
+      setShowNotificationsBanner(!profile?.push_token);
+    };
+
+    maybeShowNotificationsBanner();
+
+    // Re-check when returning from Settings (app comes back to foreground)
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        maybeShowNotificationsBanner();
+      }
+    });
+
+    return () => appStateSubscription.remove();
+  }, [session?.user?.id, loading, pathname]);
+
+  useEffect(() => {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
     });
@@ -214,6 +273,29 @@ function RootLayoutNav() {
     captureEvent(UI_EVENTS.MENU_OPENED);
   };
 
+  const handleEnableNotifications = async () => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') {
+      await registerForPushNotificationsAsync(userId);
+      setShowNotificationsBanner(false);
+      return;
+    }
+
+    await Linking.openSettings();
+  };
+
+  const handleIgnoreNotificationsBanner = () => {
+    setShowNotificationsBanner(false);
+  };
+
+  const handleDisableNotificationsBanner = async () => {
+    await AsyncStorage.setItem(NOTIF_BANNER_DISABLED_KEY, '1');
+    setShowNotificationsBanner(false);
+  };
+
   if (loading) {
     return null;
   }
@@ -233,6 +315,33 @@ function RootLayoutNav() {
         isDetailPage={isDetailPage}
         hideLogo={hideLogo}
       />
+
+      {showNotificationsBanner && !hideLogo && (
+        <View style={styles.notificationsBanner}>
+          <View style={styles.notificationsBannerLeft}>
+            <Ionicons name="notifications-outline" size={16} color={colors.light.primary} />
+            <View style={styles.notificationsBannerTextWrap}>
+              <Text style={styles.notificationsBannerTitle}>{t('Enable notifications')}</Text>
+              <Text style={styles.notificationsBannerSubtitle} numberOfLines={2}>
+                {t("Turn on notifications so you don't miss challenge updates and activity.")}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.notificationsBannerActions}>
+            <TouchableOpacity style={styles.notificationsBannerButton} onPress={handleEnableNotifications}>
+              <Text style={styles.notificationsBannerButtonText}>{t('Enable')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleIgnoreNotificationsBanner}>
+              <Text style={styles.notificationsBannerGhostButtonText}>{t('Not now')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.notificationsBannerGhostButton} onPress={handleDisableNotificationsBanner}>
+              <Text style={styles.notificationsBannerGhostButtonText}>{t("Don't ask again")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
       <Stack
         screenOptions={{
@@ -278,6 +387,65 @@ function RootLayoutNav() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  notificationsBanner: {
+    backgroundColor: colors.light.accent2,
+    borderBottomColor: colors.neutral.grey2,
+    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  notificationsBannerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  notificationsBannerTextWrap: {
+    flex: 1,
+  },
+  notificationsBannerTitle: {
+    color: colors.light.text,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  notificationsBannerSubtitle: {
+    color: colors.light.lightText,
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 1,
+  },
+  notificationsBannerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  notificationsBannerButton: {
+    backgroundColor: colors.light.primary,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  notificationsBannerButtonText: {
+    color: colors.neutral.white,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  notificationsBannerGhostButton: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  notificationsBannerGhostButtonText: {
+    color: '#666',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+});
 
 export default function Layout() {
   // Get API key from environment variable
