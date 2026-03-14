@@ -369,6 +369,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: colors.light.primary,
+    backgroundColor: colors.light.primary,
     overflow: 'hidden',
     alignSelf: 'flex-start',
     width: '50%',
@@ -376,6 +377,8 @@ const styles = StyleSheet.create({
   segment: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.light.background,
     paddingVertical: 7,
   },
   activeSegment: {

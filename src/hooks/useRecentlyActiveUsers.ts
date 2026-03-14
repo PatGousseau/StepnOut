@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { imageService } from '../services/imageService';
 
@@ -12,6 +13,14 @@ export interface RecentlyActiveUser {
   isActiveToday: boolean;
 }
 
+type ProfileRow = {
+  id: string;
+  username?: string | null;
+  name?: string | null;
+  is_recently_active?: boolean | null;
+  profile_media?: { file_path?: string | null } | Array<{ file_path?: string | null }> | null;
+};
+
 const PROFILE_SELECT = `
   id,
   username,
@@ -20,73 +29,84 @@ const PROFILE_SELECT = `
   profile_media:media!profiles_profile_media_id_fkey (file_path)
 `;
 
+async function fetchRecentlyActiveCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_recently_active', true)
+    .not('profile_media_id', 'is', null);
+
+  if (error) throw error;
+  return count || 0;
+}
+
+async function fetchRecentlyActivePage(pageParam: number): Promise<RecentlyActiveUser[]> {
+  const from = pageParam * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(PROFILE_SELECT)
+    .not('profile_media_id', 'is', null)
+    .order('is_recently_active', { ascending: false })
+    .range(from, to);
+
+  if (error) throw error;
+  return mapProfiles((data || []) as ProfileRow[]);
+}
+
 export const useRecentlyActiveUsers = () => {
-  const [activeUsers, setActiveUsers] = useState<RecentlyActiveUser[]>([]);
-  const [activeTodayCount, setActiveTodayCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const countQuery = useQuery({
+    queryKey: ['recently-active-count'],
+    queryFn: fetchRecentlyActiveCount,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  const usersQuery = useInfiniteQuery({
+    queryKey: ['recently-active-users'],
+    queryFn: ({ pageParam }) => fetchRecentlyActivePage(pageParam),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length : undefined,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  const activeUsers = useMemo(() => {
+    const pages = usersQuery.data?.pages || [];
+    const seen = new Set<string>();
+
+    return pages
+      .flat()
+      .filter((u) => {
+        if (seen.has(u.id)) return false;
+        seen.add(u.id);
+        return true;
+      });
+  }, [usersQuery.data?.pages]);
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Get count and first page in parallel
-      const [countResult, profilesResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_recently_active', true)
-          .not('profile_media_id', 'is', null),
-        supabase
-          .from('profiles')
-          .select(PROFILE_SELECT)
-          .not('profile_media_id', 'is', null)
-          .order('is_recently_active', { ascending: false })
-          .range(0, PAGE_SIZE - 1),
-      ]);
-
-      setActiveTodayCount(countResult.count || 0);
-      const profiles = profilesResult.data || [];
-      setActiveUsers(mapProfiles(profiles));
-      setHasMore(profiles.length === PAGE_SIZE);
-    } catch (error) {
-      console.error('Error fetching recently active users:', error);
-      setActiveUsers([]);
-      setActiveTodayCount(0);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    await Promise.all([countQuery.refetch(), usersQuery.refetch()]);
+  }, [countQuery, usersQuery]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    try {
-      const offset = activeUsers.length;
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select(PROFILE_SELECT)
-        .not('profile_media_id', 'is', null)
-        .order('is_recently_active', { ascending: false })
-        .range(offset, offset + PAGE_SIZE - 1);
+    if (!usersQuery.hasNextPage || usersQuery.isFetchingNextPage) return;
+    await usersQuery.fetchNextPage();
+  }, [usersQuery]);
 
-      const newUsers = mapProfiles(profiles || []);
-      setActiveUsers((prev) => {
-        const ids = new Set(prev.map((u) => u.id));
-        return [...prev, ...newUsers.filter((u) => !ids.has(u.id))];
-      });
-      setHasMore((profiles || []).length === PAGE_SIZE);
-    } catch (error) {
-      console.error('Error loading more users:', error);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [activeUsers.length, loadingMore, hasMore]);
-
-  return { activeUsers, activeTodayCount, loading, loadingMore, hasMore, fetchUsers, loadMore };
+  return {
+    activeUsers,
+    activeTodayCount: countQuery.data || 0,
+    loading: countQuery.isLoading || usersQuery.isLoading,
+    loadingMore: usersQuery.isFetchingNextPage,
+    hasMore: !!usersQuery.hasNextPage,
+    fetchUsers,
+    loadMore,
+  };
 };
 
-function mapProfiles(profiles: any[]): RecentlyActiveUser[] {
+function mapProfiles(profiles: ProfileRow[]): RecentlyActiveUser[] {
   const seen = new Set<string>();
   return profiles
     .map((p) => {

@@ -239,7 +239,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
       >
         <Icon
           name={isLiked ? "heart" : "heart-o"}
-          size={14}
+          size={16}
           color={isLiked ? "#eb656b" : colors.neutral.grey1}
         />
         <Text style={countStyle}>{likeCount}</Text>
@@ -401,12 +401,12 @@ const pillStyle: ViewStyle = {
 };
 
 const emojiStyle: TextStyle = {
-  fontSize: 12,
+  fontSize: 14,
 };
 
 const countStyle: TextStyle = {
-  marginLeft: 3,
-  fontSize: 11,
+  marginLeft: 4,
+  fontSize: 13,
   color: colors.light.text,
 };
 
@@ -417,9 +417,9 @@ const addButtonStyle: ViewStyle = {
 
 const addPlusStyle: TextStyle = {
   position: "absolute",
-  top: -1,
-  right: 0,
-  fontSize: 9,
+  top: -2,
+  right: -1,
+  fontSize: 12,
   color: "#888",
   fontWeight: "700",
 };
@@ -504,7 +504,6 @@ const usersLoadingStyle: ViewStyle = {
   justifyContent: "center",
 };
 
-const usersCloseButtonStyle: ViewStyle = {};
 
 const usersListStyle: ViewStyle = {
   paddingVertical: 8,
