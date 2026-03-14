@@ -273,6 +273,81 @@ VALUES
 SELECT setval('public.likes_id_seq', (SELECT MAX(id) FROM public.likes));
 
 -- =============================================================================
+-- DMS
+-- =============================================================================
+
+INSERT INTO public.dm_conversations (id, pair_key, created_at)
+VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '11111111-1111-1111-1111-111111111111:44444444-4444-4444-4444-444444444444', now() - interval '5 days'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222:44444444-4444-4444-4444-444444444444', now() - interval '3 days'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333:44444444-4444-4444-4444-444444444444', now() - interval '2 days'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '22222222-2222-2222-2222-222222222222:33333333-3333-3333-3333-333333333333', now() - interval '1 day');
+
+INSERT INTO public.dm_conversation_members (conversation_id, user_id, joined_at, last_read_at, archived, muted)
+VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '11111111-1111-1111-1111-111111111111', now() - interval '5 days', now() - interval '2 hours', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '44444444-4444-4444-4444-444444444444', now() - interval '5 days', now() - interval '30 minutes', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222', now() - interval '3 days', now() - interval '6 hours', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', now() - interval '3 days', now() - interval '20 minutes', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333', now() - interval '2 days', now() - interval '1 day', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '44444444-4444-4444-4444-444444444444', now() - interval '2 days', now() - interval '10 minutes', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '22222222-2222-2222-2222-222222222222', now() - interval '1 day', now() - interval '12 hours', false, false),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '33333333-3333-3333-3333-333333333333', now() - interval '1 day', now() - interval '4 hours', false, false);
+
+INSERT INTO public.dm_messages (conversation_id, sender_id, body, created_at)
+SELECT
+  'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
+  CASE WHEN gs % 2 = 1
+    THEN '44444444-4444-4444-4444-444444444444'::uuid
+    ELSE '11111111-1111-1111-1111-111111111111'::uuid
+  END,
+  CASE (gs - 1) % 10
+    WHEN 0 THEN 'Quick check-in before the challenge starts.'
+    WHEN 1 THEN 'I am still laughing about how awkward that first attempt was.'
+    WHEN 2 THEN 'Honestly, awkward is kind of the point here.'
+    WHEN 3 THEN 'Fair. Progress over pride.'
+    WHEN 4 THEN 'Did you end up doing the coffee shop version or the park version?'
+    WHEN 5 THEN 'Coffee shop. Less escape routes, more character building.'
+    WHEN 6 THEN 'That is a brutal but respectable strategy.'
+    WHEN 7 THEN 'Sending this as your official admin encouragement ping.'
+    WHEN 8 THEN 'Received. Mildly terrified, but received.'
+    ELSE 'Log this under "things I never thought I would do voluntarily."'
+  END,
+  now() - interval '50 hours' + (gs * interval '30 minutes')
+FROM generate_series(1, 100) AS gs;
+
+INSERT INTO public.dm_messages (conversation_id, sender_id, body, created_at)
+VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', 'You posted a great update today.', now() - interval '40 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222', 'Appreciate it. I almost bailed.', now() - interval '39 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', 'That usually means it was a good challenge.', now() - interval '38 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222', 'Annoying that you are right.', now() - interval '37 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', 'Saving this as a testimonial.', now() - interval '20 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222', 'Please do not.', now() - interval '19 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', 'No promises.', now() - interval '18 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222', 'Also, next week better not involve karaoke.', now() - interval '2 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', 'Noted. No further comment.', now() - interval '90 minutes'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '44444444-4444-4444-4444-444444444444', 'Actually that reaction makes me want to pick karaoke.', now() - interval '35 minutes');
+
+INSERT INTO public.dm_messages (conversation_id, sender_id, body, created_at)
+VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333', 'Do you think people actually enjoy public speaking?', now() - interval '26 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '44444444-4444-4444-4444-444444444444', 'A deeply suspicious group of people, yes.', now() - interval '25 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333', 'Comforting answer.', now() - interval '24 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '44444444-4444-4444-4444-444444444444', 'You do not have to enjoy it to get stronger at it.', now() - interval '23 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333', 'That sounds suspiciously wise.', now() - interval '4 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '44444444-4444-4444-4444-444444444444', 'Do not tell anyone.', now() - interval '45 minutes');
+
+INSERT INTO public.dm_messages (conversation_id, sender_id, body, created_at)
+VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '22222222-2222-2222-2222-222222222222', 'You doing this week challenge?', now() - interval '16 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '33333333-3333-3333-3333-333333333333', 'Yeah but I am procrastinating aggressively.', now() - interval '15 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '22222222-2222-2222-2222-222222222222', 'Same. Want accountability?', now() - interval '14 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '33333333-3333-3333-3333-333333333333', 'Absolutely. Public shame but friendly.', now() - interval '13 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '22222222-2222-2222-2222-222222222222', 'Perfect, that is my specialty.', now() - interval '12 hours'),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa4', '33333333-3333-3333-3333-333333333333', 'Checking back in later so neither of us flakes.', now() - interval '11 hours');
+
+-- =============================================================================
 -- NOTIFICATIONS
 -- =============================================================================
 

@@ -251,7 +251,7 @@ function RootLayoutNav() {
           headerShown: false,
           gestureEnabled: true,
           gestureDirection: 'horizontal',
-          fullScreenGestureEnabled: true,
+          fullScreenGestureEnabled: false,
           presentation: 'card'
         }}
       >
