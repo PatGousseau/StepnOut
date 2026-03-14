@@ -265,7 +265,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
         <TouchableOpacity onPress={handleOpen} style={addButtonStyle}>
           <MaterialCommunityIcons
             name="emoticon-happy-outline"
-            size={20}
+            size={18}
             color={"#888"}
           />
           <Text style={addPlusStyle}>+</Text>
