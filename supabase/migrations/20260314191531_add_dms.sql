@@ -91,6 +91,36 @@ AS $$
     );
 $$;
 
+CREATE OR REPLACE FUNCTION public.dm_other_participant(conversation uuid, member_user_id uuid)
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT m.user_id
+  FROM public.dm_conversation_members m
+  WHERE m.conversation_id = conversation
+    AND m.user_id <> member_user_id
+  LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.can_access_dm_conversation(conversation uuid, member_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    member_user_id IS NOT NULL
+    AND public.is_dm_conversation_member(conversation, member_user_id)
+    AND NOT public.dm_is_blocked(
+      member_user_id,
+      public.dm_other_participant(conversation, member_user_id)
+    );
+$$;
+
 -- create or fetch the 1:1 conversation for the current user and another user
 CREATE OR REPLACE FUNCTION public.get_or_create_dm_conversation(other_user_id uuid)
 RETURNS uuid
@@ -181,6 +211,7 @@ AS $$
     FROM public.dm_conversation_members m
     WHERE m.user_id = auth.uid()
       AND m.archived = false
+      AND public.can_access_dm_conversation(m.conversation_id, auth.uid())
   ),
   other AS (
     SELECT m.conversation_id, m.user_id AS other_user_id
@@ -227,26 +258,32 @@ ALTER TABLE public.dm_messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY dm_conversations_select_member
   ON public.dm_conversations FOR SELECT
   TO authenticated
-  USING (public.is_dm_conversation_member(dm_conversations.id, auth.uid()));
+  USING (public.can_access_dm_conversation(dm_conversations.id, auth.uid()));
 
 -- members: members can read membership rows for their conversations
 CREATE POLICY dm_conversation_members_select_member
   ON public.dm_conversation_members FOR SELECT
   TO authenticated
-  USING (public.is_dm_conversation_member(dm_conversation_members.conversation_id, auth.uid()));
+  USING (public.can_access_dm_conversation(dm_conversation_members.conversation_id, auth.uid()));
 
 -- members: self can update last_read_at/muted/archived
 CREATE POLICY dm_conversation_members_update_self
   ON public.dm_conversation_members FOR UPDATE
   TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
+  USING (
+    user_id = auth.uid()
+    AND public.can_access_dm_conversation(dm_conversation_members.conversation_id, auth.uid())
+  )
+  WITH CHECK (
+    user_id = auth.uid()
+    AND public.can_access_dm_conversation(dm_conversation_members.conversation_id, auth.uid())
+  );
 
 -- messages: members can read
 CREATE POLICY dm_messages_select_member
   ON public.dm_messages FOR SELECT
   TO authenticated
-  USING (public.is_dm_conversation_member(dm_messages.conversation_id, auth.uid()));
+  USING (public.can_access_dm_conversation(dm_messages.conversation_id, auth.uid()));
 
 -- messages: members can send, but not if blocked
 CREATE POLICY dm_messages_insert_member
@@ -254,7 +291,7 @@ CREATE POLICY dm_messages_insert_member
   TO authenticated
   WITH CHECK (
     sender_id = auth.uid()
-    AND public.is_dm_conversation_member(dm_messages.conversation_id, auth.uid())
+    AND public.can_access_dm_conversation(dm_messages.conversation_id, auth.uid())
     AND NOT public.dm_is_blocked(auth.uid(), (
       SELECT m2.user_id
       FROM public.dm_conversation_members m2

@@ -13,21 +13,29 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Menu, MenuOption, MenuOptions, MenuTrigger } from "react-native-popup-menu";
 
 import { Text } from "../../components/StyledText";
 import { Loader } from "../../components/Loader";
 import { AnimatedSendButton } from "../../components/AnimatedSendButton";
 import { colors } from "../../constants/Colors";
+import { useLanguage } from "../../contexts/LanguageContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDmThread } from "../../hooks/useDmThread";
 import { imageService } from "../../services/imageService";
+import { dmQueryKeys } from "../../services/dmQueryKeys";
+import { postService } from "../../services/postService";
 
 export default function DmThreadScreen() {
   const { id } = useLocalSearchParams();
   const conversationId = typeof id === "string" ? id : undefined;
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [text, setText] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -81,6 +89,31 @@ export default function DmThreadScreen() {
     await fetchNextPage();
   };
 
+  const handleBlock = () => {
+    if (!user?.id || !otherUserId) return;
+
+    Alert.alert(t("Block user"), t("Are you sure you want to block this user?"), [
+      {
+        text: t("Cancel"),
+        style: "cancel",
+      },
+      {
+        text: t("Block"),
+        style: "destructive",
+        onPress: async () => {
+          const success = await postService.blockUser(user.id, otherUserId);
+          if (!success) return;
+
+          await queryClient.invalidateQueries({ queryKey: dmQueryKeys.inbox(user.id) });
+          if (conversationId) {
+            await queryClient.invalidateQueries({ queryKey: dmQueryKeys.threadMessages(conversationId) });
+          }
+          router.replace("/inbox");
+        },
+      },
+    ]);
+  };
+
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
@@ -127,32 +160,49 @@ export default function DmThreadScreen() {
             behavior={Platform.OS === "ios" ? "padding" : undefined}
             keyboardVerticalOffset={Platform.OS === "ios" ? 96 : 0}
           >
-            <Pressable
-              onPress={() => {
-                if (otherUserId) router.push(`/profile/${otherUserId}`);
-              }}
-              disabled={!otherUserId}
-              style={({ pressed }) => [
-                styles.conversationMeta,
-                pressed && otherUserId ? styles.conversationMetaPressed : undefined,
-              ]}
-            >
-              <View style={styles.avatar}>
-                {avatarUri ? (
-                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarText}>{avatarInitials || "?"}</Text>
-                )}
-              </View>
-              <View style={styles.metaCopy}>
-                <Text style={styles.metaName} numberOfLines={1}>
-                  {otherUserName || "Message"}
-                </Text>
-                <Text style={styles.metaHint} numberOfLines={1}>
-                  View profile
-                </Text>
-              </View>
-            </Pressable>
+            <View style={styles.conversationMeta}>
+              <Pressable
+                onPress={() => {
+                  if (otherUserId) router.push(`/profile/${otherUserId}`);
+                }}
+                disabled={!otherUserId}
+                style={({ pressed }) => [
+                  styles.metaMainPressable,
+                  pressed && otherUserId ? styles.conversationMetaPressed : undefined,
+                ]}
+              >
+                <View style={styles.avatar}>
+                  {avatarUri ? (
+                    <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={styles.avatarText}>{avatarInitials || "?"}</Text>
+                  )}
+                </View>
+                <View style={styles.metaCopy}>
+                  <Text style={styles.metaName} numberOfLines={1}>
+                    {otherUserName || "Message"}
+                  </Text>
+                  <Text style={styles.metaHint} numberOfLines={1}>
+                    {t("View profile")}
+                  </Text>
+                </View>
+              </Pressable>
+              <Menu style={styles.menuContainer}>
+                <MenuTrigger>
+                  <View style={styles.menuTrigger}>
+                    <MaterialIcons name="more-horiz" size={22} color={colors.light.primary} />
+                  </View>
+                </MenuTrigger>
+                <MenuOptions customStyles={menuOptionsStyles}>
+                  <MenuOption onSelect={handleBlock}>
+                    <View style={styles.menuOptionRow}>
+                      <MaterialIcons name="block" size={20} color={colors.light.alertRed} />
+                      <Text style={styles.menuOptionText}>{t("Block user")}</Text>
+                    </View>
+                  </MenuOption>
+                </MenuOptions>
+              </Menu>
+            </View>
 
             <FlatList
               data={sorted}
@@ -245,6 +295,16 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.neutral.grey1 + "90",
     backgroundColor: colors.light.background,
   },
+  metaMainPressable: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minWidth: 0,
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingRight: 4,
+  },
   conversationMetaPressed: {
     backgroundColor: "rgba(0,0,0,0.04)",
   },
@@ -280,6 +340,27 @@ const styles = StyleSheet.create({
   metaHint: {
     fontSize: 12,
     color: colors.light.lightText,
+  },
+  menuContainer: {
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  menuTrigger: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 4,
+  },
+  menuOptionText: {
+    fontSize: 14,
+    color: colors.light.alertRed,
   },
   listContent: {
     paddingHorizontal: 16,
@@ -391,3 +472,19 @@ const styles = StyleSheet.create({
     paddingRight: 2,
   },
 });
+
+const menuOptionsStyles = {
+  optionsContainer: {
+    backgroundColor: colors.neutral.white,
+    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    width: 180,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
+    marginTop: 28,
+  },
+};
