@@ -86,10 +86,6 @@ export const useRecentlyActiveUsers = () => {
       });
   }, [usersQuery.data?.pages]);
 
-  const fetchUsers = useCallback(async () => {
-    await Promise.all([countQuery.refetch(), usersQuery.refetch()]);
-  }, [countQuery, usersQuery]);
-
   const loadMore = useCallback(async () => {
     if (!usersQuery.hasNextPage || usersQuery.isFetchingNextPage) return;
     await usersQuery.fetchNextPage();
@@ -101,7 +97,6 @@ export const useRecentlyActiveUsers = () => {
     loading: countQuery.isLoading || usersQuery.isLoading,
     loadingMore: usersQuery.isFetchingNextPage,
     hasMore: !!usersQuery.hasNextPage,
-    fetchUsers,
     loadMore,
   };
 };

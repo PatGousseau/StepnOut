@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -94,14 +94,10 @@ const UserAvatar = ({ user, onPress, variant, zIndex }: UserAvatarProps) => {
 
 export const RecentlyActiveBanner = ({ hidden = false }: { hidden?: boolean }) => {
   const { t } = useLanguage();
-  const { activeUsers, activeTodayCount, loading, loadingMore, hasMore, fetchUsers, loadMore } = useRecentlyActiveUsers();
+  const { activeUsers, activeTodayCount, loading, loadingMore, hasMore, loadMore } = useRecentlyActiveUsers();
   const [isExpanded, setIsExpanded] = useState(false);
   const heightAnimation = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
   const rotateAnimation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   const toggleExpanded = useCallback(() => {
     const toExpanded = !isExpanded;
