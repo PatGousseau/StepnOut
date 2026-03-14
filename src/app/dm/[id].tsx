@@ -2,14 +2,15 @@ import { useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 
 import { Text } from "../../components/StyledText";
@@ -17,6 +18,7 @@ import { Loader } from "../../components/Loader";
 import { colors } from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDmThread } from "../../hooks/useDmThread";
+import { imageService } from "../../services/imageService";
 import Icon from "react-native-vector-icons/Ionicons";
 
 export default function DmThreadScreen() {
@@ -32,6 +34,7 @@ export default function DmThreadScreen() {
   const {
     otherUserId,
     otherUserName,
+    otherUserProfileMediaPath,
     messages,
     loading,
     loadingMore,
@@ -44,6 +47,16 @@ export default function DmThreadScreen() {
   const sorted = useMemo(() => {
     return [...messages].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   }, [messages]);
+
+  const avatarUri = otherUserProfileMediaPath
+    ? imageService.getProfileImageUrlSync(otherUserProfileMediaPath, "small")
+    : null;
+  const avatarInitials = (otherUserName || "M")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
   const onSend = async () => {
     if (!conversationId || !myUserId) return;
@@ -86,38 +99,42 @@ export default function DmThreadScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.headerBack}>
-            <Icon name="chevron-back" size={28} color={colors.light.text} />
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              if (otherUserId) router.push(`/profile/${otherUserId}`);
-            }}
-            disabled={!otherUserId}
-            style={({ pressed }) => [
-              styles.headerTitleWrap,
-              pressed && otherUserId ? styles.headerTitlePressed : undefined,
-            ]}
-          >
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {otherUserName || "Message"}
-            </Text>
-          </Pressable>
-
-          <View style={styles.headerSpacer} />
-        </View>
-
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
         {loading ? (
           <Loader />
         ) : (
           <KeyboardAvoidingView
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 96 : 0}
           >
+            <Pressable
+              onPress={() => {
+                if (otherUserId) router.push(`/profile/${otherUserId}`);
+              }}
+              disabled={!otherUserId}
+              style={({ pressed }) => [
+                styles.conversationMeta,
+                pressed && otherUserId ? styles.conversationMetaPressed : undefined,
+              ]}
+            >
+              <View style={styles.avatar}>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarText}>{avatarInitials || "?"}</Text>
+                )}
+              </View>
+              <View style={styles.metaCopy}>
+                <Text style={styles.metaName} numberOfLines={1}>
+                  {otherUserName || "Message"}
+                </Text>
+                <Text style={styles.metaHint} numberOfLines={1}>
+                  View profile
+                </Text>
+              </View>
+            </Pressable>
+
             <FlatList
               data={sorted}
               keyExtractor={(item) => item.id}
@@ -195,43 +212,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light.background,
   },
-  header: {
+  conversationMeta: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral.grey1 + "90",
     backgroundColor: colors.light.background,
   },
-  headerBack: {
-    width: 40,
-    height: 36,
+  conversationMetaPressed: {
+    backgroundColor: "rgba(0,0,0,0.04)",
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.neutral.grey1 + "60",
+    backgroundColor: colors.light.accent2,
     alignItems: "center",
     justifyContent: "center",
   },
-  headerTitleWrap: {
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+  },
+  avatarText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.light.primary,
+  },
+  metaCopy: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 10,
+    gap: 2,
   },
-  headerTitlePressed: {
-    backgroundColor: "rgba(0,0,0,0.04)",
-  },
-  headerTitle: {
+  metaName: {
     fontSize: 17,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: colors.light.text,
   },
-  headerSpacer: {
-    width: 40,
-    height: 36,
+  metaHint: {
+    fontSize: 12,
+    color: colors.light.lightText,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 10,
+    flexGrow: 1,
   },
   bubbleRow: {
     flexDirection: "row",
@@ -284,7 +315,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === "ios" ? 12 : 10,
     borderTopWidth: 1,
     borderTopColor: colors.neutral.grey1 + "90",
     backgroundColor: colors.light.background,

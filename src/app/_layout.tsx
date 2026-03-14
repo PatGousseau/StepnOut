@@ -65,6 +65,7 @@ function RootLayoutNav() {
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
     pathname.includes('/challenge/') ||
+    pathname.includes('/dm/') ||
     pathname === '/badges';
 
   // hide logo on auth screens

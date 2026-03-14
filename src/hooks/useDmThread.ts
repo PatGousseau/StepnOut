@@ -166,6 +166,7 @@ export const useDmThread = (conversationId?: string, userId?: string) => {
   return {
     otherUserId: metaQuery.data?.otherUserId ?? null,
     otherUserName: metaQuery.data?.otherUserName ?? null,
+    otherUserProfileMediaPath: metaQuery.data?.otherUserProfileMediaPath ?? null,
     messages,
     loading: metaQuery.isLoading || messagesQuery.isLoading,
     loadingMore: messagesQuery.isFetchingNextPage,

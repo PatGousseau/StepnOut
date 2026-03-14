@@ -29,6 +29,7 @@ export type DmProfilePreview = {
 export type DmConversationMeta = {
   otherUserId: string | null;
   otherUserName: string | null;
+  otherUserProfileMediaPath: string | null;
 };
 
 export const dmService = {
@@ -116,13 +117,22 @@ export const dmService = {
           data: {
             otherUserId: null,
             otherUserName: null,
+            otherUserProfileMediaPath: null,
           },
         };
       }
 
       const { data: profileRows, error: profileError } = await supabase
         .from("profiles")
-        .select("name, username")
+        .select(
+          `
+          name,
+          username,
+          profile_media:media!profiles_profile_media_id_fkey (
+            file_path
+          )
+          `
+        )
         .eq("id", otherUserId)
         .limit(1);
 
@@ -134,6 +144,7 @@ export const dmService = {
         data: {
           otherUserId,
           otherUserName: profile?.name || profile?.username || null,
+          otherUserProfileMediaPath: profile?.profile_media?.file_path ?? null,
         },
       };
     } catch (error) {
