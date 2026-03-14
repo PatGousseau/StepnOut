@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { imageService } from '../services/imageService';
 
 const PAGE_SIZE = 20;
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface RecentlyActiveUser {
   id: string;
@@ -11,6 +12,15 @@ export interface RecentlyActiveUser {
   profileImageUrl: string | null;
   isActiveToday: boolean;
 }
+
+type RecentlyActiveCache = {
+  activeUsers: RecentlyActiveUser[];
+  activeTodayCount: number;
+  hasMore: boolean;
+  timestamp: number;
+};
+
+let recentlyActiveCache: RecentlyActiveCache | null = null;
 
 const PROFILE_SELECT = `
   id,
@@ -21,16 +31,37 @@ const PROFILE_SELECT = `
 `;
 
 export const useRecentlyActiveUsers = () => {
-  const [activeUsers, setActiveUsers] = useState<RecentlyActiveUser[]>([]);
-  const [activeTodayCount, setActiveTodayCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const cacheIsFresh = !!recentlyActiveCache && Date.now() - recentlyActiveCache.timestamp < CACHE_TTL_MS;
+
+  const [activeUsers, setActiveUsers] = useState<RecentlyActiveUser[]>(
+    cacheIsFresh ? recentlyActiveCache!.activeUsers : []
+  );
+  const [activeTodayCount, setActiveTodayCount] = useState(
+    cacheIsFresh ? recentlyActiveCache!.activeTodayCount : 0
+  );
+  const [loading, setLoading] = useState(!cacheIsFresh);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(cacheIsFresh ? recentlyActiveCache!.hasMore : true);
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
+    const hasCache = !!recentlyActiveCache;
+    const isFresh = hasCache && Date.now() - recentlyActiveCache!.timestamp < CACHE_TTL_MS;
+
+    if (hasCache) {
+      setActiveUsers(recentlyActiveCache!.activeUsers);
+      setActiveTodayCount(recentlyActiveCache!.activeTodayCount);
+      setHasMore(recentlyActiveCache!.hasMore);
+    }
+
+    // If cache is still fresh, avoid a refetch to keep UI instant on back nav
+    if (isFresh) {
+      setLoading(false);
+      return;
+    }
+
+    // For stale/no cache, fetch. If we already have cached data, keep showing it without loader flash.
+    setLoading(!hasCache);
     try {
-      // Get count and first page in parallel
       const [countResult, profilesResult] = await Promise.all([
         supabase
           .from('profiles')
@@ -45,14 +76,27 @@ export const useRecentlyActiveUsers = () => {
           .range(0, PAGE_SIZE - 1),
       ]);
 
-      setActiveTodayCount(countResult.count || 0);
+      const nextActiveTodayCount = countResult.count || 0;
       const profiles = profilesResult.data || [];
-      setActiveUsers(mapProfiles(profiles));
-      setHasMore(profiles.length === PAGE_SIZE);
+      const nextActiveUsers = mapProfiles(profiles);
+      const nextHasMore = profiles.length === PAGE_SIZE;
+
+      setActiveTodayCount(nextActiveTodayCount);
+      setActiveUsers(nextActiveUsers);
+      setHasMore(nextHasMore);
+
+      recentlyActiveCache = {
+        activeUsers: nextActiveUsers,
+        activeTodayCount: nextActiveTodayCount,
+        hasMore: nextHasMore,
+        timestamp: Date.now(),
+      };
     } catch (error) {
       console.error('Error fetching recently active users:', error);
-      setActiveUsers([]);
-      setActiveTodayCount(0);
+      if (!hasCache) {
+        setActiveUsers([]);
+        setActiveTodayCount(0);
+      }
     } finally {
       setLoading(false);
     }
@@ -73,7 +117,16 @@ export const useRecentlyActiveUsers = () => {
       const newUsers = mapProfiles(profiles || []);
       setActiveUsers((prev) => {
         const ids = new Set(prev.map((u) => u.id));
-        return [...prev, ...newUsers.filter((u) => !ids.has(u.id))];
+        const merged = [...prev, ...newUsers.filter((u) => !ids.has(u.id))];
+
+        recentlyActiveCache = {
+          activeUsers: merged,
+          activeTodayCount,
+          hasMore: (profiles || []).length === PAGE_SIZE,
+          timestamp: Date.now(),
+        };
+
+        return merged;
       });
       setHasMore((profiles || []).length === PAGE_SIZE);
     } catch (error) {
@@ -81,12 +134,20 @@ export const useRecentlyActiveUsers = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [activeUsers.length, loadingMore, hasMore]);
+  }, [activeUsers.length, loadingMore, hasMore, activeTodayCount]);
 
   return { activeUsers, activeTodayCount, loading, loadingMore, hasMore, fetchUsers, loadMore };
 };
 
-function mapProfiles(profiles: any[]): RecentlyActiveUser[] {
+type ProfileRow = {
+  id: string;
+  username?: string | null;
+  name?: string | null;
+  is_recently_active?: boolean | null;
+  profile_media?: { file_path?: string | null } | Array<{ file_path?: string | null }> | null;
+};
+
+function mapProfiles(profiles: ProfileRow[]): RecentlyActiveUser[] {
   const seen = new Set<string>();
   return profiles
     .map((p) => {

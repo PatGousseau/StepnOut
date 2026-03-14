@@ -235,6 +235,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
           openUsers("❤️");
         }}
         delayLongPress={350}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         style={pillStyle}
       >
         <Icon
@@ -254,6 +255,7 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
             openUsers(r.emoji);
           }}
           delayLongPress={350}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           style={getReactionPillStyle(r.reacted)}
         >
           <Text style={emojiStyle}>{r.emoji}</Text>
@@ -262,7 +264,11 @@ export const ReactionsBar: React.FC<ReactionsBarProps> = ({
       ))}
 
       <View ref={buttonRef} collapsable={false}>
-        <TouchableOpacity onPress={handleOpen} style={addButtonStyle}>
+        <TouchableOpacity
+          onPress={handleOpen}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          style={addButtonStyle}
+        >
           <MaterialCommunityIcons
             name="emoticon-happy-outline"
             size={16}
@@ -396,8 +402,11 @@ const containerStyle: ViewStyle = {
 const pillStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
-  paddingHorizontal: 2,
-  paddingVertical: 2,
+  justifyContent: "center",
+  minHeight: 32,
+  minWidth: 32,
+  paddingHorizontal: 6,
+  paddingVertical: 4,
 };
 
 const emojiStyle: TextStyle = {
@@ -411,8 +420,12 @@ const countStyle: TextStyle = {
 };
 
 const addButtonStyle: ViewStyle = {
-  paddingHorizontal: 4,
-  paddingVertical: 2,
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 32,
+  minWidth: 32,
+  paddingHorizontal: 6,
+  paddingVertical: 4,
 };
 
 const addPlusStyle: TextStyle = {
@@ -504,7 +517,6 @@ const usersLoadingStyle: ViewStyle = {
   justifyContent: "center",
 };
 
-const usersCloseButtonStyle: ViewStyle = {};
 
 const usersListStyle: ViewStyle = {
   paddingVertical: 8,
