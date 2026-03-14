@@ -1,29 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  SafeAreaView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { FlatList, Image, Pressable, RefreshControl, SafeAreaView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 
 import { Text } from "../../components/StyledText";
 import { Loader } from "../../components/Loader";
 import { colors } from "../../constants/Colors";
-import { supabase } from "../../lib/supabase";
 import { imageService } from "../../services/imageService";
 import { useAuth } from "../../contexts/AuthContext";
-import { dmService, DmInboxItem } from "../../services/dmService";
-
-type ProfilePreview = {
-  id: string;
-  username: string | null;
-  name: string | null;
-  profile_media: { file_path: string | null } | null;
-};
+import { useDmInbox } from "../../hooks/useDmInbox";
 
 const formatInboxTime = (date: Date) => {
   const now = new Date();
@@ -45,203 +28,7 @@ const formatInboxTime = (date: Date) => {
 export default function InboxScreen() {
   const router = useRouter();
   const { user } = useAuth();
-
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [items, setItems] = useState<DmInboxItem[]>([]);
-  const [profilesById, setProfilesById] = useState<Record<string, ProfilePreview>>({});
-
-  const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const otherUserIds = useMemo(() => {
-    return Array.from(new Set(items.map((i) => i.other_user_id)));
-  }, [items]);
-
-  const fetchProfiles = useCallback(async (userIds: string[]) => {
-    if (!userIds.length) return;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select(
-        `
-        id,
-        username,
-        name,
-        profile_media:media!profiles_profile_media_id_fkey (
-          file_path
-        )
-        `
-      )
-      .in("id", userIds);
-
-    if (error) {
-      console.error("Error fetching dm inbox profiles:", error);
-      return;
-    }
-
-    const next: Record<string, ProfilePreview> = {};
-    (data ?? []).forEach((p) => {
-      next[p.id] = {
-        id: p.id,
-        username: p.username,
-        name: p.name,
-        profile_media: p.profile_media ?? null,
-      };
-    });
-
-    setProfilesById((prev) => ({ ...prev, ...next }));
-  }, []);
-
-  const fetchInbox = useCallback(async () => {
-    setRefreshing(true);
-    const result = await dmService.listInbox();
-    if (result.error) {
-      console.error("Error fetching dm inbox:", result.error);
-    } else {
-      setItems(result.data ?? []);
-    }
-    setRefreshing(false);
-  }, []);
-
-  const refreshInboxSilently = useCallback(async () => {
-    const result = await dmService.listInbox();
-    if (result.error) {
-      console.error("Error fetching dm inbox:", result.error);
-    } else {
-      setItems(result.data ?? []);
-    }
-  }, []);
-
-  const scheduleRealtimeRefresh = useCallback(() => {
-    if (realtimeRefreshTimeoutRef.current) {
-      clearTimeout(realtimeRefreshTimeoutRef.current);
-    }
-
-    realtimeRefreshTimeoutRef.current = setTimeout(() => {
-      refreshInboxSilently().catch(() => null);
-    }, 250);
-  }, [refreshInboxSilently]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      setLoading(true);
-      const result = await dmService.listInbox();
-      if (!cancelled) {
-        if (result.data) setItems(result.data);
-        if (result.error) console.error("Error fetching dm inbox:", result.error);
-        setLoading(false);
-      }
-    };
-
-    if (user) run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel(`dm_inbox:${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "dm_messages",
-        },
-        (payload) => {
-          const row = payload.new as {
-            id: string;
-            conversation_id: string;
-            sender_id: string;
-            body: string;
-            created_at: string;
-          };
-
-          if (!row?.conversation_id) {
-            scheduleRealtimeRefresh();
-            return;
-          }
-
-          setItems((prev) => {
-            const index = prev.findIndex((i) => i.conversation_id === row.conversation_id);
-            if (index === -1) {
-              scheduleRealtimeRefresh();
-              return prev;
-            }
-
-            const current = prev[index];
-            const unreadIncrement = row.sender_id !== user.id ? 1 : 0;
-
-            const nextItem: DmInboxItem = {
-              ...current,
-              last_message_body: row.body,
-              last_message_at: row.created_at,
-              unread_count: Math.max(0, (current.unread_count ?? 0) + unreadIncrement),
-            };
-
-            const without = prev.filter((_, i) => i !== index);
-            return [nextItem, ...without];
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "dm_conversation_members",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const row = payload.new as {
-            conversation_id: string;
-            user_id: string;
-            last_read_at: string | null;
-            archived: boolean;
-          };
-
-          if (!row?.conversation_id) {
-            scheduleRealtimeRefresh();
-            return;
-          }
-
-          setItems((prev) => {
-            const index = prev.findIndex((i) => i.conversation_id === row.conversation_id);
-            if (index === -1) return prev;
-
-            if (row.archived) {
-              return prev.filter((i) => i.conversation_id !== row.conversation_id);
-            }
-
-            const current = prev[index];
-            const nextItem: DmInboxItem = {
-              ...current,
-              unread_count: 0,
-            };
-
-            return prev.map((i) => (i.conversation_id === row.conversation_id ? nextItem : i));
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      if (realtimeRefreshTimeoutRef.current) {
-        clearTimeout(realtimeRefreshTimeoutRef.current);
-      }
-      supabase.removeChannel(channel);
-    };
-  }, [user, scheduleRealtimeRefresh]);
-
-  useEffect(() => {
-    fetchProfiles(otherUserIds);
-  }, [otherUserIds, fetchProfiles]);
+  const { items, loading, refreshing, refresh } = useDmInbox(user?.id);
 
   if (!user) {
     return (
@@ -264,11 +51,11 @@ export default function InboxScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.conversation_id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchInbox} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         contentContainerStyle={[styles.listContent, items.length ? undefined : styles.emptyContainer]}
         ListEmptyComponent={<Text style={styles.emptyText}>No messages yet.</Text>}
         renderItem={({ item }) => {
-          const other = profilesById[item.other_user_id];
+          const other = item.profile;
           const displayName = other?.name || other?.username || "Unknown";
           const initials = (displayName || "?")
             .split(" ")

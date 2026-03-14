@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -16,8 +16,7 @@ import { Text } from "../../components/StyledText";
 import { Loader } from "../../components/Loader";
 import { colors } from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
-import { dmService, DmMessage } from "../../services/dmService";
-import { supabase } from "../../lib/supabase";
+import { useDmThread } from "../../hooks/useDmThread";
 import Icon from "react-native-vector-icons/Ionicons";
 
 export default function DmThreadScreen() {
@@ -27,153 +26,44 @@ export default function DmThreadScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [loading, setLoading] = useState(true);
-  const [messages, setMessages] = useState<DmMessage[]>([]);
   const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
-  const [otherUserId, setOtherUserId] = useState<string | null>(null);
-  const [otherUserName, setOtherUserName] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
 
   const myUserId = user?.id;
+  const {
+    otherUserId,
+    otherUserName,
+    messages,
+    loading,
+    loadingMore,
+    hasMore,
+    sending,
+    sendMessage,
+    fetchNextPage,
+  } = useDmThread(conversationId, myUserId);
 
   const sorted = useMemo(() => {
     return [...messages].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
   }, [messages]);
 
-  const oldestCreatedAt = useMemo(() => {
-    if (!messages.length) return null;
-    return messages.reduce((oldest, m) => (m.created_at < oldest ? m.created_at : oldest), messages[0].created_at);
-  }, [messages]);
-
-  useEffect(() => {
-    if (!conversationId || !myUserId) return;
-
-    let cancelled = false;
-
-    const run = async () => {
-      setLoading(true);
-
-      const [{ data: memberRows, error: memberError }, messagesResult] = await Promise.all([
-        supabase
-          .from("dm_conversation_members")
-          .select("user_id")
-          .eq("conversation_id", conversationId),
-        dmService.fetchMessages(conversationId, { limit: 50 }),
-      ]);
-
-      if (!cancelled) {
-        if (memberError) {
-          console.error("Error fetching dm members:", memberError);
-        } else {
-          const otherId = (memberRows ?? []).map((r) => r.user_id).find((uid) => uid !== myUserId);
-          if (otherId) {
-            setOtherUserId(otherId);
-
-            const { data: profileRows, error: profileError } = await supabase
-              .from("profiles")
-              .select("name, username")
-              .eq("id", otherId)
-              .limit(1);
-
-            if (profileError) {
-              console.error("Error fetching dm other profile:", profileError);
-            } else {
-              const p = profileRows?.[0];
-              setOtherUserName(p?.name || p?.username || null);
-            }
-          }
-        }
-
-        if (messagesResult.data) setMessages(messagesResult.data);
-        if (messagesResult.error) console.error("Error fetching dm messages:", messagesResult.error);
-
-        setLoading(false);
-      }
-
-      dmService.markConversationRead(conversationId, myUserId).catch(() => null);
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [conversationId, myUserId]);
-
-  useEffect(() => {
-    if (!conversationId || !myUserId) return;
-
-    const channel = supabase
-      .channel(`dm:${conversationId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "dm_messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          const next = payload.new as DmMessage;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === next.id)) return prev;
-            return [next, ...prev];
-          });
-
-          dmService.markConversationRead(conversationId, myUserId).catch(() => null);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [conversationId, myUserId]);
-
   const onSend = async () => {
     if (!conversationId || !myUserId) return;
 
-    setSending(true);
     const body = text;
     setText("");
 
-    const result = await dmService.sendMessage(conversationId, myUserId, body);
-    if (result.error) {
-      console.error("Error sending dm message:", result.error);
-      Alert.alert("Couldn’t send", result.error);
+    try {
+      await sendMessage(body);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to send message";
+      console.error("Error sending dm message:", message);
+      Alert.alert("Couldn’t send", message);
       setText(body);
     }
-
-    setSending(false);
   };
 
   const loadMore = async () => {
-    if (!conversationId || loadingMore || !hasMore || !oldestCreatedAt) return;
-
-    setLoadingMore(true);
-    const result = await dmService.fetchMessages(conversationId, {
-      limit: 50,
-      beforeCreatedAt: oldestCreatedAt,
-    });
-
-    if (result.error) {
-      console.error("Error loading more dm messages:", result.error);
-      setLoadingMore(false);
-      return;
-    }
-
-    const next = result.data ?? [];
-    setMessages((prev) => {
-      const existingIds = new Set(prev.map((m) => m.id));
-      const deduped = next.filter((m) => !existingIds.has(m.id));
-      return [...prev, ...deduped];
-    });
-
-    if (next.length < 50) setHasMore(false);
-
-    setLoadingMore(false);
+    if (!hasMore || loadingMore) return;
+    await fetchNextPage();
   };
 
   if (!conversationId) {

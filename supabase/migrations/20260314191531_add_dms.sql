@@ -43,6 +43,9 @@ CREATE INDEX IF NOT EXISTS dm_messages_conversation_id_created_at_idx
 CREATE INDEX IF NOT EXISTS dm_conversations_last_message_at_idx
   ON public.dm_conversations (last_message_at DESC);
 
+ALTER PUBLICATION supabase_realtime ADD TABLE public.dm_messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.dm_conversation_members;
+
 -- =============================================================================
 -- helpers
 -- =============================================================================
@@ -69,6 +72,23 @@ AS $$
     WHERE (b.blocker_id = user_a AND b.blocked_id = user_b)
        OR (b.blocker_id = user_b AND b.blocked_id = user_a)
   );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_dm_conversation_member(conversation uuid, member_user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    member_user_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1
+      FROM public.dm_conversation_members m
+      WHERE m.conversation_id = conversation
+        AND m.user_id = member_user_id
+    );
 $$;
 
 -- create or fetch the 1:1 conversation for the current user and another user
@@ -207,27 +227,13 @@ ALTER TABLE public.dm_messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY dm_conversations_select_member
   ON public.dm_conversations FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.dm_conversation_members m
-      WHERE m.conversation_id = dm_conversations.id
-        AND m.user_id = auth.uid()
-    )
-  );
+  USING (public.is_dm_conversation_member(dm_conversations.id, auth.uid()));
 
 -- members: members can read membership rows for their conversations
 CREATE POLICY dm_conversation_members_select_member
   ON public.dm_conversation_members FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.dm_conversation_members my
-      WHERE my.conversation_id = dm_conversation_members.conversation_id
-        AND my.user_id = auth.uid()
-    )
-  );
+  USING (public.is_dm_conversation_member(dm_conversation_members.conversation_id, auth.uid()));
 
 -- members: self can update last_read_at/muted/archived
 CREATE POLICY dm_conversation_members_update_self
@@ -240,14 +246,7 @@ CREATE POLICY dm_conversation_members_update_self
 CREATE POLICY dm_messages_select_member
   ON public.dm_messages FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1
-      FROM public.dm_conversation_members m
-      WHERE m.conversation_id = dm_messages.conversation_id
-        AND m.user_id = auth.uid()
-    )
-  );
+  USING (public.is_dm_conversation_member(dm_messages.conversation_id, auth.uid()));
 
 -- messages: members can send, but not if blocked
 CREATE POLICY dm_messages_insert_member
@@ -255,12 +254,7 @@ CREATE POLICY dm_messages_insert_member
   TO authenticated
   WITH CHECK (
     sender_id = auth.uid()
-    AND EXISTS (
-      SELECT 1
-      FROM public.dm_conversation_members m
-      WHERE m.conversation_id = dm_messages.conversation_id
-        AND m.user_id = auth.uid()
-    )
+    AND public.is_dm_conversation_member(dm_messages.conversation_id, auth.uid())
     AND NOT public.dm_is_blocked(auth.uid(), (
       SELECT m2.user_id
       FROM public.dm_conversation_members m2

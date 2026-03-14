@@ -1,5 +1,7 @@
 import { supabase } from "../lib/supabase";
 
+export const DM_MESSAGES_PAGE_SIZE = 50;
+
 export type DmInboxItem = {
   conversation_id: string;
   other_user_id: string;
@@ -15,6 +17,18 @@ export type DmMessage = {
   body: string;
   created_at: string;
   deleted_at: string | null;
+};
+
+export type DmProfilePreview = {
+  id: string;
+  username: string | null;
+  name: string | null;
+  profile_media: { file_path: string | null } | null;
+};
+
+export type DmConversationMeta = {
+  otherUserId: string | null;
+  otherUserName: string | null;
 };
 
 export const dmService = {
@@ -59,7 +73,7 @@ export const dmService = {
     opts?: { limit?: number; beforeCreatedAt?: string }
   ): Promise<{ data?: DmMessage[]; error?: string }> {
     try {
-      const limit = opts?.limit ?? 50;
+      const limit = opts?.limit ?? DM_MESSAGES_PAGE_SIZE;
 
       let query = supabase
         .from("dm_messages")
@@ -82,24 +96,111 @@ export const dmService = {
     }
   },
 
+  async fetchConversationMeta(
+    conversationId: string,
+    currentUserId: string
+  ): Promise<{ data?: DmConversationMeta; error?: string }> {
+    try {
+      const { data: memberRows, error: memberError } = await supabase
+        .from("dm_conversation_members")
+        .select("user_id")
+        .eq("conversation_id", conversationId);
+
+      if (memberError) throw memberError;
+
+      const otherUserId =
+        (memberRows ?? []).map((row) => row.user_id).find((userId) => userId !== currentUserId) ?? null;
+
+      if (!otherUserId) {
+        return {
+          data: {
+            otherUserId: null,
+            otherUserName: null,
+          },
+        };
+      }
+
+      const { data: profileRows, error: profileError } = await supabase
+        .from("profiles")
+        .select("name, username")
+        .eq("id", otherUserId)
+        .limit(1);
+
+      if (profileError) throw profileError;
+
+      const profile = profileRows?.[0];
+
+      return {
+        data: {
+          otherUserId,
+          otherUserName: profile?.name || profile?.username || null,
+        },
+      };
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  },
+
+  async fetchInboxProfiles(
+    userIds: string[]
+  ): Promise<{ data?: Record<string, DmProfilePreview>; error?: string }> {
+    try {
+      if (!userIds.length) return { data: {} };
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          `
+          id,
+          username,
+          name,
+          profile_media:media!profiles_profile_media_id_fkey (
+            file_path
+          )
+          `
+        )
+        .in("id", userIds);
+
+      if (error) throw error;
+
+      const profilesById: Record<string, DmProfilePreview> = {};
+      (data ?? []).forEach((profile) => {
+        profilesById[profile.id] = {
+          id: profile.id,
+          username: profile.username,
+          name: profile.name,
+          profile_media: profile.profile_media ?? null,
+        };
+      });
+
+      return { data: profilesById };
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
+  },
+
   async sendMessage(
     conversationId: string,
     senderId: string,
     body: string
-  ): Promise<{ error?: string }> {
+  ): Promise<{ data?: DmMessage; error?: string }> {
     try {
       const trimmed = body.trim();
       if (!trimmed) return { error: "Message cannot be empty" };
 
-      const { error } = await supabase.from("dm_messages").insert({
-        conversation_id: conversationId,
-        sender_id: senderId,
-        body: trimmed,
-      });
+      const { data, error } = await supabase
+        .from("dm_messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: senderId,
+          body: trimmed,
+        })
+        .select("id, conversation_id, sender_id, body, created_at, deleted_at")
+        .single();
 
       if (error) throw error;
 
-      return {};
+      return { data: data as DmMessage };
     } catch (error) {
       return { error: (error as Error).message };
     }
