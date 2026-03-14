@@ -117,6 +117,8 @@ const Home = () => {
 
   // Handle tab button press
   const handleTabPress = useCallback((index: number) => {
+    // Update visual state immediately; PagerView transition can complete after.
+    setActiveTab(index);
     pagerRef.current?.setPage(index);
   }, []);
 
