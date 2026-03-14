@@ -405,8 +405,8 @@ const emojiStyle: TextStyle = {
 };
 
 const countStyle: TextStyle = {
-  marginLeft: 3,
-  fontSize: 11,
+  marginLeft: 4,
+  fontSize: 14,
   color: colors.light.text,
 };
 
