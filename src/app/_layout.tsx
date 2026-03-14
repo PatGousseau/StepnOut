@@ -24,6 +24,7 @@ import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
 import { UI_EVENTS } from '../constants/analyticsEvents';
 import { supabase } from '../lib/supabase';
+import { useDmUnreadCount } from '../hooks/useDmUnreadCount';
 
 // Set up notifications handler
 Notifications.setNotificationHandler({
@@ -56,6 +57,7 @@ function RootLayoutNav() {
   const { t } = useLanguage();
   const { session, loading } = useAuth();
   const { markAllAsRead, notifications, unreadCount } = useNotifications();
+  const { unreadCount: dmUnreadCount } = useDmUnreadCount(session?.user.id);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -158,6 +160,7 @@ function RootLayoutNav() {
         // support both new (type/postId) and legacy (postId) payloads
         const postId = data['postId'] ?? data['post_id'];
         const challengeId = data['challengeId'] ?? data['challenge_id'];
+        const conversationId = data['conversationId'] ?? data['conversation_id'];
 
         if (typeof postId === 'string' || typeof postId === 'number') {
           const postIdStr = String(postId);
@@ -171,6 +174,14 @@ function RootLayoutNav() {
           const challengeIdStr = String(challengeId);
           if (challengeIdStr.length > 0) {
             router.push(`/challenge/${challengeIdStr}`);
+            return;
+          }
+        }
+
+        if (typeof conversationId === 'string' || typeof conversationId === 'number') {
+          const conversationIdStr = String(conversationId);
+          if (conversationIdStr.length > 0) {
+            router.push(`/dm/${conversationIdStr}`);
             return;
           }
         }
@@ -197,10 +208,10 @@ function RootLayoutNav() {
   useEffect(() => {
     // keep OS app icon badge in sync with in-app unread notifications
     // ios supports this reliably; android depends on launcher support
-    Notifications.setBadgeCountAsync(unreadCount).catch((e) => {
+    Notifications.setBadgeCountAsync(unreadCount + dmUnreadCount).catch((e) => {
       console.error('Error setting badge count:', e);
     });
-  }, [unreadCount]);
+  }, [dmUnreadCount, unreadCount]);
 
   const handleNotificationPress = () => {
     markAllAsRead();

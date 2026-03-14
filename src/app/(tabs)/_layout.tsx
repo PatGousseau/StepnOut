@@ -4,10 +4,12 @@ import { colors } from '../../constants/Colors';
 import { Platform } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useDmUnreadCount } from '../../hooks/useDmUnreadCount';
 
 export default function TabsLayout() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { t } = useLanguage();
+  const { unreadCount: dmUnreadCount } = useDmUnreadCount(user?.id);
   
   return (
     <Tabs
@@ -75,6 +77,12 @@ export default function TabsLayout() {
         name="inbox"
         options={{
           title: t('Messages'),
+          tabBarBadge: dmUnreadCount > 0 ? dmUnreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.light.alertRed,
+            color: colors.neutral.white,
+            fontSize: 11,
+          },
         }}
       />
       <Tabs.Screen

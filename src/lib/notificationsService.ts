@@ -16,14 +16,39 @@ async function getPushToken(userId: string): Promise<string | null> {
     return data.push_token;
 }
 
+async function getBadgeCount(userId: string): Promise<number> {
+    try {
+        const [{ data: unreadNotificationCount, error: notificationError }, { data: unreadDmCount, error: dmError }] =
+            await Promise.all([
+                supabase.rpc('get_unread_notification_count', { target_user_id: userId }),
+                supabase.rpc('get_unread_dm_count', { target_user_id: userId }),
+            ]);
+
+        if (notificationError) throw notificationError;
+        if (dmError) throw dmError;
+
+        return Number(unreadNotificationCount ?? 0) + Number(unreadDmCount ?? 0);
+    } catch (error) {
+        console.error('Error fetching badge count:', error);
+        return 0;
+    }
+}
+
 // Send a push notification
-async function sendPushNotification(token: string, title: string, body: string, data: object = {}) {
+async function sendPushNotification(
+    token: string,
+    title: string,
+    body: string,
+    data: object = {},
+    badge?: number
+) {
     const message = {
         to: token,
         sound: 'default',
         title,
         body,
         data,
+        ...(typeof badge === 'number' ? { badge } : {}),
     };
 
     try {
@@ -45,6 +70,55 @@ async function sendPushNotification(token: string, title: string, body: string, 
         // Don't let push notification failures bubble up and break other operations
         console.error('Error sending push notification:', error);
     }
+}
+
+export async function sendDmNotification(
+    senderId: string,
+    conversationId: string,
+    messageBody: string
+) {
+    const { data: memberRows, error: memberError } = await supabase
+        .from('dm_conversation_members')
+        .select('user_id')
+        .eq('conversation_id', conversationId);
+
+    if (memberError) {
+        console.error('Error fetching DM members for push notification:', memberError);
+        return;
+    }
+
+    const recipientId = memberRows?.find(row => row.user_id !== senderId)?.user_id;
+    if (!recipientId) return;
+
+    const { data: senderProfile, error: senderError } = await supabase
+        .from('profiles')
+        .select('username, name')
+        .eq('id', senderId)
+        .single();
+
+    if (senderError) {
+        console.error('Error fetching sender profile for DM notification:', senderError);
+        return;
+    }
+
+    const pushToken = await getPushToken(recipientId);
+    if (!pushToken) return;
+
+    const senderName = senderProfile?.name || senderProfile?.username || 'Someone';
+    const preview = messageBody.trim().slice(0, 120);
+    const badge = await getBadgeCount(recipientId);
+
+    await sendPushNotification(
+        pushToken,
+        senderName,
+        preview || 'Sent you a message',
+        {
+            type: 'dm',
+            conversationId,
+            senderId,
+        },
+        badge
+    );
 }
 
 // Handle sending notifications for likes
@@ -80,8 +154,9 @@ export async function sendLikeNotification(
     const title = translations.title.replace('(username)', senderUsername);
     const body = translations.body;
     const data = { postId, senderId, ...(commentId ? { commentId } : {}) };
+    const badge = await getBadgeCount(recipientId);
 
-    await sendPushNotification(pushToken, title, body, data);
+    await sendPushNotification(pushToken, title, body, data, badge);
 }
 
 export async function sendReactionNotification(
@@ -116,8 +191,9 @@ export async function sendReactionNotification(
     const title = translations.title.replace('(username)', senderUsername);
     const body = translations.body;
     const data = { postId, senderId, emoji, ...(commentId ? { commentId } : {}) };
+    const badge = await getBadgeCount(recipientId);
 
-    await sendPushNotification(pushToken, title, body, data);
+    await sendPushNotification(pushToken, title, body, data, badge);
 }
 
 // Handle sending notifications for comments
@@ -154,8 +230,9 @@ export async function sendCommentNotification(
     const title = translations.title.replace('(username)', senderUsername);
     const body = `"${commentText}"`;
     const data = { postId, senderId, commentId };
+    const badge = await getBadgeCount(recipientId);
 
-    await sendPushNotification(pushToken, title, body, data);
+    await sendPushNotification(pushToken, title, body, data, badge);
 }
 
 // Handle sending notifications for new challenges
@@ -182,8 +259,9 @@ export async function sendNewChallengeNotification(recipientId: string, challeng
     const title = 'Nuova sfida settimanale!';
     const body = challengeTitle;
     const data = { challengeId };
+    const badge = await getBadgeCount(recipientId);
 
-    await sendPushNotification(pushToken, title, body, data);
+    await sendPushNotification(pushToken, title, body, data, badge);
 }
 
 // Fetch all user IDs
@@ -191,8 +269,9 @@ async function getAllUserIds(): Promise<string[]> {
     const allIds: string[] = [];
     const pageSize = 1000;
     let from = 0;
+    let hasMore = true;
 
-    while (true) {
+    while (hasMore) {
         const { data, error } = await supabase
             .from('profiles')
             .select('id')
@@ -205,7 +284,7 @@ async function getAllUserIds(): Promise<string[]> {
 
         allIds.push(...data.map(profile => profile.id));
 
-        if (data.length < pageSize) break;
+        hasMore = data.length === pageSize;
         from += pageSize;
     }
 

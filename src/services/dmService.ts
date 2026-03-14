@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { sendDmNotification } from "../lib/notificationsService";
 
 export const DM_MESSAGES_PAGE_SIZE = 50;
 
@@ -210,6 +211,8 @@ export const dmService = {
         .single();
 
       if (error) throw error;
+
+      void sendDmNotification(senderId, conversationId, trimmed);
 
       return { data: data as DmMessage };
     } catch (error) {
