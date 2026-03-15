@@ -88,6 +88,9 @@ export const UI_EVENTS = {
   MENU_OPENED: 'ui_menu_opened',
   FEEDBACK_MODAL_OPENED: 'ui_feedback_modal_opened',
   FEEDBACK_SUBMITTED: 'ui_feedback_submitted',
+  NOTIFICATIONS_BANNER_ENABLE_CLICKED: 'ui_notifications_banner_enable_clicked',
+  NOTIFICATIONS_BANNER_NOT_NOW_CLICKED: 'ui_notifications_banner_not_now_clicked',
+  NOTIFICATIONS_BANNER_DONT_ASK_AGAIN_CLICKED: 'ui_notifications_banner_dont_ask_again_clicked',
 } as const;
 
 // ============================================
