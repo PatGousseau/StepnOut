@@ -45,6 +45,13 @@ type ChallengeLeaderboardItem = {
   avgComfort: number | null;
 };
 
+type ActivationStep = {
+  key: string;
+  label: string;
+  count: number;
+  rateFromStart: number;
+};
+
 type AdminAnalytics = {
   userCount: number;
   newUsers7d: number;
@@ -77,6 +84,7 @@ type AdminAnalytics = {
   pendingReports: number;
 
   topChallenges30d: ChallengeLeaderboardItem[];
+  activationFunnel7d: ActivationStep[];
 };
 
 const dayKeyUtc = (iso: string) => {
@@ -214,6 +222,12 @@ const ChallengeCreation: React.FC = () => {
           .select("id", { count: "exact", head: true })
           .gte("created_at", since14to7d)
           .lt("created_at", since7d),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since7d)
+          .not("username", "is", null)
+          .neq("username", ""),
 
         supabase.from("post").select("user_id").not("challenge_id", "is", null).gte("created_at", since7d),
         supabase
@@ -274,6 +288,7 @@ const ChallengeCreation: React.FC = () => {
         usersRes,
         newUsersRes,
         newUsersPrev7dRes,
+        createdProfile7dRes,
         completers7dRes,
         completersPrev7dRes,
         completersBeforePrev7dRes,
@@ -390,6 +405,31 @@ const ChallengeCreation: React.FC = () => {
       let activeChallengeUniqueCompletions = 0;
       let activeChallengeTotalCompletions = 0;
 
+      const joined7d = newUsersRes.count || 0;
+      const createdProfile7d = createdProfile7dRes.count || 0;
+      const challengeCompleters7d = weeklyActiveUsers7d;
+
+      const activationFunnel7d: ActivationStep[] = [
+        {
+          key: 'joined',
+          label: 'Joined (7d)',
+          count: joined7d,
+          rateFromStart: 100,
+        },
+        {
+          key: 'profile_created',
+          label: 'Created profile (username set)',
+          count: createdProfile7d,
+          rateFromStart: joined7d ? Math.round((createdProfile7d / joined7d) * 1000) / 10 : 0,
+        },
+        {
+          key: 'challenge_completed',
+          label: 'Completed challenge',
+          count: challengeCompleters7d,
+          rateFromStart: joined7d ? Math.round((challengeCompleters7d / joined7d) * 1000) / 10 : 0,
+        },
+      ];
+
       if (activeChallenge) {
         const [uniqueRes, totalRes] = await Promise.all([
           supabase.from("post").select("user_id").eq("challenge_id", activeChallenge.id),
@@ -482,6 +522,7 @@ const ChallengeCreation: React.FC = () => {
         pendingReports: pendingReportsRes.count || 0,
 
         topChallenges30d,
+        activationFunnel7d,
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -807,6 +848,22 @@ const ChallengeCreation: React.FC = () => {
             </Text>
             <Text style={styles.analyticsLabel}>Pending Reports</Text>
           </View>
+        </View>
+
+        <View style={styles.chartWideCard}>
+          <Text style={styles.chartTitle}>Activation Funnel (Last 7 Days)</Text>
+          <Text style={styles.axisLabel}>Joined → Profile created → Challenge completion</Text>
+          {(analytics?.activationFunnel7d || []).map((step) => (
+            <View key={step.key} style={styles.funnelRow}>
+              <View style={styles.funnelLabelWrap}>
+                <Text style={styles.funnelLabel}>{step.label}</Text>
+                <Text style={styles.funnelMeta}>{step.count} users · {step.rateFromStart}%</Text>
+              </View>
+              <View style={styles.funnelBarWrap}>
+                <View style={[styles.funnelBar, { width: `${Math.max(4, Math.min(100, step.rateFromStart))}%` }]} />
+              </View>
+            </View>
+          ))}
         </View>
 
         <View style={styles.chartsRow}>
@@ -1444,6 +1501,36 @@ const styles = StyleSheet.create({
     color: '#777',
     fontSize: 11,
     marginTop: 2,
+  },
+  funnelRow: {
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f4f4f4',
+  },
+  funnelLabelWrap: {
+    marginBottom: 6,
+  },
+  funnelLabel: {
+    color: colors.light.text,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  funnelMeta: {
+    color: '#777',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  funnelBarWrap: {
+    width: '100%',
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#eee',
+    overflow: 'hidden',
+  },
+  funnelBar: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: colors.light.secondary,
   },
   bucketLabel: {
     marginTop: 6,
