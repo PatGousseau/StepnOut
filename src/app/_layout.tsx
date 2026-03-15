@@ -278,6 +278,10 @@ function RootLayoutNav() {
     if (!userId) return;
 
     const { status } = await Notifications.getPermissionsAsync();
+    captureEvent(UI_EVENTS.NOTIFICATIONS_BANNER_ENABLE_CLICKED, {
+      permission_status: status,
+    });
+
     if (status === 'granted') {
       await registerForPushNotificationsAsync(userId);
       setShowNotificationsBanner(false);
@@ -287,11 +291,19 @@ function RootLayoutNav() {
     await Linking.openSettings();
   };
 
-  const handleIgnoreNotificationsBanner = () => {
+  const handleIgnoreNotificationsBanner = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    captureEvent(UI_EVENTS.NOTIFICATIONS_BANNER_NOT_NOW_CLICKED, {
+      permission_status: status,
+    });
     setShowNotificationsBanner(false);
   };
 
   const handleDisableNotificationsBanner = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    captureEvent(UI_EVENTS.NOTIFICATIONS_BANNER_DONT_ASK_AGAIN_CLICKED, {
+      permission_status: status,
+    });
     await AsyncStorage.setItem(NOTIF_BANNER_DISABLED_KEY, '1');
     setShowNotificationsBanner(false);
   };
