@@ -42,6 +42,7 @@ SplashScreen.preventAutoHideAsync();
 
 // Create a QueryClient instance with defaults
 const NOTIF_BANNER_DISABLED_KEY = 'notifications_banner_disabled';
+const PUSH_NOTIFICATIONS_BANNER_ENABLED = false;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -153,6 +154,11 @@ function RootLayoutNav() {
 
   useEffect(() => {
     const maybeShowNotificationsBanner = async () => {
+      if (!PUSH_NOTIFICATIONS_BANNER_ENABLED) {
+        setShowNotificationsBanner(false);
+        return;
+      }
+
       if (!session?.user?.id || loading) return;
 
       const isAuthRoute =
@@ -328,7 +334,7 @@ function RootLayoutNav() {
         hideLogo={hideLogo}
       />
 
-      {showNotificationsBanner && !hideLogo && (
+      {PUSH_NOTIFICATIONS_BANNER_ENABLED && showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
             <Ionicons name="notifications-outline" size={16} color={colors.light.primary} />
