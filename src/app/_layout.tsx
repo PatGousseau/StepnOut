@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
@@ -42,7 +42,7 @@ SplashScreen.preventAutoHideAsync();
 
 // Create a QueryClient instance with defaults
 const NOTIF_BANNER_DISABLED_KEY = 'notifications_banner_disabled';
-const PUSH_NOTIFICATIONS_BANNER_ENABLED = false;
+const PUSH_NOTIFICATIONS_BANNER_ENABLED = Platform.OS !== 'android';
 
 const queryClient = new QueryClient({
   defaultOptions: {
