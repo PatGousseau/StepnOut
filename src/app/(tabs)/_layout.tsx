@@ -33,6 +33,9 @@ export default function TabsLayout() {
             case 'profile':
               iconName = 'person';
               break;
+            case 'inbox':
+              iconName = 'chatbubbles';
+              break;
             case 'admin':
               iconName = 'settings';
               break;
@@ -66,6 +69,12 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: t('Profile'),
+        }}
+      />
+      <Tabs.Screen
+        name="inbox"
+        options={{
+          title: t('Messages'),
         }}
       />
       <Tabs.Screen

@@ -26,6 +26,7 @@ import { colors } from "../constants/Colors";
 import { Loader } from "./Loader";
 import { ProfileSkeleton } from "./Skeleton";
 import { profileService } from "../services/profileService";
+import { dmService } from "../services/dmService";
 import { UserProfile } from "../models/User";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useLikes } from "../contexts/LikesContext";
@@ -96,6 +97,23 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     await Promise.all([refetchProfile(), refreshActivity()]);
     setRefreshing(false);
   }, [refetchProfile, refreshActivity]);
+
+  const handleMessageUser = async () => {
+    if (!user?.id) {
+      Alert.alert(t("Error"), t("User not authenticated"));
+      return;
+    }
+
+    if (isOwnProfile) return;
+
+    const result = await dmService.getOrCreateConversation(targetUserId);
+    if (result.error || !result.data) {
+      Alert.alert(t("Error"), result.error || t("Failed to start conversation"));
+      return;
+    }
+
+    router.push(`/dm/${result.data}`);
+  };
 
   const handleUpdateProfilePicture = async () => {
     try {
@@ -442,6 +460,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </View>
 
           <View style={styles.headerButtons}>
+            {!isOwnProfile && (
+              <TouchableOpacity style={styles.messageButton} onPress={handleMessageUser}>
+                <Icon name="chatbubble-ellipses-outline" size={22} color="#333" />
+              </TouchableOpacity>
+            )}
             {isOwnProfile && (
               <ProfileActions
                 onEdit={() => {
@@ -727,6 +750,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 16,
     paddingTop: 6,
+  },
+  messageButton: {
+    padding: 6,
   },
   headerLeft: {
     alignItems: "flex-start",

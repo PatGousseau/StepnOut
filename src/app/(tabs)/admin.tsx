@@ -111,6 +111,8 @@ const fetchAll = async <T,>(fetchPage: (from: number, to: number) => Promise<{ d
   return out;
 };
 
+const TWO_DAY_NOTIFICATION_TITLE_IT = "Ancora 2 giorni ⏳";
+
 const ChallengeCreation: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -125,6 +127,8 @@ const ChallengeCreation: React.FC = () => {
 
   const [notifTitle, setNotifTitle] = useState<string>("");
   const [notifBody, setNotifBody] = useState<string>("");
+  const [twoDayNotifEnglishPreview, setTwoDayNotifEnglishPreview] = useState<string>("");
+  const [generatingTwoDayNotif, setGeneratingTwoDayNotif] = useState<boolean>(false);
   const [sendToAll, setSendToAll] = useState<boolean>(true);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -469,6 +473,37 @@ const ChallengeCreation: React.FC = () => {
     );
   };
 
+  const handleGenerateTwoDayNotification = async () => {
+    const activeChallenge = challenges.find((c) => c.is_active);
+    if (!activeChallenge) {
+      Alert.alert("Error", "No active challenge found");
+      return;
+    }
+
+    setGeneratingTwoDayNotif(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-2day-notification", {
+        body: {
+          challengeTitle: activeChallenge.title,
+          challengeDescription: activeChallenge.description,
+          challengeTitleIt: activeChallenge.title_it,
+          challengeDescriptionIt: activeChallenge.description_it,
+        },
+      });
+
+      if (error) throw error;
+
+      setNotifTitle(TWO_DAY_NOTIFICATION_TITLE_IT);
+      setNotifBody(data?.italianBody || "");
+      setTwoDayNotifEnglishPreview(data?.englishBody || "");
+    } catch (error) {
+      console.error("Error generating 2-day notification:", error);
+      Alert.alert("Error", "Failed to generate notification");
+    } finally {
+      setGeneratingTwoDayNotif(false);
+    }
+  };
+
   const handleSendCustomNotification = async () => {
     if (!notifTitle.trim() || !notifBody.trim()) {
       Alert.alert("Error", "Title and body are required");
@@ -493,6 +528,7 @@ const ChallengeCreation: React.FC = () => {
       );
       setNotifTitle("");
       setNotifBody("");
+      setTwoDayNotifEnglishPreview("");
       setSelectedUserIds([]);
     } catch (error) {
       console.error("Error sending custom notification:", error);
@@ -753,6 +789,18 @@ const ChallengeCreation: React.FC = () => {
 
         <Text style={styles.sectionTitle}>Send Notification</Text>
 
+        <View style={styles.twoDayRow}>
+          <TouchableOpacity
+            style={[styles.twoDayButton, generatingTwoDayNotif && styles.twoDayButtonDisabled]}
+            onPress={handleGenerateTwoDayNotification}
+            disabled={generatingTwoDayNotif}
+          >
+            <Text style={styles.twoDayButtonText}>
+              {twoDayNotifEnglishPreview ? "Regenerate 2-day" : "Generate 2-day"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.label}>Title</Text>
         <TextInput
           style={styles.input}
@@ -761,7 +809,7 @@ const ChallengeCreation: React.FC = () => {
           placeholder="Notification title"
         />
 
-        <Text style={styles.label}>Body</Text>
+        <Text style={styles.label}>Body (Italian)</Text>
         <TextInput
           style={[styles.input, { minHeight: 80 }]}
           value={notifBody}
@@ -769,6 +817,13 @@ const ChallengeCreation: React.FC = () => {
           placeholder="Notification message"
           multiline
         />
+
+        {twoDayNotifEnglishPreview ? (
+          <View style={styles.englishPreviewCard}>
+            <Text style={styles.englishPreviewLabel}>English preview</Text>
+            <Text style={styles.englishPreviewText}>{twoDayNotifEnglishPreview}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.recipientToggle}>
           <TouchableOpacity
@@ -1189,7 +1244,43 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   // Notification styles
-  recipientToggle: {
+  twoDayRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginTop: 8,
+  },
+  twoDayButton: {
+    backgroundColor: colors.light.secondary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  twoDayButtonDisabled: {
+    opacity: 0.6,
+  },
+  twoDayButtonText: {
+    color: colors.light.text,
+    fontWeight: "700",
+  },
+  englishPreviewCard: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#eee",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 12,
+  },
+  englishPreviewLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#666",
+    marginBottom: 6,
+  },
+  englishPreviewText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  recipientToggle: {"}
     flexDirection: "row",
     marginTop: 16,
     gap: 8,
