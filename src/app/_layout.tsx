@@ -333,7 +333,6 @@ function RootLayoutNav() {
         isDetailPage={isDetailPage}
         hideLogo={hideLogo}
       />
-
       {PUSH_NOTIFICATIONS_BANNER_ENABLED && showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
@@ -360,7 +359,7 @@ function RootLayoutNav() {
         </View>
       )}
 
-      {!hideLogo && !isDetailPage && !hideRecentlyActive && <RecentlyActiveBanner />}
+      {!hideLogo && !hideRecentlyActive && <RecentlyActiveBanner hidden={isDetailPage} />}
       <Stack
         screenOptions={{
           headerShown: false,

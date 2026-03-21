@@ -459,12 +459,14 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         </ActionsMenu>
       </View>
       {post.challenge_id && (
-        <TouchableOpacity onPress={handleChallengePress}>
-          <View style={challengeBoxStyle}>
-            <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-              <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
-            </Text>
-          </View>
+        <>
+          <TouchableOpacity onPress={handleChallengePress}>
+            <View style={challengeBoxStyle}>
+              <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
+              </Text>
+            </View>
+          </TouchableOpacity>
           {post.comfort_zone_rating != null && (
             <View style={comfortRatingStyle}>
               <Text style={comfortRatingLabelStyle}>
@@ -498,7 +500,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               </View>
             </View>
           )}
-        </TouchableOpacity>
+        </>
       )}
       {post.body && !post.media?.file_path ? (
         <Pressable onPress={handleDoubleTap}>

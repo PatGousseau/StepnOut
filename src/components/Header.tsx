@@ -96,7 +96,8 @@ const Header = ({
         </View>
       )}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           onPress={() => {
             if (isDetailPage) {
               router.back();
