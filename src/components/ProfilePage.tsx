@@ -42,6 +42,7 @@ type ProfilePageProps = {
   userId?: string;
 };
 
+
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -71,7 +72,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const [editedBio, setEditedBio] = useState("");
   const [fullResImageUrl, setFullResImageUrl] = useState<string | null>(null);
   const [isLoadingFullRes, setIsLoadingFullRes] = useState(false);
-
 
   // Use React Query to fetch profile data
   const {
