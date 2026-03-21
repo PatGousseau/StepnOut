@@ -36,6 +36,14 @@ type UserProfile = {
   name: string;
 };
 
+type FeedbackEntry = {
+  id: number;
+  user_id: string | null;
+  message: string;
+  created_at: string;
+  user?: Pick<UserProfile, 'id' | 'username' | 'name'>;
+};
+
 type AdminTimeseriesPoint = { date: string; count: number };
 
 type AdminAnalytics = {
@@ -99,7 +107,10 @@ const median = (xs: number[]) => {
   return s[Math.floor(s.length / 2)];
 };
 
-const fetchAll = async <T,>(fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>, pageSize = 1000) => {
+const fetchAll = async <T,>(
+  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: unknown }>,
+  pageSize = 1000
+) => {
   const out: T[] = [];
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await fetchPage(from, from + pageSize - 1);
@@ -133,6 +144,9 @@ const ChallengeCreation: React.FC = () => {
 
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState<boolean>(false);
+  const [feedbackEntries, setFeedbackEntries] = useState<FeedbackEntry[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState<boolean>(false);
+  const [showFeedbackList, setShowFeedbackList] = useState<boolean>(false);
 
   const { user } = useAuth();
 
@@ -154,10 +168,9 @@ const ChallengeCreation: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const pageSize = 1000;
-      let from = 0;
       const users: UserProfile[] = [];
 
-      while (true) {
+      for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, username, name")
@@ -170,12 +183,59 @@ const ChallengeCreation: React.FC = () => {
         users.push(...page);
 
         if (page.length < pageSize) break;
-        from += pageSize;
       }
 
       setAllUsers(users);
     } catch (error) {
       console.error("Error fetching users:", error);
+    }
+  };
+
+  const fetchFeedbackEntries = async () => {
+    setFeedbackLoading(true);
+    try {
+      const { data: feedbackRows, error: feedbackError } = await supabase
+        .from("feedback")
+        .select("id, user_id, message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (feedbackError) throw feedbackError;
+
+      const rows = (feedbackRows || []) as Array<{
+        id: number;
+        user_id: string | null;
+        message: string;
+        created_at: string;
+      }>;
+
+      const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter((id): id is string => !!id)));
+      let usersById = new Map<string, Pick<UserProfile, "id" | "username" | "name">>();
+
+      if (userIds.length > 0) {
+        const { data: profilesRows, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, username, name")
+          .in("id", userIds);
+
+        if (profilesError) throw profilesError;
+
+        usersById = new Map(
+          ((profilesRows || []) as UserProfile[]).map((u) => [u.id, { id: u.id, username: u.username, name: u.name }])
+        );
+      }
+
+      setFeedbackEntries(
+        rows.map((r) => ({
+          ...r,
+          user: r.user_id ? usersById.get(r.user_id) : undefined,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching feedback entries:", error);
+      setFeedbackEntries([]);
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -352,7 +412,7 @@ const ChallengeCreation: React.FC = () => {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchChallenges(), fetchUsers(), fetchAnalytics()]);
+    await Promise.all([fetchChallenges(), fetchUsers(), fetchAnalytics(), fetchFeedbackEntries()]);
     setRefreshing(false);
   }, []);
 
@@ -360,6 +420,7 @@ const ChallengeCreation: React.FC = () => {
     fetchChallenges();
     fetchUsers();
     fetchAnalytics();
+    fetchFeedbackEntries();
   }, []);
 
   const handleMediaUpload = async () => {
@@ -578,12 +639,13 @@ const ChallengeCreation: React.FC = () => {
             <Text style={styles.analyticsLabel}>Comments (7d)</Text>
           </View>
 
-          <View style={styles.analyticsCard}>
+          <TouchableOpacity style={styles.analyticsCard} onPress={() => setShowFeedbackList((v) => !v)}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.feedback7d ?? '—'}
             </Text>
             <Text style={styles.analyticsLabel}>Feedback (7d)</Text>
-          </View>
+            <Text style={styles.analyticsHint}>{showFeedbackList ? 'Hide feedback' : 'Tap to view recent feedback'}</Text>
+          </TouchableOpacity>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
@@ -646,6 +708,26 @@ const ChallengeCreation: React.FC = () => {
             </View>
           </View>
         </View>
+
+        {showFeedbackList && (
+          <View style={styles.chartWideCard}>
+            <Text style={styles.chartTitle}>Recent Feedback (Most Recent First)</Text>
+            {feedbackLoading ? (
+              <Text style={styles.analyticsHint}>Loading feedback…</Text>
+            ) : feedbackEntries.length === 0 ? (
+              <Text style={styles.analyticsHint}>No feedback found.</Text>
+            ) : (
+              feedbackEntries.map((f) => (
+                <View key={f.id} style={styles.feedbackRow}>
+                  <Text style={styles.feedbackMeta}>
+                    {(f.user?.username && `@${f.user.username}`) || f.user?.name || "Unknown user"} · {new Date(f.created_at).toLocaleString()}
+                  </Text>
+                  <Text style={styles.feedbackMessage}>{f.message}</Text>
+                </View>
+              ))
+            )}
+          </View>
+        )}
 
         <View style={styles.chartWideCard}>
           <Text style={styles.chartTitle}>Users by Total Challenges Completed</Text>
@@ -1155,6 +1237,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#666',
+  },
+  feedbackRow: {
+    borderTopColor: '#f1f1f1',
+    borderTopWidth: 1,
+    paddingVertical: 8,
+  },
+  feedbackMeta: {
+    color: '#777',
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  feedbackMessage: {
+    color: colors.light.text,
+    fontSize: 13,
+    lineHeight: 18,
   },
   barChartRow: {
     flexDirection: 'row',
