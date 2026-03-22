@@ -44,6 +44,10 @@ type PostRow = {
   challenge_id: number | null;
 };
 
+function buildCommunityHighlightTitle(posterName: string) {
+  return `Guarda cosa ha fatto ${posterName}`;
+}
+
 function parseTemplates(raw: string | null): Template[] {
   const fallback: Template[] = [
     { title: 'Serie a rischio', body: 'Ti restano 3 giorni per completare la sfida e salvare la tua serie.' },
@@ -207,20 +211,19 @@ Deno.serve(async (req) => {
                 schema: {
                   type: 'object',
                   properties: {
-                    title: { type: 'string', maxLength: 40 },
                     body: { type: 'string', maxLength: 100 },
                   },
-                  required: ['title', 'body'],
+                  required: ['body'],
                   additionalProperties: false,
                 },
               },
             },
           });
 
-          let parsed: { title?: string; body?: string } | null = null;
+          let parsed: { body?: string } | null = null;
           try { parsed = JSON.parse(response.output_text || ''); } catch { parsed = null; }
 
-          if (!parsed?.title || !parsed?.body) {
+          if (!parsed?.body) {
             results.community_highlight = { source: 'generated', reason: 'invalid_ai_output', post_id: candidatePost.id };
           } else {
             results.community_highlight = {
@@ -228,7 +231,7 @@ Deno.serve(async (req) => {
               post_id: candidatePost.id,
               poster: posterName,
               challenge: challengeTitle,
-              title: parsed.title,
+              title: buildCommunityHighlightTitle(posterName),
               body: parsed.body,
             };
           }

@@ -14,6 +14,10 @@ type PostRow = {
   challenge_id: number | null;
 };
 
+function buildCommunityHighlightTitle(posterName: string) {
+  return `Guarda cosa ha fatto ${posterName}`;
+}
+
 async function getTopPostCandidate(
   supabase: ReturnType<typeof createClient>,
 ): Promise<PostRow | null> {
@@ -173,10 +177,9 @@ Deno.serve(async (req) => {
           schema: {
             type: 'object',
             properties: {
-              title: { type: 'string', maxLength: 40 },
               body: { type: 'string', maxLength: 100 },
             },
-            required: ['title', 'body'],
+            required: ['body'],
             additionalProperties: false,
           },
         },
@@ -184,14 +187,14 @@ Deno.serve(async (req) => {
     });
 
     const content = response.output_text || '';
-    let parsed: { title?: string; body?: string } | null = null;
+    let parsed: { body?: string } | null = null;
     try {
       parsed = JSON.parse(content);
     } catch {
       parsed = null;
     }
 
-    if (!parsed?.title || !parsed?.body) {
+    if (!parsed?.body) {
       return new Response(
         JSON.stringify({ status: 'invalid_ai_output' }),
         {
@@ -201,7 +204,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const title = parsed.title;
+    const title = buildCommunityHighlightTitle(posterName);
     const body = parsed.body;
 
     if (!isDryRun) {
