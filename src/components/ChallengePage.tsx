@@ -53,7 +53,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
 
   const showPastChallengePosts = !!challenge && challenge.daysRemaining <= 0;
 
-  const { pastChallenges } = usePastChallenges(challengeId);
+  const { pastChallenges } = usePastChallenges(challengeId, !showPastChallengePosts);
 
   const {
     posts: pastChallengePosts,

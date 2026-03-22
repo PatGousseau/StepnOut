@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { challengeService } from "../services/challengeService";
 
-export function usePastChallenges(excludeChallengeId?: number) {
+export function usePastChallenges(excludeChallengeId?: number, enabled: boolean = true) {
   const {
     data: pastChallenges,
     isLoading,
@@ -11,6 +11,7 @@ export function usePastChallenges(excludeChallengeId?: number) {
   } = useQuery({
     queryKey: ["past-challenges", excludeChallengeId],
     queryFn: () => challengeService.fetchPastChallengesFromPosts(excludeChallengeId),
+    enabled: enabled && !!excludeChallengeId,
     staleTime: 60000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
