@@ -153,7 +153,8 @@ export function useFetchChallengePosts(challengeId?: number) {
       initializePostLikes(posts);
       initializePostReactions(posts);
     }
-  }, [initializePostLikes, initializePostReactions, posts]);
+    // note: keep deps minimal to avoid feedback loops from context updates
+  }, [posts.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = useCallback(() => {
     if (!isLoading && !isFetchingNextPage && hasNextPage) {
