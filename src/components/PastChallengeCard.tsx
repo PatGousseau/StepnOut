@@ -3,8 +3,8 @@ import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Challenge } from "../types";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
-import { supabaseStorageUrl } from "../lib/supabase";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { imageService } from "../services/imageService";
 
 export function PastChallengeCard({
   challenge,
@@ -16,7 +16,9 @@ export function PastChallengeCard({
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <Image
-        source={{ uri: `${supabaseStorageUrl}/${challenge.media.file_path}` }}
+        source={{
+          uri: imageService.getChallengeImageUrlSync(challenge.media.file_path, "tiny"),
+        }}
         style={styles.image}
       />
       <View style={styles.content}>

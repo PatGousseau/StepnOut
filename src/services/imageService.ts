@@ -31,6 +31,19 @@ const buildTransformUrl = (filePath: string, opts: ImageTransformOptions): strin
 };
 
 export const imageService = {
+  getChallengeImageUrlSync(
+    filePath: string,
+    size: "tiny" | "small" | "medium" | "large" = "medium"
+  ): string {
+    const sizes = {
+      tiny: { quality: 60, width: 56, height: 56 },
+      small: { quality: 75, width: 80, height: 80 },
+      medium: { quality: 85, width: 200, height: 200 },
+      large: { quality: 90, width: 600, height: 600 },
+    };
+    return buildTransformUrl(filePath, sizes[size]);
+  },
+
   getProfileImageUrlSync(filePath: string, size: "tiny" | "small" | "medium" | "large" = "medium"): string {
     const sizes = {
       tiny: { quality: 60, width: 50, height: 50 },
