@@ -100,6 +100,35 @@ function applyBlockedFilter(query: any, blockedUserIds: string[]) {
 }
 
 export const postService = {
+  async fetchPostsForChallenge(
+    challengeId: number,
+    pageParam: number,
+    blockedUserIds: string[],
+    postsPerPage: number = 20
+  ): Promise<{ posts: Post[]; hasMore: boolean }> {
+    const select = `${BASE_SELECT}, challenges!inner (title)`;
+
+    let query = supabase
+      .from("post")
+      .select(select)
+      .eq("challenge_id", challengeId)
+      .not("body", "is", null)
+      .not("media.upload_status", "in", '("failed","pending")')
+      .order("created_at", { ascending: false });
+
+    query = applyBlockedFilter(query, blockedUserIds);
+
+    const start = (pageParam - 1) * postsPerPage;
+    query = query.range(start, start + postsPerPage - 1);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const rows = (data ?? []) as PostData[];
+    const posts = rows.map((p) => processPost(p, true));
+    return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
+  },
+
   async fetchLikes(ids: number[], type: LikeableItem["type"], userId?: string) {
     try {
       const idField = `${type}_id` as const;
