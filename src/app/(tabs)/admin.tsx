@@ -36,14 +36,6 @@ type UserProfile = {
   name: string;
 };
 
-type FeedbackEntry = {
-  id: number;
-  user_id: string | null;
-  message: string;
-  created_at: string;
-  user?: Pick<UserProfile, 'id' | 'username' | 'name'>;
-};
-
 type AdminTimeseriesPoint = { date: string; count: number };
 
 type AdminAnalytics = {
@@ -107,10 +99,7 @@ const median = (xs: number[]) => {
   return s[Math.floor(s.length / 2)];
 };
 
-const fetchAll = async <T,>(
-  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: unknown }>,
-  pageSize = 1000
-) => {
+const fetchAll = async <T,>(fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>, pageSize = 1000) => {
   const out: T[] = [];
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await fetchPage(from, from + pageSize - 1);
@@ -121,6 +110,8 @@ const fetchAll = async <T,>(
   }
   return out;
 };
+
+const TWO_DAY_NOTIFICATION_TITLE_IT = "Ancora 2 giorni ⏳";
 
 const ChallengeCreation: React.FC = () => {
   const [title, setTitle] = useState<string>("");
@@ -136,6 +127,8 @@ const ChallengeCreation: React.FC = () => {
 
   const [notifTitle, setNotifTitle] = useState<string>("");
   const [notifBody, setNotifBody] = useState<string>("");
+  const [twoDayNotifEnglishPreview, setTwoDayNotifEnglishPreview] = useState<string>("");
+  const [generatingTwoDayNotif, setGeneratingTwoDayNotif] = useState<boolean>(false);
   const [sendToAll, setSendToAll] = useState<boolean>(true);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -144,9 +137,6 @@ const ChallengeCreation: React.FC = () => {
 
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState<boolean>(false);
-  const [feedbackEntries, setFeedbackEntries] = useState<FeedbackEntry[]>([]);
-  const [feedbackLoading, setFeedbackLoading] = useState<boolean>(false);
-  const [showFeedbackList, setShowFeedbackList] = useState<boolean>(false);
 
   const { user } = useAuth();
 
@@ -168,9 +158,10 @@ const ChallengeCreation: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const pageSize = 1000;
+      let from = 0;
       const users: UserProfile[] = [];
 
-      for (let from = 0; ; from += pageSize) {
+      while (true) {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, username, name")
@@ -183,59 +174,12 @@ const ChallengeCreation: React.FC = () => {
         users.push(...page);
 
         if (page.length < pageSize) break;
+        from += pageSize;
       }
 
       setAllUsers(users);
     } catch (error) {
       console.error("Error fetching users:", error);
-    }
-  };
-
-  const fetchFeedbackEntries = async () => {
-    setFeedbackLoading(true);
-    try {
-      const { data: feedbackRows, error: feedbackError } = await supabase
-        .from("feedback")
-        .select("id, user_id, message, created_at")
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (feedbackError) throw feedbackError;
-
-      const rows = (feedbackRows || []) as Array<{
-        id: number;
-        user_id: string | null;
-        message: string;
-        created_at: string;
-      }>;
-
-      const userIds = Array.from(new Set(rows.map((r) => r.user_id).filter((id): id is string => !!id)));
-      let usersById = new Map<string, Pick<UserProfile, "id" | "username" | "name">>();
-
-      if (userIds.length > 0) {
-        const { data: profilesRows, error: profilesError } = await supabase
-          .from("profiles")
-          .select("id, username, name")
-          .in("id", userIds);
-
-        if (profilesError) throw profilesError;
-
-        usersById = new Map(
-          ((profilesRows || []) as UserProfile[]).map((u) => [u.id, { id: u.id, username: u.username, name: u.name }])
-        );
-      }
-
-      setFeedbackEntries(
-        rows.map((r) => ({
-          ...r,
-          user: r.user_id ? usersById.get(r.user_id) : undefined,
-        }))
-      );
-    } catch (error) {
-      console.error("Error fetching feedback entries:", error);
-      setFeedbackEntries([]);
-    } finally {
-      setFeedbackLoading(false);
     }
   };
 
@@ -412,7 +356,7 @@ const ChallengeCreation: React.FC = () => {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchChallenges(), fetchUsers(), fetchAnalytics(), fetchFeedbackEntries()]);
+    await Promise.all([fetchChallenges(), fetchUsers(), fetchAnalytics()]);
     setRefreshing(false);
   }, []);
 
@@ -420,7 +364,6 @@ const ChallengeCreation: React.FC = () => {
     fetchChallenges();
     fetchUsers();
     fetchAnalytics();
-    fetchFeedbackEntries();
   }, []);
 
   const handleMediaUpload = async () => {
@@ -530,6 +473,37 @@ const ChallengeCreation: React.FC = () => {
     );
   };
 
+  const handleGenerateTwoDayNotification = async () => {
+    const activeChallenge = challenges.find((c) => c.is_active);
+    if (!activeChallenge) {
+      Alert.alert("Error", "No active challenge found");
+      return;
+    }
+
+    setGeneratingTwoDayNotif(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-2day-notification", {
+        body: {
+          challengeTitle: activeChallenge.title,
+          challengeDescription: activeChallenge.description,
+          challengeTitleIt: activeChallenge.title_it,
+          challengeDescriptionIt: activeChallenge.description_it,
+        },
+      });
+
+      if (error) throw error;
+
+      setNotifTitle(TWO_DAY_NOTIFICATION_TITLE_IT);
+      setNotifBody(data?.italianBody || "");
+      setTwoDayNotifEnglishPreview(data?.englishBody || "");
+    } catch (error) {
+      console.error("Error generating 2-day notification:", error);
+      Alert.alert("Error", "Failed to generate notification");
+    } finally {
+      setGeneratingTwoDayNotif(false);
+    }
+  };
+
   const handleSendCustomNotification = async () => {
     if (!notifTitle.trim() || !notifBody.trim()) {
       Alert.alert("Error", "Title and body are required");
@@ -554,6 +528,7 @@ const ChallengeCreation: React.FC = () => {
       );
       setNotifTitle("");
       setNotifBody("");
+      setTwoDayNotifEnglishPreview("");
       setSelectedUserIds([]);
     } catch (error) {
       console.error("Error sending custom notification:", error);
@@ -639,13 +614,12 @@ const ChallengeCreation: React.FC = () => {
             <Text style={styles.analyticsLabel}>Comments (7d)</Text>
           </View>
 
-          <TouchableOpacity style={styles.analyticsCard} onPress={() => setShowFeedbackList((v) => !v)}>
+          <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
               {analyticsLoading ? '…' : analytics?.feedback7d ?? '—'}
             </Text>
             <Text style={styles.analyticsLabel}>Feedback (7d)</Text>
-            <Text style={styles.analyticsHint}>{showFeedbackList ? 'Hide feedback' : 'Tap to view recent feedback'}</Text>
-          </TouchableOpacity>
+          </View>
 
           <View style={styles.analyticsCard}>
             <Text style={styles.analyticsValue}>
@@ -708,26 +682,6 @@ const ChallengeCreation: React.FC = () => {
             </View>
           </View>
         </View>
-
-        {showFeedbackList && (
-          <View style={styles.chartWideCard}>
-            <Text style={styles.chartTitle}>Recent Feedback (Most Recent First)</Text>
-            {feedbackLoading ? (
-              <Text style={styles.analyticsHint}>Loading feedback…</Text>
-            ) : feedbackEntries.length === 0 ? (
-              <Text style={styles.analyticsHint}>No feedback found.</Text>
-            ) : (
-              feedbackEntries.map((f) => (
-                <View key={f.id} style={styles.feedbackRow}>
-                  <Text style={styles.feedbackMeta}>
-                    {(f.user?.username && `@${f.user.username}`) || f.user?.name || "Unknown user"} · {new Date(f.created_at).toLocaleString()}
-                  </Text>
-                  <Text style={styles.feedbackMessage}>{f.message}</Text>
-                </View>
-              ))
-            )}
-          </View>
-        )}
 
         <View style={styles.chartWideCard}>
           <Text style={styles.chartTitle}>Users by Total Challenges Completed</Text>
@@ -835,6 +789,18 @@ const ChallengeCreation: React.FC = () => {
 
         <Text style={styles.sectionTitle}>Send Notification</Text>
 
+        <View style={styles.twoDayRow}>
+          <TouchableOpacity
+            style={[styles.twoDayButton, generatingTwoDayNotif && styles.twoDayButtonDisabled]}
+            onPress={handleGenerateTwoDayNotification}
+            disabled={generatingTwoDayNotif}
+          >
+            <Text style={styles.twoDayButtonText}>
+              {twoDayNotifEnglishPreview ? "Regenerate 2-day" : "Generate 2-day"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.label}>Title</Text>
         <TextInput
           style={styles.input}
@@ -843,7 +809,7 @@ const ChallengeCreation: React.FC = () => {
           placeholder="Notification title"
         />
 
-        <Text style={styles.label}>Body</Text>
+        <Text style={styles.label}>Body (Italian)</Text>
         <TextInput
           style={[styles.input, { minHeight: 80 }]}
           value={notifBody}
@@ -851,6 +817,13 @@ const ChallengeCreation: React.FC = () => {
           placeholder="Notification message"
           multiline
         />
+
+        {twoDayNotifEnglishPreview ? (
+          <View style={styles.englishPreviewCard}>
+            <Text style={styles.englishPreviewLabel}>English preview</Text>
+            <Text style={styles.englishPreviewText}>{twoDayNotifEnglishPreview}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.recipientToggle}>
           <TouchableOpacity
@@ -1238,21 +1211,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#666',
   },
-  feedbackRow: {
-    borderTopColor: '#f1f1f1',
-    borderTopWidth: 1,
-    paddingVertical: 8,
-  },
-  feedbackMeta: {
-    color: '#777',
-    fontSize: 11,
-    marginBottom: 4,
-  },
-  feedbackMessage: {
-    color: colors.light.text,
-    fontSize: 13,
-    lineHeight: 18,
-  },
   barChartRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
@@ -1286,6 +1244,42 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   // Notification styles
+  twoDayRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    marginTop: 8,
+  },
+  twoDayButton: {
+    backgroundColor: colors.light.secondary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  twoDayButtonDisabled: {
+    opacity: 0.6,
+  },
+  twoDayButtonText: {
+    color: colors.light.text,
+    fontWeight: "700",
+  },
+  englishPreviewCard: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#eee",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 12,
+  },
+  englishPreviewLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#666",
+    marginBottom: 6,
+  },
+  englishPreviewText: {
+    fontSize: 14,
+    color: "#333",
+  },
   recipientToggle: {
     flexDirection: "row",
     marginTop: 16,
