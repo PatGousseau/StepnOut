@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.light.background,
+    backgroundColor: colors.light.cardBg,
     borderRadius: 12,
     padding: 12,
     marginTop: 10,
