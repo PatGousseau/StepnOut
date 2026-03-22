@@ -75,7 +75,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     };
 
     return (
-      <View style={styles.content}>
+      <View style={[styles.content, showPastChallengePosts && styles.contentInList]}>
         <Text style={styles.title}>{t("Challenge")}</Text>
         <Text style={styles.endsIn}>
           {challenge.daysRemaining > 0
@@ -105,8 +105,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
             ))}
           </View>
         )}
-
-        {showPastChallengePosts && <Text style={styles.sectionTitle}>{t("Posts")}</Text>}
       </View>
     );
   }, [challenge, language, pastChallenges, showPastChallengePosts, t]);
@@ -195,7 +193,12 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   listContent: {
+    padding: 16,
     paddingBottom: 24,
+  },
+  contentInList: {
+    marginHorizontal: 0,
+    marginVertical: 0,
   },
   pastChallengesContainer: {
     marginTop: 16,

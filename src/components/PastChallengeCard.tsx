@@ -23,10 +23,13 @@ export function PastChallengeCard({
         <Text style={styles.title} numberOfLines={2}>
           {challenge.title}
         </Text>
-        <View style={styles.metaRow}>
-          <MaterialIcons name="history" size={14} color={colors.light.lightText} />
-          <Text style={styles.metaText}>{" "}past challenge</Text>
-        </View>
+        <Text
+          style={styles.description}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {challenge.description}
+        </Text>
       </View>
       <MaterialIcons name="chevron-right" size={24} color={colors.light.lightText} />
     </TouchableOpacity>
@@ -59,13 +62,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-  },
-  metaText: {
+  description: {
     color: colors.light.lightText,
     fontSize: 12,
+    marginTop: 6,
   },
 });
