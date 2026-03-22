@@ -36,10 +36,11 @@ export const imageService = {
     size: "tiny" | "small" | "medium" | "large" = "medium"
   ): string {
     const sizes = {
-      tiny: { quality: 60, width: 56, height: 56 },
-      small: { quality: 75, width: 80, height: 80 },
-      medium: { quality: 85, width: 200, height: 200 },
-      large: { quality: 90, width: 600, height: 600 },
+      // cards render at ~56x56, so request ~2x for retina sharpness
+      tiny: { quality: 80, width: 120, height: 120 },
+      small: { quality: 80, width: 200, height: 200 },
+      medium: { quality: 85, width: 400, height: 400 },
+      large: { quality: 90, width: 800, height: 800 },
     };
     return buildTransformUrl(filePath, sizes[size]);
   },
