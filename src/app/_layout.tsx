@@ -386,7 +386,12 @@ function RootLayoutNav() {
         />
         <Stack.Screen
           name="challenge/[id]"
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+            // keep back swipe only from the edge (full-screen swipe conflicts with vertical scrolling)
+            fullScreenGestureEnabled: false,
+            gestureResponseDistance: 24,
+          }}
         />
       </Stack>
 
