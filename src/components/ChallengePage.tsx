@@ -75,22 +75,24 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     };
 
     return (
-      <View style={[styles.content, showPastChallengePosts && styles.contentInList]}>
-        <Text style={styles.title}>{t("Challenge")}</Text>
-        <Text style={styles.endsIn}>
-          {challenge.daysRemaining > 0
-            ? t(challenge.daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days", {
-                days: challenge.daysRemaining,
-              })
-            : t("Past challenge")}
-        </Text>
-        <ChallengeCard challenge={localizedChallenge} />
-        <PatrizioExample challenge={localizedChallenge} />
+      <View>
+        <View style={[styles.content, showPastChallengePosts && styles.contentInList]}>
+          <Text style={styles.title}>{t("Challenge")}</Text>
+          <Text style={styles.endsIn}>
+            {challenge.daysRemaining > 0
+              ? t(challenge.daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days", {
+                  days: challenge.daysRemaining,
+                })
+              : t("Past challenge")}
+          </Text>
+          <ChallengeCard challenge={localizedChallenge} />
+          <PatrizioExample challenge={localizedChallenge} />
 
-        {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
+          {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
+        </View>
 
         {challenge.daysRemaining > 0 && pastChallenges.length > 0 && (
-          <View style={styles.pastChallengesContainer}>
+          <View style={styles.pastChallengesOuter}>
             <Text style={styles.sectionTitle}>{t("Past challenges")}</Text>
             {pastChallenges.map((c) => (
               <PastChallengeCard
@@ -200,8 +202,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 0,
     marginVertical: 0,
   },
-  pastChallengesContainer: {
+  pastChallengesOuter: {
+    marginHorizontal: 16,
     marginTop: 16,
+    marginBottom: 24,
   },
   sectionTitle: {
     color: colors.light.primary,
