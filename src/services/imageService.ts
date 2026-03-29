@@ -31,6 +31,20 @@ const buildTransformUrl = (filePath: string, opts: ImageTransformOptions): strin
 };
 
 export const imageService = {
+  getChallengeImageUrlSync(
+    filePath: string,
+    size: "tiny" | "small" | "medium" | "large" = "medium"
+  ): string {
+    const sizes = {
+      // cards render at ~56x56, so request ~2x for retina sharpness
+      tiny: { quality: 80, width: 120, height: 120 },
+      small: { quality: 80, width: 200, height: 200 },
+      medium: { quality: 85, width: 400, height: 400 },
+      large: { quality: 90, width: 800, height: 800 },
+    };
+    return buildTransformUrl(filePath, sizes[size]);
+  },
+
   getProfileImageUrlSync(filePath: string, size: "tiny" | "small" | "medium" | "large" = "medium"): string {
     const sizes = {
       tiny: { quality: 60, width: 50, height: 50 },

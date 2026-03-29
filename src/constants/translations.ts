@@ -222,6 +222,7 @@ export const translations = {
   Popular: "Popolari",
   "Mark as complete": "Segna come completato",
   "Challenge completed!": "Sfida completata!",
+  "Past challenges": "Sfide passate",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
   "Share your thoughts...": "Condividi i tuoi pensieri...",
   "You must be logged in to submit a post.": "Devi essere loggato per pubblicare un post.",
