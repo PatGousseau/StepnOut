@@ -66,7 +66,10 @@ function formatPosts(posts: any[], likedPosts: PostLikes): { posts: Post[]; user
 
     let mediaUrl = post.media?.file_path;
     if (mediaUrl && !mediaUrl.startsWith('http')) {
-      mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
+      const isVideoFile = /\.(mp4|mov|avi|wmv)$/i.test(mediaUrl.split('?')[0]);
+      mediaUrl = isVideoFile
+        ? imageService.getPublicMediaUrlSync(mediaUrl)
+        : imageService.getPostImageUrlSync(mediaUrl);
     }
 
     return {
@@ -376,7 +379,10 @@ export const useFetchHomeData = (
 
       let mediaUrl = data.media?.file_path;
       if (mediaUrl && !mediaUrl.startsWith('http')) {
-        mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
+        const isVideoFile = /\.(mp4|mov|avi|wmv)$/i.test(mediaUrl.split('?')[0]);
+        mediaUrl = isVideoFile
+          ? imageService.getPublicMediaUrlSync(mediaUrl)
+          : imageService.getPostImageUrlSync(mediaUrl);
       }
 
       return {

@@ -31,6 +31,11 @@ const buildTransformUrl = (filePath: string, opts: ImageTransformOptions): strin
 };
 
 export const imageService = {
+  getPublicMediaUrlSync(filePath: string): string {
+    const path = normalizePath(filePath);
+    if (!path) return "";
+    return `${supabaseUrl}/storage/v1/object/public/challenge-uploads/${path}`;
+  },
   getChallengeImageUrlSync(
     filePath: string,
     size: "tiny" | "small" | "medium" | "large" = "medium"
