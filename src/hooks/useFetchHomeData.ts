@@ -10,6 +10,7 @@ import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { postService } from "../services/postService";
 import { captureEvent } from "../lib/posthog";
 import { FEED_EVENTS } from "../constants/analyticsEvents";
+import { isVideo } from "../utils/utils";
 
 type LoadingStage =
   | 'idle'
@@ -48,6 +49,15 @@ interface CommentRow {
   profiles: { username: string } | null;
 }
 
+function resolveMediaUrl(filePath?: string | null): string | null {
+  if (!filePath) return null;
+  if (filePath.startsWith('http')) return filePath;
+
+  return isVideo(filePath)
+    ? imageService.getPublicMediaUrlSync(filePath)
+    : imageService.getPostImageUrlSync(filePath);
+}
+
 function formatPosts(posts: any[], likedPosts: PostLikes): { posts: Post[]; userMap: UserMap } {
   const extractedUserMap: UserMap = {};
 
@@ -64,13 +74,7 @@ function formatPosts(posts: any[], likedPosts: PostLikes): { posts: Post[]; user
       } as UserProfile;
     }
 
-    let mediaUrl = post.media?.file_path;
-    if (mediaUrl && !mediaUrl.startsWith('http')) {
-      const isVideoFile = /\.(mp4|mov|avi|wmv)$/i.test(mediaUrl.split('?')[0]);
-      mediaUrl = isVideoFile
-        ? imageService.getPublicMediaUrlSync(mediaUrl)
-        : imageService.getPostImageUrlSync(mediaUrl);
-    }
+    const mediaUrl = resolveMediaUrl(post.media?.file_path);
 
     return {
       ...post,
@@ -377,13 +381,7 @@ export const useFetchHomeData = (
         .filter((c) => c.profiles?.username && c.body)
         .map((c) => ({ username: c.profiles!.username, text: c.body }));
 
-      let mediaUrl = data.media?.file_path;
-      if (mediaUrl && !mediaUrl.startsWith('http')) {
-        const isVideoFile = /\.(mp4|mov|avi|wmv)$/i.test(mediaUrl.split('?')[0]);
-        mediaUrl = isVideoFile
-          ? imageService.getPublicMediaUrlSync(mediaUrl)
-          : imageService.getPostImageUrlSync(mediaUrl);
-      }
+      const mediaUrl = resolveMediaUrl(data.media?.file_path);
 
       return {
         ...data,
