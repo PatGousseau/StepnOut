@@ -38,7 +38,7 @@ export const translations = {
   Language: "Lingua",
   "Share with friends": "Condividi con gli amici",
   "Follow us on Instagram": "Seguici su Instagram",
-"Sign out": "Esci",
+  "Sign out": "Esci",
   "Your Posts": "I tuoi Post",
   Posts: "Post",
   All: "Tutti",
@@ -86,7 +86,6 @@ export const translations = {
   Skip: "Salta",
   "Inspire someone!": "Ispira qualcuno!",
   "Share with a friend": "Condividi con un amico",
-  "Skip": "Salta",
   "Share to Instagram Story": "Aggiungi alla tua Storia",
   "Sharing...": "Condivisione...",
   "No comments yet!": "Ancora nessun commento!",
@@ -307,4 +306,5 @@ export const translations = {
   "Unlocked": "Sbloccati",
   "Obtained": "Ottenuto",
   "All badges": "Tutti i badge",
+  "Please enable notifications in device Settings > Apps > StepnOut.": "Abilita le notifiche nelle impostazioni del dispositivo > App > StepnOut."
 };

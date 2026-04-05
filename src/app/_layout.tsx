@@ -1,7 +1,7 @@
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { Stack, router } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState, Platform, ToastAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
@@ -43,7 +43,6 @@ SplashScreen.preventAutoHideAsync();
 
 // Create a QueryClient instance with defaults
 const NOTIF_BANNER_DISABLED_KEY = 'notifications_banner_disabled';
-const PUSH_NOTIFICATIONS_BANNER_ENABLED = Platform.OS !== 'android';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -157,10 +156,6 @@ function RootLayoutNav() {
 
   useEffect(() => {
     const maybeShowNotificationsBanner = async () => {
-      if (!PUSH_NOTIFICATIONS_BANNER_ENABLED) {
-        setShowNotificationsBanner(false);
-        return;
-      }
 
       if (!session?.user?.id || loading) return;
 
@@ -286,6 +281,7 @@ function RootLayoutNav() {
     const userId = session?.user?.id;
     if (!userId) return;
 
+    // check current notifications permissions
     const { status } = await Notifications.getPermissionsAsync();
     captureEvent(UI_EVENTS.NOTIFICATIONS_BANNER_ENABLE_CLICKED, {
       permission_status: status,
@@ -297,7 +293,16 @@ function RootLayoutNav() {
       return;
     }
 
-    await Linking.openSettings();
+    if (Platform.OS === 'android') {
+
+      ToastAndroid.show(
+        t("Please enable notifications in device Settings > Apps > StepnOut."),
+        ToastAndroid.LONG
+      );
+    }
+    setTimeout(() => {
+      Linking.openSettings();
+    }, 1000);
   };
 
   const handleIgnoreNotificationsBanner = async () => {
@@ -336,7 +341,7 @@ function RootLayoutNav() {
         isDetailPage={isDetailPage}
         hideLogo={hideLogo}
       />
-      {PUSH_NOTIFICATIONS_BANNER_ENABLED && showNotificationsBanner && !hideLogo && (
+      {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
             <Ionicons name="notifications-outline" size={16} color={colors.light.primary} />
