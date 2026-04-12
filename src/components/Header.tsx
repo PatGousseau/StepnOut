@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/Colors'; 
 import { router } from 'expo-router';
 import { useUploadProgress } from '../contexts/UploadProgressContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   onNotificationPress: () => void;
@@ -24,6 +25,7 @@ const Header = ({
   hideLogo = false
 }: HeaderProps) => {
   const { uploadProgress, uploadMessage } = useUploadProgress();
+  const { isAdmin } = useAuth();
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const messageOpacity = useRef(new Animated.Value(0)).current;
 
@@ -122,6 +124,14 @@ const Header = ({
         )}
         
         <View style={styles.headerRight}>
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.searchIcon}
+              onPress={() => router.push('/search-users')}
+            >
+              <Ionicons name="search" size={24} color={colors.light.primary} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity 
             style={styles.feedbackIcon}
             onPress={onFeedbackPress}
@@ -162,6 +172,10 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  searchIcon: {
+    marginRight: 14,
+    position: 'relative',
   },
   feedbackIcon: {
     marginRight: 16,

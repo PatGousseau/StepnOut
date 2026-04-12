@@ -72,7 +72,8 @@ function RootLayoutNav() {
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
     pathname.includes('/challenge/') ||
-    pathname === '/badges';
+    pathname === '/badges' ||
+    pathname === '/search-users';
 
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
