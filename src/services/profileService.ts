@@ -4,6 +4,13 @@ import { Alert } from "react-native";
 import { User, UserProfile } from "../models/User";
 import { imageService } from "./imageService";
 
+export interface UserSearchResult {
+  id: string;
+  username: string;
+  name: string;
+  profileImageUrl: string | null;
+}
+
 export const profileService = {
   async updateProfilePicture(
     userId: string,
@@ -265,8 +272,8 @@ export const profileService = {
       let profileImageUrl = null;
 
       // Handle profile_media - it can be an object or array from Supabase
-      const profileMedia = Array.isArray(data.profile_media) 
-        ? data.profile_media[0] 
+      const profileMedia = Array.isArray(data.profile_media)
+        ? data.profile_media[0]
         : data.profile_media;
 
       if (profileMedia?.file_path) {
@@ -291,5 +298,81 @@ export const profileService = {
       console.error("Error fetching profile:", error);
       throw error; // Re-throw for React Query to handle
     }
+  },
+
+  async searchUsers(query: string, limit: number = 20): Promise<UserSearchResult[]> {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    const searchColumns = `
+      id,
+      username,
+      name,
+      profile_media:media!profiles_profile_media_id_fkey (
+        file_path
+      )
+    `;
+
+    const [usernameRes, nameRes] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select(searchColumns)
+        .ilike("username", `%${normalizedQuery}%`)
+        .limit(limit),
+      supabase
+        .from("profiles")
+        .select(searchColumns)
+        .ilike("name", `%${normalizedQuery}%`)
+        .limit(limit),
+    ]);
+
+    if (usernameRes.error) throw usernameRes.error;
+    if (nameRes.error) throw nameRes.error;
+
+    const merged = new Map<string, {
+      id: string;
+      username: string | null;
+      name: string | null;
+      profile_media?: { file_path?: string | null } | Array<{ file_path?: string | null }> | null;
+    }>();
+
+    [...(usernameRes.data || []), ...(nameRes.data || [])].forEach((row) => {
+      if (!merged.has(row.id)) {
+        merged.set(row.id, row);
+      }
+    });
+
+    const users = await Promise.all(
+      Array.from(merged.values()).slice(0, limit).map(async (row) => {
+        const profileMedia = Array.isArray(row.profile_media)
+          ? row.profile_media[0]
+          : row.profile_media;
+
+        let profileImageUrl: string | null = null;
+        if (profileMedia?.file_path) {
+          try {
+            const urls = await imageService.getProfileImageUrl(profileMedia.file_path, "small");
+            profileImageUrl = urls.fullUrl;
+          } catch (error) {
+            console.error("Error transforming profile image:", error);
+          }
+        }
+
+        return {
+          id: row.id,
+          username: row.username || "Unknown",
+          name: row.name || "Unknown",
+          profileImageUrl,
+        };
+      })
+    );
+
+    return users.sort((a, b) => {
+      const aStarts = a.username.toLowerCase().startsWith(normalizedQuery.toLowerCase()) ? 1 : 0;
+      const bStarts = b.username.toLowerCase().startsWith(normalizedQuery.toLowerCase()) ? 1 : 0;
+      return bStarts - aStarts;
+    });
   },
 };

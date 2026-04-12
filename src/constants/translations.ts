@@ -307,4 +307,8 @@ export const translations = {
   "Unlocked": "Sbloccati",
   "Obtained": "Ottenuto",
   "All badges": "Tutti i badge",
+  "Search users": "Cerca utenti",
+  "Search by name or username": "Cerca per nome o nome utente",
+  "Start typing to find people": "Inizia a digitare per trovare persone",
+  "No users found": "Nessun utente trovato",
 };
