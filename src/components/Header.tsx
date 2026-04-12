@@ -2,10 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { Image, View, StyleSheet, TouchableOpacity, SafeAreaView, Platform, Animated } from 'react-native';
 import { Text } from './StyledText';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/Colors'; 
+import { colors } from '../constants/Colors';
 import { router } from 'expo-router';
 import { useUploadProgress } from '../contexts/UploadProgressContext';
-import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   onNotificationPress: () => void;
@@ -16,29 +15,26 @@ interface HeaderProps {
   hideLogo?: boolean;
 }
 
-const Header = ({ 
-  onNotificationPress, 
+const Header = ({
+  onNotificationPress,
   onMenuPress,
-  onFeedbackPress, 
-  unreadCount, 
+  onFeedbackPress,
+  unreadCount,
   isDetailPage = false,
   hideLogo = false
 }: HeaderProps) => {
   const { uploadProgress, uploadMessage } = useUploadProgress();
-  const { isAdmin } = useAuth();
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const messageOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (uploadProgress !== null) {
-      // Smoothly animate to the new progress value
       Animated.timing(progressAnimation, {
         toValue: uploadProgress,
         duration: 300,
         useNativeDriver: false
       }).start();
 
-      // Show message with fade in if present
       if (uploadMessage) {
         Animated.timing(messageOpacity, {
           toValue: 1,
@@ -53,13 +49,12 @@ const Header = ({
         }).start();
       }
     } else {
-      // Reset progress when upload is complete
       Animated.timing(progressAnimation, {
         toValue: 0,
         duration: 200,
         useNativeDriver: false
       }).start();
-      
+
       Animated.timing(messageOpacity, {
         toValue: 0,
         duration: 200,
@@ -73,20 +68,20 @@ const Header = ({
       {uploadProgress !== null && (
         <View style={styles.uploadContainer}>
           <View style={styles.progressBarContainer}>
-            <Animated.View 
+            <Animated.View
               style={[
-                styles.progressBarFill, 
-                { 
+                styles.progressBarFill,
+                {
                   width: progressAnimation.interpolate({
                     inputRange: [0, 100],
                     outputRange: ['0%', '100%']
                   })
                 }
-              ]} 
+              ]}
             />
           </View>
           {uploadMessage && (
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.messageContainer,
                 { opacity: messageOpacity }
@@ -114,31 +109,29 @@ const Header = ({
             <Image source={require('../assets/images/logo.png')} style={styles.logo} />
           )}
         </TouchableOpacity>
-        
+
         {!hideLogo && (
-          <Image 
-            source={require('../assets/images/header-logo.png')} 
+          <Image
+            source={require('../assets/images/header-logo.png')}
             style={styles.headerLogo}
             resizeMode="contain"
           />
         )}
-        
+
         <View style={styles.headerRight}>
-          {isAdmin && (
-            <TouchableOpacity
-              style={styles.searchIcon}
-              onPress={() => router.push('/search-users')}
-            >
-              <Ionicons name="search" size={24} color={colors.light.primary} />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity 
+          <TouchableOpacity
+            style={styles.searchIcon}
+            onPress={() => router.push('/search')}
+          >
+            <Ionicons name="search" size={24} color={colors.light.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.feedbackIcon}
             onPress={onFeedbackPress}
           >
             <Ionicons name="help-circle-outline" size={26} color={colors.light.primary} />
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.notificationIcon}
             onPress={onNotificationPress}
           >
@@ -202,7 +195,6 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   safeArea: {
-    // backgroundColor: colors.light.primary,
     backgroundColor: colors.light.background
   },
   headerLogo: {
