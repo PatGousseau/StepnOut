@@ -21,6 +21,7 @@ import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
 import { ReactionsProvider } from '../contexts/ReactionsContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
+import { BookmarksProvider } from '../contexts/BookmarksContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
@@ -72,6 +73,9 @@ function RootLayoutNav() {
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
     pathname.includes('/challenge/') ||
+    pathname.includes('/esplora/piece/') ||
+    pathname.includes('/esplora/category/') ||
+    pathname === '/esplora/saved' ||
     pathname === '/badges' ||
     pathname === '/search-users';
 
@@ -399,6 +403,15 @@ function RootLayoutNav() {
             gestureResponseDistance: 24,
           }}
         />
+        <Stack.Screen
+          name="esplora"
+          options={{
+            headerShown: false,
+            // edge-only swipe so it doesn't steal horizontal gestures from PagerView
+            fullScreenGestureEnabled: false,
+            gestureResponseDistance: 24,
+          }}
+        />
       </Stack>
 
       <NotificationSidebar
@@ -511,9 +524,11 @@ export default function Layout() {
             <MenuProvider>
               <LikesProvider>
                 <ReactionsProvider>
-                  <UploadProgressProvider>
-                    <RootLayoutNav />
-                  </UploadProgressProvider>
+                  <BookmarksProvider>
+                    <UploadProgressProvider>
+                      <RootLayoutNav />
+                    </UploadProgressProvider>
+                  </BookmarksProvider>
                 </ReactionsProvider>
               </LikesProvider>
             </MenuProvider>

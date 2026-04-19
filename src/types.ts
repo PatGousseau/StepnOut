@@ -122,3 +122,39 @@ export interface Challenge {
     name: string;
     profileImageUrl: string | null;
   }
+
+  export type ContentCategory =
+    | 'fear'
+    | 'vulnerability'
+    | 'connection'
+    | 'stories'
+    | 'science'
+    | 'practice';
+
+  export type ContentClosingKind = 'prompt' | 'cta';
+
+  export interface ContentPiece {
+    id: number;
+    title: string;
+    category: ContentCategory;
+    hook: string;
+    cards: string[];
+    closing_kind: ContentClosingKind;
+    closing_text: string;
+    closing_challenge_id: number | null;
+    external_link_url: string | null;
+    external_link_label: string | null;
+    cover_image_path: string | null;
+    linked_challenge_id: number | null;
+    is_published: boolean;
+    is_featured: boolean;
+    published_at: string | null;
+    created_at: string;
+    updated_at: string;
+  }
+
+  export interface ContentBookmark {
+    user_id: string;
+    piece_id: number;
+    created_at: string;
+  }
