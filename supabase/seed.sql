@@ -81,6 +81,189 @@ VALUES
 SELECT setval('public.challenges_id_seq', (SELECT MAX(id) FROM public.challenges));
 
 -- =============================================================================
+-- CONTENT PIECES
+-- =============================================================================
+
+INSERT INTO public.content_pieces (
+  id,
+  title,
+  category,
+  hook,
+  cards,
+  closing_kind,
+  closing_text,
+  closing_challenge_id,
+  external_link_url,
+  external_link_label,
+  cover_image_path,
+  linked_challenge_id,
+  is_published,
+  is_featured,
+  published_at,
+  created_at,
+  updated_at
+)
+VALUES
+  (
+    1,
+    'Courage usually looks ordinary',
+    'fear',
+    'Most fear does not show up as panic. It shows up as a tiny pause before a small honest action.',
+    '[
+      "We often imagine bravery as a dramatic moment, but most growth comes from choosing not to retreat in everyday situations.",
+      "The moment before you speak, ask, admit, or begin is usually where fear does its loudest work.",
+      "If you can stay present for ten more seconds instead of escaping, you often discover the thing was survivable all along."
+    ]'::jsonb,
+    'cta',
+    'Try the challenge and notice what fear tells you right before you act.',
+    1,
+    null,
+    null,
+    'esplora/fear-ordinary-courage.jpg',
+    1,
+    true,
+    true,
+    now() - interval '2 days',
+    now() - interval '3 days',
+    now() - interval '2 days'
+  ),
+  (
+    2,
+    'Vulnerability is not oversharing',
+    'vulnerability',
+    'Being open is not about saying everything. It is about saying one true thing without hiding behind performance.',
+    '[
+      "A vulnerable moment can be as small as admitting you are nervous, asking for help, or saying that something mattered to you.",
+      "What makes it vulnerable is not the size of the confession. It is the absence of armor.",
+      "The goal is not to expose yourself recklessly. The goal is to be real enough that connection becomes possible."
+    ]'::jsonb,
+    'prompt',
+    'What is one sentence you could say today that is honest, specific, and slightly scary?',
+    null,
+    null,
+    null,
+    'esplora/vulnerability-honesty.jpg',
+    null,
+    true,
+    false,
+    now() - interval '5 days',
+    now() - interval '6 days',
+    now() - interval '5 days'
+  ),
+  (
+    3,
+    'Connection starts before confidence',
+    'connection',
+    'You do not need to feel socially fluent before reaching out. Contact often creates the confidence you were waiting for.',
+    '[
+      "A lot of people delay connection until they feel interesting, calm, witty, or fully ready.",
+      "But warmth is built through participation, not preparation. A simple question is often enough to open the door.",
+      "The first move can be imperfect and still meaningful. Most people remember sincerity more than polish."
+    ]'::jsonb,
+    'cta',
+    'Use this as permission to make the first move, even if it feels a little awkward.',
+    1,
+    null,
+    null,
+    'esplora/connection-first-move.jpg',
+    1,
+    true,
+    false,
+    now() - interval '8 days',
+    now() - interval '9 days',
+    now() - interval '8 days'
+  ),
+  (
+    4,
+    'The story in your head is not always the room you are in',
+    'stories',
+    'Before many difficult moments, we invent a social disaster in advance and then react to our own prediction.',
+    '[
+      "Your brain is constantly trying to protect you by forecasting embarrassment, rejection, and regret.",
+      "That forecast can feel so convincing that it becomes indistinguishable from reality.",
+      "A useful question is: what do I actually know right now, and what part did I write myself?"
+    ]'::jsonb,
+    'prompt',
+    'What story are you telling yourself about a situation this week, and what facts do you actually have?',
+    null,
+    null,
+    null,
+    'esplora/stories-forecast.jpg',
+    null,
+    true,
+    false,
+    now() - interval '11 days',
+    now() - interval '12 days',
+    now() - interval '11 days'
+  ),
+  (
+    5,
+    'Confidence follows exposure',
+    'science',
+    'Your nervous system learns from repetition more than from pep talks.',
+    '[
+      "Avoidance can create short-term relief, but it also teaches the brain that the situation really was dangerous.",
+      "Gradual exposure works because each repetition gives your body new evidence: I felt activated, and I was still okay.",
+      "The goal is not to eliminate discomfort instantly. It is to reduce the gap between discomfort and action over time."
+    ]'::jsonb,
+    'cta',
+    'Pick a challenge that is uncomfortable but doable, and let repetition do the deeper work.',
+    3,
+    'https://www.apa.org/topics/anxiety',
+    'Read more',
+    'esplora/science-exposure.jpg',
+    3,
+    true,
+    false,
+    now() - interval '14 days',
+    now() - interval '15 days',
+    now() - interval '14 days'
+  ),
+  (
+    6,
+    'Make the challenge smaller, not softer',
+    'practice',
+    'When something feels too hard, the answer is often to reduce the scope rather than abandon the intention.',
+    '[
+      "If talking to a stranger feels impossible, start by making eye contact and saying hi.",
+      "If public speaking feels huge, begin by asking one question in a group setting.",
+      "A smaller version still counts because consistency changes identity faster than occasional heroics."
+    ]'::jsonb,
+    'cta',
+    'Shrink the challenge until it feels possible today, then complete that version on purpose.',
+    3,
+    null,
+    null,
+    'esplora/practice-make-it-smaller.jpg',
+    3,
+    true,
+    false,
+    now() - interval '17 days',
+    now() - interval '18 days',
+    now() - interval '17 days'
+  )
+ON CONFLICT (id) DO UPDATE
+SET
+  title = EXCLUDED.title,
+  category = EXCLUDED.category,
+  hook = EXCLUDED.hook,
+  cards = EXCLUDED.cards,
+  closing_kind = EXCLUDED.closing_kind,
+  closing_text = EXCLUDED.closing_text,
+  closing_challenge_id = EXCLUDED.closing_challenge_id,
+  external_link_url = EXCLUDED.external_link_url,
+  external_link_label = EXCLUDED.external_link_label,
+  cover_image_path = EXCLUDED.cover_image_path,
+  linked_challenge_id = EXCLUDED.linked_challenge_id,
+  is_published = EXCLUDED.is_published,
+  is_featured = EXCLUDED.is_featured,
+  published_at = EXCLUDED.published_at,
+  created_at = EXCLUDED.created_at,
+  updated_at = EXCLUDED.updated_at;
+
+SELECT setval('public.content_pieces_id_seq', (SELECT MAX(id) FROM public.content_pieces));
+
+-- =============================================================================
 -- POSTS (challenge submissions and discussion posts)
 -- =============================================================================
 
