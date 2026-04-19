@@ -222,20 +222,42 @@ function RootLayoutNav() {
         const postId = data['postId'] ?? data['post_id'];
         const challengeId = data['challengeId'] ?? data['challenge_id'];
 
+        let destination: 'post' | 'challenge' | 'none' = 'none';
+        let postIdStr: string | undefined;
+        let challengeIdStr: string | undefined;
+
         if (typeof postId === 'string' || typeof postId === 'number') {
-          const postIdStr = String(postId);
-          if (postIdStr.length > 0) {
-            router.push(`/post/${postIdStr}`);
-            return;
+          const s = String(postId);
+          if (s.length > 0) {
+            destination = 'post';
+            postIdStr = s;
+          }
+        }
+        if (destination === 'none' && (typeof challengeId === 'string' || typeof challengeId === 'number')) {
+          const s = String(challengeId);
+          if (s.length > 0) {
+            destination = 'challenge';
+            challengeIdStr = s;
           }
         }
 
-        if (typeof challengeId === 'string' || typeof challengeId === 'number') {
-          const challengeIdStr = String(challengeId);
-          if (challengeIdStr.length > 0) {
-            router.push(`/challenge/${challengeIdStr}`);
-            return;
-          }
+        const typeVal = data['type'];
+        captureEvent(UI_EVENTS.PUSH_NOTIFICATION_CLICKED, {
+          destination,
+          ...(postIdStr ? { post_id: postIdStr } : {}),
+          ...(challengeIdStr ? { challenge_id: challengeIdStr } : {}),
+          ...(typeof typeVal === 'string' ? { notification_type: typeVal } : {}),
+          ...(response.actionIdentifier ? { action_identifier: response.actionIdentifier } : {}),
+        });
+
+        if (postIdStr) {
+          router.push(`/post/${postIdStr}`);
+          return;
+        }
+
+        if (challengeIdStr) {
+          router.push(`/challenge/${challengeIdStr}`);
+          return;
         }
 
         console.log('Notification tapped (no navigable data):', data);
