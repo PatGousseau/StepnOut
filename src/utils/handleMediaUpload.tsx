@@ -25,7 +25,8 @@ export interface MediaSelectionResult {
   pendingUpload: {
     originalUri: string;
     fileName: string;
-    mediaType: string;
+    mediaType: 'image' | 'video' | 'audio';
+    contentType: string;
     thumbnailFileName: string | null;
   };
 }
@@ -115,6 +116,9 @@ export const selectMediaForPreview = async (
 
     if (dbError) throw dbError;
 
+    const uploadMediaType: MediaSelectionResult['pendingUpload']['mediaType'] = isVideoFile ? 'video' : 'image';
+    const contentType = isVideoFile ? 'video/mp4' : 'image/jpeg';
+
     return {
       mediaId: mediaData.id,
       previewUrl,
@@ -123,7 +127,8 @@ export const selectMediaForPreview = async (
       pendingUpload: {
         originalUri,
         fileName,
-        mediaType,
+        mediaType: uploadMediaType,
+        contentType,
         thumbnailFileName,
       },
     };
@@ -147,6 +152,7 @@ export const uploadMediaInBackground = async (
 ): Promise<string> => {
   try {
     const isVideoFile = pendingUpload.mediaType === "video";
+    const isAudioFile = pendingUpload.mediaType === "audio";
     let compressedUri;
 
     // For videos, also upload thumbnail in background if needed
@@ -185,8 +191,12 @@ export const uploadMediaInBackground = async (
       }
     }
 
-    // Compress media in background
-    if (isVideoFile) {
+    // Compress media in background (audio skips compression)
+    if (isAudioFile) {
+      if (onProgress) onProgress(10);
+      compressedUri = pendingUpload.originalUri;
+      if (onProgress) onProgress(70);
+    } else if (isVideoFile) {
       if (onProgress) onProgress(10); // Report compression start
 
       if (Video) {
@@ -233,7 +243,7 @@ export const uploadMediaInBackground = async (
     formData.append("file", {
       uri: compressedUri,
       name: pendingUpload.fileName,
-      type: pendingUpload.mediaType === "video" ? "video/mp4" : "image/jpeg",
+      type: pendingUpload.contentType,
     } as any);
 
     if (onProgress) onProgress(80);
@@ -429,4 +439,42 @@ export const uploadMedia = async (
     console.error("Error uploading file:", error);
     throw error;
   }
+};
+
+export const createVoiceMemoForPreview = async (options: {
+  uri: string;
+}): Promise<MediaSelectionResult> => {
+  const timestamp = Date.now();
+  const extMatch = options.uri.match(/\.(m4a|aac|caf|mp3|wav|ogg)$/i);
+  const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : ".m4a";
+  const fileName = `audio/${timestamp}${ext}`;
+  const contentType = ext === ".caf" ? "audio/x-caf" : "audio/m4a";
+
+  const { data: mediaData, error: dbError } = await supabase
+    .from("media")
+    .insert([
+      {
+        file_path: null,
+        thumbnail_path: null,
+        upload_status: "pending",
+      },
+    ])
+    .select("id")
+    .single();
+
+  if (dbError) throw dbError;
+
+  return {
+    mediaId: mediaData.id,
+    previewUrl: options.uri,
+    thumbnailUri: null,
+    isVideo: false,
+    pendingUpload: {
+      originalUri: options.uri,
+      fileName,
+      mediaType: "audio",
+      contentType,
+      thumbnailFileName: null,
+    },
+  };
 };
