@@ -37,12 +37,31 @@ type UserProfile = {
 };
 
 type AdminTimeseriesPoint = { date: string; count: number };
+type ChallengeLeaderboardItem = {
+  challengeId: number;
+  challengeTitle: string;
+  uniqueCompleters: number;
+  totalCompletions: number;
+  avgComfort: number | null;
+};
+
+type ActivationStep = {
+  key: string;
+  label: string;
+  count: number;
+  rateFromStart: number;
+};
 
 type AdminAnalytics = {
   userCount: number;
   newUsers7d: number;
+  newUsersPrev7d: number;
 
   weeklyActiveUsers7d: number;
+  weeklyActiveUsersPrev7d: number;
+  dau1d: number;
+  mau30d: number;
+  dauMauRatio: number;
   newCompleters7d: number;
   returningCompleters7d: number;
 
@@ -58,9 +77,14 @@ type AdminAnalytics = {
   completionBuckets: { label: string; percent: number; count: number }[];
 
   posts7d: number;
+  postsPrev7d: number;
   comments7d: number;
+  commentsPrev7d: number;
   feedback7d: number;
   pendingReports: number;
+
+  topChallenges30d: ChallengeLeaderboardItem[];
+  activationFunnel7d: ActivationStep[];
 };
 
 const dayKeyUtc = (iso: string) => {
@@ -99,7 +123,10 @@ const median = (xs: number[]) => {
   return s[Math.floor(s.length / 2)];
 };
 
-const fetchAll = async <T,>(fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>, pageSize = 1000) => {
+const fetchAll = async <T,>(
+  fetchPage: (from: number, to: number) => Promise<{ data: T[] | null; error: unknown }>,
+  pageSize = 1000
+) => {
   const out: T[] = [];
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await fetchPage(from, from + pageSize - 1);
@@ -158,10 +185,9 @@ const ChallengeCreation: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const pageSize = 1000;
-      let from = 0;
       const users: UserProfile[] = [];
 
-      while (true) {
+      for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, username, name")
@@ -174,7 +200,6 @@ const ChallengeCreation: React.FC = () => {
         users.push(...page);
 
         if (page.length < pageSize) break;
-        from += pageSize;
       }
 
       setAllUsers(users);
@@ -187,16 +212,35 @@ const ChallengeCreation: React.FC = () => {
     setAnalyticsLoading(true);
     try {
       const isoDaysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+      const since1d = isoDaysAgo(1);
       const since7d = isoDaysAgo(7);
       const since14d = isoDaysAgo(14);
       const since30d = isoDaysAgo(30);
+      const since14to7d = isoDaysAgo(14);
 
       const results = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", since7d),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since14to7d)
+          .lt("created_at", since7d),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since7d)
+          .not("username", "is", null)
+          .neq("username", ""),
 
         supabase.from("post").select("user_id").not("challenge_id", "is", null).gte("created_at", since7d),
-        supabase.from("post").select("user_id").not("challenge_id", "is", null).lt("created_at", since7d),
+        supabase
+          .from("post")
+          .select("user_id")
+          .not("challenge_id", "is", null)
+          .gte("created_at", since14to7d)
+          .lt("created_at", since7d),
+        supabase.from("post").select("user_id").not("challenge_id", "is", null).lt("created_at", since14to7d),
 
         supabase.from("challenges").select("id, title").eq("is_active", true).limit(1).maybeSingle(),
 
@@ -211,9 +255,34 @@ const ChallengeCreation: React.FC = () => {
           .select("id", { count: "exact", head: true })
           .gte("created_at", since7d)
           .eq("is_welcome", false),
+        supabase
+          .from("post")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since14to7d)
+          .lt("created_at", since7d)
+          .eq("is_welcome", false),
         supabase.from("comments").select("id", { count: "exact", head: true }).gte("created_at", since7d),
+        supabase
+          .from("comments")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", since14to7d)
+          .lt("created_at", since7d),
         supabase.from("feedback").select("id", { count: "exact", head: true }).gte("created_at", since7d),
         supabase.from("reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
+
+        supabase.from("post").select("user_id").gte("created_at", since1d).eq("is_welcome", false),
+        supabase.from("comments").select("user_id").gte("created_at", since1d),
+        supabase.from("likes").select("user_id").gte("created_at", since1d),
+
+        supabase.from("post").select("user_id").gte("created_at", since30d).eq("is_welcome", false),
+        supabase.from("comments").select("user_id").gte("created_at", since30d),
+        supabase.from("likes").select("user_id").gte("created_at", since30d),
+
+        supabase
+          .from("post")
+          .select("challenge_id, user_id, comfort_zone_rating, challenges:challenges(title, title_it)")
+          .not("challenge_id", "is", null)
+          .gte("created_at", since30d),
       ]);
 
       const err = results.map((r) => r.error).find(Boolean);
@@ -222,29 +291,57 @@ const ChallengeCreation: React.FC = () => {
       const [
         usersRes,
         newUsersRes,
+        newUsersPrev7dRes,
+        createdProfile7dRes,
         completers7dRes,
-        completersBefore7dRes,
+        completersPrev7dRes,
+        completersBeforePrev7dRes,
         activeChallengeRes,
         completions14dRes,
         newUsers14dRes,
         profiles30dRes,
         completions30dRes,
         posts7dRes,
+        postsPrev7dRes,
         comments7dRes,
+        commentsPrev7dRes,
         feedback7dRes,
         pendingReportsRes,
+        postsUsers1dRes,
+        commentsUsers1dRes,
+        likesUsers1dRes,
+        postsUsers30dRes,
+        commentsUsers30dRes,
+        likesUsers30dRes,
+        challengePosts30dRes,
       ] = results;
 
       const completers7d = new Set((completers7dRes.data || []).map((r) => r.user_id));
-      const completersBefore7d = new Set((completersBefore7dRes.data || []).map((r) => r.user_id));
+      const completersPrev7d = new Set((completersPrev7dRes.data || []).map((r) => r.user_id));
+      const completersBeforePrev7d = new Set((completersBeforePrev7dRes.data || []).map((r) => r.user_id));
 
       let returningCompleters7d = 0;
       completers7d.forEach((uid) => {
-        if (completersBefore7d.has(uid)) returningCompleters7d += 1;
+        if (completersPrev7d.has(uid) || completersBeforePrev7d.has(uid)) returningCompleters7d += 1;
       });
 
       const weeklyActiveUsers7d = completers7d.size;
+      const weeklyActiveUsersPrev7d = completersPrev7d.size;
       const newCompleters7d = weeklyActiveUsers7d - returningCompleters7d;
+
+      const dauSet = new Set<string>([
+        ...((postsUsers1dRes.data || []).map((r) => r.user_id)),
+        ...((commentsUsers1dRes.data || []).map((r) => r.user_id)),
+        ...((likesUsers1dRes.data || []).map((r) => r.user_id)),
+      ]);
+      const mauSet = new Set<string>([
+        ...((postsUsers30dRes.data || []).map((r) => r.user_id)),
+        ...((commentsUsers30dRes.data || []).map((r) => r.user_id)),
+        ...((likesUsers30dRes.data || []).map((r) => r.user_id)),
+      ]);
+      const dau1d = dauSet.size;
+      const mau30d = mauSet.size;
+      const dauMauRatio = mau30d ? Math.round((dau1d / mau30d) * 1000) / 10 : 0;
 
       const completions14d = utcDaySeries(14);
       const newUsers14d = utcDaySeries(14);
@@ -312,6 +409,31 @@ const ChallengeCreation: React.FC = () => {
       let activeChallengeUniqueCompletions = 0;
       let activeChallengeTotalCompletions = 0;
 
+      const joined7d = newUsersRes.count || 0;
+      const createdProfile7d = createdProfile7dRes.count || 0;
+      const challengeCompleters7d = weeklyActiveUsers7d;
+
+      const activationFunnel7d: ActivationStep[] = [
+        {
+          key: 'joined',
+          label: 'Joined (7d)',
+          count: joined7d,
+          rateFromStart: 100,
+        },
+        {
+          key: 'profile_created',
+          label: 'Created profile (username set)',
+          count: createdProfile7d,
+          rateFromStart: joined7d ? Math.round((createdProfile7d / joined7d) * 1000) / 10 : 0,
+        },
+        {
+          key: 'challenge_completed',
+          label: 'Completed challenge',
+          count: challengeCompleters7d,
+          rateFromStart: joined7d ? Math.round((challengeCompleters7d / joined7d) * 1000) / 10 : 0,
+        },
+      ];
+
       if (activeChallenge) {
         const [uniqueRes, totalRes] = await Promise.all([
           supabase.from("post").select("user_id").eq("challenge_id", activeChallenge.id),
@@ -323,11 +445,65 @@ const ChallengeCreation: React.FC = () => {
         activeChallengeTotalCompletions = totalRes.count || 0;
       }
 
+      type ChallengePostRow = {
+        challenge_id: number;
+        user_id: string;
+        comfort_zone_rating: number | null;
+        challenges: { title: string | null; title_it: string | null } | Array<{ title: string | null; title_it: string | null }> | null;
+      };
+
+      const challengeMap = new Map<number, {
+        title: string;
+        users: Set<string>;
+        total: number;
+        comfortSum: number;
+        comfortCount: number;
+      }>();
+
+      ((challengePosts30dRes.data || []) as ChallengePostRow[]).forEach((row) => {
+        const chMeta = Array.isArray(row.challenges) ? row.challenges[0] : row.challenges;
+        const title = chMeta?.title_it || chMeta?.title || `Challenge #${row.challenge_id}`;
+
+        const current = challengeMap.get(row.challenge_id) || {
+          title,
+          users: new Set<string>(),
+          total: 0,
+          comfortSum: 0,
+          comfortCount: 0,
+        };
+
+        current.total += 1;
+        current.users.add(row.user_id);
+
+        if (typeof row.comfort_zone_rating === 'number') {
+          current.comfortSum += row.comfort_zone_rating;
+          current.comfortCount += 1;
+        }
+
+        challengeMap.set(row.challenge_id, current);
+      });
+
+      const topChallenges30d: ChallengeLeaderboardItem[] = Array.from(challengeMap.entries())
+        .map(([challengeId, data]) => ({
+          challengeId,
+          challengeTitle: data.title,
+          uniqueCompleters: data.users.size,
+          totalCompletions: data.total,
+          avgComfort: data.comfortCount ? Math.round((data.comfortSum / data.comfortCount) * 10) / 10 : null,
+        }))
+        .sort((a, b) => b.uniqueCompleters - a.uniqueCompleters)
+        .slice(0, 5);
+
       setAnalytics({
         userCount: totalUsers,
         newUsers7d: newUsersRes.count || 0,
+        newUsersPrev7d: newUsersPrev7dRes.count || 0,
 
         weeklyActiveUsers7d,
+        weeklyActiveUsersPrev7d,
+        dau1d,
+        mau30d,
+        dauMauRatio,
         newCompleters7d,
         returningCompleters7d,
 
@@ -343,9 +519,14 @@ const ChallengeCreation: React.FC = () => {
         completionBuckets,
 
         posts7d: posts7dRes.count || 0,
+        postsPrev7d: postsPrev7dRes.count || 0,
         comments7d: comments7dRes.count || 0,
+        commentsPrev7d: commentsPrev7dRes.count || 0,
         feedback7d: feedback7dRes.count || 0,
         pendingReports: pendingReportsRes.count || 0,
+
+        topChallenges30d,
+        activationFunnel7d,
       });
     } catch (error) {
       console.error("Error fetching analytics:", error);
@@ -543,6 +724,32 @@ const ChallengeCreation: React.FC = () => {
   const maxNewUsers14d = Math.max(...newUsers14d.map((p) => p.count), 1);
   const maxCompletions14d = Math.max(...completions14d.map((p) => p.count), 1);
 
+  const pctDelta = (current: number, prev: number) => {
+    if (prev === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - prev) / prev) * 100);
+  };
+
+  const formatDelta = (d: number) => `${d > 0 ? '+' : ''}${d}%`;
+
+  const activeCompletionRate = analytics?.userCount
+    ? Math.round(((analytics.weeklyActiveUsers7d / analytics.userCount) * 1000)) / 10
+    : 0;
+
+  const activeChallengeRepeatRate = analytics?.activeChallengeTotalCompletions
+    ? Math.round(
+        ((
+          (analytics.activeChallengeTotalCompletions - analytics.activeChallengeUniqueCompletions) /
+          analytics.activeChallengeTotalCompletions
+        ) *
+          1000)
+      ) / 10
+    : 0;
+
+  const newUsersDelta = analytics ? pctDelta(analytics.newUsers7d, analytics.newUsersPrev7d) : 0;
+  const activeUsersDelta = analytics ? pctDelta(analytics.weeklyActiveUsers7d, analytics.weeklyActiveUsersPrev7d) : 0;
+  const postsDelta = analytics ? pctDelta(analytics.posts7d, analytics.postsPrev7d) : 0;
+  const commentsDelta = analytics ? pctDelta(analytics.comments7d, analytics.commentsPrev7d) : 0;
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -550,6 +757,32 @@ const ChallengeCreation: React.FC = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <Text style={styles.sectionTitle}>Analytics</Text>
+
+        <View style={styles.insightsCard}>
+          <Text style={styles.insightsTitle}>Actionable Insights (7d)</Text>
+          <View style={styles.insightRow}>
+            <Text style={styles.insightLabel}>Acquisition trend</Text>
+            <Text style={styles.insightValue}>{analyticsLoading ? '…' : formatDelta(newUsersDelta)}</Text>
+          </View>
+          <View style={styles.insightRow}>
+            <Text style={styles.insightLabel}>Active completers trend</Text>
+            <Text style={styles.insightValue}>{analyticsLoading ? '…' : formatDelta(activeUsersDelta)}</Text>
+          </View>
+          <View style={styles.insightRow}>
+            <Text style={styles.insightLabel}>Content output trend (posts / comments)</Text>
+            <Text style={styles.insightValue}>
+              {analyticsLoading ? '…' : `${formatDelta(postsDelta)} / ${formatDelta(commentsDelta)}`}
+            </Text>
+          </View>
+          <View style={styles.insightRow}>
+            <Text style={styles.insightLabel}>Weekly completion penetration</Text>
+            <Text style={styles.insightValue}>{analyticsLoading ? '…' : `${activeCompletionRate}%`}</Text>
+          </View>
+          <View style={styles.insightRow}>
+            <Text style={styles.insightLabel}>Current challenge repeat completion</Text>
+            <Text style={styles.insightValue}>{analyticsLoading ? '…' : `${activeChallengeRepeatRate}%`}</Text>
+          </View>
+        </View>
 
         <View style={styles.analyticsGrid}>
           <View style={styles.analyticsCard}>
@@ -564,6 +797,19 @@ const ChallengeCreation: React.FC = () => {
               {analyticsLoading ? '…' : analytics?.newUsers7d ?? '—'}
             </Text>
             <Text style={styles.analyticsLabel}>New Users (7d)</Text>
+            <Text style={styles.analyticsHint}>
+              vs prev 7d: {analyticsLoading ? '…' : formatDelta(newUsersDelta)}
+            </Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : analytics?.dau1d ?? '—'}
+            </Text>
+            <Text style={styles.analyticsLabel}>DAU (1d Active Users)</Text>
+            <Text style={styles.analyticsHint}>
+              MAU (30d): {analyticsLoading ? '…' : analytics?.mau30d ?? '—'}
+            </Text>
           </View>
 
           <View style={styles.analyticsCard}>
@@ -575,6 +821,17 @@ const ChallengeCreation: React.FC = () => {
               New: {analyticsLoading ? '…' : analytics?.newCompleters7d ?? '—'} · Returning:{' '}
               {analyticsLoading ? '…' : analytics?.returningCompleters7d ?? '—'}
             </Text>
+            <Text style={styles.analyticsHint}>
+              vs prev 7d: {analyticsLoading ? '…' : formatDelta(activeUsersDelta)}
+            </Text>
+          </View>
+
+          <View style={styles.analyticsCard}>
+            <Text style={styles.analyticsValue}>
+              {analyticsLoading ? '…' : `${analytics?.dauMauRatio ?? 0}%`}
+            </Text>
+            <Text style={styles.analyticsLabel}>DAU / MAU</Text>
+            <Text style={styles.analyticsHint}>Daily stickiness signal</Text>
           </View>
 
           <View style={styles.analyticsCard}>
@@ -627,6 +884,22 @@ const ChallengeCreation: React.FC = () => {
             </Text>
             <Text style={styles.analyticsLabel}>Pending Reports</Text>
           </View>
+        </View>
+
+        <View style={styles.chartWideCard}>
+          <Text style={styles.chartTitle}>Activation Funnel (Last 7 Days)</Text>
+          <Text style={styles.axisLabel}>Joined → Profile created → Challenge completion</Text>
+          {(analytics?.activationFunnel7d || []).map((step) => (
+            <View key={step.key} style={styles.funnelRow}>
+              <View style={styles.funnelLabelWrap}>
+                <Text style={styles.funnelLabel}>{step.label}</Text>
+                <Text style={styles.funnelMeta}>{step.count} users · {step.rateFromStart}%</Text>
+              </View>
+              <View style={styles.funnelBarWrap}>
+                <View style={[styles.funnelBar, { width: `${Math.max(4, Math.min(100, step.rateFromStart))}%` }]} />
+              </View>
+            </View>
+          ))}
         </View>
 
         <View style={styles.chartsRow}>
@@ -704,6 +977,26 @@ const ChallengeCreation: React.FC = () => {
               </View>
             ))}
           </View>
+        </View>
+
+        <View style={styles.chartWideCard}>
+          <Text style={styles.chartTitle}>Top Challenges (30d)</Text>
+          <Text style={styles.axisLabel}>Ranked by unique completers</Text>
+          {(analytics?.topChallenges30d || []).length === 0 ? (
+            <Text style={styles.analyticsHint}>{analyticsLoading ? 'Loading…' : 'No challenge completion data yet.'}</Text>
+          ) : (
+            (analytics?.topChallenges30d || []).map((c, idx) => (
+              <View key={c.challengeId} style={styles.topChallengeRow}>
+                <Text style={styles.topChallengeRank}>#{idx + 1}</Text>
+                <View style={styles.topChallengeInfo}>
+                  <Text style={styles.topChallengeTitle} numberOfLines={1}>{c.challengeTitle}</Text>
+                  <Text style={styles.topChallengeMeta}>
+                    {c.uniqueCompleters} unique · {c.totalCompletions} completions · avg comfort {c.avgComfort ?? '—'}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>Create New Challenge</Text>
@@ -1113,6 +1406,39 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 16,
   },
+  insightsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#eee',
+    marginBottom: 12,
+  },
+  insightsTitle: {
+    color: colors.light.text,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  insightRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+    borderTopWidth: 1,
+    borderTopColor: '#f4f4f4',
+  },
+  insightLabel: {
+    color: '#666',
+    fontSize: 12,
+    flex: 1,
+    marginRight: 8,
+  },
+  insightValue: {
+    color: colors.light.text,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   analyticsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1204,6 +1530,62 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: colors.light.primary,
     borderRadius: 4,
+  },
+  topChallengeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f4f4f4',
+  },
+  topChallengeRank: {
+    color: colors.light.primary,
+    fontSize: 12,
+    fontWeight: '800',
+    width: 28,
+  },
+  topChallengeInfo: {
+    flex: 1,
+  },
+  topChallengeTitle: {
+    color: colors.light.text,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  topChallengeMeta: {
+    color: '#777',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  funnelRow: {
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f4f4f4',
+  },
+  funnelLabelWrap: {
+    marginBottom: 6,
+  },
+  funnelLabel: {
+    color: colors.light.text,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  funnelMeta: {
+    color: '#777',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  funnelBarWrap: {
+    width: '100%',
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#eee',
+    overflow: 'hidden',
+  },
+  funnelBar: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: colors.light.secondary,
   },
   bucketLabel: {
     marginTop: 6,
