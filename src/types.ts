@@ -131,24 +131,24 @@ export interface Challenge {
     | 'science'
     | 'practice';
 
-  export type ContentClosingKind = 'prompt' | 'cta';
+  export interface CardLink {
+    url: string;
+    label?: string;
+  }
+
+  export type ContentCard =
+    | { type: 'text'; body: string; link?: CardLink }
+    | { type: 'youtube'; video_id: string; caption?: string }
+    | { type: 'link'; url: string; label: string; description?: string };
 
   export interface ContentPiece {
     id: number;
     title: string;
     category: ContentCategory;
     hook: string;
-    cards: string[];
-    closing_kind: ContentClosingKind;
-    closing_text: string;
-    closing_challenge_id: number | null;
-    external_link_url: string | null;
-    external_link_label: string | null;
+    cards: ContentCard[];
     cover_image_path: string | null;
-    linked_challenge_id: number | null;
-    is_published: boolean;
     is_featured: boolean;
-    published_at: string | null;
     created_at: string;
     updated_at: string;
   }

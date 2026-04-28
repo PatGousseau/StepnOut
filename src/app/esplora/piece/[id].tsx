@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,6 +14,7 @@ import {
   esploraSpacing,
   esploraType,
 } from '../../../constants/EsploraStyles';
+import { ContentCard } from '../../../types';
 import { usePiece } from '../../../hooks/usePiece';
 import { useBookmarks } from '../../../contexts/BookmarksContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -23,6 +23,10 @@ import { CardPager } from '../../../components/esplora/CardPager';
 import { PieceCard } from '../../../components/esplora/PieceCard';
 import { captureEvent } from '../../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../../constants/analyticsEvents';
+
+type ReaderPage =
+  | { kind: 'hook'; text: string }
+  | { kind: 'body'; card: ContentCard };
 
 export default function PieceReaderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -51,26 +55,11 @@ export default function PieceReaderScreen() {
     }
   }, [piece]);
 
-  const cards = useMemo(() => {
-    if (!piece) return [] as Array<
-      | { kind: 'hook'; text: string }
-      | { kind: 'body'; text: string }
-      | {
-          kind: 'closing';
-          text: string;
-          closingKind: 'prompt' | 'cta';
-          challengeId: number | null;
-        }
-    >;
+  const pages = useMemo<ReaderPage[]>(() => {
+    if (!piece) return [];
     return [
-      { kind: 'hook' as const, text: piece.hook },
-      ...piece.cards.map((text) => ({ kind: 'body' as const, text })),
-      {
-        kind: 'closing' as const,
-        text: piece.closing_text,
-        closingKind: piece.closing_kind,
-        challengeId: piece.closing_challenge_id,
-      },
+      { kind: 'hook', text: piece.hook },
+      ...piece.cards.map((card) => ({ kind: 'body' as const, card })),
     ];
   }, [piece]);
 
@@ -84,16 +73,10 @@ export default function PieceReaderScreen() {
         card_index: index,
       });
     }
-    if (index === cards.length - 1 && !finishedRef.current) {
+    if (index === pages.length - 1 && !finishedRef.current) {
       finishedRef.current = true;
       captureEvent(ESPLORA_EVENTS.PIECE_FINISHED, { piece_id: piece.id });
     }
-  };
-
-  const handleExternalLink = () => {
-    if (!piece?.external_link_url) return;
-    captureEvent(ESPLORA_EVENTS.EXTERNAL_LINK_TAPPED, { piece_id: piece.id });
-    Linking.openURL(piece.external_link_url);
   };
 
   if (isLoading || !piece) {
@@ -103,8 +86,6 @@ export default function PieceReaderScreen() {
       </View>
     );
   }
-
-  const isLastCard = activeIndex === cards.length - 1;
 
   return (
     <View style={styles.container}>
@@ -124,40 +105,20 @@ export default function PieceReaderScreen() {
       </View>
 
       <CardPager
-        totalCards={cards.length}
+        totalCards={pages.length}
         activeIndex={activeIndex}
         onPageSelected={handlePageSelected}
       >
-        {cards.map((card, idx) => (
+        {pages.map((page, idx) => (
           <View key={idx} collapsable={false} style={styles.page}>
-            {card.kind === 'hook' ? (
-              <PieceCard kind="hook" text={card.text} />
-            ) : card.kind === 'body' ? (
-              <PieceCard kind="body" text={card.text} />
+            {page.kind === 'hook' ? (
+              <PieceCard kind="hook" text={page.text} />
             ) : (
-              <PieceCard
-                kind="closing"
-                text={card.text}
-                closingKind={card.closingKind}
-                challengeId={card.challengeId}
-              />
+              <PieceCard kind="body" card={page.card} pieceId={piece.id} />
             )}
           </View>
         ))}
       </CardPager>
-
-      {isLastCard && piece.external_link_url ? (
-        <View style={styles.externalLinkWrap}>
-          <TouchableOpacity
-            onPress={handleExternalLink}
-            accessibilityRole="link"
-          >
-            <Text style={styles.externalLinkText}>
-              {piece.external_link_label ?? t('Read more')} →
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -188,16 +149,5 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
-  },
-  externalLinkWrap: {
-    paddingHorizontal: esploraSpacing.readerHorizontalPadding,
-    paddingBottom: esploraSpacing.lg,
-    alignItems: 'flex-start',
-  },
-  externalLinkText: {
-    ...esploraType.body,
-    color: colors.light.primary,
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
