@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { ContentCategory, ContentPiece } from '../types';
+import { ContentCard, ContentCategory, ContentPiece } from '../types';
 
 const BASE_COLUMNS = `
   id,
@@ -7,16 +7,8 @@ const BASE_COLUMNS = `
   category,
   hook,
   cards,
-  closing_kind,
-  closing_text,
-  closing_challenge_id,
-  external_link_url,
-  external_link_label,
   cover_image_path,
-  linked_challenge_id,
-  is_published,
   is_featured,
-  published_at,
   created_at,
   updated_at
 `;
@@ -25,7 +17,7 @@ type ContentPieceRow = Omit<ContentPiece, 'cards'> & { cards: unknown };
 
 const normalizePiece = (row: ContentPieceRow): ContentPiece => ({
   ...row,
-  cards: Array.isArray(row.cards) ? (row.cards as string[]) : [],
+  cards: Array.isArray(row.cards) ? (row.cards as ContentCard[]) : [],
 });
 
 export const contentService = {
@@ -33,7 +25,6 @@ export const contentService = {
     const { data, error } = await supabase
       .from('content_pieces')
       .select(BASE_COLUMNS)
-      .eq('is_published', true)
       .eq('is_featured', true)
       .limit(1)
       .maybeSingle();
@@ -52,8 +43,6 @@ export const contentService = {
     const { data, error } = await supabase
       .from('content_pieces')
       .select(BASE_COLUMNS)
-      .eq('is_published', true)
-      .order('published_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -72,9 +61,7 @@ export const contentService = {
     const { data, error } = await supabase
       .from('content_pieces')
       .select(BASE_COLUMNS)
-      .eq('is_published', true)
       .eq('category', category)
-      .order('published_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
