@@ -7,84 +7,70 @@ import {
   View,
 } from 'react-native';
 import { colors } from '../../constants/Colors';
-import { esploraSpacing, esploraType } from '../../constants/EsploraStyles';
-import { useFeaturedPiece, useRecentPieces } from '../../hooks/useEsploraHome';
+import { esploraSpacing } from '../../constants/EsploraStyles';
+import {
+  useCategorySections,
+  useFeaturedPiece,
+} from '../../hooks/useEsploraHome';
 import { useBookmarks } from '../../contexts/BookmarksContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { EsploraHeader } from '../../components/esplora/EsploraHeader';
 import { FeaturedCard } from '../../components/esplora/FeaturedCard';
-import { CategoryRow } from '../../components/esplora/CategoryRow';
-import { PieceListItem } from '../../components/esplora/PieceListItem';
+import { CategorySection } from '../../components/esplora/CategorySection';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
 
 export default function EsploraScreen() {
   const { t } = useLanguage();
   const featuredQuery = useFeaturedPiece();
-  const recentQuery = useRecentPieces();
+  const { sections, isLoading, pieces } = useCategorySections();
   const { initializeBookmarks } = useBookmarks();
 
-  const recentPieces = useMemo(
-    () => recentQuery.data?.pages.flat() ?? [],
-    [recentQuery.data]
-  );
+  const allPieces = useMemo(() => {
+    return [
+      ...(featuredQuery.data ? [featuredQuery.data] : []),
+      ...pieces,
+    ];
+  }, [featuredQuery.data, pieces]);
 
   useEffect(() => {
     captureEvent(ESPLORA_EVENTS.OPENED);
   }, []);
 
   useEffect(() => {
-    const all = [
-      ...(featuredQuery.data ? [featuredQuery.data] : []),
-      ...recentPieces,
-    ];
-    if (all.length > 0) {
-      initializeBookmarks(all);
-    }
-  }, [featuredQuery.data, recentPieces, initializeBookmarks]);
+    if (allPieces.length > 0) initializeBookmarks(allPieces);
+  }, [allPieces, initializeBookmarks]);
 
-  const loading = featuredQuery.isLoading || recentQuery.isLoading;
+  const loading = featuredQuery.isLoading || isLoading;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      onMomentumScrollEnd={(e) => {
-        const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-        const nearBottom =
-          contentOffset.y + layoutMeasurement.height >= contentSize.height - 100;
-        if (
-          nearBottom &&
-          recentQuery.hasNextPage &&
-          !recentQuery.isFetchingNextPage
-        ) {
-          recentQuery.fetchNextPage();
-        }
-      }}
-    >
+    <View style={styles.container}>
       <EsploraHeader />
-
-      {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.light.lightText} />
-        </View>
-      ) : (
-        <>
-          {featuredQuery.data && <FeaturedCard piece={featuredQuery.data} />}
-          <CategoryRow />
-          <View style={styles.recentSection}>
-            <Text style={styles.sectionLabel}>{t('Recent discoveries')}</Text>
-            {recentPieces.length === 0 ? (
-              <Text style={styles.empty}>{t('No pieces yet')}</Text>
-            ) : (
-              recentPieces.map((piece) => (
-                <PieceListItem key={piece.id} piece={piece} source="recent" />
-              ))
-            )}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {loading ? (
+          <View style={styles.loader}>
+            <ActivityIndicator color={colors.light.lightText} />
           </View>
-        </>
-      )}
-    </ScrollView>
+        ) : (
+          <>
+            {featuredQuery.data && <FeaturedCard piece={featuredQuery.data} />}
+            {sections.map((section) => (
+              <CategorySection
+                key={section.category}
+                category={section.category}
+                pieces={section.pieces}
+              />
+            ))}
+            {sections.every((s) => s.pieces.length === 0) && (
+              <Text style={styles.empty}>{t('No pieces yet')}</Text>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -100,17 +86,8 @@ const styles = StyleSheet.create({
     paddingVertical: esploraSpacing.xxl,
     alignItems: 'center',
   },
-  recentSection: {
-    marginTop: esploraSpacing.lg,
-  },
-  sectionLabel: {
-    ...esploraType.sectionLabel,
-    color: colors.light.lightText,
-    paddingHorizontal: esploraSpacing.horizontalPadding,
-    marginBottom: esploraSpacing.sm,
-  },
   empty: {
-    ...esploraType.body,
+    fontSize: 14,
     color: colors.light.lightText,
     paddingHorizontal: esploraSpacing.horizontalPadding,
     paddingVertical: esploraSpacing.lg,

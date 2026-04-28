@@ -10,11 +10,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
-import { esploraSpacing, esploraType } from '../../constants/EsploraStyles';
+import {
+  esploraCard,
+  esploraSpacing,
+  esploraType,
+} from '../../constants/EsploraStyles';
 import { useBookmarkedPieces } from '../../hooks/useBookmarkedPieces';
 import { useBookmarks } from '../../contexts/BookmarksContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { PieceListItem } from '../../components/esplora/PieceListItem';
+import { LargePieceCard } from '../../components/esplora/LargePieceCard';
 
 export default function SavedScreen() {
   const { t } = useLanguage();
@@ -41,8 +45,11 @@ export default function SavedScreen() {
         data={data ?? []}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <PieceListItem piece={item} source="saved" />
+          <LargePieceCard piece={item} source="saved" style={styles.gridCard} />
         )}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.list}
         ListHeaderComponent={
           <Text style={styles.heading}>{t('Saved')}</Text>
         }
@@ -77,10 +84,21 @@ const styles = StyleSheet.create({
     paddingTop: esploraSpacing.md,
     paddingBottom: esploraSpacing.sm,
   },
+  list: {
+    paddingHorizontal: esploraSpacing.horizontalPadding,
+    paddingBottom: esploraSpacing.xxxl,
+  },
+  columnWrapper: {
+    gap: esploraCard.gap,
+    marginBottom: esploraCard.gap,
+  },
+  gridCard: {
+    width: esploraCard.gridWidth,
+    height: esploraCard.gridHeight,
+  },
   heading: {
     ...esploraType.display,
     color: colors.light.text,
-    paddingHorizontal: esploraSpacing.horizontalPadding,
     paddingTop: esploraSpacing.md,
     paddingBottom: esploraSpacing.lg,
   },
@@ -89,7 +107,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyWrap: {
-    paddingHorizontal: esploraSpacing.horizontalPadding,
     paddingVertical: esploraSpacing.xxl,
   },
   emptyTitle: {

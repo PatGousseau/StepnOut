@@ -12,13 +12,14 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { colors } from '../../../constants/Colors';
 import {
   CATEGORY_LABEL_KEYS,
+  esploraCard,
   esploraSpacing,
   esploraType,
 } from '../../../constants/EsploraStyles';
 import { usePiecesByCategory } from '../../../hooks/usePiecesByCategory';
 import { useBookmarks } from '../../../contexts/BookmarksContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
-import { PieceListItem } from '../../../components/esplora/PieceListItem';
+import { LargePieceCard } from '../../../components/esplora/LargePieceCard';
 import { ContentCategory } from '../../../types';
 
 const VALID_CATEGORIES: ContentCategory[] = [
@@ -62,8 +63,11 @@ export default function CategoryScreen() {
         data={pieces}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
-          <PieceListItem piece={item} source="category" />
+          <LargePieceCard piece={item} source="category" style={styles.gridCard} />
         )}
+        numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.list}
         onEndReached={() => {
           if (query.hasNextPage && !query.isFetchingNextPage) {
             query.fetchNextPage();
@@ -99,10 +103,21 @@ const styles = StyleSheet.create({
     paddingTop: esploraSpacing.md,
     paddingBottom: esploraSpacing.sm,
   },
+  list: {
+    paddingHorizontal: esploraSpacing.horizontalPadding,
+    paddingBottom: esploraSpacing.xxxl,
+  },
+  columnWrapper: {
+    gap: esploraCard.gap,
+    marginBottom: esploraCard.gap,
+  },
+  gridCard: {
+    width: esploraCard.gridWidth,
+    height: esploraCard.gridHeight,
+  },
   heading: {
     ...esploraType.display,
     color: colors.light.text,
-    paddingHorizontal: esploraSpacing.horizontalPadding,
     paddingTop: esploraSpacing.md,
     paddingBottom: esploraSpacing.lg,
   },
@@ -113,7 +128,6 @@ const styles = StyleSheet.create({
   empty: {
     ...esploraType.body,
     color: colors.light.lightText,
-    paddingHorizontal: esploraSpacing.horizontalPadding,
     paddingVertical: esploraSpacing.lg,
   },
 });

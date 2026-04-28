@@ -1,4 +1,4 @@
-import { Platform, TextStyle } from 'react-native';
+import { Dimensions, Platform, TextStyle } from 'react-native';
 import { ContentCategory } from '../types';
 
 // System serif: Georgia on iOS, the stock serif on Android.
@@ -22,6 +22,27 @@ export const esploraSpacing = {
   horizontalPadding: 24,
   readerHorizontalPadding: 32,
   sectionGap: 40,
+} as const;
+
+// Two cards plus a peek of a third visible in horizontal scroll, matching the
+// reference layout. Grid screens (saved, category) use the same width.
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_GAP = 12;
+const HORIZONTAL_PADDING = esploraSpacing.horizontalPadding;
+const CARD_WIDTH = Math.round(
+  (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - CARD_GAP) / 1.85
+);
+const GRID_CARD_WIDTH = Math.round(
+  (SCREEN_WIDTH - HORIZONTAL_PADDING * 2 - CARD_GAP) / 2
+);
+
+export const esploraCard = {
+  width: CARD_WIDTH,
+  height: Math.round(CARD_WIDTH * 1.4),
+  gridWidth: GRID_CARD_WIDTH,
+  gridHeight: Math.round(GRID_CARD_WIDTH * 1.4),
+  gap: CARD_GAP,
+  radius: 14,
 } as const;
 
 export const esploraType = {
@@ -54,6 +75,18 @@ export const esploraType = {
     fontSize: 20,
     lineHeight: 26,
   } as TextStyle,
+  cardTitle: {
+    fontFamily: esploraFonts.serif,
+    fontWeight: '500',
+    fontSize: 19,
+    lineHeight: 24,
+  } as TextStyle,
+  cardMeta: {
+    fontFamily: esploraFonts.sans,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+  } as TextStyle,
   body: {
     fontFamily: esploraFonts.sans,
     fontSize: 16,
@@ -78,12 +111,10 @@ export const esploraType = {
     lineHeight: 24,
   } as TextStyle,
   sectionLabel: {
-    fontFamily: esploraFonts.sans,
-    fontSize: 11,
-    lineHeight: 14,
-    letterSpacing: 1.8,
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    fontFamily: esploraFonts.serif,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '500',
   } as TextStyle,
 } as const;
 
@@ -104,4 +135,15 @@ export const CATEGORY_LABEL_KEYS: Record<ContentCategory, string> = {
   stories: 'True stories',
   science: 'The science',
   practice: 'Daily practice',
+};
+
+// Painterly gradients used as a fallback when a piece has no cover image.
+// Each pair is [top, bottom] for a vertical linear gradient.
+export const CATEGORY_GRADIENTS: Record<ContentCategory, [string, string]> = {
+  fear: ['#7C2230', '#E07A5F'],
+  vulnerability: ['#A8466A', '#F2B5A3'],
+  connection: ['#B86A3A', '#E5B768'],
+  stories: ['#2F4A3F', '#93B79A'],
+  science: ['#37406C', '#8E96C9'],
+  practice: ['#6B6033', '#C9B679'],
 };
