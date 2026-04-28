@@ -101,6 +101,21 @@ export const SCREEN_EVENTS = {
 } as const;
 
 // ============================================
+// ESPLORA EVENTS
+// ============================================
+export const ESPLORA_EVENTS = {
+  OPENED: 'esplora_opened',
+  PIECE_OPENED: 'esplora_piece_opened',
+  CARD_VIEWED: 'esplora_card_viewed',
+  PIECE_FINISHED: 'esplora_piece_finished',
+  BOOKMARK_TOGGLED: 'esplora_bookmark_toggled',
+  EXTERNAL_LINK_TAPPED: 'esplora_external_link_tapped',
+  CTA_TAPPED: 'esplora_cta_tapped',
+  CATEGORY_OPENED: 'esplora_category_opened',
+  SAVED_OPENED: 'esplora_saved_opened',
+} as const;
+
+// ============================================
 // USER PROPERTY KEYS (for setUserProperties)
 // ============================================
 export const USER_PROPERTIES = {
@@ -126,4 +141,5 @@ export const ANALYTICS_EVENTS = {
   FEED: FEED_EVENTS,
   UI: UI_EVENTS,
   SCREEN: SCREEN_EVENTS,
+  ESPLORA: ESPLORA_EVENTS,
 } as const;

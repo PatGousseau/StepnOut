@@ -30,6 +30,9 @@ export default function TabsLayout() {
             case 'challenge':
               iconName = 'trophy';
               break;
+            case 'esplora':
+              iconName = 'book-outline';
+              break;
             case 'profile':
               iconName = 'person';
               break;
@@ -60,6 +63,12 @@ export default function TabsLayout() {
         name="challenge"
         options={{
           title: t('Challenge'),
+        }}
+      />
+      <Tabs.Screen
+        name="esplora"
+        options={{
+          title: t('Esplora'),
         }}
       />
       <Tabs.Screen

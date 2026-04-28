@@ -21,6 +21,7 @@ import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
 import { ReactionsProvider } from '../contexts/ReactionsContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
+import { BookmarksProvider } from '../contexts/BookmarksContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
@@ -72,8 +73,19 @@ function RootLayoutNav() {
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
     pathname.includes('/challenge/') ||
+    pathname.includes('/esplora/piece/') ||
+    pathname.includes('/esplora/category/') ||
+    pathname === '/esplora/saved' ||
     pathname === '/badges' ||
     pathname === '/search-users';
+
+  // Esplora detail screens render their own immersive chrome (close button,
+  // category label, bookmark), so hide the global Header to avoid duplicate
+  // back affordances.
+  const isEsploraDetail =
+    pathname.includes('/esplora/piece/') ||
+    pathname.includes('/esplora/category/') ||
+    pathname === '/esplora/saved';
 
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
@@ -334,14 +346,16 @@ function RootLayoutNav() {
       onLayout={onLayoutRootView}
     >
       <StatusBar backgroundColor={colors.light.background} style="dark" />
-      <Header
-        onNotificationPress={handleNotificationPress}
-        onMenuPress={handleMenuPress}
-        onFeedbackPress={() => setShowFeedback(true)}
-        unreadCount={unreadCount}
-        isDetailPage={isDetailPage}
-        hideLogo={hideLogo}
-      />
+      {!isEsploraDetail && (
+        <Header
+          onNotificationPress={handleNotificationPress}
+          onMenuPress={handleMenuPress}
+          onFeedbackPress={() => setShowFeedback(true)}
+          unreadCount={unreadCount}
+          isDetailPage={isDetailPage}
+          hideLogo={hideLogo}
+        />
+      )}
       {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
@@ -395,6 +409,15 @@ function RootLayoutNav() {
           options={{
             headerShown: false,
             // keep back swipe only from the edge (full-screen swipe conflicts with vertical scrolling)
+            fullScreenGestureEnabled: false,
+            gestureResponseDistance: 24,
+          }}
+        />
+        <Stack.Screen
+          name="esplora"
+          options={{
+            headerShown: false,
+            // edge-only swipe so it doesn't steal horizontal gestures from PagerView
             fullScreenGestureEnabled: false,
             gestureResponseDistance: 24,
           }}
@@ -511,9 +534,11 @@ export default function Layout() {
             <MenuProvider>
               <LikesProvider>
                 <ReactionsProvider>
-                  <UploadProgressProvider>
-                    <RootLayoutNav />
-                  </UploadProgressProvider>
+                  <BookmarksProvider>
+                    <UploadProgressProvider>
+                      <RootLayoutNav />
+                    </UploadProgressProvider>
+                  </BookmarksProvider>
                 </ReactionsProvider>
               </LikesProvider>
             </MenuProvider>
