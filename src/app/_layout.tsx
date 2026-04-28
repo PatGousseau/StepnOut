@@ -80,6 +80,14 @@ function RootLayoutNav() {
     pathname === '/badges' ||
     pathname === '/search-users';
 
+  // Esplora detail screens render their own immersive chrome (close button,
+  // category label, bookmark), so hide the global Header to avoid duplicate
+  // back affordances.
+  const isEsploraDetail =
+    pathname.includes('/esplora/piece/') ||
+    pathname.includes('/esplora/category/') ||
+    pathname === '/esplora/saved';
+
   // hide logo on auth screens
   const hideLogo =
     pathname === '/login' ||
@@ -373,14 +381,16 @@ function RootLayoutNav() {
       onLayout={onLayoutRootView}
     >
       <StatusBar backgroundColor={colors.light.background} style="dark" />
-      <Header
-        onNotificationPress={handleNotificationPress}
-        onMenuPress={handleMenuPress}
-        onFeedbackPress={() => setShowFeedback(true)}
-        unreadCount={unreadCount}
-        isDetailPage={isDetailPage}
-        hideLogo={hideLogo}
-      />
+      {!isEsploraDetail && (
+        <Header
+          onNotificationPress={handleNotificationPress}
+          onMenuPress={handleMenuPress}
+          onFeedbackPress={() => setShowFeedback(true)}
+          unreadCount={unreadCount}
+          isDetailPage={isDetailPage}
+          hideLogo={hideLogo}
+        />
+      )}
       {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
