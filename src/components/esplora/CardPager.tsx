@@ -36,8 +36,10 @@ export const CardPager: React.FC<Props> = ({
   renderCard,
 }) => {
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const incomingPan = useRef(new Animated.Value(0)).current;
   const [isFlying, setIsFlying] = useState(false);
   const [behindIndex, setBehindIndex] = useState(activeIndex + 1);
+  const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const target = activeIndex + 1;
@@ -108,11 +110,32 @@ export const CardPager: React.FC<Props> = ({
     }
   };
 
+  const slideInPrev = (target: number) => {
+    setIsFlying(true);
+    const screenWidth = Dimensions.get('window').width;
+    setIncomingIndex(target);
+    incomingPan.setValue(-screenWidth * 1.4);
+    Animated.timing(incomingPan, {
+      toValue: 0,
+      duration: FLING_DURATION,
+      useNativeDriver: true,
+    }).start(() => {
+      onIndexChange(target);
+      requestAnimationFrame(() => {
+        setIncomingIndex(null);
+        setIsFlying(false);
+      });
+    });
+  };
+
   const goTo = (next: number) => {
     if (isFlying) return;
     if (next < 0 || next >= totalCards) return;
-    const direction = next > activeIndex ? 'left' : 'right';
-    flingOff(direction, () => onIndexChange(next));
+    if (next > activeIndex) {
+      flingOff('left', () => onIndexChange(next));
+    } else {
+      slideInPrev(next);
+    }
   };
 
   const remaining = totalCards - activeIndex - 1;
@@ -158,6 +181,17 @@ export const CardPager: React.FC<Props> = ({
             {renderCard(activeIndex)}
           </Animated.View>
         </PanGestureHandler>
+        {incomingIndex !== null && (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.cardSlot,
+              { transform: [{ translateX: incomingPan }] },
+            ]}
+          >
+            {renderCard(incomingIndex)}
+          </Animated.View>
+        )}
       </View>
 
       <View style={styles.navRow}>
