@@ -338,6 +338,175 @@ VALUES
     false,
     now() - interval '15 days',
     now() - interval '15 days'
+  ),
+  -- =============================================================================
+  -- Stare con sé stessi (solitude) — three originals + one curated
+  -- =============================================================================
+  (
+    16,
+    'Un tavolo per uno',
+    'solitude',
+    'C''è qualcosa di stranamente esposto nel chiedere un tavolo per uno. Non perché sia una scena triste, ma perché ci costringe a vedere quanto spesso confondiamo l''essere soli con l''essere rimasti fuori. Eppure, a volte, il primo appuntamento che manca davvero è proprio quello con noi stessi.',
+    '[
+      { "type": "text", "body": "Molti adulti si muovono da soli con grande efficienza, ma con pochissima intimità con sé stessi. Lavorano, si spostano, risolvono, producono. Però appena l''idea è sedersi da soli in un posto bello, ordinare con calma e restare lì senza giustificarsi, compare un piccolo imbarazzo. Un tavolo per uno sembra dire agli altri che non sei stato scelto da nessuno. È curioso: facciamo cose difficilissime ogni giorno, ma stare da soli in modo visibile ci mette a nudo. Non perché sia un gesto enorme, ma perché tocca un punto infantile e profondo: il nostro valore si intreccia ancora troppo con lo sguardo degli altri." },
+      { "type": "text", "body": "Il punto non è che la solitudine faccia sempre paura. Il punto è che spesso la leggiamo come una prova contro di noi. Se nessuno ti accompagna, allora forse manchi di qualcosa. Se non hai un piano condiviso, allora quel tempo è vuoto. Per questo tante persone riempiono l''assenza di compagnia con il telefono, con la fretta, con una specie di posa invisibile: faccio in fretta, così non sembro solo. Ma quando vivi così, non ti stai proteggendo davvero. Stai evitando di vedere quanto ti pesa essere semplicemente presente, senza essere invitato, confermato, scelto da fuori." },
+      { "type": "text", "body": "Stare da soli, invece, non è automaticamente solitudine. La differenza la fa soprattutto il modo in cui abiti quel tempo. C''è un essere soli che punge, perché sa di esclusione. E c''è un essere soli che allarga, perché ha il sapore della scelta. Nel primo caso ti senti lasciato indietro; nel secondo ti stai raggiungendo. Un appuntamento con te stesso non sostituisce gli altri e non li svaluta. Semplicemente smette di trattare la tua presenza come qualcosa che esiste solo se osservata. Ti meriti un tavolo, un''attenzione e un tempo anche quando nessuno ti sta guardando o accompagnando." },
+      { "type": "text", "body": "Per questo portarti a pranzo, a cena o anche solo a prendere un caffè non è un gesto estetico. È un piccolo allenamento interiore. Vuol dire scegliere un posto che ti incuriosisce, stare qualche minuto senza cercare subito uno schermo, accorgerti di cosa ti piace davvero quando non devi adattarti al gusto di qualcun altro. Magari ti senti goffo, magari guardi troppo la porta, magari il silenzio pesa. Va bene. Non stai cercando di diventare impeccabile nella solitudine. Stai solo imparando a non insultare quel momento trattandolo come un tempo di serie B. È proprio questo che comincia a renderlo degno." },
+      { "type": "text", "body": "La cosa più preziosa, alla lunga, è che chi sa stare da solo non diventa meno capace di legarsi. Diventa meno disposto a usare gli altri come anestesia. Le relazioni smettono di essere l''unico posto in cui ti senti vivo, visto, autorizzato a esistere. Restano importanti, bellissime, necessarie. Ma non sono più un pronto soccorso permanente contro il vuoto. Un tavolo per uno, allora, non certifica che manca qualcosa. A volte è il contrario: è il momento in cui inizi a smettere di mancare a te stesso." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '16 days',
+    now() - interval '16 days'
+  ),
+  (
+    17,
+    'Quando finalmente non succede niente',
+    'solitude',
+    'Ci sono momenti in cui il silenzio pesa più di una conversazione scomoda. Un tragitto senza telefono, dieci minuti senza musica, un pomeriggio senza rumore: basta poco per accorgersi che non ci manca solo uno stimolo, ci manca l''abitudine a restare presenti. La presenza, prima di essere una pratica, è spesso un piccolo attrito.',
+    '[
+      { "type": "text", "body": "Siamo diventati molto bravi a riempire gli interstizi. L''ascensore, la fila, il bus, i cinque minuti prima di uscire, i tre minuti tra una cosa e l''altra. Ogni vuoto chiama subito un gesto: schermo, audio, chat, notifica, qualcosa. Il problema non è la tecnologia in sé. È il fatto che molte volte non la stiamo scegliendo: la stiamo usando per non restare nemmeno un attimo nella stanza con noi stessi. Così la giornata si riempie, ma noi restiamo stranamente assenti. Sempre occupati, raramente davvero presenti a quello che ci succede dentro." },
+      { "type": "text", "body": "Appena si spegne il rumore, affiora di tutto: agitazione, noia, pensieri lasciati a metà, una stanchezza che non avevi sentito, perfino una domanda semplice come che cosa ho voglia di fare davvero. È qui che molta gente conclude troppo in fretta che il silenzio non fa per lei. In realtà, più spesso, non è il silenzio a essere insopportabile. È il contatto non mediato con quello che stavi evitando. La distrazione continua ti protegge anche da questo. Ma ti toglie pure qualcosa: la possibilità di sviluppare una minima dimestichezza con il tuo mondo interno." },
+      { "type": "text", "body": "La presenza non è uno stato perfetto, calmo e luminoso in cui a un certo punto entri. Non è una superiorità spirituale e non è nemmeno una prestazione zen. Molto spesso è una cosa meno elegante: restare due minuti in più senza scappare. Sentire che vorresti prendere il telefono e non farlo subito. Accorgerti che sei a disagio senza correre a cancellarlo. La presenza comincia così, in una tolleranza minuscola. Non ti chiede di amare ogni istante vuoto. Ti chiede solo di non trasformare ogni istante vuoto in un''emergenza da riempire." },
+      { "type": "text", "body": "Per questo un momento senza telefono può essere più profondo di quanto sembri. Non perché ti trasformi all''istante, ma perché rimette in moto dei muscoli mentali atrofizzati. Ti accorgi dei rumori di una strada, del tuo respiro, del fatto che ti sei stancato, di un desiderio piccolo che altrimenti avresti coperto. Ti accorgi anche che l''impulso a distrarti sale e poi passa. Questo è importante: scopri che non devi obbedire a ogni spinta. E che il disagio, se non lo insegui e non lo drammatizzi, a volte cambia forma da solo." },
+      { "type": "text", "body": "Col tempo succede una cosa sottile ma decisiva. La vita smette di sembrarti fatta solo di picchi, stimoli e contenuti, e ricomincia ad avere trama. Un hobby, una passeggiata, un caffè in silenzio, un tragitto senza auricolari non sembrano più tempi morti da sopportare. Diventano luoghi in cui ti ritrovi. Non perché ogni volta ti piaccia, ma perché non devi più fuggire automaticamente. E quando non fuggi sempre, non sei solo più presente. Diventi anche più libero: meno addestrato dal riflesso, più capace di stare dove sei." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '17 days',
+    now() - interval '17 days'
+  ),
+  (
+    18,
+    'Restare dalla tua parte',
+    'solitude',
+    'Molti sanno essere premurosi con tutti, tranne che con sé. Si concedono il tempo solo quando avanza, e poi si stupiscono se stare da soli sembra sempre una punizione. La compagnia di sé è semplice e difficile insieme: smettere di trattarti come l''ultima voce della lista.',
+    '[
+      { "type": "text", "body": "C''è una differenza importante tra essere soli e sentirsi accompagnati da sé. La prima cosa può capitarti. La seconda va costruita. Molte persone, anche molto sensibili, trattano sé stesse in modo frettoloso: rimandano ciò che desiderano, usano il proprio tempo come scarto, concedono cura solo quando tutte le altre richieste sono state soddisfatte. Poi arriva un pomeriggio libero e quel tempo pesa, perché non è stato preparato. Se non ti scegli mai davvero, è difficile che la tua compagnia ti sembri naturale. Ti sembrerà sempre un ripiego momentaneo." },
+      { "type": "text", "body": "Qui nasce il paradosso: si desidera stare bene con sé, ma si continua a investire tutto fuori da sé. Nelle risposte, nelle aspettative altrui, nella produttività, nella sensazione di essere utili. Così, quando si prova a fare qualcosa da soli, entra subito un dubbio: sto perdendo tempo? dovrei fare qualcosa di più serio? potrei essere più efficiente? Anche il piacere viene interrogato come un colpevole. E se ogni gesto verso di te deve passare da un processo, è normale che il rapporto con te resti teso, formale, poco vivo." },
+      { "type": "text", "body": "Farsi compagnia non significa adorarsi o sentirsi sempre bene da soli. Significa diventare qualcuno da cui non devi allontanarti appena puoi. La compagnia di sé nasce da piccole fedeltà: prepararti una sera decente, proteggere una mezz''ora per leggere o dipingere o cucinare, non cancellare sempre per primo ciò che ti farebbe bene. Non è narcisismo. È affidabilità interiore. È il messaggio quieto che mandi a te stesso quando dici: ci sei anche tu, non solo tutto il resto. Ed è questo, più di mille frasi giuste, che rende la tua presenza meno ostile." },
+      { "type": "text", "body": "Per questo ritrovare il tempo per un hobby conta molto più di quanto sembri. Un hobby non ti chiede di essere brillante, utile o redditizio. Ti chiede di stare. Di tornare. Di fare una cosa per il gusto di farla. In un''epoca che misura quasi tutto in resa, l''inutilità buona di un gesto scelto è una forma di igiene psichica. Ti ricorda che non esisti solo quando performi. E soprattutto crea un terreno concreto in cui sentirti a casa con te: non nei grandi discorsi, ma nella ripetizione viva di qualcosa che ti appartiene davvero." },
+      { "type": "text", "body": "A un certo punto te ne accorgi da segnali minimi. Non apri il telefono appena hai un buco. Non senti il bisogno di riempire ogni sera. Ti viene in mente una cosa che ti piace e la fai, senza trasformarla subito in progetto o compito. È lì che la solitudine cambia sapore. Non perché diventi sempre facile, ma perché non coincide più con un abbandono. Restare dalla tua parte vuol dire questo: fare in modo che, quando il mondo si ritira un poco, tu non sparisca insieme a lui." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '18 days',
+    now() - interval '18 days'
+  ),
+  (
+    19,
+    'Il vuoto che non va corretto',
+    'solitude',
+    'Appena restiamo soli, ci viene da riempire. Un messaggio, una playlist, qualcosa da fare subito. E se una parte della fatica nascesse proprio dall''idea che ogni vuoto vada corretto? Questa lettura serve perché non romanticizza la solitudine, ma nemmeno la tratta come un guasto da eliminare.',
+    '[
+      { "type": "text", "body": "Questo pezzo funziona bene per un catalogo che vuole spostarsi dall''esterno all''interno, perché prende sul serio una cosa scomoda: stare soli può fare male, ma non per questo va evitato sempre. L''articolo distingue bene tra il dolore del sentirsi isolati e la possibilità di riconoscere nella solitudine anche un segnale, uno spazio, una funzione. Non spinge a chiudersi; spinge a non trattare ogni momento non condiviso come una prova di fallimento personale. È una sfumatura utile soprattutto per utenti giovani che tendono a leggere la vita sociale come misura continua del proprio valore." },
+      { "type": "link", "url": "https://www.internazionale.it/opinione/oliver-burkeman/2016/11/23/solitudine", "label": "Leggi l''articolo su Internazionale", "description": "Oliver Burkeman — Come rendere utile la solitudine" },
+      { "type": "text", "body": "Perché tenerlo in libreria: accompagna bene un appuntamento con sé, un momento senza telefono, o il recupero di un hobby, perché non promette serenità immediata. Offre una cornice più adulta: il disagio non è sempre la prova che stai sbagliando, a volte è il segnale che non hai ancora imparato ad abitare quel tipo di tempo. Questo rende la lettura meno consolatoria e più trasformativa. In più, essendo tradotto e pubblicato da un media forte, alza il tono del catalogo senza spostarlo verso l''accademico." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '19 days',
+    now() - interval '19 days'
+  ),
+  -- =============================================================================
+  -- Dire quello che vuoi (assertiveness) — one original + two curated
+  -- =============================================================================
+  (
+    20,
+    'Preferisco questo',
+    'assertiveness',
+    'Molte persone non fanno fatica a parlare. Fanno fatica a preferire. Dire quello che vuoi sembra piccolo, ma spesso tocca una paura enorme: deludere, disturbare, apparire troppo, perdere il legame. Per questo tante vite si riempiono di sì gentili e di desideri sempre rinviati.',
+    '[
+      { "type": "text", "body": "Il people-pleasing di solito non nasce dalla falsità. Nasce da una forma di intelligenza relazionale che a furia di esagerare si è storta. Leggi la stanza, anticipi il bisogno dell''altro, eviti attriti, fai in modo che tutto scorra. All''inizio sembra una virtù: sei facile, sei adattabile, sei caro a tutti. E in parte è vero. Il problema è che, a lungo andare, questo talento può trasformarsi in una piccola sparizione. Ti abitui a sentire prima l''atmosfera che la tua preferenza. E così finisci per essere molto bravo a tenere insieme il contesto, ma sempre meno capace di dire dove sei tu." },
+      { "type": "text", "body": "Il costo dell''accondiscendenza automatica raramente esplode subito. Si deposita. Un ristorante scelto senza dirlo, un invito accettato senza voglia, un favore concesso mentre dentro ti irrigidisci, una decisione lasciata ad altri perché tanto è uguale. Ma non è quasi mai davvero uguale. Il risultato non è solo frustrazione: è sfocatura. Dopo un po'' non sai più bene che cosa ti piace, che cosa rifiuti, dove finisci per convinzione e dove per inerzia. E quando perdi contatto con le tue preferenze, smetti anche di fidarti del tuo giudizio." },
+      { "type": "text", "body": "Essere assertivi non significa imporsi. Significa assumersi la responsabilità di esistere con una forma riconoscibile dentro la relazione. Dire preferisco questo, per me no, oggi non me la sento, a me andrebbe quest''altra cosa. Non è durezza. È chiarezza. L''aggressività forza. La passività arretra. L''assertività resta. Non umilia l''altro e non umilia te. Non ti garantisce di ottenere sempre ciò che vuoi, ma fa una cosa più importante: impedisce che il legame si regga solo sulla tua disponibilità a farti meno ingombrante." },
+      { "type": "text", "body": "Il modo più realistico per allenarla non è cominciare dai grandi no drammatici. È iniziare dalle preferenze piccole. Scegliere il posto, dire che ora ti pesa, chiedere di cambiare programma, nominare una voglia semplice senza trasformarla subito in una scusa. Le persone molto compiacenti credono spesso che per essere amate debbano essere facili. In realtà, relazioni sane reggono anche la differenza, perfino la preferiscono alla vaga disponibilità. Dire quello che vuoi in modo pulito crea più realtà, non meno armonia. Solo che all''inizio sembra rischioso perché interrompe un vecchio automatismo." },
+      { "type": "text", "body": "C''è anche un effetto collaterale bello. Quando impari a dire quello che vuoi, diventi più capace di lasciare spazio anche al volere altrui. Non hai più bisogno di controllare tutto né di cedere sempre. Puoi scegliere quando proporre e quando seguire. Quando insistere e quando mollare. Il coraggio della preferenza non crea persone rigide: crea persone presenti. E una persona presente, in una relazione, è molto più affidabile di una persona sempre accomodante e segretamente lontana." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '20 days',
+    now() - interval '20 days'
+  ),
+  (
+    21,
+    'Tra il sì che subisci e il no che ferisce',
+    'assertiveness',
+    'C''è un equivoco ostinato: o sei accomodante o sei duro. E così la gente rimane bloccata, accumulando piccoli sì, evitando di dire no e sognando un tono che non assomigli né alla scusa né all''attacco. Questa risorsa è utile proprio perché smonta quel falso aut aut.',
+    '[
+      { "type": "text", "body": "Questo pezzo va tenuto in libreria perché nomina con chiarezza una cosa che molti utenti sentono ma non sanno formulare: l''assertività non è un carattere, è una competenza. E soprattutto non è una versione elegante della prepotenza. Il testo lavora bene sul continuum passività-aggressività-assertività e sui cosiddetti diritti assertivi, cioè il diritto di dire no, di esprimere bisogni, di cambiare idea, di non dover compiacere sempre. È un contenuto utile quando vuoi dare agli utenti una lingua pulita, non motivazionale, per leggere i loro automatismi." },
+      { "type": "link", "url": "https://www.ospedalemarialuigia.it/psicologia-applicata/assertivita/", "label": "Leggi l''articolo su Ospedale Maria Luigia", "description": "Assertività: stare davvero in relazione con l''altro" },
+      { "type": "text", "body": "Perché tenerlo in libreria: è particolarmente adatto come supporto a una sfida sul dire ciò che vuoi, ma funziona anche come contrappeso per chi teme di diventare duro o egoista appena smette di compiacere. Ha un taglio sobrio, clinico quanto basta, ma leggibile. Non ti dice diventa più forte; ti dice impara a stare in relazione senza cancellarti. In un catalogo italiano rivolto a giovani adulti, questa precisione è preziosa perché evita sia il gergo motivazionale sia quello troppo terapeutico." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '21 days',
+    now() - interval '21 days'
+  ),
+  (
+    22,
+    'La voce che non vuoi zittire',
+    'assertiveness',
+    'A volte non siamo senza desiderio. Siamo solo pieni di dovere. Quando succede, il desiderio smette di sembrarti una voce e comincia a sembrarti un problema da gestire in silenzio. Questo ascolto è utile perché riporta il desiderio al centro senza glorificarlo.',
+    '[
+      { "type": "text", "body": "Molte persone credono di avere un problema di coraggio quando in realtà hanno prima un problema di ascolto. Non riescono a dire quello che vogliono perché non si concedono nemmeno di sentirlo con chiarezza. Il desiderio appare infantile, eccessivo, pericoloso, poco pratico. Allora viene subito tradotto in linguaggio più accettabile: non importa, decidi tu, per me è lo stesso, vediamo dopo. Questa puntata è preziosa proprio qui: rimette al centro il tema del desiderio come voce da distinguere dal dovere, dall''abitudine e dai ruoli che recitiamo senza accorgercene." },
+      { "type": "link", "url": "https://www.raiplaysound.it/audio/2026/01/Sophia-Libera-enciclopedia-di-Radio3---Desiderio-7fb93d42-4826-4e12-a50c-2c414b445e1b.html", "label": "Ascolta la puntata su RaiPlay Sound", "description": "Sophia. Libera enciclopedia di Radio3 — Desiderio" },
+      { "type": "text", "body": "Perché tenerlo in libreria: lavora bene come contenuto laterale ma profondo accanto a una sfida sull''assertività, perché mostra che dire ciò che vuoi non parte dalla tecnica comunicativa, parte da una familiarità minima con il tuo desiderio. È utile anche per evitare un malinteso: cedere non è sempre scomparire, ma lo diventa quando non sai più se stai scegliendo oppure obbedendo al riflesso di non disturbare. Il tono filosofico e radiofonico lo rende diverso dal classico contenuto di autoaiuto." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '22 days',
+    now() - interval '22 days'
+  ),
+  -- =============================================================================
+  -- Aprirsi al nuovo (openness) — one original + two curated
+  -- =============================================================================
+  (
+    23,
+    'Una vita un po'' meno prevista',
+    'openness',
+    'Da bambini proviamo senza sapere se saremo bravi. Da adulti spesso facciamo il contrario: scegliamo solo ciò che ci lascia competenti. Il problema è che, a forza di proteggerci dall''imbarazzo, finiamo per proteggerci anche dal sentirci vivi.',
+    '[
+      { "type": "text", "body": "A un certo punto molti adulti smettono di fare cose nuove non perché non abbiano tempo, ma perché hanno imparato ad amare troppo la sensazione di sapersi muovere bene. La competenza rassicura. La routine fa risparmiare energia. Sapere già chi sei e come funzionano le tue settimane ti evita il ridicolo, il caos, la goffaggine dei primi tentativi. Tutto comprensibile. Il problema è che questa protezione, se diventa eccessiva, restringe il campo del possibile. Rimani efficiente, ma sempre meno poroso. La vita continua, solo che ti attraversa di meno." },
+      { "type": "text", "body": "La rinuncia al nuovo raramente si presenta come rinuncia. Di solito arriva travestita da buon senso. Non è il momento. Non sono il tipo. Sarà per altri. Meglio non complicarsi la vita. Di solito c''è anche un piccolo orgoglio nascosto: se faccio solo ciò in cui me la cavo, non devo sentirmi principiante da nessuna parte. Ma essere sempre esperti ha un costo emotivo. Ti fa perdere la freschezza dell''inizio, la sorpresa, la buffa libertà di non sapere ancora come si fa. E così l''autopilota, da strumento, diventa atmosfera." },
+      { "type": "text", "body": "Aprirsi al nuovo non significa stravolgere tutto o diventare una persona diversa. Significa lasciare entrare una percentuale minima di imprevisto. Una conversazione accettata invece di rimandata. Una strada nuova al posto di quella di sempre. Un invito a cui dici sì anche se non ti senti nel tuo personaggio migliore. Un hobby iniziato senza domandarti se sarai bravo. La novità utile non è quella che ti costringe a performare. È quella che incrina appena il copione e ti restituisce movimento. Il suo effetto più importante non è l''adrenalina: è il ritorno di una certa curiosità verso la tua stessa vita." },
+      { "type": "text", "body": "Per questo rompere la routine funziona bene quando resta concreto. Non serve cambiare città o iscriversi a cinque corsi. Serve spostare qualcosa. Dire sì una volta in più del solito. Fare l''attività che rimandi da mesi senza trasformarla subito in progetto identitario. Entrare in un posto in cui non entri mai. Lasciare che l''esperienza venga prima della valutazione. Il nuovo non ti chiede sempre coraggio spettacolare. Più spesso ti chiede disponibilità. E la disponibilità è una forma mite ma potentissima di apertura." },
+      { "type": "text", "body": "La ricompensa, quasi mai, è diventare una versione migliore di te. È sentirti meno intorpidito. Più presente. Più curioso. A volte anche più tenero verso le tue goffaggini. Perché ogni volta che ricominci da qualcosa che non domini, ti ricordi che essere vivi non coincide con l''essere già capaci. Una vita un po'' meno prevista non è una vita più rumorosa. È una vita in cui lasci accadere qualcosa prima di decidere subito se fa per te." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '23 days',
+    now() - interval '23 days'
+  ),
+  (
+    24,
+    'Lasciarti sorprendere di nuovo',
+    'openness',
+    'La meraviglia non è una cosa infantile. È una forma di attenzione larga, non ancora addomesticata. Quando sparisce, la vita non diventa più seria: diventa solo più prevedibile. Questa risorsa è forte perché restituisce dignità filosofica a un''esperienza che da adulti spesso censuriamo troppo presto.',
+    '[
+      { "type": "text", "body": "Questo video è una scelta felice per il catalogo perché tratta la meraviglia come un modo di stare al mondo. È esattamente il registro che serve per accompagnare sfide sul sì, sulla rottura della routine e persino sul recupero di un hobby: non il nuovo come performance, ma il nuovo come riapertura dell''attenzione. Inoltre la voce di Ilaria Gaspari è molto adatta a un pubblico giovane adulto italiano: colta ma non pesante, limpida, mai predicatoria. È una risorsa che innalza il tono della libreria senza irrigidirla." },
+      { "type": "youtube", "video_id": "ojkW-VaSNk4", "caption": "Ilaria Gaspari — Dalla meraviglia alla filosofia: un viaggio per imparare a vivere (TEDx)" },
+      { "type": "text", "body": "Perché tenerlo in libreria: offre una giustificazione nobile, ma accessibile, a tutto ciò che interrompe l''automatismo. Se vuoi che gli utenti vedano il nuovo non come capriccio ma come allenamento percettivo e umano, questa è una risorsa giusta. Funziona bene anche come contrappeso a un approccio troppo psicologico o troppo pratico: rimette al centro il fatto che vivere meglio, a volte, significa anche tornare a stupirsi un po'', invece di consumare tutto come già visto." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '24 days',
+    now() - interval '24 days'
+  ),
+  (
+    25,
+    'Uscire dal centro di gravità',
+    'openness',
+    'Ci immaginiamo l''avventura come qualcosa di rumoroso. Invece spesso comincia in modo quasi impercettibile: un sì non previsto, una deviazione, il coraggio di non seguire il copione. Questa puntata è preziosa perché toglie all''apertura al nuovo la caricatura dell''adrenalina e la riporta vicino alla vita vera.',
+    '[
+      { "type": "text", "body": "Per molti adulti il nuovo viene accettato solo se resta innocuo, ordinato, già compatibile con l''immagine che hanno di sé. Questa puntata è utile perché chiama l''avventura in un altro modo: non fuga, non collezione di esperienze, non eccitazione seriale, ma apertura all''imprevedibile. È una definizione molto più interessante per il tuo catalogo, perché lega il nuovo non al consumo ma alla sincerità. Quando qualcosa incrina il dominio delle abitudini, infatti, non diventi più spettacolare. Diventi spesso più vero, meno automatico, meno centrato solo sul mantenere il controllo." },
+      { "type": "link", "url": "https://www.raiplaysound.it/audio/2026/03/Sophia-Libera-enciclopedia-di-Radio3---Avventura-2b24ddeb-2f57-46ba-adb6-c88c2334334e.html", "label": "Ascolta la puntata su RaiPlay Sound", "description": "Sophia. Libera enciclopedia di Radio3 — Avventura" },
+      { "type": "text", "body": "Perché tenerlo in libreria: accompagna benissimo una sfida sul dire sì, sul rompere la routine o sul provare qualcosa che non ti viene naturale. Lo fa senza infantilizzare l''utente e senza parlare il linguaggio dell''ottimizzazione personale. Il suo pregio è che resta fedele all''idea di apertura: non devi trasformarti in un''altra persona, devi solo accettare di uscire un poco dal tuo centro di gravità abituale. Per un''app che lavora sul comfort zone stretching, è un appoggio molto pulito." }
+    ]'::jsonb,
+    null,
+    false,
+    now() - interval '25 days',
+    now() - interval '25 days'
   )
 ON CONFLICT (id) DO UPDATE
 SET
