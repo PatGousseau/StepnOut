@@ -150,7 +150,6 @@ export interface Challenge {
     category: ContentCategory;
     hook: string;
     cards: ContentCard[];
-    cover_image_path: string | null;
     is_featured: boolean;
     created_at: string;
     updated_at: string;

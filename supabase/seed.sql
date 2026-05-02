@@ -96,7 +96,6 @@ INSERT INTO public.content_pieces (
   category,
   hook,
   cards,
-  cover_image_path,
   is_featured,
   created_at,
   updated_at
@@ -114,7 +113,6 @@ VALUES
       { "type": "text", "body": "La verità è che le persone non restano bloccate perché sono deboli. Restano bloccate perché sono diventate molto brave a evitarsi il disagio. Eppure il disagio, quando non è distruttivo ma dosato, è spesso la porta d''ingresso della crescita. Il coraggio non ti chiede di diventare un altro: ti chiede di smettere, per qualche secondo, di obbedire sempre alla parte di te che vuole solo essere al sicuro." },
       { "type": "text", "body": "Forse è questa la definizione più onesta di uscire dalla comfort zone: non fare cose enormi, ma smettere di lasciare che la paura abbia sempre l''ultima parola. Ogni volta che non la lasci decidere da sola, succede una cosa sottile ma potente: non diventi invincibile. Diventi più libero." }
     ]'::jsonb,
-    'esplora/sulla-paura-passo-tremore.jpg',
     true,
     now() - interval '1 day',
     now() - interval '1 day'
@@ -129,7 +127,6 @@ VALUES
       { "type": "youtube", "video_id": "yeVg4bUZajs", "caption": "Mary Baccaglini — Il dilemma in amore: mente o cuore? (TEDx)" },
       { "type": "text", "body": "È un contenuto prezioso perché aiuta a distinguere tra autenticità e dipendenza emotiva: se sto cercando l''altro per condividere qualcosa, o solo per non sentirmi vuoto. Quella differenza cambia tutto, soprattutto nelle sfide che toccano appuntamenti, approcci, attese e rifiuto." }
     ]'::jsonb,
-    'esplora/sulla-paura-restare-soli.jpg',
     false,
     now() - interval '2 days',
     now() - interval '2 days'
@@ -146,7 +143,6 @@ VALUES
       { "type": "text", "body": "Se non lasci mai vedere niente di vivo, le persone possono starti vicino senza avvicinarsi davvero. Possono frequentarti, ridere con te, perfino volerti bene — ma senza incontrarti fino in fondo. È una forma di protezione che col tempo diventa solitudine: non perché manchino i contatti, ma perché manca l''esperienza di essere conosciuti. E questa esperienza non arriva quando fai una performance impeccabile. Arriva quando smetti di essere solo gestito e diventi, almeno un po'', presente." },
       { "type": "text", "body": "Essere vulnerabili non vuol dire parlare sempre di cose enormi. Vuol dire fare spazio al vero anche nelle cose piccole. Dire: \"Mi farebbe piacere\". Dire: \"Questa cosa mi ha colpito\". Dire: \"Mi sento fuori posto\". Dire: \"Ti posso chiedere una mano?\". Dire: \"Con te sto bene\". Non è poco. È già moltissimo. La vulnerabilità ben dosata non ti rende meno dignitoso: ti rende più leggibile, più umano, più incontrabile." }
     ]'::jsonb,
-    'esplora/vulnerabilita-dire-verita.jpg',
     false,
     now() - interval '3 days',
     now() - interval '3 days'
@@ -161,7 +157,6 @@ VALUES
       { "type": "youtube", "video_id": "izHbS7rETVg", "caption": "Alessandro D''Avenia — L''arte di essere fragili (TEDx)" },
       { "type": "text", "body": "D''Avenia arriva a questo talk dopo un percorso da scrittore e docente che include anche il libro \"L''arte di essere fragili. Come Leopardi può salvarti la vita\": è quindi un contenuto ideale per utenti intelligenti, sensibili, magari diffidenti verso il linguaggio motivazionale. La fragilità non viene \"superata\"; viene riconosciuta come materia viva dell''esistenza, e proprio per questo diventa meno umiliante e più abitabile." }
     ]'::jsonb,
-    'esplora/vulnerabilita-arte-fragili.jpg',
     false,
     now() - interval '4 days',
     now() - interval '4 days'
@@ -176,7 +171,6 @@ VALUES
       { "type": "link", "url": "https://www.stateofmind.it/vergogna/", "label": "Leggi l''articolo su State of Mind", "description": "Approfondimento sulla vergogna come emozione sociale" },
       { "type": "text", "body": "È una lettura preziosa perché spiega bene un punto centrale: non sempre le persone evitano perché \"non ne hanno voglia\"; molte reagiscono a un senso di inferiorità o di esposizione troppo doloroso. Questo pezzo aiuta a normalizzare quel vissuto senza banalizzarlo." }
     ]'::jsonb,
-    'esplora/vulnerabilita-vergogna.jpg',
     false,
     now() - interval '5 days',
     now() - interval '5 days'
@@ -193,7 +187,6 @@ VALUES
       { "type": "text", "body": "Questo è decisivo per StepnOut, perché molte sfide possono essere interpretate in due modi opposti. Parlare con uno sconosciuto può diventare una prova di audacia egoica — \"vediamo se ce la faccio\" — oppure un esercizio di contatto umano — \"vediamo cosa succede se incontro davvero una persona\". Nel primo caso cerchi prestazione. Nel secondo cerchi realtà. E la realtà, quasi sempre, è più trasformativa." },
       { "type": "text", "body": "La connessione vera non richiede di essere perfetti, ma di essere un po'' meno difesi. Di arrivare meno preparati e più disponibili. Di tollerare il piccolo disordine dell''incontro. È lì che gli altri smettono di essere pubblico, specchio o minaccia. E tornano a essere quello che sono: altri esseri umani, con le loro paure, il loro bisogno di essere visti, la loro fame di verità." }
     ]'::jsonb,
-    'esplora/connessione-non-performance.jpg',
     false,
     now() - interval '6 days',
     now() - interval '6 days'
@@ -208,7 +201,6 @@ VALUES
       { "type": "youtube", "video_id": "FfmPig6URTs", "caption": "Giada Susca — Essere comunità nell''Era della solitudine (TEDx)" },
       { "type": "text", "body": "Susca arriva a una conclusione molto vicina al cuore dell''app: la cura passa dai piccoli gesti quotidiani di connessione, che diventano i primi mattoni di comunità più sane. Un ottimo pezzo da mettere prima di sfide che riguardano nonni, vicinato, famiglia, gruppi o senso civico, perché amplia l''idea di uscire dalla comfort zone: non solo esporsi, ma tornare in relazione." }
     ]'::jsonb,
-    'esplora/connessione-comunita.jpg',
     false,
     now() - interval '7 days',
     now() - interval '7 days'
@@ -223,7 +215,6 @@ VALUES
       { "type": "link", "url": "https://www.libreriadelledonne.it/puntodivista/dallastampa/il-silenzio-delle-ragazze/", "label": "Leggi l''articolo", "description": "Carol Gilligan — Il silenzio delle ragazze" },
       { "type": "text", "body": "Il valore di questo pezzo è enorme, perché trasforma il tema della connessione in qualcosa di più esigente della semplice presenza: una relazione non è davvero viva se per mantenerla devi smettere di dire ciò che senti. Un contenuto molto forte per utenti giovani, soprattutto quando il nodo non è \"come socializzare\", ma \"come restare veri senza perdere appartenenza\"." }
     ]'::jsonb,
-    'esplora/connessione-silenzio-ragazze.jpg',
     false,
     now() - interval '8 days',
     now() - interval '8 days'
@@ -240,7 +231,6 @@ VALUES
       { "type": "text", "body": "Forse la maturità emotiva è anche questo: smettere di aspettare il momento in cui saremo perfettamente pronti. E imparare a riconoscere il valore morale, affettivo, umano dei gesti minimi. Perché chiedere scusa davvero, fare un complimento senza ironia, dire \"mi manchi\" a un nonno, parlare con qualcuno che di solito ignori, fermarti ad ascoltare — sono tutte cose piccole solo per chi non le deve fare. Per chi le deve fare, a volte, sono montagne." },
       { "type": "text", "body": "E allora sì: onoriamo anche il coraggio ordinario. Quello che non fa curriculum. Quello che non impressiona nessuno. Quello che però, silenziosamente, rimette in moto la vita." }
     ]'::jsonb,
-    'esplora/storie-coraggio-ordinario.jpg',
     false,
     now() - interval '9 days',
     now() - interval '9 days'
@@ -255,7 +245,6 @@ VALUES
       { "type": "youtube", "video_id": "x_sVIV8-vvM", "caption": "Marco Confortola — No pain no gain (TED)" },
       { "type": "text", "body": "La pagina ufficiale descrive il passaggio dalla connessione estrema con il corpo e la montagna alla disconnessione dal mondo dopo l''amputazione, fino a una nuova ricerca di relazione con se stesso e con gli altri. È prezioso perché offre una storia vera di vulnerabilità non romantica: il dolore non viene negato, ma attraversato. Molto più utile per utenti adulti di qualunque contenuto \"motivazionale\" standard." }
     ]'::jsonb,
-    'esplora/storie-no-pain-no-gain.jpg',
     false,
     now() - interval '10 days',
     now() - interval '10 days'
@@ -270,7 +259,6 @@ VALUES
       { "type": "link", "url": "https://www.raiplaysound.it/audio/2024/11/Il-tuffo-del-22112024-e85ca394-ea1b-453c-91e0-da8425c4d732.html", "label": "Ascolta il podcast su RaiPlay Sound", "description": "Il tuffo — Parlarne tra amici" },
       { "type": "text", "body": "È uno dei contenuti più interessanti di tutta la selezione perché porta la vulnerabilità fuori dalla teoria e la mostra come pratica sociale: parlare non elimina il conflitto, ma lo rende meno cieco. Ottimo per un pubblico giovane che ha bisogno di vedere la sincerità non come perdita di status, ma come forma di responsabilità." }
     ]'::jsonb,
-    'esplora/storie-parlarne-tra-amici.jpg',
     false,
     now() - interval '11 days',
     now() - interval '11 days'
@@ -287,7 +275,6 @@ VALUES
       { "type": "text", "body": "Per questo la crescita personale seria non coincide con l''adrenalina. Coincide con l''apprendimento. L''obiettivo non è buttarsi nelle situazioni più difficili, ma restare a contatto con ciò che temi in modo abbastanza graduale da permettere al cervello e al corpo di aggiornare le proprie previsioni. È anche il motivo per cui i programmi di esposizione funzionano: non perché insegnino a \"non provare ansia\", ma perché aiutano a scoprire che molte situazioni temute sono affrontabili." },
       { "type": "text", "body": "In pratica, la tua zona di comfort non è il luogo dove stai bene: è il luogo dove sai già cosa aspettarti. E queste non sono la stessa cosa. Uscire dalla comfort zone non è un gesto teatrale. È, molto più spesso, una scelta di apprendimento: fare una cosa diversa abbastanza volte da non doverla più vivere come una minaccia assoluta. Meno glamour di come la raccontano online. Ma infinitamente più vero." }
     ]'::jsonb,
-    'esplora/scienza-comfort-restringe.jpg',
     false,
     now() - interval '12 days',
     now() - interval '12 days'
@@ -302,7 +289,6 @@ VALUES
       { "type": "link", "url": "https://www.stateofmind.it/2022/07/ansia-sociale-regolazione-emotiva/", "label": "Leggi l''articolo su State of Mind", "description": "Ansia sociale, solitudine e regolazione emotiva" },
       { "type": "text", "body": "Il valore per StepnOut è pratico e profondo insieme: aiuta a capire che l''isolamento non nasce solo dalla mancanza di contatti, ma anche dal modo in cui interpretiamo e gestiamo le emozioni nelle relazioni. In altre parole, spiega perché uscire dalla comfort zone può migliorare non solo la vita sociale, ma anche il rapporto con i propri stati interni." }
     ]'::jsonb,
-    'esplora/scienza-ansia-sociale.jpg',
     false,
     now() - interval '13 days',
     now() - interval '13 days'
@@ -319,7 +305,6 @@ VALUES
       { "type": "text", "body": "Il micro-coraggio ha una qualità morale bellissima: è democratico. Non appartiene solo agli estroversi, ai disinvolti, a quelli che amano stare al centro. Appartiene anche alle persone sensibili, prudenti, lente, introspettive. Una buona sfida non ti umilia: ti allena. Non ti rompe: ti allarga. Non cancella la paura; la rende meno sovrana." },
       { "type": "text", "body": "Nella pratica quotidiana, uscire dalla comfort zone non dovrebbe somigliare a un esame di valore personale. Dovrebbe somigliare a un allenamento gentile ma serio. Oggi un centimetro. Domani forse due. Alcuni giorni niente applausi, niente svolte, niente euforia. Solo una piccola prova fatta fino in fondo. È così che si costruisce una nuova immagine di sé: non con un exploit, ma con una serie di esperienze che dicono, lentamente, \"questa cosa la posso fare\". E a un certo punto ti accorgi che il mondo non è diventato meno impegnativo. Sei tu che sei diventato un po'' più capace di starci dentro." }
     ]'::jsonb,
-    'esplora/pratica-centimetro-oltre.jpg',
     false,
     now() - interval '14 days',
     now() - interval '14 days'
@@ -336,7 +321,6 @@ VALUES
       { "type": "text", "body": "Da lì, il cambiamento non si decide in una giornata. Si costruisce in piccole interruzioni ripetute. Una volta su dieci, fai diversamente. Poi una volta su otto. Poi una volta su cinque. Non è glamour. Non è la versione Instagram della trasformazione. Ma è come funziona davvero. Ogni interruzione è un piccolo voto contro l''automatismo. E i voti, sommati nel tempo, decidono molto più di quanto sembrino. Chi cambia davvero, di solito, non ha più disciplina degli altri. Ha solo notato prima, più spesso, e ha lasciato che la consapevolezza facesse il suo lavoro lento." },
       { "type": "text", "body": "Per questo le sfide quotidiane piccole hanno più valore di quanto sembri. Non perché un singolo gesto cambi la vita, ma perché ogni gesto compiuto consapevolmente rompe l''incantesimo dell''automatico. Ricomincia a farti vedere come una persona che decide, non come una persona a cui le cose succedono. E quella differenza — sentirti soggetto invece che spettatore della tua vita — non si misura in risultati esterni. Si misura in qualcosa di più sottile: il senso, ricominciato a sentirsi quasi dimenticato, che le tue giornate ti appartengono davvero." }
     ]'::jsonb,
-    'esplora/pratica-parla-con-noi.jpg',
     false,
     now() - interval '15 days',
     now() - interval '15 days'
@@ -356,7 +340,6 @@ VALUES
       { "type": "text", "body": "Per questo portarti a pranzo, a cena o anche solo a prendere un caffè non è un gesto estetico. È un piccolo allenamento interiore. Vuol dire scegliere un posto che ti incuriosisce, stare qualche minuto senza cercare subito uno schermo, accorgerti di cosa ti piace davvero quando non devi adattarti al gusto di qualcun altro. Magari ti senti goffo, magari guardi troppo la porta, magari il silenzio pesa. Va bene. Non stai cercando di diventare impeccabile nella solitudine. Stai solo imparando a non insultare quel momento trattandolo come un tempo di serie B. È proprio questo che comincia a renderlo degno." },
       { "type": "text", "body": "La cosa più preziosa, alla lunga, è che chi sa stare da solo non diventa meno capace di legarsi. Diventa meno disposto a usare gli altri come anestesia. Le relazioni smettono di essere l''unico posto in cui ti senti vivo, visto, autorizzato a esistere. Restano importanti, bellissime, necessarie. Ma non sono più un pronto soccorso permanente contro il vuoto. Un tavolo per uno, allora, non certifica che manca qualcosa. A volte è il contrario: è il momento in cui inizi a smettere di mancare a te stesso." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '16 days',
     now() - interval '16 days'
@@ -373,7 +356,6 @@ VALUES
       { "type": "text", "body": "Per questo un momento senza telefono può essere più profondo di quanto sembri. Non perché ti trasformi all''istante, ma perché rimette in moto dei muscoli mentali atrofizzati. Ti accorgi dei rumori di una strada, del tuo respiro, del fatto che ti sei stancato, di un desiderio piccolo che altrimenti avresti coperto. Ti accorgi anche che l''impulso a distrarti sale e poi passa. Questo è importante: scopri che non devi obbedire a ogni spinta. E che il disagio, se non lo insegui e non lo drammatizzi, a volte cambia forma da solo." },
       { "type": "text", "body": "Col tempo succede una cosa sottile ma decisiva. La vita smette di sembrarti fatta solo di picchi, stimoli e contenuti, e ricomincia ad avere trama. Un hobby, una passeggiata, un caffè in silenzio, un tragitto senza auricolari non sembrano più tempi morti da sopportare. Diventano luoghi in cui ti ritrovi. Non perché ogni volta ti piaccia, ma perché non devi più fuggire automaticamente. E quando non fuggi sempre, non sei solo più presente. Diventi anche più libero: meno addestrato dal riflesso, più capace di stare dove sei." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '17 days',
     now() - interval '17 days'
@@ -390,7 +372,6 @@ VALUES
       { "type": "text", "body": "Per questo ritrovare il tempo per un hobby conta molto più di quanto sembri. Un hobby non ti chiede di essere brillante, utile o redditizio. Ti chiede di stare. Di tornare. Di fare una cosa per il gusto di farla. In un''epoca che misura quasi tutto in resa, l''inutilità buona di un gesto scelto è una forma di igiene psichica. Ti ricorda che non esisti solo quando performi. E soprattutto crea un terreno concreto in cui sentirti a casa con te: non nei grandi discorsi, ma nella ripetizione viva di qualcosa che ti appartiene davvero." },
       { "type": "text", "body": "A un certo punto te ne accorgi da segnali minimi. Non apri il telefono appena hai un buco. Non senti il bisogno di riempire ogni sera. Ti viene in mente una cosa che ti piace e la fai, senza trasformarla subito in progetto o compito. È lì che la solitudine cambia sapore. Non perché diventi sempre facile, ma perché non coincide più con un abbandono. Restare dalla tua parte vuol dire questo: fare in modo che, quando il mondo si ritira un poco, tu non sparisca insieme a lui." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '18 days',
     now() - interval '18 days'
@@ -405,7 +386,6 @@ VALUES
       { "type": "link", "url": "https://www.internazionale.it/opinione/oliver-burkeman/2016/11/23/solitudine", "label": "Leggi l''articolo su Internazionale", "description": "Oliver Burkeman — Come rendere utile la solitudine" },
       { "type": "text", "body": "Perché tenerlo in libreria: accompagna bene un appuntamento con sé, un momento senza telefono, o il recupero di un hobby, perché non promette serenità immediata. Offre una cornice più adulta: il disagio non è sempre la prova che stai sbagliando, a volte è il segnale che non hai ancora imparato ad abitare quel tipo di tempo. Questo rende la lettura meno consolatoria e più trasformativa. In più, essendo tradotto e pubblicato da un media forte, alza il tono del catalogo senza spostarlo verso l''accademico." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '19 days',
     now() - interval '19 days'
@@ -425,7 +405,6 @@ VALUES
       { "type": "text", "body": "Il modo più realistico per allenarla non è cominciare dai grandi no drammatici. È iniziare dalle preferenze piccole. Scegliere il posto, dire che ora ti pesa, chiedere di cambiare programma, nominare una voglia semplice senza trasformarla subito in una scusa. Le persone molto compiacenti credono spesso che per essere amate debbano essere facili. In realtà, relazioni sane reggono anche la differenza, perfino la preferiscono alla vaga disponibilità. Dire quello che vuoi in modo pulito crea più realtà, non meno armonia. Solo che all''inizio sembra rischioso perché interrompe un vecchio automatismo." },
       { "type": "text", "body": "C''è anche un effetto collaterale bello. Quando impari a dire quello che vuoi, diventi più capace di lasciare spazio anche al volere altrui. Non hai più bisogno di controllare tutto né di cedere sempre. Puoi scegliere quando proporre e quando seguire. Quando insistere e quando mollare. Il coraggio della preferenza non crea persone rigide: crea persone presenti. E una persona presente, in una relazione, è molto più affidabile di una persona sempre accomodante e segretamente lontana." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '20 days',
     now() - interval '20 days'
@@ -440,7 +419,6 @@ VALUES
       { "type": "link", "url": "https://www.ospedalemarialuigia.it/psicologia-applicata/assertivita/", "label": "Leggi l''articolo su Ospedale Maria Luigia", "description": "Assertività: stare davvero in relazione con l''altro" },
       { "type": "text", "body": "Perché tenerlo in libreria: è particolarmente adatto come supporto a una sfida sul dire ciò che vuoi, ma funziona anche come contrappeso per chi teme di diventare duro o egoista appena smette di compiacere. Ha un taglio sobrio, clinico quanto basta, ma leggibile. Non ti dice diventa più forte; ti dice impara a stare in relazione senza cancellarti. In un catalogo italiano rivolto a giovani adulti, questa precisione è preziosa perché evita sia il gergo motivazionale sia quello troppo terapeutico." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '21 days',
     now() - interval '21 days'
@@ -457,7 +435,6 @@ VALUES
       { "type": "text", "body": "Il modo per ricominciare ad ascoltarsi è più semplice di quanto sembri, ma più difficile da praticare. È fermarsi un attimo prima di rispondere. Anche solo tre secondi. In quei tre secondi, prima che parta la risposta automatica — il sì comodo, il va bene rituale, il decidi tu — chiediti: cosa preferirei davvero, se non dovessi giustificarlo? La domanda non porta sempre una risposta chiara. A volte c''è solo silenzio, o confusione. Va bene anche questo: vuol dire che la tua preferenza era stata coperta così bene che non riesce ancora a presentarsi. Ma il fatto stesso di chiederti qualcosa, prima di rispondere all''altro, ti rimette al centro per un momento. E quel momento, ripetuto, cambia tutto." },
       { "type": "text", "body": "Quello che molte persone scoprono, allenando questa pausa, è che dire quello che vogliono non è quasi mai così catastrofico come temevano. Le relazioni reggono. Gli altri si adattano. A volte si stupiscono, a volte sono perfino sollevati: anche loro, probabilmente, stavano cercando di indovinare. La differenza non è che diventi una persona più dura. È che diventi una persona presente. E una persona presente, alla lunga, è molto più amabile di una persona accomodante. Perché la persona accomodante non c''è davvero. C''è solo la sua ombra, gentile e silenziosa, che dice sempre va bene mentre dentro qualcosa lentamente si spegne." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '22 days',
     now() - interval '22 days'
@@ -477,7 +454,6 @@ VALUES
       { "type": "text", "body": "Per questo rompere la routine funziona bene quando resta concreto. Non serve cambiare città o iscriversi a cinque corsi. Serve spostare qualcosa. Dire sì una volta in più del solito. Fare l''attività che rimandi da mesi senza trasformarla subito in progetto identitario. Entrare in un posto in cui non entri mai. Lasciare che l''esperienza venga prima della valutazione. Il nuovo non ti chiede sempre coraggio spettacolare. Più spesso ti chiede disponibilità. E la disponibilità è una forma mite ma potentissima di apertura." },
       { "type": "text", "body": "La ricompensa, quasi mai, è diventare una versione migliore di te. È sentirti meno intorpidito. Più presente. Più curioso. A volte anche più tenero verso le tue goffaggini. Perché ogni volta che ricominci da qualcosa che non domini, ti ricordi che essere vivi non coincide con l''essere già capaci. Una vita un po'' meno prevista non è una vita più rumorosa. È una vita in cui lasci accadere qualcosa prima di decidere subito se fa per te." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '23 days',
     now() - interval '23 days'
@@ -492,7 +468,6 @@ VALUES
       { "type": "youtube", "video_id": "ojkW-VaSNk4", "caption": "Ilaria Gaspari — Dalla meraviglia alla filosofia: un viaggio per imparare a vivere (TEDx)" },
       { "type": "text", "body": "Perché tenerlo in libreria: offre una giustificazione nobile, ma accessibile, a tutto ciò che interrompe l''automatismo. Se vuoi che gli utenti vedano il nuovo non come capriccio ma come allenamento percettivo e umano, questa è una risorsa giusta. Funziona bene anche come contrappeso a un approccio troppo psicologico o troppo pratico: rimette al centro il fatto che vivere meglio, a volte, significa anche tornare a stupirsi un po'', invece di consumare tutto come già visto." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '24 days',
     now() - interval '24 days'
@@ -509,7 +484,6 @@ VALUES
       { "type": "text", "body": "Quello che succede dentro questi piccoli sì è interessante. Non sempre l''esperienza è memorabile. A volte è proprio insignificante: hai detto sì a un caffè, era un caffè, fine. Ma anche in quel caso qualcosa è cambiato: hai dimostrato a te stesso che puoi uscire dal copione senza che crolli niente. È un''informazione preziosa. Il cervello la registra. La prossima volta che si presenta un sì possibile, la resistenza è un po'' più debole. Non perché tu sia diventato un''altra persona, ma perché hai aggiornato l''ipotesi su quello che sei in grado di fare. E queste piccole informazioni, accumulate, costruiscono una vita più mossa." },
       { "type": "text", "body": "Forse è questo il segreto poco glamour dell''apertura: non è coraggio, è disponibilità. Non ti chiede di trasformarti, ma di non chiuderti automaticamente. Di lasciare uno spazio, ogni tanto, perché qualcosa di non previsto possa entrare. E quando entra, non sempre porta una rivelazione. Spesso porta solo una cosa più piccola e più preziosa: il senso che la tua vita non è una collezione di doveri da spuntare, ma uno spazio in cui possono ancora capitare cose che non avevi pianificato. È poco. Ma in quel poco c''è quasi tutto quello che chiamiamo sentirsi vivi." }
     ]'::jsonb,
-    null,
     false,
     now() - interval '25 days',
     now() - interval '25 days'
@@ -520,7 +494,6 @@ SET
   category = EXCLUDED.category,
   hook = EXCLUDED.hook,
   cards = EXCLUDED.cards,
-  cover_image_path = EXCLUDED.cover_image_path,
   is_featured = EXCLUDED.is_featured,
   created_at = EXCLUDED.created_at,
   updated_at = EXCLUDED.updated_at;

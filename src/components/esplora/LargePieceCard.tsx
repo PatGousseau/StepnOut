@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
@@ -11,7 +10,6 @@ import {
   esploraType,
 } from '../../constants/EsploraStyles';
 import { ContentPiece } from '../../types';
-import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
@@ -22,20 +20,8 @@ interface Props {
   style?: ViewStyle;
 }
 
-const useCoverImageUrl = (path: string | null) =>
-  useMemo(() => {
-    if (!path) return null;
-    const { data } = supabase.storage
-      .from('challenge-uploads')
-      .getPublicUrl(path);
-    return data?.publicUrl ?? null;
-  }, [path]);
-
 export const LargePieceCard: React.FC<Props> = ({ piece, source, style }) => {
   const { t } = useLanguage();
-  const imageUrl = useCoverImageUrl(piece.cover_image_path);
-  const [imageFailed, setImageFailed] = useState(false);
-  const showImage = imageUrl && !imageFailed;
   const gradient = CATEGORY_GRADIENTS[piece.category];
 
   const handlePress = () => {
@@ -64,15 +50,6 @@ export const LargePieceCard: React.FC<Props> = ({ piece, source, style }) => {
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {showImage ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={200}
-          onError={() => setImageFailed(true)}
-        />
-      ) : null}
       <LinearGradient
         colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.45)']}
         locations={[0, 0.45, 1]}

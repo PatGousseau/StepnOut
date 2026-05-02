@@ -1,6 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
@@ -11,7 +10,6 @@ import {
   esploraType,
 } from '../../constants/EsploraStyles';
 import { ContentPiece } from '../../types';
-import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
@@ -24,15 +22,6 @@ const FEATURED_HEIGHT = Math.round(Dimensions.get('window').width * 0.9);
 
 export const FeaturedCard: React.FC<Props> = ({ piece }) => {
   const { t } = useLanguage();
-  const [imageFailed, setImageFailed] = useState(false);
-  const imageUrl = useMemo(() => {
-    if (!piece.cover_image_path) return null;
-    const { data } = supabase.storage
-      .from('challenge-uploads')
-      .getPublicUrl(piece.cover_image_path);
-    return data?.publicUrl ?? null;
-  }, [piece.cover_image_path]);
-  const showImage = imageUrl && !imageFailed;
   const gradient = CATEGORY_GRADIENTS[piece.category];
 
   const handlePress = () => {
@@ -59,15 +48,6 @@ export const FeaturedCard: React.FC<Props> = ({ piece }) => {
           end={{ x: 0, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        {showImage ? (
-          <Image
-            source={{ uri: imageUrl }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            transition={200}
-            onError={() => setImageFailed(true)}
-          />
-        ) : null}
         <LinearGradient
           colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.65)']}
           locations={[0, 0.4, 1]}
