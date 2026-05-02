@@ -1,22 +1,22 @@
 CREATE TABLE public.private_challenge_profiles (
   user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   goal text[] NOT NULL DEFAULT '{}'::text[]
-    CHECK (goal <@ ARRAY['confidence', 'connection', 'spontaneity', 'courage', 'self_trust', 'less_overthinking']::text[])
+    CHECK (goal <@ ARRAY['novelty', 'fun', 'connection', 'momentum', 'creativity', 'better_stories']::text[])
     CHECK (cardinality(goal) > 0),
   hard_situation text[] NOT NULL DEFAULT '{}'::text[]
-    CHECK (hard_situation <@ ARRAY['talking_to_strangers', 'being_seen', 'asking_for_what_i_want', 'doing_things_alone', 'being_playful', 'saying_yes']::text[])
+    CHECK (hard_situation <@ ARRAY['low_energy', 'overthinking', 'spending_money', 'planning', 'social_hesitation', 'going_far', 'not_knowing', 'feeling_self_conscious']::text[])
     CHECK (cardinality(hard_situation) > 0),
-  stretch_level text NOT NULL CHECK (stretch_level IN ('gentle', 'balanced', 'push_me')),
+  stretch_level text NOT NULL CHECK (stretch_level IN ('easy_win', 'moderate_push', 'bold_nudge')),
   preferred_context text[] NOT NULL DEFAULT '{}'::text[]
-    CHECK (preferred_context <@ ARRAY['at_home', 'outside', 'social_settings', 'work_or_school', 'anywhere']::text[])
+    CHECK (preferred_context <@ ARRAY['at_home', 'near_home', 'out_in_the_city', 'with_other_people', 'solo']::text[])
     CHECK (cardinality(preferred_context) > 0),
   meaningful_type text[] NOT NULL DEFAULT '{}'::text[]
-    CHECK (meaningful_type <@ ARRAY['social', 'reflective', 'adventurous', 'expressive', 'practical', 'habit_building']::text[])
+    CHECK (meaningful_type <@ ARRAY['playful', 'creative', 'exploratory', 'social', 'reflective', 'growth_edge']::text[])
     CHECK (cardinality(meaningful_type) > 0),
   avoid_types text[] NOT NULL DEFAULT '{}'::text[]
-    CHECK (avoid_types <@ ARRAY['spending_money', 'talking_to_strangers', 'group_social_situations', 'physically_demanding', 'nighttime', 'work_or_school', 'none']::text[]),
+    CHECK (avoid_types <@ ARRAY['spending_money', 'talking_to_strangers', 'group_social_situations', 'lots_of_planning', 'physically_demanding', 'nighttime', 'going_far']::text[]),
   progress_definition text[] NOT NULL DEFAULT '{}'::text[]
-    CHECK (progress_definition <@ ARRAY['less_anxious', 'more_initiative', 'talk_to_more_people', 'less_overthinking_action', 'more_stories']::text[])
+    CHECK (progress_definition <@ ARRAY['did_something_unusual', 'more_stories', 'days_less_repetitive', 'followed_impulses', 'explored_more', 'felt_more_alive', 'shared_more_with_people']::text[])
     CHECK (cardinality(progress_definition) > 0),
   onboarding_completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),

@@ -201,11 +201,7 @@ export const PrivateChallengePath: React.FC = () => {
 
   const toggleAvoidType = (value: PrivateChallengeAvoidType) => {
     setDraft((current) => {
-      if (value === "none") {
-        return { ...current, avoid_types: current.avoid_types.includes("none") ? [] : ["none"] };
-      }
-
-      const existing = current.avoid_types.filter((item) => item !== "none");
+      const existing = current.avoid_types;
       return {
         ...current,
         avoid_types: existing.includes(value)
@@ -217,23 +213,23 @@ export const PrivateChallengePath: React.FC = () => {
 
   const questionnaireSteps = [
     {
-      title: "What do you want more of right now?",
+      title: "What are you craving more of right now?",
       render: () => (
         <MultiSelectSection
-          title="What do you want more of right now?"
+          title="What are you craving more of right now?"
           options={PRIVATE_CHALLENGE_GOAL_OPTIONS}
           selected={draft.goal}
           onToggle={(goal) => toggleMultiValue("goal", goal)}
-          helperText="Choose all that feel true right now"
+          helperText="Choose all that sound right"
         />
       ),
       isComplete: draft.goal.length > 0,
     },
     {
-      title: "Which situations feel hardest to you?",
+      title: "What usually keeps you in the same routine?",
       render: () => (
         <MultiSelectSection
-          title="Which situations feel hardest to you?"
+          title="What usually keeps you in the same routine?"
           options={PRIVATE_CHALLENGE_HARD_SITUATION_OPTIONS}
           selected={draft.hard_situation}
           onToggle={(hard_situation) => toggleMultiValue("hard_situation", hard_situation)}
@@ -243,10 +239,10 @@ export const PrivateChallengePath: React.FC = () => {
       isComplete: draft.hard_situation.length > 0,
     },
     {
-      title: "How much stretch do you want most days?",
+      title: "How much activation do you want from these?",
       render: () => (
         <SingleSelectSection
-          title="How much stretch do you want most days?"
+          title="How much activation do you want from these?"
           options={PRIVATE_CHALLENGE_STRETCH_LEVEL_OPTIONS}
           selected={draft.stretch_level}
           onSelect={(stretch_level) => setDraft((current) => ({ ...current, stretch_level }))}
@@ -255,10 +251,10 @@ export const PrivateChallengePath: React.FC = () => {
       isComplete: !!draft.stretch_level,
     },
     {
-      title: "Where do you want these challenges to happen most often?",
+      title: "Where should these fit most easily?",
       render: () => (
         <MultiSelectSection
-          title="Where do you want these challenges to happen most often?"
+          title="Where should these fit most easily?"
           options={PRIVATE_CHALLENGE_CONTEXT_OPTIONS}
           selected={draft.preferred_context}
           onToggle={(preferred_context) => toggleMultiValue("preferred_context", preferred_context)}
@@ -268,23 +264,23 @@ export const PrivateChallengePath: React.FC = () => {
       isComplete: draft.preferred_context.length > 0,
     },
     {
-      title: "What kind of challenge feels most meaningful?",
+      title: "What kind of side quest sounds most appealing?",
       render: () => (
         <MultiSelectSection
-          title="What kind of challenge feels most meaningful?"
+          title="What kind of side quest sounds most appealing?"
           options={PRIVATE_CHALLENGE_MEANINGFUL_TYPE_OPTIONS}
           selected={draft.meaningful_type}
           onToggle={(meaningful_type) => toggleMultiValue("meaningful_type", meaningful_type)}
-          helperText="Choose all that resonate"
+          helperText="Choose all that appeal to you"
         />
       ),
       isComplete: draft.meaningful_type.length > 0,
     },
     {
-      title: "Which challenges should we avoid?",
+      title: "What should we steer away from?",
       render: () => (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t("Which challenges should we avoid?")}</Text>
+          <Text style={styles.sectionTitle}>{t("What should we steer away from?")}</Text>
           <Text style={styles.helperText}>{t("Choose all that apply")}</Text>
           <View style={styles.optionsWrap}>
             {PRIVATE_CHALLENGE_AVOID_OPTIONS.map((option) => {
@@ -305,14 +301,14 @@ export const PrivateChallengePath: React.FC = () => {
       isComplete: true,
     },
     {
-      title: "What would feel like progress in a month?",
+      title: "A month from now, what would make this feel worth it?",
       render: () => (
         <MultiSelectSection
-          title="What would feel like progress in a month?"
+          title="A month from now, what would make this feel worth it?"
           options={PRIVATE_CHALLENGE_PROGRESS_OPTIONS}
           selected={draft.progress_definition}
           onToggle={(progress_definition) => toggleMultiValue("progress_definition", progress_definition)}
-          helperText="Choose all that feel meaningful"
+          helperText="Choose all that would matter to you"
         />
       ),
       isComplete: draft.progress_definition.length > 0,
@@ -426,7 +422,7 @@ export const PrivateChallengePath: React.FC = () => {
                   <>
                     <Text style={styles.editingTitle}>{t("Edit preferences")}</Text>
                     <Text style={styles.editingSubtitle}>
-                      {t("Fine-tune the kind of stretch that feels right for you right now.")}
+                      {t("Fine-tune the kinds of side quests that fit your life right now.")}
                     </Text>
                   </>
                 )}
@@ -441,13 +437,13 @@ export const PrivateChallengePath: React.FC = () => {
           >
             {showingIntroStep ? (
               <View style={styles.introSection}>
-                <Text style={styles.introEyebrow}>{t("Your private path")}</Text>
+                <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
                 <Text style={styles.introTitle}>{t("Set up your path")}</Text>
                 <Text style={styles.introBody}>
-                  {t("Stepping out of your comfort zone does not look the same every day. Sometimes it is speaking up. Sometimes it is being seen, doing something alone, or saying yes before you can overthink it.")}
+                  {t("Not everything worthwhile has to be part of the main plot. Sometimes the best moments come from doing something a little unexpected: a detour, a tiny adventure, a plan you would not normally make on an ordinary day.")}
                 </Text>
                 <Text style={styles.introBody}>
-                  {t("This path is here to help you grow in a way that feels personal: small private challenges, the right kind of stretch, and a little more courage over time.")}
+                  {t("This path is here to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable for your real life.")}
                 </Text>
               </View>
             ) : (
