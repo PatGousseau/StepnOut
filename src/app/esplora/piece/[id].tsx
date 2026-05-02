@@ -89,6 +89,18 @@ export default function PieceReaderScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.progressRow}>
+        {pages.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.progressSegment,
+              i <= activeIndex && styles.progressSegmentActive,
+            ]}
+          />
+        ))}
+      </View>
+
       <View style={styles.topBar}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -132,6 +144,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  progressRow: {
+    flexDirection: 'row',
+    paddingHorizontal: esploraSpacing.horizontalPadding,
+    paddingTop: esploraSpacing.md,
+    gap: 4,
+  },
+  progressSegment: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.light.text,
+    opacity: 0.15,
+  },
+  progressSegmentActive: {
+    backgroundColor: colors.light.primary,
+    opacity: 1,
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,5 +178,6 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
+    backgroundColor: colors.light.background,
   },
 });
