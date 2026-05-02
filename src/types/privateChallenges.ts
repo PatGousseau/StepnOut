@@ -2,53 +2,57 @@ export type PrivateChallengeDifficulty = "easy" | "medium" | "hard";
 export type PrivateChallengeSetStatus = "pending" | "completed" | "skipped";
 
 export type PrivateChallengeGoal =
-  | "confidence"
+  | "novelty"
+  | "fun"
   | "connection"
-  | "spontaneity"
-  | "courage"
-  | "self_trust"
-  | "less_overthinking";
+  | "momentum"
+  | "creativity"
+  | "better_stories";
 
 export type PrivateChallengeHardSituation =
-  | "talking_to_strangers"
-  | "being_seen"
-  | "asking_for_what_i_want"
-  | "doing_things_alone"
-  | "being_playful"
-  | "saying_yes";
+  | "low_energy"
+  | "overthinking"
+  | "spending_money"
+  | "planning"
+  | "social_hesitation"
+  | "going_far"
+  | "not_knowing"
+  | "feeling_self_conscious";
 
-export type PrivateChallengeStretchLevel = "gentle" | "balanced" | "push_me";
+export type PrivateChallengeStretchLevel = "easy_win" | "moderate_push" | "bold_nudge";
 
 export type PrivateChallengePreferredContext =
   | "at_home"
-  | "outside"
-  | "social_settings"
-  | "work_or_school"
-  | "anywhere";
+  | "near_home"
+  | "out_in_the_city"
+  | "with_other_people"
+  | "solo";
 
 export type PrivateChallengeMeaningfulType =
+  | "playful"
+  | "creative"
+  | "exploratory"
   | "social"
   | "reflective"
-  | "adventurous"
-  | "expressive"
-  | "practical"
-  | "habit_building";
+  | "growth_edge";
 
 export type PrivateChallengeAvoidType =
   | "spending_money"
   | "talking_to_strangers"
   | "group_social_situations"
+  | "lots_of_planning"
   | "physically_demanding"
   | "nighttime"
-  | "work_or_school"
-  | "none";
+  | "going_far";
 
 export type PrivateChallengeProgressDefinition =
-  | "less_anxious"
-  | "more_initiative"
-  | "talk_to_more_people"
-  | "less_overthinking_action"
-  | "more_stories";
+  | "did_something_unusual"
+  | "more_stories"
+  | "days_less_repetitive"
+  | "followed_impulses"
+  | "explored_more"
+  | "felt_more_alive"
+  | "shared_more_with_people";
 
 export interface PrivateChallengeProfile {
   user_id: string;
