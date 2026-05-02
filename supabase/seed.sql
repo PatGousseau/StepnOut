@@ -123,10 +123,10 @@ VALUES
     2,
     'La paura di restare soli crea rapporti infelici',
     'fear',
-    'Un video breve ma molto nitido su una paura che fa più danni di quanto sembri: quella di restare soli. Utile quando una sfida sociale tocca il bisogno di conferma più che il desiderio di incontro.',
+    'Un TEDx breve e diretto su una paura che fa più danni di quanto sembri: quella di restare soli. Utile quando una sfida sociale tocca il bisogno di conferma più che il desiderio di incontro.',
     '[
-      { "type": "text", "body": "In questo video di Internazionale con Alain de Botton, il punto non è \"imparare a bastarsi\", ma riconoscere una dinamica scomoda: molte relazioni non nascono da una scelta, ma da una fuga dalla solitudine." },
-      { "type": "link", "url": "https://REPLACE_ME-internazionale-de-botton-paura-soli", "label": "Guarda il video su Internazionale", "description": "Alain de Botton — La paura di restare soli crea rapporti infelici" },
+      { "type": "text", "body": "In questo TEDx, Mary Baccaglini riflette su come l''amore, quando nasce dalla dipendenza invece che dall''autonomia, finisca per sacrificare l''identità di chi lo vive. Il punto non è imparare a bastarsi, ma riconoscere una dinamica scomoda: molte relazioni non nascono da una scelta, ma da una fuga dalla solitudine." },
+      { "type": "youtube", "video_id": "yeVg4bUZajs", "caption": "Mary Baccaglini — Il dilemma in amore: mente o cuore? (TEDx)" },
       { "type": "text", "body": "È un contenuto prezioso perché aiuta a distinguere tra autenticità e dipendenza emotiva: se sto cercando l''altro per condividere qualcosa, o solo per non sentirmi vuoto. Quella differenza cambia tutto, soprattutto nelle sfide che toccano appuntamenti, approcci, attese e rifiuto." }
     ]'::jsonb,
     'esplora/sulla-paura-restare-soli.jpg',
@@ -204,9 +204,9 @@ VALUES
     'connection',
     'Un video breve, illuminante, quasi "fondativo" per il tema dell''app. Ricorda che il contrario della solitudine non è la folla: è appartenenza.',
     '[
-      { "type": "text", "body": "Questo video tradotto in italiano spiega una cosa che per StepnOut è centrale: non basta essere connessi, bisogna sentirsi parte di qualcosa." },
-      { "type": "link", "url": "https://REPLACE_ME-debotton-comunita", "label": "Guarda il video", "description": "Alain de Botton — Per sentirci meno soli dobbiamo ritrovare il senso di comunità" },
-      { "type": "text", "body": "Alain de Botton insiste sul fatto che mettere emozioni e pensieri dentro una comunità affiatata non ci rende solo meno soli, ma riduce anche impulsi distruttivi e compulsivi. È un ottimo pezzo da mettere prima di sfide che riguardano nonni, vicinato, famiglia, gruppi o senso civico, perché amplia l''idea di \"uscire dalla comfort zone\": non solo esporsi, ma tornare in relazione." }
+      { "type": "text", "body": "In questo intervento, Giada Susca affronta il paradosso del nostro tempo: siamo iperconnessi eppure sempre più soli. La connessione che ci offrono i social non riesce a riempire il vuoto delle relazioni umane vere, e la solitudine, ricorda, non è solo un disagio emotivo, è anche una minaccia concreta alla salute." },
+      { "type": "youtube", "video_id": "FfmPig6URTs", "caption": "Giada Susca — Essere comunità nell''Era della solitudine (TEDx)" },
+      { "type": "text", "body": "Susca arriva a una conclusione molto vicina al cuore dell''app: la cura passa dai piccoli gesti quotidiani di connessione, che diventano i primi mattoni di comunità più sane. Un ottimo pezzo da mettere prima di sfide che riguardano nonni, vicinato, famiglia, gruppi o senso civico, perché amplia l''idea di uscire dalla comfort zone: non solo esporsi, ma tornare in relazione." }
     ]'::jsonb,
     'esplora/connessione-comunita.jpg',
     false,
