@@ -49,6 +49,8 @@ export const translations = {
   "Past challenge": "Sfida passata",
   "This week's challenge": "La sfida di questa settimana",
   "Suggested reading": "Lettura consigliata",
+  "1 card": "1 carta",
+  "{n} cards": "{n} carte",
   "Read": "Leggi",
   Error: "Errore",
   Success: "Successo",
