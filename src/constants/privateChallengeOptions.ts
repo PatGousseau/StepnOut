@@ -15,13 +15,13 @@ type Option<T extends string> = {
 };
 
 export const PRIVATE_CHALLENGE_EMPTY_DRAFT: PrivateChallengeQuestionnaireDraft = {
-  goal: null,
-  hard_situation: null,
+  goal: [],
+  hard_situation: [],
   stretch_level: null,
-  preferred_context: null,
-  meaningful_type: null,
+  preferred_context: [],
+  meaningful_type: [],
   avoid_types: [],
-  progress_definition: null,
+  progress_definition: [],
 };
 
 export const PRIVATE_CHALLENGE_GOAL_OPTIONS: Option<PrivateChallengeGoal>[] = [
