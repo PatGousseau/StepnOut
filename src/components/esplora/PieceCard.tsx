@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Image,
   Linking,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import { colors } from '../../constants/Colors';
 import { esploraSpacing, esploraType } from '../../constants/EsploraStyles';
 import { CardLink, ContentCard } from '../../types';
@@ -118,34 +119,99 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
   const { width } = useWindowDimensions();
   const playerWidth = width - (CARD_STACK_OUTER_MARGIN + CARD_INNER_PADDING) * 2;
   const playerHeight = (playerWidth * 9) / 16;
-  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const [activated, setActivated] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  const handleActivate = () => {
+    setActivated(true);
+    setPlaying(true);
+  };
+
+  if (errored) {
+    return (
+      <View>
+        <TouchableOpacity
+          onPress={() => Linking.openURL(watchUrl)}
+          activeOpacity={0.85}
+          accessibilityRole="link"
+          style={{
+            width: playerWidth,
+            height: playerHeight,
+            backgroundColor: colors.neutral.black,
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}
+        >
+          <Image
+            source={{ uri: thumbUrl }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+          <View style={styles.youtubePlayOverlay}>
+            <View style={styles.youtubePlayBadge}>
+              <Ionicons name="open-outline" size={26} color="#FFFFFF" />
+            </View>
+          </View>
+        </TouchableOpacity>
+        <Text style={styles.caption}>
+          {caption ? `${caption} — ` : ''}Apri su YouTube
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View>
-      <TouchableOpacity
-        onPress={() => Linking.openURL(watchUrl)}
-        activeOpacity={0.85}
-        accessibilityRole="link"
-        accessibilityLabel={caption ? `Play on YouTube: ${caption}` : 'Play on YouTube'}
-        style={{
-          width: playerWidth,
-          height: playerHeight,
-          backgroundColor: colors.neutral.black,
-          borderRadius: 8,
-          overflow: 'hidden',
-        }}
-      >
-        <Image
-          source={{ uri: thumbUrl }}
-          style={StyleSheet.absoluteFillObject}
-          resizeMode="cover"
-        />
-        <View style={styles.youtubePlayOverlay}>
-          <View style={styles.youtubePlayBadge}>
-            <Ionicons name="play" size={28} color="#FFFFFF" style={{ marginLeft: 3 }} />
-          </View>
+      {activated ? (
+        <View
+          style={{
+            width: playerWidth,
+            height: playerHeight,
+            borderRadius: 8,
+            overflow: 'hidden',
+            backgroundColor: colors.neutral.black,
+          }}
+        >
+          <YoutubePlayer
+            height={playerHeight}
+            width={playerWidth}
+            videoId={videoId}
+            play={playing}
+            onChangeState={(state: string) => {
+              if (state === 'ended') setPlaying(false);
+            }}
+            onError={() => setErrored(true)}
+          />
         </View>
-      </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={handleActivate}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={caption ? `Play video: ${caption}` : 'Play video'}
+          style={{
+            width: playerWidth,
+            height: playerHeight,
+            backgroundColor: colors.neutral.black,
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}
+        >
+          <Image
+            source={{ uri: thumbUrl }}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+          <View style={styles.youtubePlayOverlay}>
+            <View style={styles.youtubePlayBadge}>
+              <Ionicons name="play" size={28} color="#FFFFFF" style={{ marginLeft: 3 }} />
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
       {caption ? <Text style={styles.caption}>{caption}</Text> : null}
     </View>
   );
