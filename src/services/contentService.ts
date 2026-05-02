@@ -7,7 +7,6 @@ const BASE_COLUMNS = `
   category,
   hook,
   cards,
-  cover_image_path,
   is_featured,
   created_at,
   updated_at

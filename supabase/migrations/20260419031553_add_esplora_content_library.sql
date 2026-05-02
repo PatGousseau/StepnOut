@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS "public"."content_pieces" (
   "category" public.content_category NOT NULL,
   "hook" text NOT NULL,
   "cards" jsonb NOT NULL,
-  "cover_image_path" text,
   "is_featured" boolean NOT NULL DEFAULT false,
   "created_at" timestamptz NOT NULL DEFAULT now(),
   "updated_at" timestamptz NOT NULL DEFAULT now(),
