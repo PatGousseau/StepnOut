@@ -119,18 +119,17 @@ export default function PieceReaderScreen() {
       <CardPager
         totalCards={pages.length}
         activeIndex={activeIndex}
-        onPageSelected={handlePageSelected}
-      >
-        {pages.map((page, idx) => (
-          <View key={idx} collapsable={false} style={styles.page}>
-            {page.kind === 'hook' ? (
-              <PieceCard kind="hook" text={page.text} />
-            ) : (
-              <PieceCard kind="body" card={page.card} pieceId={piece.id} />
-            )}
-          </View>
-        ))}
-      </CardPager>
+        onIndexChange={handlePageSelected}
+        renderCard={(idx) => {
+          const page = pages[idx];
+          if (!page) return null;
+          return page.kind === 'hook' ? (
+            <PieceCard kind="hook" text={page.text} />
+          ) : (
+            <PieceCard kind="body" card={page.card} pieceId={piece.id} />
+          );
+        }}
+      />
     </View>
   );
 }
@@ -175,9 +174,5 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     marginHorizontal: esploraSpacing.md,
-  },
-  page: {
-    flex: 1,
-    backgroundColor: colors.light.background,
   },
 });

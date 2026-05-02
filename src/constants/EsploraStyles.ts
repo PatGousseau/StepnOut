@@ -119,6 +119,9 @@ export const esploraType = {
 } as const;
 
 export const CATEGORY_ORDER: ContentCategory[] = [
+  'solitude',
+  'assertiveness',
+  'openness',
   'fear',
   'vulnerability',
   'connection',
@@ -135,6 +138,9 @@ export const CATEGORY_LABEL_KEYS: Record<ContentCategory, string> = {
   stories: 'True stories',
   science: 'The science',
   practice: 'Daily practice',
+  solitude: 'Time with yourself',
+  assertiveness: 'Speak your mind',
+  openness: 'Open to the new',
 };
 
 // Painterly gradients used as a fallback when a piece has no cover image.
@@ -146,4 +152,7 @@ export const CATEGORY_GRADIENTS: Record<ContentCategory, [string, string]> = {
   stories: ['#2F4A3F', '#93B79A'],
   science: ['#37406C', '#8E96C9'],
   practice: ['#6B6033', '#C9B679'],
+  solitude: ['#2A3F5A', '#7B92AE'],
+  assertiveness: ['#6E2A3F', '#C97A6B'],
+  openness: ['#3A6B68', '#9DCFB5'],
 };

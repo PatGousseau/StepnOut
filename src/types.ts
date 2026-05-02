@@ -129,7 +129,10 @@ export interface Challenge {
     | 'connection'
     | 'stories'
     | 'science'
-    | 'practice';
+    | 'practice'
+    | 'solitude'
+    | 'assertiveness'
+    | 'openness';
 
   export interface CardLink {
     url: string;
