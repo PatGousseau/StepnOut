@@ -5,13 +5,13 @@ type Language = "en" | "it";
 type Difficulty = "easy" | "medium" | "hard";
 
 type ChallengeProfile = {
-  goal: string;
-  hard_situation: string;
+  goal: string[];
+  hard_situation: string[];
   stretch_level: string;
-  preferred_context: string;
-  meaningful_type: string;
+  preferred_context: string[];
+  meaningful_type: string[];
   avoid_types: string[];
-  progress_definition: string;
+  progress_definition: string[];
 };
 
 type ChallengeRow = {
@@ -104,11 +104,32 @@ function getLabel(language: Language, key: string) {
   return LABELS[language][key] || key;
 }
 
+function getLabels(language: Language, values: string[] | string | null | undefined) {
+  const normalized = Array.isArray(values) ? values : values ? [values] : [];
+  return normalized.map((value) => getLabel(language, value));
+}
+
+function formatList(language: Language, values: string[]) {
+  if (values.length === 0) return "";
+  if (values.length === 1) return values[0];
+  if (values.length === 2) {
+    return language === "it" ? `${values[0]} e ${values[1]}` : `${values[0]} and ${values[1]}`;
+  }
+
+  const last = values[values.length - 1];
+  const first = values.slice(0, -1).join(", ");
+  return language === "it" ? `${first} e ${last}` : `${first}, and ${last}`;
+}
+
 function fallbackChallenges(profile: ChallengeProfile, language: Language): ChallengeRow[] {
-  const goal = getLabel(language, profile.goal);
-  const context = getLabel(language, profile.preferred_context);
-  const hardSituation = getLabel(language, profile.hard_situation);
-  const meaningfulType = getLabel(language, profile.meaningful_type);
+  const goals = getLabels(language, profile.goal);
+  const contexts = getLabels(language, profile.preferred_context);
+  const hardSituations = getLabels(language, profile.hard_situation);
+  const meaningfulTypes = getLabels(language, profile.meaningful_type);
+  const goal = formatList(language, goals);
+  const context = formatList(language, contexts);
+  const hardSituation = formatList(language, hardSituations);
+  const meaningfulType = meaningfulTypes[0] || (language === "it" ? "personale" : "personal");
 
   if (language === "it") {
     return [
@@ -223,13 +244,13 @@ async function generateWithOpenAI(
 
   const userPrompt = JSON.stringify({
     profile: {
-      goal: getLabel(language, profile.goal),
-      hard_situation: getLabel(language, profile.hard_situation),
+      goal: getLabels(language, profile.goal),
+      hard_situation: getLabels(language, profile.hard_situation),
       stretch_level: getLabel(language, profile.stretch_level),
-      preferred_context: getLabel(language, profile.preferred_context),
-      meaningful_type: getLabel(language, profile.meaningful_type),
+      preferred_context: getLabels(language, profile.preferred_context),
+      meaningful_type: getLabels(language, profile.meaningful_type),
       avoid_types: avoidTypes,
-      progress_definition: getLabel(language, profile.progress_definition),
+      progress_definition: getLabels(language, profile.progress_definition),
     },
     recent_history: recentHistory,
     output_rules: {

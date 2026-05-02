@@ -1,13 +1,23 @@
 CREATE TABLE public.private_challenge_profiles (
   user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-  goal text NOT NULL CHECK (goal IN ('confidence', 'connection', 'spontaneity', 'courage', 'self_trust', 'less_overthinking')),
-  hard_situation text NOT NULL CHECK (hard_situation IN ('talking_to_strangers', 'being_seen', 'asking_for_what_i_want', 'doing_things_alone', 'being_playful', 'saying_yes')),
+  goal text[] NOT NULL DEFAULT '{}'::text[]
+    CHECK (goal <@ ARRAY['confidence', 'connection', 'spontaneity', 'courage', 'self_trust', 'less_overthinking']::text[])
+    CHECK (cardinality(goal) > 0),
+  hard_situation text[] NOT NULL DEFAULT '{}'::text[]
+    CHECK (hard_situation <@ ARRAY['talking_to_strangers', 'being_seen', 'asking_for_what_i_want', 'doing_things_alone', 'being_playful', 'saying_yes']::text[])
+    CHECK (cardinality(hard_situation) > 0),
   stretch_level text NOT NULL CHECK (stretch_level IN ('gentle', 'balanced', 'push_me')),
-  preferred_context text NOT NULL CHECK (preferred_context IN ('at_home', 'outside', 'social_settings', 'work_or_school', 'anywhere')),
-  meaningful_type text NOT NULL CHECK (meaningful_type IN ('social', 'reflective', 'adventurous', 'expressive', 'practical', 'habit_building')),
+  preferred_context text[] NOT NULL DEFAULT '{}'::text[]
+    CHECK (preferred_context <@ ARRAY['at_home', 'outside', 'social_settings', 'work_or_school', 'anywhere']::text[])
+    CHECK (cardinality(preferred_context) > 0),
+  meaningful_type text[] NOT NULL DEFAULT '{}'::text[]
+    CHECK (meaningful_type <@ ARRAY['social', 'reflective', 'adventurous', 'expressive', 'practical', 'habit_building']::text[])
+    CHECK (cardinality(meaningful_type) > 0),
   avoid_types text[] NOT NULL DEFAULT '{}'::text[]
     CHECK (avoid_types <@ ARRAY['spending_money', 'talking_to_strangers', 'group_social_situations', 'physically_demanding', 'nighttime', 'work_or_school', 'none']::text[]),
-  progress_definition text NOT NULL CHECK (progress_definition IN ('less_anxious', 'more_initiative', 'talk_to_more_people', 'less_overthinking_action', 'more_stories')),
+  progress_definition text[] NOT NULL DEFAULT '{}'::text[]
+    CHECK (progress_definition <@ ARRAY['less_anxious', 'more_initiative', 'talk_to_more_people', 'less_overthinking_action', 'more_stories']::text[])
+    CHECK (cardinality(progress_definition) > 0),
   onboarding_completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()

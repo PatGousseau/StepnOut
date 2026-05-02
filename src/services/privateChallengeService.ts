@@ -1,10 +1,17 @@
 import { supabase } from "../lib/supabase";
 import {
+  PrivateChallengeAvoidType,
   PrivateChallenge,
   PrivateChallengeDifficulty,
+  PrivateChallengeGoal,
+  PrivateChallengeHardSituation,
+  PrivateChallengeMeaningfulType,
+  PrivateChallengePreferredContext,
   PrivateChallengeProfile,
+  PrivateChallengeProgressDefinition,
   PrivateChallengeQuestionnaireDraft,
   PrivateChallengeSet,
+  PrivateChallengeStretchLevel,
   PrivateChallengeStats,
 } from "../types/privateChallenges";
 
@@ -15,6 +22,33 @@ type ChallengeRow = Omit<PrivateChallenge, "llm_metadata"> & {
 type SetRow = Omit<PrivateChallengeSet, "private_challenges"> & {
   private_challenges: ChallengeRow[] | null;
 };
+
+type ProfileRow = Omit<
+  PrivateChallengeProfile,
+  "goal" | "hard_situation" | "preferred_context" | "meaningful_type" | "progress_definition"
+> & {
+  goal: PrivateChallengeGoal[] | PrivateChallengeGoal | null;
+  hard_situation: PrivateChallengeHardSituation[] | PrivateChallengeHardSituation | null;
+  preferred_context: PrivateChallengePreferredContext[] | PrivateChallengePreferredContext | null;
+  meaningful_type: PrivateChallengeMeaningfulType[] | PrivateChallengeMeaningfulType | null;
+  progress_definition: PrivateChallengeProgressDefinition[] | PrivateChallengeProgressDefinition | null;
+};
+
+function toArray<T extends string>(value: T[] | T | null | undefined): T[] {
+  if (Array.isArray(value)) return value;
+  return value ? [value] : [];
+}
+
+function normalizeProfile(row: ProfileRow): PrivateChallengeProfile {
+  return {
+    ...row,
+    goal: toArray(row.goal),
+    hard_situation: toArray(row.hard_situation),
+    preferred_context: toArray(row.preferred_context),
+    meaningful_type: toArray(row.meaningful_type),
+    progress_definition: toArray(row.progress_definition),
+  };
+}
 
 function normalizeSet(row: SetRow): PrivateChallengeSet {
   const order: Record<PrivateChallengeDifficulty, number> = {
@@ -104,17 +138,17 @@ export const privateChallengeService = {
       .maybeSingle();
 
     if (error) throw error;
-    return data;
+    return data ? normalizeProfile(data as ProfileRow) : null;
   },
 
   async saveProfile(userId: string, draft: PrivateChallengeQuestionnaireDraft): Promise<PrivateChallengeProfile> {
     if (
-      !draft.goal ||
-      !draft.hard_situation ||
+      draft.goal.length === 0 ||
+      draft.hard_situation.length === 0 ||
       !draft.stretch_level ||
-      !draft.preferred_context ||
-      !draft.meaningful_type ||
-      !draft.progress_definition
+      draft.preferred_context.length === 0 ||
+      draft.meaningful_type.length === 0 ||
+      draft.progress_definition.length === 0
     ) {
       throw new Error("Incomplete questionnaire");
     }
@@ -127,10 +161,10 @@ export const privateChallengeService = {
       user_id: userId,
       goal: draft.goal,
       hard_situation: draft.hard_situation,
-      stretch_level: draft.stretch_level,
+      stretch_level: draft.stretch_level as PrivateChallengeStretchLevel,
       preferred_context: draft.preferred_context,
       meaningful_type: draft.meaningful_type,
-      avoid_types: avoidTypes,
+      avoid_types: avoidTypes as PrivateChallengeAvoidType[],
       progress_definition: draft.progress_definition,
       onboarding_completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -143,7 +177,7 @@ export const privateChallengeService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return normalizeProfile(data as ProfileRow);
   },
 
   async fetchOrCreateTodaySet(localDate: string, language: "en" | "it"): Promise<PrivateChallengeSet> {

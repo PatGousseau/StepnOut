@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -95,6 +96,45 @@ function SingleSelectSection<T extends string>({
   );
 }
 
+type MultiSelectSectionProps<T extends string> = {
+  title: string;
+  options: { id: T; label: string }[];
+  selected: T[];
+  onToggle: (value: T) => void;
+  helperText?: string;
+};
+
+function MultiSelectSection<T extends string>({
+  title,
+  options,
+  selected,
+  onToggle,
+  helperText,
+}: MultiSelectSectionProps<T>) {
+  const { t } = useLanguage();
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{t(title)}</Text>
+      {!!helperText && <Text style={styles.helperText}>{t(helperText)}</Text>}
+      <View style={styles.optionsWrap}>
+        {options.map((option) => {
+          const active = selected.includes(option.id);
+          return (
+            <TouchableOpacity
+              key={option.id}
+              onPress={() => onToggle(option.id)}
+              style={[styles.optionChip, active && styles.optionChipActive]}
+            >
+              <Text style={[styles.optionText, active && styles.optionTextActive]}>{t(option.label)}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 export const PrivateChallengePath: React.FC = () => {
   const { t, language } = useLanguage();
   const {
@@ -117,7 +157,8 @@ export const PrivateChallengePath: React.FC = () => {
   const [editingPreferences, setEditingPreferences] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<PrivateChallengeDifficulty | null>(null);
   const [note, setNote] = useState("");
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
+  const needsOnboarding = !profile;
 
   useEffect(() => {
     setDraft(buildDraft(profile));
@@ -125,23 +166,38 @@ export const PrivateChallengePath: React.FC = () => {
 
   useEffect(() => {
     if (needsOnboarding || editingPreferences) {
-      setCurrentQuestionIndex(0);
+      setCurrentQuestionIndex(needsOnboarding ? -1 : 0);
     }
   }, [needsOnboarding, editingPreferences]);
 
-  const needsOnboarding = !profile;
+  const showingIntroStep = needsOnboarding && currentQuestionIndex < 0;
   const selectedChallenge = getSelectedChallenge(todaySet, selectedDifficulty);
 
   const questionnaireComplete = useMemo(
     () =>
-      !!draft.goal &&
-      !!draft.hard_situation &&
+      draft.goal.length > 0 &&
+      draft.hard_situation.length > 0 &&
       !!draft.stretch_level &&
-      !!draft.preferred_context &&
-      !!draft.meaningful_type &&
-      !!draft.progress_definition,
+      draft.preferred_context.length > 0 &&
+      draft.meaningful_type.length > 0 &&
+      draft.progress_definition.length > 0,
     [draft]
   );
+
+  const toggleMultiValue = <T extends string,>(key: keyof Pick<
+    PrivateChallengeQuestionnaireDraft,
+    "goal" | "hard_situation" | "preferred_context" | "meaningful_type" | "progress_definition"
+  >, value: T) => {
+    setDraft((current) => {
+      const existing = current[key] as T[];
+      return {
+        ...current,
+        [key]: existing.includes(value)
+          ? existing.filter((item) => item !== value)
+          : [...existing, value],
+      };
+    });
+  };
 
   const toggleAvoidType = (value: PrivateChallengeAvoidType) => {
     setDraft((current) => {
@@ -163,26 +219,28 @@ export const PrivateChallengePath: React.FC = () => {
     {
       title: "What do you want more of right now?",
       render: () => (
-        <SingleSelectSection
+        <MultiSelectSection
           title="What do you want more of right now?"
           options={PRIVATE_CHALLENGE_GOAL_OPTIONS}
           selected={draft.goal}
-          onSelect={(goal) => setDraft((current) => ({ ...current, goal }))}
+          onToggle={(goal) => toggleMultiValue("goal", goal)}
+          helperText="Choose all that feel true right now"
         />
       ),
-      isComplete: !!draft.goal,
+      isComplete: draft.goal.length > 0,
     },
     {
       title: "Which situations feel hardest to you?",
       render: () => (
-        <SingleSelectSection
+        <MultiSelectSection
           title="Which situations feel hardest to you?"
           options={PRIVATE_CHALLENGE_HARD_SITUATION_OPTIONS}
           selected={draft.hard_situation}
-          onSelect={(hard_situation) => setDraft((current) => ({ ...current, hard_situation }))}
+          onToggle={(hard_situation) => toggleMultiValue("hard_situation", hard_situation)}
+          helperText="Choose all that apply"
         />
       ),
-      isComplete: !!draft.hard_situation,
+      isComplete: draft.hard_situation.length > 0,
     },
     {
       title: "How much stretch do you want most days?",
@@ -199,26 +257,28 @@ export const PrivateChallengePath: React.FC = () => {
     {
       title: "Where do you want these challenges to happen most often?",
       render: () => (
-        <SingleSelectSection
+        <MultiSelectSection
           title="Where do you want these challenges to happen most often?"
           options={PRIVATE_CHALLENGE_CONTEXT_OPTIONS}
           selected={draft.preferred_context}
-          onSelect={(preferred_context) => setDraft((current) => ({ ...current, preferred_context }))}
+          onToggle={(preferred_context) => toggleMultiValue("preferred_context", preferred_context)}
+          helperText="Choose all that fit your life"
         />
       ),
-      isComplete: !!draft.preferred_context,
+      isComplete: draft.preferred_context.length > 0,
     },
     {
       title: "What kind of challenge feels most meaningful?",
       render: () => (
-        <SingleSelectSection
+        <MultiSelectSection
           title="What kind of challenge feels most meaningful?"
           options={PRIVATE_CHALLENGE_MEANINGFUL_TYPE_OPTIONS}
           selected={draft.meaningful_type}
-          onSelect={(meaningful_type) => setDraft((current) => ({ ...current, meaningful_type }))}
+          onToggle={(meaningful_type) => toggleMultiValue("meaningful_type", meaningful_type)}
+          helperText="Choose all that resonate"
         />
       ),
-      isComplete: !!draft.meaningful_type,
+      isComplete: draft.meaningful_type.length > 0,
     },
     {
       title: "Which challenges should we avoid?",
@@ -247,18 +307,19 @@ export const PrivateChallengePath: React.FC = () => {
     {
       title: "What would feel like progress in a month?",
       render: () => (
-        <SingleSelectSection
+        <MultiSelectSection
           title="What would feel like progress in a month?"
           options={PRIVATE_CHALLENGE_PROGRESS_OPTIONS}
           selected={draft.progress_definition}
-          onSelect={(progress_definition) => setDraft((current) => ({ ...current, progress_definition }))}
+          onToggle={(progress_definition) => toggleMultiValue("progress_definition", progress_definition)}
+          helperText="Choose all that feel meaningful"
         />
       ),
-      isComplete: !!draft.progress_definition,
+      isComplete: draft.progress_definition.length > 0,
     },
   ];
 
-  const currentStep = questionnaireSteps[currentQuestionIndex];
+  const currentStep = currentQuestionIndex >= 0 ? questionnaireSteps[currentQuestionIndex] : null;
   const isLastQuestion = currentQuestionIndex === questionnaireSteps.length - 1;
   const getDifficultyColor = (difficulty: PrivateChallengeDifficulty) => {
     switch (difficulty) {
@@ -273,6 +334,10 @@ export const PrivateChallengePath: React.FC = () => {
   };
 
   const handleNextQuestion = () => {
+    if (showingIntroStep) {
+      setCurrentQuestionIndex(0);
+      return;
+    }
     if (!currentStep?.isComplete) return;
     if (!isLastQuestion) {
       setCurrentQuestionIndex((current) => current + 1);
@@ -282,6 +347,11 @@ export const PrivateChallengePath: React.FC = () => {
   const handleBackQuestion = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((current) => current - 1);
+      return;
+    }
+
+    if (needsOnboarding && currentQuestionIndex === 0) {
+      setCurrentQuestionIndex(-1);
     }
   };
 
@@ -335,69 +405,93 @@ export const PrivateChallengePath: React.FC = () => {
 
   if (needsOnboarding || editingPreferences) {
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.questionnaireContent}>
-        <Text style={styles.pageTitle}>
-          {t(needsOnboarding ? "Set up your path" : "Edit preferences")}
-        </Text>
-        <Text style={styles.subtitle}>
-          {t("Answer a few quick questions so your daily challenges feel personal.")}
-        </Text>
-        <View style={styles.stepIndicatorRow}>
-          {questionnaireSteps.map((step, index) => (
-            <View
-              key={step.title}
-              style={[
-                styles.stepIndicator,
-                index < currentQuestionIndex && styles.stepIndicatorComplete,
-                index === currentQuestionIndex && styles.stepIndicatorActive,
-              ]}
-            />
-          ))}
-        </View>
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
+        <View style={styles.questionnaireScreen}>
+          <View style={styles.questionnaireHeader}>
+            {!showingIntroStep && (
+              <>
+                <View style={styles.stepIndicatorRow}>
+                  {questionnaireSteps.map((step, index) => (
+                    <View
+                      key={step.title}
+                      style={[
+                        styles.stepIndicator,
+                        index < currentQuestionIndex && styles.stepIndicatorComplete,
+                        index === currentQuestionIndex && styles.stepIndicatorActive,
+                      ]}
+                    />
+                  ))}
+                </View>
+                {editingPreferences && (
+                  <>
+                    <Text style={styles.editingTitle}>{t("Edit preferences")}</Text>
+                    <Text style={styles.editingSubtitle}>
+                      {t("Fine-tune the kind of stretch that feels right for you right now.")}
+                    </Text>
+                  </>
+                )}
+              </>
+            )}
+          </View>
 
-        <View style={styles.questionCard}>
-          <Text style={styles.stepCounter}>
-            {t("Question (current) of (total)", {
-              current: currentQuestionIndex + 1,
-              total: questionnaireSteps.length,
-            })}
-          </Text>
-          {currentStep.render()}
-        </View>
-
-        <View style={styles.questionActions}>
-          <TouchableOpacity
-            style={[
-              styles.questionSecondaryButton,
-              currentQuestionIndex === 0 && styles.questionSecondaryButtonHidden,
-            ]}
-            disabled={currentQuestionIndex === 0}
-            onPress={handleBackQuestion}
+          <ScrollView
+            style={styles.questionnaireScroll}
+            contentContainerStyle={styles.questionnaireContent}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.questionSecondaryButtonText}>{t("Back")}</Text>
-          </TouchableOpacity>
+            {showingIntroStep ? (
+              <View style={styles.introSection}>
+                <Text style={styles.introEyebrow}>{t("Your private path")}</Text>
+                <Text style={styles.introTitle}>{t("Set up your path")}</Text>
+                <Text style={styles.introBody}>
+                  {t("Stepping out of your comfort zone does not look the same every day. Sometimes it is speaking up. Sometimes it is being seen, doing something alone, or saying yes before you can overthink it.")}
+                </Text>
+                <Text style={styles.introBody}>
+                  {t("This path is here to help you grow in a way that feels personal: small private challenges, the right kind of stretch, and a little more courage over time.")}
+                </Text>
+              </View>
+            ) : (
+              currentStep?.render()
+            )}
+          </ScrollView>
 
-          {isLastQuestion ? (
+          <View style={styles.questionActions}>
             <TouchableOpacity
-              style={[styles.primaryButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
-              disabled={!questionnaireComplete || savingProfile}
-              onPress={submitProfile}
+              style={[
+                styles.questionSecondaryButton,
+                ((showingIntroStep || (!needsOnboarding && currentQuestionIndex === 0))) &&
+                  styles.questionSecondaryButtonHidden,
+              ]}
+              disabled={showingIntroStep || (!needsOnboarding && currentQuestionIndex === 0)}
+              onPress={handleBackQuestion}
             >
-              <Text style={styles.primaryButtonText}>
-                {savingProfile ? t("Saving...") : t("Done")}
-              </Text>
+              <Text style={styles.questionSecondaryButtonText}>{t("Back")}</Text>
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.primaryButton, !currentStep.isComplete && styles.disabledButton]}
-              disabled={!currentStep.isComplete}
-              onPress={handleNextQuestion}
-            >
-              <Text style={styles.primaryButtonText}>{t("Next")}</Text>
-            </TouchableOpacity>
-          )}
+
+            {!showingIntroStep && isLastQuestion ? (
+              <TouchableOpacity
+                style={[styles.primaryButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
+                disabled={!questionnaireComplete || savingProfile}
+                onPress={submitProfile}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {savingProfile ? t("Saving...") : t("Done")}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.primaryButton, !showingIntroStep && !currentStep?.isComplete && styles.disabledButton]}
+                disabled={!showingIntroStep && !currentStep?.isComplete}
+                onPress={handleNextQuestion}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {showingIntroStep ? t("Let's begin") : t("Next")}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -711,6 +805,31 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 12,
   },
+  introBody: {
+    color: colors.light.text,
+    fontSize: 17,
+    lineHeight: 28,
+    marginTop: 16,
+  },
+  introEyebrow: {
+    color: colors.light.primary,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  introSection: {
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  introTitle: {
+    color: colors.light.text,
+    fontSize: 34,
+    fontWeight: "700",
+    lineHeight: 40,
+    marginTop: 12,
+  },
   infoBanner: {
     backgroundColor: colors.light.accent2,
     borderRadius: 12,
@@ -805,22 +924,23 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   optionChip: {
-    backgroundColor: colors.neutral.white,
-    borderColor: colors.light.accent2,
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
     borderRadius: 999,
-    borderWidth: 1,
     marginBottom: 8,
     marginRight: 8,
+    minHeight: 36,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   optionChipActive: {
     backgroundColor: colors.light.primary,
-    borderColor: colors.light.primary,
   },
   optionText: {
-    color: colors.light.text,
-    fontSize: 14,
+    color: "#666666",
+    fontSize: 15,
+    fontWeight: "600",
   },
   optionTextActive: {
     color: "#FFFFFF",
@@ -834,33 +954,49 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
   },
-  questionActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 18,
+  editingSubtitle: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 4,
   },
-  questionCard: {
-    backgroundColor: colors.light.cardBg,
-    borderRadius: 12,
-    marginTop: 8,
-    padding: 18,
+  editingTitle: {
+    color: colors.light.primary,
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  questionActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    paddingBottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   questionnaireContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 24,
+  },
+  questionnaireHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
+  questionnaireScreen: {
+    flex: 1,
+  },
+  questionnaireScroll: {
+    flex: 1,
+    marginTop: 20,
   },
   questionSecondaryButton: {
     alignItems: "center",
     backgroundColor: colors.neutral.white,
-    borderColor: colors.light.accent2,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 999,
+    flex: 1,
     justifyContent: "center",
-    minWidth: 96,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 11,
   },
   questionSecondaryButtonHidden: {
     opacity: 0,
@@ -873,15 +1009,14 @@ const styles = StyleSheet.create({
   primaryButton: {
     alignItems: "center",
     backgroundColor: colors.light.primary,
-    borderRadius: 12,
-    marginTop: 8,
-    minWidth: 110,
+    borderRadius: 999,
+    flex: 1,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 11,
   },
   primaryButtonText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
   },
   secondaryButton: {
@@ -913,13 +1048,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   section: {
-    marginBottom: 18,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
     color: colors.light.text,
-    fontSize: 17,
+    fontSize: 28,
     fontWeight: "700",
-    marginBottom: 10,
+    lineHeight: 36,
+    marginBottom: 18,
   },
   statCard: {
     alignItems: "center",
@@ -945,19 +1081,12 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  stepCounter: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    fontWeight: "700",
-    marginBottom: 10,
-    textTransform: "uppercase",
-  },
   stepIndicator: {
     backgroundColor: colors.neutral.grey2,
     borderRadius: 999,
     flex: 1,
-    height: 6,
-    marginHorizontal: 3,
+    height: 5,
+    marginHorizontal: 4,
   },
   stepIndicatorActive: {
     backgroundColor: colors.light.accent,
@@ -967,7 +1096,7 @@ const styles = StyleSheet.create({
   },
   stepIndicatorRow: {
     flexDirection: "row",
-    marginTop: 18,
+    marginBottom: 22,
   },
   subtitle: {
     color: colors.light.lightText,

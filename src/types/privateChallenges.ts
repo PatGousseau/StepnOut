@@ -52,13 +52,13 @@ export type PrivateChallengeProgressDefinition =
 
 export interface PrivateChallengeProfile {
   user_id: string;
-  goal: PrivateChallengeGoal;
-  hard_situation: PrivateChallengeHardSituation;
+  goal: PrivateChallengeGoal[];
+  hard_situation: PrivateChallengeHardSituation[];
   stretch_level: PrivateChallengeStretchLevel;
-  preferred_context: PrivateChallengePreferredContext;
-  meaningful_type: PrivateChallengeMeaningfulType;
+  preferred_context: PrivateChallengePreferredContext[];
+  meaningful_type: PrivateChallengeMeaningfulType[];
   avoid_types: PrivateChallengeAvoidType[];
-  progress_definition: PrivateChallengeProgressDefinition;
+  progress_definition: PrivateChallengeProgressDefinition[];
   onboarding_completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -92,13 +92,13 @@ export interface PrivateChallengeSet {
 }
 
 export interface PrivateChallengeQuestionnaireDraft {
-  goal: PrivateChallengeGoal | null;
-  hard_situation: PrivateChallengeHardSituation | null;
+  goal: PrivateChallengeGoal[];
+  hard_situation: PrivateChallengeHardSituation[];
   stretch_level: PrivateChallengeStretchLevel | null;
-  preferred_context: PrivateChallengePreferredContext | null;
-  meaningful_type: PrivateChallengeMeaningfulType | null;
+  preferred_context: PrivateChallengePreferredContext[];
+  meaningful_type: PrivateChallengeMeaningfulType[];
   avoid_types: PrivateChallengeAvoidType[];
-  progress_definition: PrivateChallengeProgressDefinition | null;
+  progress_definition: PrivateChallengeProgressDefinition[];
 }
 
 export interface PrivateChallengeStats {
