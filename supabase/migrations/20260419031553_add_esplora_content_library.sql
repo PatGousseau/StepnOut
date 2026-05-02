@@ -14,7 +14,10 @@ CREATE TYPE "public"."content_category" AS ENUM (
   'connection',
   'stories',
   'science',
-  'practice'
+  'practice',
+  'solitude',
+  'assertiveness',
+  'openness'
 );
 
 CREATE TABLE IF NOT EXISTS "public"."content_pieces" (
