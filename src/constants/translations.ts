@@ -16,6 +16,9 @@ export const translations = {
   "True stories": "Storie vere",
   "The science": "La scienza",
   "Daily practice": "Pratica quotidiana",
+  "Time with yourself": "Stare con sé stessi",
+  "Speak your mind": "Dire quello che vuoi",
+  "Open to the new": "Aprirsi al nuovo",
   "No saved pieces yet": "Ancora nessun salvato",
   "Save a piece to find it here later.":
     "Salva un contenuto per ritrovarlo qui più tardi.",

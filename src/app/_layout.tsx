@@ -9,6 +9,7 @@ import { registerPushTokenIfGranted } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
 import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
@@ -544,9 +545,10 @@ export default function Layout() {
   const isPostHogDisabled = process.env.EXPO_PUBLIC_POSTHOG_DISABLED === 'true' || !posthogApiKey;
 
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <QueryClientProvider client={queryClient}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <LanguageProvider>
+          <QueryClientProvider client={queryClient}>
           <PostHogProvider
             apiKey={posthogApiKey || 'placeholder'}
             options={{
@@ -582,5 +584,6 @@ export default function Layout() {
         </QueryClientProvider>
       </LanguageProvider>
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,36 +1,118 @@
-import React, { useRef } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import PagerView, { PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
+import {
+  PanGestureHandler,
+  PanGestureHandlerStateChangeEvent,
+  State,
+} from 'react-native-gesture-handler';
 import { colors } from '../../constants/Colors';
 import { esploraSpacing } from '../../constants/EsploraStyles';
 
 interface Props {
   totalCards: number;
   activeIndex: number;
-  onPageSelected: (index: number) => void;
-  children: React.ReactNode;
+  onIndexChange: (index: number) => void;
+  renderCard: (index: number) => React.ReactNode;
 }
 
 export const CARD_STACK_OUTER_MARGIN = esploraSpacing.md;
 export const CARD_STACK_RADIUS = 28;
 const STACK_PEEK = 8;
+const SWIPE_DISTANCE_THRESHOLD = 100;
+const SWIPE_VELOCITY_THRESHOLD = 800;
+const FLING_DURATION = 220;
 
 export const CardPager: React.FC<Props> = ({
   totalCards,
   activeIndex,
-  onPageSelected,
-  children,
+  onIndexChange,
+  renderCard,
 }) => {
-  const pagerRef = useRef<PagerView>(null);
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const [isFlying, setIsFlying] = useState(false);
+  const [behindIndex, setBehindIndex] = useState(activeIndex + 1);
 
-  const handlePageSelected = (e: PagerViewOnPageSelectedEvent) => {
-    onPageSelected(e.nativeEvent.position);
+  useEffect(() => {
+    const target = activeIndex + 1;
+    if (behindIndex === target) return;
+    const raf = requestAnimationFrame(() => setBehindIndex(target));
+    return () => cancelAnimationFrame(raf);
+  }, [activeIndex, behindIndex]);
+
+  const rotate = pan.x.interpolate({
+    inputRange: [-300, 0, 300],
+    outputRange: ['-8deg', '0deg', '8deg'],
+    extrapolate: 'clamp',
+  });
+
+  const handleGestureEvent = Animated.event(
+    [{ nativeEvent: { translationX: pan.x, translationY: pan.y } }],
+    { useNativeDriver: true }
+  );
+
+  const flingOff = (
+    direction: 'left' | 'right',
+    onComplete: () => void
+  ) => {
+    setIsFlying(true);
+    const screenWidth = Dimensions.get('window').width;
+    const targetX = direction === 'left' ? -screenWidth * 1.4 : screenWidth * 1.4;
+    Animated.timing(pan, {
+      toValue: { x: targetX, y: 0 },
+      duration: FLING_DURATION,
+      useNativeDriver: true,
+    }).start(() => {
+      // Update the index first so React commits the new card content while the
+      // front slot is still translated off-screen. Then snap the pan back on
+      // the next frame — by that point the new content has rendered, so the
+      // user never sees the previous card flash at center.
+      onComplete();
+      requestAnimationFrame(() => {
+        pan.setValue({ x: 0, y: 0 });
+        setIsFlying(false);
+      });
+    });
+  };
+
+  const springBack = () => {
+    Animated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      friction: 6,
+      tension: 60,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleHandlerStateChange = (
+    event: PanGestureHandlerStateChangeEvent
+  ) => {
+    if (event.nativeEvent.state !== State.END) return;
+    const { translationX, velocityX } = event.nativeEvent;
+
+    const swipedFarEnough =
+      Math.abs(translationX) > SWIPE_DISTANCE_THRESHOLD ||
+      Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD;
+
+    if (swipedFarEnough && activeIndex < totalCards - 1) {
+      const direction = translationX < 0 ? 'left' : 'right';
+      flingOff(direction, () => onIndexChange(activeIndex + 1));
+    } else {
+      springBack();
+    }
   };
 
   const goTo = (next: number) => {
+    if (isFlying) return;
     if (next < 0 || next >= totalCards) return;
-    pagerRef.current?.setPage(next);
+    const direction = next > activeIndex ? 'left' : 'right';
+    flingOff(direction, () => onIndexChange(next));
   };
 
   const remaining = totalCards - activeIndex - 1;
@@ -39,6 +121,8 @@ export const CardPager: React.FC<Props> = ({
 
   const isFirst = activeIndex === 0;
   const isLast = activeIndex >= totalCards - 1;
+
+  const showBehind = behindIndex < totalCards;
 
   return (
     <View style={styles.container}>
@@ -49,25 +133,42 @@ export const CardPager: React.FC<Props> = ({
         {showStackOne && (
           <View pointerEvents="none" style={[styles.ghost, styles.ghostMid]} />
         )}
-        <PagerView
-          ref={pagerRef}
-          style={styles.pager}
-          initialPage={0}
-          onPageSelected={handlePageSelected}
+        {showBehind && (
+          <View pointerEvents="none" style={styles.cardSlot}>
+            {renderCard(behindIndex)}
+          </View>
+        )}
+        <PanGestureHandler
+          enabled={!isFlying}
+          onGestureEvent={handleGestureEvent}
+          onHandlerStateChange={handleHandlerStateChange}
         >
-          {children}
-        </PagerView>
+          <Animated.View
+            style={[
+              styles.cardSlot,
+              {
+                transform: [
+                  { translateX: pan.x },
+                  { translateY: pan.y },
+                  { rotate },
+                ],
+              },
+            ]}
+          >
+            {renderCard(activeIndex)}
+          </Animated.View>
+        </PanGestureHandler>
       </View>
 
       <View style={styles.navRow}>
         <Pressable
           onPress={() => goTo(activeIndex - 1)}
-          disabled={isFirst}
+          disabled={isFirst || isFlying}
           hitSlop={16}
           style={({ pressed }) => [
             styles.navBtn,
-            isFirst && styles.navBtnDisabled,
-            pressed && !isFirst && styles.navBtnPressed,
+            (isFirst || isFlying) && styles.navBtnDisabled,
+            pressed && !isFirst && !isFlying && styles.navBtnPressed,
           ]}
           accessibilityRole="button"
           accessibilityLabel="Previous card"
@@ -76,12 +177,12 @@ export const CardPager: React.FC<Props> = ({
         </Pressable>
         <Pressable
           onPress={() => goTo(activeIndex + 1)}
-          disabled={isLast}
+          disabled={isLast || isFlying}
           hitSlop={16}
           style={({ pressed }) => [
             styles.navBtn,
-            isLast && styles.navBtnDisabled,
-            pressed && !isLast && styles.navBtnPressed,
+            (isLast || isFlying) && styles.navBtnDisabled,
+            pressed && !isLast && !isFlying && styles.navBtnPressed,
           ]}
           accessibilityRole="button"
           accessibilityLabel="Next card"
@@ -103,10 +204,12 @@ const styles = StyleSheet.create({
     marginHorizontal: CARD_STACK_OUTER_MARGIN,
     marginVertical: 12,
   },
-  pager: {
-    flex: 1,
-    marginBottom: STACK_PEEK * 2,
-    backgroundColor: colors.light.background,
+  cardSlot: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: STACK_PEEK * 2,
+    bottom: 0,
   },
   ghost: {
     position: 'absolute',
@@ -116,16 +219,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.1)',
   },
   ghostMid: {
-    top: STACK_PEEK,
-    left: 8,
-    right: 8,
-    bottom: STACK_PEEK,
+    top: 8,
+    bottom: 8,
+    left: STACK_PEEK,
+    right: STACK_PEEK,
   },
   ghostBack: {
-    top: STACK_PEEK * 2,
-    left: 18,
-    right: 18,
-    bottom: 0,
+    top: 18,
+    bottom: 18,
+    left: STACK_PEEK * 2,
+    right: 0,
   },
   navRow: {
     flexDirection: 'row',
