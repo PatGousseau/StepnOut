@@ -13,6 +13,9 @@ import { esploraSpacing, esploraType } from '../../constants/EsploraStyles';
 import { CardLink, ContentCard } from '../../types';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
+import { CARD_STACK_OUTER_MARGIN, CARD_STACK_RADIUS } from './CardPager';
+
+const CARD_INNER_PADDING = esploraSpacing.lg;
 
 interface HookCardProps {
   kind: 'hook';
@@ -112,7 +115,7 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
   caption,
 }) => {
   const { width } = useWindowDimensions();
-  const playerWidth = width - esploraSpacing.readerHorizontalPadding * 2;
+  const playerWidth = width - (CARD_STACK_OUTER_MARGIN + CARD_INNER_PADDING) * 2;
   const playerHeight = (playerWidth * 9) / 16;
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   return (
@@ -149,8 +152,12 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    paddingHorizontal: esploraSpacing.readerHorizontalPadding,
+    paddingHorizontal: CARD_INNER_PADDING,
     paddingVertical: esploraSpacing.xl,
+    backgroundColor: '#FFFFFF',
+    borderRadius: CARD_STACK_RADIUS,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   centered: {
     justifyContent: 'center',
