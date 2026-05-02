@@ -173,7 +173,7 @@ VALUES
     'Un articolo utile quando vuoi dare profondità psicologica a una parola usata spesso ma capita poco.',
     '[
       { "type": "text", "body": "In questo approfondimento di State of Mind la vergogna viene trattata per quello che spesso è: un''emozione sociale che tocca il giudizio, l''inadeguatezza, la paura di essere rifiutati e il ritiro dalle relazioni." },
-      { "type": "link", "url": "https://REPLACE_ME-stateofmind-vergogna", "label": "Leggi l''articolo su State of Mind", "description": "Approfondimento sulla vergogna come emozione sociale" },
+      { "type": "link", "url": "https://www.stateofmind.it/vergogna/", "label": "Leggi l''articolo su State of Mind", "description": "Approfondimento sulla vergogna come emozione sociale" },
       { "type": "text", "body": "È una lettura preziosa perché spiega bene un punto centrale: non sempre le persone evitano perché \"non ne hanno voglia\"; molte reagiscono a un senso di inferiorità o di esposizione troppo doloroso. Questo pezzo aiuta a normalizzare quel vissuto senza banalizzarlo." }
     ]'::jsonb,
     'esplora/vulnerabilita-vergogna.jpg',
@@ -219,8 +219,8 @@ VALUES
     'connection',
     'Una tesi che resta addosso: tante relazioni si rompono nel punto esatto in cui una persona sceglie di non dire più ciò che pensa per non perdere il legame.',
     '[
-      { "type": "text", "body": "In questo testo, tradotto e pubblicato da Internazionale, Carol Gilligan mette a fuoco una dinamica potentissima: il momento in cui, per proteggere la relazione, una persona sacrifica la propria voce." },
-      { "type": "link", "url": "https://REPLACE_ME-internazionale-gilligan-silenzio", "label": "Leggi l''articolo su Internazionale", "description": "Carol Gilligan — Il silenzio delle ragazze" },
+      { "type": "text", "body": "In questo testo di Carol Gilligan, ripubblicato dalla Libreria delle Donne di Milano, l''autrice mette a fuoco una dinamica potentissima: il momento in cui, per proteggere la relazione, una persona sacrifica la propria voce." },
+      { "type": "link", "url": "https://www.libreriadelledonne.it/puntodivista/dallastampa/il-silenzio-delle-ragazze/", "label": "Leggi l''articolo", "description": "Carol Gilligan — Il silenzio delle ragazze" },
       { "type": "text", "body": "Il valore di questo pezzo è enorme, perché trasforma il tema della connessione in qualcosa di più esigente della semplice presenza: una relazione non è davvero viva se per mantenerla devi smettere di dire ciò che senti. Un contenuto molto forte per utenti giovani, soprattutto quando il nodo non è \"come socializzare\", ma \"come restare veri senza perdere appartenenza\"." }
     ]'::jsonb,
     'esplora/connessione-silenzio-ragazze.jpg',
@@ -267,7 +267,7 @@ VALUES
     'Un episodio audio potente, concreto e molto contemporaneo. Mostra cosa succede quando degli uomini si ritrovano a parlare davvero di rabbia, tensione e paura.',
     '[
       { "type": "text", "body": "Questo episodio di \"Parlarne tra amici\" dal programma \"Il tuffo\", prodotto da Rai Radio 3 e distribuito su RaiPlay Sound, segue un gruppo di uomini e ragazzi che si incontra per mettere in parole rabbia e tensioni quotidiane prima che diventino violenza." },
-      { "type": "link", "url": "https://REPLACE_ME-raiplaysound-parlarne-tra-amici", "label": "Ascolta il podcast su RaiPlay Sound", "description": "Il tuffo — Parlarne tra amici" },
+      { "type": "link", "url": "https://www.raiplaysound.it/audio/2024/11/Il-tuffo-del-22112024-e85ca394-ea1b-453c-91e0-da8425c4d732.html", "label": "Ascolta il podcast su RaiPlay Sound", "description": "Il tuffo — Parlarne tra amici" },
       { "type": "text", "body": "È uno dei contenuti più interessanti di tutta la selezione perché porta la vulnerabilità fuori dalla teoria e la mostra come pratica sociale: parlare non elimina il conflitto, ma lo rende meno cieco. Ottimo per un pubblico giovane che ha bisogno di vedere la sincerità non come perdita di status, ma come forma di responsabilità." }
     ]'::jsonb,
     'esplora/storie-parlarne-tra-amici.jpg',
@@ -299,7 +299,7 @@ VALUES
     'Sentirsi soli non è solo una conseguenza esterna, ma un circuito emotivo che si autoalimenta. Un pezzo che dà spessore scientifico alla relazione tra paura sociale e isolamento.',
     '[
       { "type": "text", "body": "Questo articolo di State of Mind tiene insieme tre parole che nell''esperienza reale vanno spesso insieme: ansia sociale, solitudine e difficoltà di regolazione emotiva." },
-      { "type": "link", "url": "https://REPLACE_ME-stateofmind-ansia-solitudine", "label": "Leggi l''articolo su State of Mind", "description": "Ansia sociale, solitudine e regolazione emotiva" },
+      { "type": "link", "url": "https://www.stateofmind.it/2022/07/ansia-sociale-regolazione-emotiva/", "label": "Leggi l''articolo su State of Mind", "description": "Ansia sociale, solitudine e regolazione emotiva" },
       { "type": "text", "body": "Il valore per StepnOut è pratico e profondo insieme: aiuta a capire che l''isolamento non nasce solo dalla mancanza di contatti, ma anche dal modo in cui interpretiamo e gestiamo le emozioni nelle relazioni. In altre parole, spiega perché uscire dalla comfort zone può migliorare non solo la vita sociale, ma anche il rapporto con i propri stati interni." }
     ]'::jsonb,
     'esplora/scienza-ansia-sociale.jpg',
@@ -331,7 +331,7 @@ VALUES
     'Un contenuto istituzionale, ma non freddo: pubblico, domande vere, esperti e casi concreti. Una voce di servizio pubblico che integra bene i pezzi più intimi e narrativi.',
     '[
       { "type": "text", "body": "Questo programma in quattro appuntamenti mette al centro un pubblico attivo che fa domande a esperti su bullismo, dipendenze, comportamenti di rischio e altri temi del benessere quotidiano." },
-      { "type": "link", "url": "https://REPLACE_ME-rai-parla-con-noi", "label": "Ascolta il programma", "description": "Parla con Noi! Benessere Psicologico — Rai" },
+      { "type": "link", "url": "https://www.raiplaysound.it/programmi/parlaconnoibenesserepsicologico", "label": "Ascolta il programma", "description": "Parla con Noi! Benessere Psicologico — Rai" },
       { "type": "text", "body": "Per il progetto è utile soprattutto perché traduce temi psicologici complessi in situazioni quotidiane e concrete: non parla sopra le persone, ma a partire dalle loro domande. In particolare, gli episodi su comportamenti di rischio e bullismo mostrano quanto paura, solitudine, pressione del gruppo e dinamiche affettive entrino nella vita ordinaria. Un contenuto meno \"letterario\" di altri in lista, ma proprio per questo molto utilizzabile come contrappunto pratico e civile." }
     ]'::jsonb,
     'esplora/pratica-parla-con-noi.jpg',
