@@ -79,10 +79,26 @@ export default function PieceReaderScreen() {
     }
   };
 
-  if (isLoading || !piece) {
+  if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator color={colors.light.lightText} />
+      </View>
+    );
+  }
+
+  if (!piece) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.notFound}>{t('Piece not found')}</Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          hitSlop={12}
+          accessibilityRole="button"
+          style={styles.notFoundBack}
+        >
+          <Text style={styles.notFoundBackText}>{t('Go back')}</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -174,5 +190,18 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     marginHorizontal: esploraSpacing.md,
+  },
+  notFound: {
+    ...esploraType.body,
+    color: colors.light.lightText,
+    marginBottom: esploraSpacing.md,
+  },
+  notFoundBack: {
+    paddingVertical: esploraSpacing.sm,
+    paddingHorizontal: esploraSpacing.md,
+  },
+  notFoundBackText: {
+    ...esploraType.categoryLabel,
+    color: colors.light.text,
   },
 });

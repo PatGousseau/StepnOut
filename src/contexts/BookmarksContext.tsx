@@ -25,6 +25,7 @@ export const BookmarksProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     if (!user?.id) {
       setBookmarkedPieces({});
+      setPendingBookmarks({});
     }
   }, [user?.id]);
 
