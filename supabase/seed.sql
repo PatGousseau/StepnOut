@@ -158,7 +158,7 @@ VALUES
     'Un contenuto elegante, colto ma accessibile, per chi ha bisogno di sentire che la fragilità non è un difetto da correggere.',
     '[
       { "type": "text", "body": "Questo intervento di Alessandro D''Avenia sul canale TEDx Talks merita spazio perché viene da una voce letteraria italiana capace di parlare di fragilità senza psicologese e senza retorica." },
-      { "type": "youtube", "video_id": "REPLACE_ME_davenia_tedx_id", "caption": "Alessandro D''Avenia — L''arte di essere fragili (TEDx)" },
+      { "type": "youtube", "video_id": "izHbS7rETVg", "caption": "Alessandro D''Avenia — L''arte di essere fragili (TEDx)" },
       { "type": "text", "body": "D''Avenia arriva a questo talk dopo un percorso da scrittore e docente che include anche il libro \"L''arte di essere fragili. Come Leopardi può salvarti la vita\": è quindi un contenuto ideale per utenti intelligenti, sensibili, magari diffidenti verso il linguaggio motivazionale. La fragilità non viene \"superata\"; viene riconosciuta come materia viva dell''esistenza, e proprio per questo diventa meno umiliante e più abitabile." }
     ]'::jsonb,
     'esplora/vulnerabilita-arte-fragili.jpg',
@@ -252,7 +252,7 @@ VALUES
     'Una storia di disconnessione, perdita e riconnessione raccontata da una voce italiana che non ha bisogno di abbellire nulla.',
     '[
       { "type": "text", "body": "Questo intervento su TED di Marco Confortola è forte perché non racconta il coraggio come una linea retta." },
-      { "type": "youtube", "video_id": "REPLACE_ME_confortola_ted_id", "caption": "Marco Confortola — No pain no gain (TED)" },
+      { "type": "youtube", "video_id": "x_sVIV8-vvM", "caption": "Marco Confortola — No pain no gain (TED)" },
       { "type": "text", "body": "La pagina ufficiale descrive il passaggio dalla connessione estrema con il corpo e la montagna alla disconnessione dal mondo dopo l''amputazione, fino a una nuova ricerca di relazione con se stesso e con gli altri. È prezioso perché offre una storia vera di vulnerabilità non romantica: il dolore non viene negato, ma attraversato. Molto più utile per utenti adulti di qualunque contenuto \"motivazionale\" standard." }
     ]'::jsonb,
     'esplora/storie-no-pain-no-gain.jpg',
