@@ -51,6 +51,8 @@ export const translations = {
   "Suggested reading": "Lettura consigliata",
   "1 card": "1 carta",
   "{n} cards": "{n} carte",
+  "Piece not found": "Lettura non trovata",
+  "Go back": "Indietro",
   "Read": "Leggi",
   Error: "Errore",
   Success: "Successo",

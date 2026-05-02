@@ -22,14 +22,7 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { LargePieceCard } from '../../../components/esplora/LargePieceCard';
 import { ContentCategory } from '../../../types';
 
-const VALID_CATEGORIES: ContentCategory[] = [
-  'fear',
-  'vulnerability',
-  'connection',
-  'stories',
-  'science',
-  'practice',
-];
+const VALID_CATEGORIES = Object.keys(CATEGORY_LABEL_KEYS) as ContentCategory[];
 
 export default function CategoryScreen() {
   const { key } = useLocalSearchParams<{ key: string }>();
