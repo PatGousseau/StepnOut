@@ -124,7 +124,7 @@ export default function PieceReaderScreen() {
           const page = pages[idx];
           if (!page) return null;
           return page.kind === 'hook' ? (
-            <PieceCard kind="hook" text={page.text} />
+            <PieceCard kind="hook" text={page.text} category={piece.category} />
           ) : (
             <PieceCard kind="body" card={page.card} pieceId={piece.id} />
           );

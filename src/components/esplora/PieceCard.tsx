@@ -11,10 +11,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import YoutubePlayer from 'react-native-youtube-iframe';
 import { colors } from '../../constants/Colors';
-import { esploraSpacing, esploraType } from '../../constants/EsploraStyles';
-import { CardLink, ContentCard } from '../../types';
+import {
+  CATEGORY_GRADIENTS,
+  CATEGORY_LABEL_KEYS,
+  esploraSpacing,
+  esploraType,
+} from '../../constants/EsploraStyles';
+import { CardLink, ContentCard, ContentCategory } from '../../types';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { CARD_STACK_OUTER_MARGIN, CARD_STACK_RADIUS } from './CardPager';
 
 const CARD_INNER_PADDING = esploraSpacing.lg;
@@ -22,6 +28,7 @@ const CARD_INNER_PADDING = esploraSpacing.lg;
 interface HookCardProps {
   kind: 'hook';
   text: string;
+  category: ContentCategory;
 }
 
 interface BodyCardProps {
@@ -34,16 +41,28 @@ type Props = HookCardProps | BodyCardProps;
 
 export const PieceCard: React.FC<Props> = (props) => {
   if (props.kind === 'hook') {
-    return (
-      <View style={[styles.card, styles.centered]}>
-        <Text style={styles.hook}>{props.text}</Text>
-      </View>
-    );
+    return <HookCard text={props.text} category={props.category} />;
   }
 
   return (
     <View style={[styles.card, styles.centered]}>
       <CardBody card={props.card} pieceId={props.pieceId} />
+    </View>
+  );
+};
+
+const HookCard: React.FC<{ text: string; category: ContentCategory }> = ({
+  text,
+  category,
+}) => {
+  const { t } = useLanguage();
+  const accentColor = CATEGORY_GRADIENTS[category][0];
+  const eyebrow = t(CATEGORY_LABEL_KEYS[category]).toUpperCase();
+  return (
+    <View style={[styles.card, styles.hookCard]}>
+      <View style={[styles.hookAccent, { backgroundColor: accentColor }]} />
+      <Text style={[styles.hookEyebrow, { color: accentColor }]}>{eyebrow}</Text>
+      <Text style={styles.hook}>{text}</Text>
     </View>
   );
 };
@@ -230,11 +249,27 @@ const styles = StyleSheet.create({
   centered: {
     justifyContent: 'center',
   },
+  hookCard: {
+    justifyContent: 'center',
+  },
+  hookAccent: {
+    width: 32,
+    height: 3,
+    borderRadius: 2,
+    marginBottom: esploraSpacing.md,
+  },
+  hookEyebrow: {
+    ...esploraType.categoryLabel,
+    fontSize: 12,
+    letterSpacing: 1.4,
+    marginBottom: esploraSpacing.md,
+  },
   hook: {
-    ...esploraType.hookLarge,
+    ...esploraType.body,
     color: colors.light.text,
-    fontSize: 30,
-    lineHeight: 42,
+    fontSize: 19,
+    lineHeight: 30,
+    fontStyle: 'italic',
     textAlign: 'left',
   },
   body: {
