@@ -38,7 +38,6 @@ WITH payload AS (
       ]
     },
     {
-      "instructions": "Pick a block near home, walk it slowly, notice signs, textures, sounds, plants, and windows, then choose the most interesting thing you found as the block's unofficial landmark.",
       "title": "Safari di un isolato",
       "summary": "Studia un isolato qualsiasi come se fosse una meta di viaggio.",
       "why_it_hits": "Trasforma le strade familiari in un territorio tutto da scoprire.",
