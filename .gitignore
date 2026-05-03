@@ -2,6 +2,7 @@
 
 scrap/
 scripts/side-quests/output/
+.codex/
 
 # local-only scripts
 .local/
