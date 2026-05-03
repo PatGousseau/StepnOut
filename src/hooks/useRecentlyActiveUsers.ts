@@ -33,8 +33,7 @@ async function fetchRecentlyActiveCount(): Promise<number> {
   const { count, error } = await supabase
     .from('profiles')
     .select('*', { count: 'exact', head: true })
-    .eq('is_recently_active', true)
-    .not('profile_media_id', 'is', null);
+    .eq('is_recently_active', true);
 
   if (error) throw error;
   return count || 0;
