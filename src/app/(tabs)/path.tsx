@@ -1,5 +1,5 @@
-import { PrivateChallengePath } from "../../components/PrivateChallengePath";
+import { SideQuestPath } from "../../components/SideQuestPath";
 
 export default function PathScreen() {
-  return <PrivateChallengePath />;
+  return <SideQuestPath />;
 }

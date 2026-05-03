@@ -62,7 +62,7 @@ export interface Challenge {
   }
   
   export interface UserProgress {
-    challengeProgress: ChallengeProgress;
+    challengeData: ChallengeProgress;
     weekData: WeekData[];
   }
 
