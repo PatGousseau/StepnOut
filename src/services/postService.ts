@@ -99,6 +99,15 @@ function applyBlockedFilter(query: any, blockedUserIds: string[]) {
   return query.not("user_id", "in", quotedList);
 }
 
+export interface PostSearchResult {
+  id: number;
+  body: string | null;
+  createdAt: string;
+  userId: string;
+  username: string | null;
+  mediaUrl: string | null;
+}
+
 export const postService = {
   async fetchPostsForChallenge(
     challengeId: number,
@@ -681,5 +690,55 @@ export const postService = {
       .map((p) => processPost(p, isChallenge));
 
     return { posts: posts as Post[], hasMore: orderedIds.length === postsPerPage };
+  },
+
+  async searchPosts(query: string, limit: number = 20): Promise<PostSearchResult[]> {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) return [];
+
+    type PostSearchRow = {
+      id: number;
+      user_id: string;
+      body: string | null;
+      created_at: string;
+      media: { file_path: string | null; upload_status: string | null } | null;
+      profiles: { username: string | null } | null;
+    };
+
+    const { data, error } = await supabase
+      .from('post')
+      .select(
+        `
+          id,
+          user_id,
+          body,
+          created_at,
+          media (file_path, upload_status),
+          profiles!post_user_id_profiles_fkey (username)
+        `
+      )
+      .ilike('body', `%${normalizedQuery}%`)
+      .eq('is_welcome', false)
+      .not('media.upload_status', 'in', '("failed","pending")')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    const rows = (data ?? []) as unknown as PostSearchRow[];
+
+    return rows.map((row) => {
+      const filePath = row.media?.file_path ?? null;
+      const mediaUrl = filePath ? imageService.getPostImageUrlSync(filePath, 'small') : null;
+
+      return {
+        id: row.id,
+        body: row.body,
+        createdAt: row.created_at,
+        userId: row.user_id,
+        username: row.profiles?.username ?? null,
+        mediaUrl,
+      };
+    });
   },
 };

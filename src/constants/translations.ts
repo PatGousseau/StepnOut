@@ -310,5 +310,13 @@ export const translations = {
   "Search by name or username": "Cerca per nome o nome utente",
   "Start typing to find people": "Inizia a digitare per trovare persone",
   "No users found": "Nessun utente trovato",
+  "Search": "Cerca",
+  "Posts": "Post",
+  "People": "Persone",
+  "Search posts": "Cerca nei post",
+  "Start typing to search": "Inizia a digitare per cercare",
+  "No results found": "Nessun risultato trovato",
+  "No text": "Nessun testo",
+  "Unknown": "Sconosciuto",
   "Please enable notifications in device Settings > Apps > StepnOut.": "Abilita le notifiche nelle impostazioni del dispositivo > App > StepnOut."
 };
