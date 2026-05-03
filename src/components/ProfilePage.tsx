@@ -469,7 +469,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         <BadgePreviewSection userId={targetUserId!} userProfile={userProfile} />
 
         {isOwnProfile && data && (
-          <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
+          <>
+            <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
+          </>
         )}
 
         <View style={styles.filterRow}>

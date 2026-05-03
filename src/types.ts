@@ -62,7 +62,7 @@ export interface Challenge {
   }
   
   export interface UserProgress {
-    challengeProgress: ChallengeProgress;
+    challengeData: ChallengeProgress;
     weekData: WeekData[];
   }
 
@@ -121,4 +121,42 @@ export interface Challenge {
     username: string;
     name: string;
     profileImageUrl: string | null;
+  }
+
+  export type ContentCategory =
+    | 'fear'
+    | 'vulnerability'
+    | 'connection'
+    | 'stories'
+    | 'science'
+    | 'practice'
+    | 'solitude'
+    | 'assertiveness'
+    | 'openness';
+
+  export interface CardLink {
+    url: string;
+    label?: string;
+  }
+
+  export type ContentCard =
+    | { type: 'text'; body: string; link?: CardLink }
+    | { type: 'youtube'; video_id: string; caption?: string }
+    | { type: 'link'; url: string; label: string; description?: string };
+
+  export interface ContentPiece {
+    id: number;
+    title: string;
+    category: ContentCategory;
+    hook: string;
+    cards: ContentCard[];
+    is_featured: boolean;
+    created_at: string;
+    updated_at: string;
+  }
+
+  export interface ContentBookmark {
+    user_id: string;
+    piece_id: number;
+    created_at: string;
   }
