@@ -74,6 +74,18 @@ export const PROFILE_EVENTS = {
 } as const;
 
 // ============================================
+// SIDE QUEST EVENTS
+// ============================================
+export const SIDE_QUEST_EVENTS = {
+  QUESTIONNAIRE_STARTED: 'side_quest_questionnaire_started',
+  PREFERENCES_EDIT_STARTED: 'side_quest_preferences_edit_started',
+  QUESTION_ADVANCED: 'side_quest_question_advanced',
+  QUESTIONNAIRE_COMPLETED: 'side_quest_questionnaire_completed',
+  QUESTIONNAIRE_CANCELLED: 'side_quest_questionnaire_cancelled',
+  QUESTIONNAIRE_SAVE_FAILED: 'side_quest_questionnaire_save_failed',
+} as const;
+
+// ============================================
 // FEED EVENTS
 // ============================================
 export const FEED_EVENTS = {
@@ -143,6 +155,7 @@ export const ANALYTICS_EVENTS = {
   COMMENT: COMMENT_EVENTS,
   CHALLENGE: CHALLENGE_EVENTS,
   PROFILE: PROFILE_EVENTS,
+  SIDE_QUEST: SIDE_QUEST_EVENTS,
   FEED: FEED_EVENTS,
   UI: UI_EVENTS,
   SCREEN: SCREEN_EVENTS,
