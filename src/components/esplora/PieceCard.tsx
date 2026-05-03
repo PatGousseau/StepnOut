@@ -135,9 +135,11 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
   videoId,
   caption,
 }) => {
+  const { t } = useLanguage();
   const { width } = useWindowDimensions();
   const playerWidth = width - (CARD_STACK_OUTER_MARGIN + CARD_INNER_PADDING) * 2;
   const playerHeight = (playerWidth * 9) / 16;
+  const playerSize = { width: playerWidth, height: playerHeight };
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const [activated, setActivated] = useState(false);
@@ -156,13 +158,7 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
           onPress={() => Linking.openURL(watchUrl)}
           activeOpacity={0.85}
           accessibilityRole="link"
-          style={{
-            width: playerWidth,
-            height: playerHeight,
-            backgroundColor: colors.neutral.black,
-            borderRadius: 8,
-            overflow: 'hidden',
-          }}
+          style={[styles.youtubeFrame, playerSize]}
         >
           <Image
             source={{ uri: thumbUrl }}
@@ -176,7 +172,7 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
           </View>
         </TouchableOpacity>
         <Text style={styles.caption}>
-          {caption ? `${caption} — ` : ''}Apri su YouTube
+          {caption ? `${caption} — ` : ''}{t('Open on YouTube')}
         </Text>
       </View>
     );
@@ -185,15 +181,7 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
   return (
     <View>
       {activated ? (
-        <View
-          style={{
-            width: playerWidth,
-            height: playerHeight,
-            borderRadius: 8,
-            overflow: 'hidden',
-            backgroundColor: colors.neutral.black,
-          }}
-        >
+        <View style={[styles.youtubeFrame, playerSize]}>
           <YoutubePlayer
             height={playerHeight}
             width={playerWidth}
@@ -211,13 +199,7 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel={caption ? `Play video: ${caption}` : 'Play video'}
-          style={{
-            width: playerWidth,
-            height: playerHeight,
-            backgroundColor: colors.neutral.black,
-            borderRadius: 8,
-            overflow: 'hidden',
-          }}
+          style={[styles.youtubeFrame, playerSize]}
         >
           <Image
             source={{ uri: thumbUrl }}
@@ -226,7 +208,7 @@ const YouTubeEmbed: React.FC<{ videoId: string; caption?: string }> = ({
           />
           <View style={styles.youtubePlayOverlay}>
             <View style={styles.youtubePlayBadge}>
-              <Ionicons name="play" size={28} color="#FFFFFF" style={{ marginLeft: 3 }} />
+              <Ionicons name="play" size={28} color="#FFFFFF" style={styles.youtubePlayIcon} />
             </View>
           </View>
         </TouchableOpacity>
@@ -303,6 +285,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: esploraSpacing.md,
   },
+  youtubeFrame: {
+    backgroundColor: colors.neutral.black,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
   youtubePlayOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -316,5 +303,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  youtubePlayIcon: {
+    marginLeft: 3,
   },
 });

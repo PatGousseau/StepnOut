@@ -54,6 +54,7 @@ export const translations = {
   "Piece not found": "Lettura non trovata",
   "Go back": "Indietro",
   "Read": "Leggi",
+  "Open on YouTube": "Apri su YouTube",
   Error: "Errore",
   Success: "Successo",
   Name: "Nome",
