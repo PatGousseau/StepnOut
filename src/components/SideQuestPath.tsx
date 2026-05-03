@@ -141,7 +141,7 @@ export const SideQuestPath: React.FC = () => {
     }
   }, [needsOnboarding, editingPreferences]);
 
-  const showingIntroStep = needsOnboarding && currentQuestionIndex < 0;
+  const showingIntroStep = currentQuestionIndex < 0;
 
   const questionnaireComplete = useMemo(
     () =>
@@ -307,7 +307,7 @@ export const SideQuestPath: React.FC = () => {
       return;
     }
 
-    if (needsOnboarding && currentQuestionIndex === 0) {
+    if (currentQuestionIndex === 0) {
       setCurrentQuestionIndex(-1);
     }
   };
@@ -340,28 +340,18 @@ export const SideQuestPath: React.FC = () => {
         <View style={styles.questionnaireScreen}>
           <View style={styles.questionnaireHeader}>
             {!showingIntroStep && (
-              <>
-                <View style={styles.stepIndicatorRow}>
-                  {questionnaireSteps.map((step, index) => (
-                    <View
-                      key={step.title}
-                      style={[
-                        styles.stepIndicator,
-                        index < currentQuestionIndex && styles.stepIndicatorComplete,
-                        index === currentQuestionIndex && styles.stepIndicatorActive,
-                      ]}
-                    />
-                  ))}
-                </View>
-                {editingPreferences && (
-                  <>
-                    <Text style={styles.editingTitle}>{t("Edit preferences")}</Text>
-                    <Text style={styles.editingSubtitle}>
-                      {t("Fine-tune the kinds of side quests that fit your life right now.")}
-                    </Text>
-                  </>
-                )}
-              </>
+              <View style={styles.stepIndicatorRow}>
+                {questionnaireSteps.map((step, index) => (
+                  <View
+                    key={step.title}
+                    style={[
+                      styles.stepIndicator,
+                      index < currentQuestionIndex && styles.stepIndicatorComplete,
+                      index === currentQuestionIndex && styles.stepIndicatorActive,
+                    ]}
+                  />
+                ))}
+              </View>
             )}
           </View>
 
@@ -389,33 +379,32 @@ export const SideQuestPath: React.FC = () => {
           <View style={styles.questionActions}>
             <TouchableOpacity
               style={[
-                styles.questionSecondaryButton,
-                ((showingIntroStep || (!needsOnboarding && currentQuestionIndex === 0))) &&
-                  styles.questionSecondaryButtonHidden,
+                styles.questionBackButton,
+                showingIntroStep && styles.questionSecondaryButtonHidden,
               ]}
-              disabled={showingIntroStep || (!needsOnboarding && currentQuestionIndex === 0)}
+              disabled={showingIntroStep}
               onPress={handleBackQuestion}
             >
-              <Text style={styles.questionSecondaryButtonText}>{t("Back")}</Text>
+              <Text style={styles.questionBackButtonText}>{t("Back")}</Text>
             </TouchableOpacity>
 
             {!showingIntroStep && isLastQuestion ? (
               <TouchableOpacity
-                style={[styles.primaryButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
+                style={[styles.questionNextButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
                 disabled={!questionnaireComplete || savingProfile}
                 onPress={submitProfile}
               >
-                <Text style={styles.primaryButtonText}>
+                <Text style={styles.questionNextButtonText}>
                   {savingProfile ? t("Saving...") : t("Done")}
                 </Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
-                style={[styles.primaryButton, !showingIntroStep && !currentStep?.isComplete && styles.disabledButton]}
+                style={[styles.questionNextButton, !showingIntroStep && !currentStep?.isComplete && styles.disabledButton]}
                 disabled={!showingIntroStep && !currentStep?.isComplete}
                 onPress={handleNextQuestion}
               >
-                <Text style={styles.primaryButtonText}>
+                <Text style={styles.questionNextButtonText}>
                   {showingIntroStep ? t("Let's begin") : t("Next")}
                 </Text>
               </TouchableOpacity>
@@ -505,18 +494,6 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
-  editingSubtitle: {
-    color: colors.light.lightText,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 6,
-  },
-  editingTitle: {
-    color: colors.light.text,
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 10,
-  },
   emptyStateBody: {
     color: colors.light.lightText,
     fontSize: 15,
@@ -605,12 +582,12 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   optionChip: {
-    backgroundColor: "#F2F4F7",
-    borderColor: "#D7DDE8",
+    backgroundColor: "#FFFFFF",
+    borderColor: colors.neutral.grey2,
     borderRadius: 999,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   optionChipActive: {
     backgroundColor: colors.light.primary,
@@ -618,7 +595,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: colors.light.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
   },
   optionTextActive: {
@@ -635,20 +612,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 34,
     marginBottom: 6,
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.light.primary,
-    borderRadius: 999,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: 48,
-    paddingHorizontal: 18,
-  },
-  primaryButtonText: {
-    color: colors.neutral.white,
-    fontSize: 15,
-    fontWeight: "700",
   },
   questCard: {
     backgroundColor: colors.light.cardBg,
@@ -694,36 +657,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   questionActions: {
+    alignItems: "center",
     flexDirection: "row",
-    gap: 10,
+    justifyContent: "space-between",
     paddingBottom: 0,
     paddingTop: 14,
   },
-  questionSecondaryButton: {
+  questionBackButton: {
     alignItems: "center",
-    borderColor: "#D7DDE8",
-    borderRadius: 999,
-    borderWidth: 1,
     justifyContent: "center",
-    minHeight: 48,
+    minHeight: 32,
+    paddingHorizontal: 4,
+  },
+  questionBackButtonText: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  questionNextButton: {
+    alignItems: "center",
+    alignSelf: "flex-end",
+    backgroundColor: colors.light.primary,
+    borderRadius: 12,
+    justifyContent: "center",
+    minHeight: 42,
+    minWidth: 88,
     paddingHorizontal: 18,
+  },
+  questionNextButtonText: {
+    color: colors.neutral.white,
+    fontSize: 14,
+    fontWeight: "700",
   },
   questionSecondaryButtonHidden: {
     opacity: 0,
-  },
-  questionSecondaryButtonText: {
-    color: colors.light.text,
-    fontSize: 15,
-    fontWeight: "600",
   },
   section: {
     paddingTop: 10,
   },
   sectionTitle: {
     color: colors.light.text,
-    fontSize: 30,
-    fontWeight: "800",
-    lineHeight: 34,
+    fontSize: 22,
+    fontWeight: "700",
+    lineHeight: 28,
     marginBottom: 10,
   },
   secondaryButton: {
