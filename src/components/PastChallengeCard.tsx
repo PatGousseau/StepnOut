@@ -1,10 +1,6 @@
 import React from "react";
-import { View, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { Challenge } from "../types";
-import { Text } from "./StyledText";
-import { colors } from "../constants/Colors";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { imageService } from "../services/imageService";
+import { ChallengePreviewCard } from "./ChallengePreviewCard";
 
 export function PastChallengeCard({
   challenge,
@@ -13,60 +9,15 @@ export function PastChallengeCard({
   challenge: Challenge;
   onPress: () => void;
 }) {
+  const filePath = challenge.media?.file_path;
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
-      <Image
-        source={{
-          uri: imageService.getChallengeImageUrlSync(challenge.media.file_path, "tiny"),
-        }}
-        style={styles.image}
-      />
-      <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>
-          {challenge.title}
-        </Text>
-        <Text
-          style={styles.description}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
-          {challenge.description}
-        </Text>
-      </View>
-      <MaterialIcons name="chevron-right" size={24} color={colors.light.lightText} />
-    </TouchableOpacity>
+    <ChallengePreviewCard
+      title={challenge.title}
+      description={challenge.description}
+      difficulty={challenge.difficulty}
+      imagePath={filePath}
+      onPress={onPress}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.light.background,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.neutral.grey1 + "70",
-    padding: 12,
-    marginTop: 10,
-  },
-  image: {
-    width: 56,
-    height: 56,
-    borderRadius: 10,
-    marginRight: 12,
-    backgroundColor: colors.neutral.grey1,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    color: colors.light.primary,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  description: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    marginTop: 6,
-  },
-});

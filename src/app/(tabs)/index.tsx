@@ -19,6 +19,7 @@ import FeedSortToggle from "../../components/FeedSortToggle";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
 import { colors } from "../../constants/Colors";
 import InlineCreatePost from "../../components/InlineCreatePost";
+import { HomeChallengeBanner } from "../../components/HomeChallengeBanner";
 import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
 import { PostsListSkeleton } from "@/src/components/Skeleton";
@@ -248,12 +249,15 @@ const Home = () => {
 
   const renderSubmissionsHeader = useCallback(() => {
     return (
-      <FeedSortToggle
-        value={submissionSort}
-        onChange={setSubmissionSort}
-        recentLabel={t("Most recent")}
-        popularLabel={t("Popular")}
-      />
+      <View>
+        <HomeChallengeBanner />
+        <FeedSortToggle
+          value={submissionSort}
+          onChange={setSubmissionSort}
+          recentLabel={t("Most recent")}
+          popularLabel={t("Popular")}
+        />
+      </View>
     );
   }, [submissionSort, t]);
 
@@ -261,6 +265,7 @@ const Home = () => {
   const renderDiscussionHeader = useCallback(() => {
     return (
       <View>
+        <HomeChallengeBanner />
         <FeedSortToggle
           value={discussionSort}
           onChange={setDiscussionSort}

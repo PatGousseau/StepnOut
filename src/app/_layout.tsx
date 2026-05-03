@@ -383,7 +383,7 @@ function RootLayoutNav() {
         </View>
       )}
 
-      {!hideLogo && !hideRecentlyActive && <RecentlyActiveBanner hidden={isDetailPage} />}
+      {/* {!hideLogo && !hideRecentlyActive && <RecentlyActiveBanner hidden={isDetailPage} />} */}
       <Stack
         screenOptions={{
           headerShown: false,
