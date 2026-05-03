@@ -383,6 +383,7 @@ async function generateRawQuests() {
     "It should feel interesting, fun, fresh, fulfilling, or lightly growth-oriented.",
     "It should not read like therapy homework or a formal self-improvement challenge.",
     "You are not annotating the quests yet, but you must generate them with enough diversity that a later annotation pass can meaningfully cover the full preference space.",
+    "Write all user-facing quest text in Italian.",
     "Return valid JSON only.",
   ].join("\n");
 
@@ -438,6 +439,8 @@ async function generateRawQuests() {
     "- concrete summaries",
     "- concise why_it_hits",
     "- instructions should be one compact paragraph, not a numbered list",
+    "- all four text fields must be in natural contemporary Italian",
+    "- do not leave any title, summary, why_it_hits, or instructions in English",
     "- do not over-index on quirky, whimsical, or mischievous ideas",
     "- only some quests should feel playful",
     "- many quests should instead feel grounded, curious, social, reflective, intimate, cinematic, or quietly adventurous",
