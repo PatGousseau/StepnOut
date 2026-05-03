@@ -21,6 +21,7 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { BookmarkButton } from '../../../components/esplora/BookmarkButton';
 import { CardPager } from '../../../components/esplora/CardPager';
 import { PieceCard } from '../../../components/esplora/PieceCard';
+import { ProgressSegments } from '../../../components/ProgressSegments';
 import { captureEvent } from '../../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../../constants/analyticsEvents';
 
@@ -106,15 +107,7 @@ export default function PieceReaderScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.progressRow}>
-        {pages.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.progressSegment,
-              i <= activeIndex && styles.progressSegmentActive,
-            ]}
-          />
-        ))}
+        <ProgressSegments total={pages.length} activeIndex={activeIndex} />
       </View>
 
       <View style={styles.topBar}>
@@ -160,21 +153,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   progressRow: {
-    flexDirection: 'row',
     paddingHorizontal: esploraSpacing.horizontalPadding,
     paddingTop: esploraSpacing.md,
-    gap: 4,
-  },
-  progressSegment: {
-    flex: 1,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: colors.light.text,
-    opacity: 0.15,
-  },
-  progressSegmentActive: {
-    backgroundColor: colors.light.primary,
-    opacity: 1,
   },
   topBar: {
     flexDirection: 'row',

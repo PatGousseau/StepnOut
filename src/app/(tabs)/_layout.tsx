@@ -32,6 +32,8 @@ export default function TabsLayout() {
               break;
             case 'esplora':
               iconName = 'book-outline';
+            case 'path':
+              iconName = 'footsteps';
               break;
             case 'profile':
               iconName = 'person';
@@ -69,6 +71,12 @@ export default function TabsLayout() {
         name="esplora"
         options={{
           title: t('Esplora'),
+        }}
+      />
+      <Tabs.Screen
+        name="path"
+        options={{
+          title: t('Path'),
         }}
       />
       <Tabs.Screen
