@@ -2,6 +2,7 @@
 
 scrap/
 scripts/side-quests/output/
+.codex/
 
 # dependencies
 node_modules/
