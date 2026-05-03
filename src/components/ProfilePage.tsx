@@ -37,7 +37,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { PROFILE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 import { BadgePreviewSection } from "./Badges/BadgePreviewSection";
-import { PrivateProgressCard } from "./PrivateProgressCard";
 
 type ProfilePageProps = {
   userId?: string;
@@ -495,7 +494,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
         {isOwnProfile && data && (
           <>
-            <PrivateProgressCard userId={targetUserId} />
             <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
           </>
         )}

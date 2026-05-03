@@ -221,9 +221,9 @@ const useUserProgress = (targetUserId: string) => {
       } catch (err) {
         console.error('Error fetching progress data:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch progress data');
-        setData({ 
-          challengeData: { easy: 0, medium: 0, hard: 0 }, 
-          weekData: [] 
+        setData({
+          challengeData: { easy: 0, medium: 0, hard: 0 },
+          weekData: []
         });
       } finally {
         setLoading(false);
