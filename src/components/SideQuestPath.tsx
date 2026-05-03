@@ -6,6 +6,7 @@ import { Loader } from "./Loader";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSideQuests } from "../hooks/useSideQuests";
 import { colors } from "../constants/Colors";
+import { captureEvent } from "../lib/posthog";
 import {
   SIDE_QUEST_AVOID_OPTIONS,
   SIDE_QUEST_CONTEXT_OPTIONS,
@@ -16,6 +17,7 @@ import {
   SIDE_QUEST_PROGRESS_OPTIONS,
   SIDE_QUEST_STRETCH_LEVEL_OPTIONS,
 } from "../constants/sideQuestOptions";
+import { SIDE_QUEST_EVENTS } from "../constants/analyticsEvents";
 import {
   SideQuestAvoidType,
   SideQuestGoal,
@@ -293,11 +295,23 @@ export const SideQuestPath: React.FC = () => {
 
   const handleNextQuestion = () => {
     if (showingIntroStep) {
+      if (needsOnboarding) {
+        captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_STARTED, {
+          entry_point: "onboarding",
+          question_count: questionnaireSteps.length,
+        });
+      }
       setCurrentQuestionIndex(0);
       return;
     }
 
     if (!currentStep?.isComplete) return;
+    captureEvent(SIDE_QUEST_EVENTS.QUESTION_ADVANCED, {
+      step_index: currentQuestionIndex,
+      step_title: currentStep.title,
+      entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
+    });
+
     if (!isLastQuestion) setCurrentQuestionIndex((current) => current + 1);
   };
 
@@ -315,8 +329,23 @@ export const SideQuestPath: React.FC = () => {
   const submitProfile = async () => {
     try {
       await saveProfile(draft);
+      captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_COMPLETED, {
+        entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
+        question_count: questionnaireSteps.length,
+        goal_count: draft.goal.length,
+        hard_situation_count: draft.hard_situation.length,
+        preferred_context_count: draft.preferred_context.length,
+        meaningful_type_count: draft.meaningful_type.length,
+        avoid_types_count: draft.avoid_types.length,
+        progress_definition_count: draft.progress_definition.length,
+      });
       setEditingPreferences(false);
     } catch (error) {
+      captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_SAVE_FAILED, {
+        entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
+        step_index: currentQuestionIndex,
+        message: (error as Error).message,
+      });
       Alert.alert(t("Error"), (error as Error).message);
     }
   };
@@ -437,7 +466,16 @@ export const SideQuestPath: React.FC = () => {
             {t("Ranked to fit the kind of break from routine you want right now.")}
           </Text>
         </View>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => setEditingPreferences(true)}>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => {
+            captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
+              entry_point: "results",
+              question_count: questionnaireSteps.length,
+            });
+            setEditingPreferences(true);
+          }}
+        >
           <Text style={styles.secondaryButtonText}>{t("Edit preferences")}</Text>
         </TouchableOpacity>
       </View>
