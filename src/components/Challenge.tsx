@@ -514,11 +514,8 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
 const challengeStyles = StyleSheet.create({
   card: {
-    backgroundColor: colors.light.background,
-    borderRadius: 12,
-    marginBottom: 10,
-    padding: 20,
-    width: "100%",
+    width: "80%",
+    alignSelf: "center",
   },
   challengeHeader: {
     alignItems: "flex-start",
@@ -526,21 +523,23 @@ const challengeStyles = StyleSheet.create({
   },
   challengeImage: {
     alignSelf: "center",
-    height: 200,
-    marginBottom: 20,
-    width: 200,
+    aspectRatio: 1,
+    borderRadius: 16,
+    marginBottom: 16,
+    width: "80%",
   },
   challengeName: {
     color: colors.light.primary,
     flex: 1,
     fontSize: 16,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 8,
+    textAlign: "left",
   },
   description: {
     color: colors.light.text,
     fontSize: 14,
-    marginBottom: 15,
+    textAlign: "left",
   },
   difficultyBadgeContainer: {
     borderRadius: 12,
