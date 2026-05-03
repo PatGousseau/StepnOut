@@ -1,27 +1,13 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import { Animated, Easing, Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
 import { useActiveChallenge } from "../hooks/useActiveChallenge";
 import { useLanguage } from "../contexts/LanguageContext";
-import { imageService } from "../services/imageService";
 import { captureEvent } from "../lib/posthog";
 import { CHALLENGE_EVENTS } from "../constants/analyticsEvents";
-
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty.toLowerCase()) {
-    case "easy":
-      return colors.light.easyGreen;
-    case "medium":
-      return colors.light.mediumYellow;
-    case "hard":
-      return colors.light.hardRed;
-    default:
-      return colors.light.easyGreen;
-  }
-};
+import { ChallengePreviewCard } from "./ChallengePreviewCard";
 
 export const HomeChallengeBanner: React.FC = () => {
   const { t, language } = useLanguage();
@@ -64,14 +50,6 @@ export const HomeChallengeBanner: React.FC = () => {
   const description =
     language === "it" ? activeChallenge.description_it : activeChallenge.description;
   const filePath = activeChallenge.media?.file_path || activeChallenge.media_file_path;
-  const difficulty = activeChallenge.difficulty;
-
-  const endsLabel =
-    daysRemaining === null
-      ? null
-      : daysRemaining > 0
-      ? t(daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days", { days: daysRemaining })
-      : t("Past challenge");
 
   const handlePress = () => {
     captureEvent(CHALLENGE_EVENTS.VIEWED, {
@@ -84,53 +62,19 @@ export const HomeChallengeBanner: React.FC = () => {
   return (
     <View style={styles.wrap}>
       <Text style={styles.eyebrow}>{t("This week's challenge")}</Text>
-      <AnimatedTouchable
-        style={[styles.card, { transform: [{ scale }] }]}
-        onPress={handlePress}
-        activeOpacity={0.9}
-        accessibilityRole="button"
-      >
-        {filePath ? (
-          <Image
-            source={{ uri: imageService.getChallengeImageUrlSync(filePath, "small") }}
-            style={styles.image}
-          />
-        ) : (
-          <View style={[styles.image, styles.imageFallback]} />
-        )}
-        <View style={styles.content}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title} numberOfLines={2}>
-              {title}
-            </Text>
-            <View
-              style={[
-                styles.difficultyBadge,
-                { backgroundColor: getDifficultyColor(difficulty) },
-              ]}
-            >
-              <Text style={styles.difficultyText}>
-                {t(difficulty.charAt(0).toUpperCase() + difficulty.slice(1))}
-              </Text>
-            </View>
-          </View>
-          <Text style={styles.description} numberOfLines={2}>
-            {description}
-          </Text>
-          {endsLabel && <Text style={styles.endsLabel}>{endsLabel}</Text>}
-        </View>
-        <MaterialIcons
-          name="chevron-right"
-          size={22}
-          color={colors.light.lightText}
-          style={styles.chevron}
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <ChallengePreviewCard
+          title={title}
+          description={description}
+          difficulty={activeChallenge.difficulty}
+          imagePath={filePath}
+          daysRemaining={daysRemaining}
+          onPress={handlePress}
         />
-      </AnimatedTouchable>
+      </Animated.View>
     </View>
   );
 };
-
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const styles = StyleSheet.create({
   wrap: {
@@ -143,66 +87,5 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 8,
-  },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.light.background,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.neutral.grey1 + "70",
-    padding: 10,
-  },
-  image: {
-    width: 72,
-    height: 72,
-    borderRadius: 10,
-    backgroundColor: colors.neutral.grey1,
-  },
-  imageFallback: {
-    backgroundColor: colors.neutral.grey1,
-  },
-  content: {
-    flex: 1,
-    marginLeft: 12,
-    marginRight: 4,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-  },
-  title: {
-    flex: 1,
-    color: colors.light.primary,
-    fontSize: 15,
-    fontWeight: "700",
-    lineHeight: 19,
-  },
-  difficultyBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    marginTop: 1,
-  },
-  difficultyText: {
-    color: colors.light.text,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  description: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 4,
-  },
-  endsLabel: {
-    color: colors.light.accent,
-    fontSize: 11,
-    fontWeight: "600",
-    marginTop: 6,
-  },
-  chevron: {
-    alignSelf: "center",
   },
 });

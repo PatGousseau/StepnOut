@@ -22,6 +22,7 @@ import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getChallengeDifficultyColor } from "../utils/challengeDifficulty";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -29,18 +30,6 @@ interface ChallengeCardProps {
 
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
   const { t } = useLanguage();
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty.toLowerCase()) {
-      case "easy":
-        return colors.light.easyGreen;
-      case "medium":
-        return colors.light.mediumYellow;
-      case "hard":
-        return colors.light.hardRed;
-      default:
-        return colors.light.easyGreen;
-    }
-  };
 
   return (
     <>
@@ -56,7 +45,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({ challenge }) => {
             <View
               style={[
                 challengeStyles.difficultyBadgeContainer,
-                { backgroundColor: getDifficultyColor(challenge.difficulty) },
+                { backgroundColor: getChallengeDifficultyColor(challenge.difficulty) },
               ]}
             >
               <Text style={challengeStyles.difficultyBadgeText}>
