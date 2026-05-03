@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-nat
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
+import { ProgressSegments } from "./ProgressSegments";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSideQuests } from "../hooks/useSideQuests";
 import { colors } from "../constants/Colors";
@@ -370,16 +371,10 @@ export const SideQuestPath: React.FC = () => {
           <View style={styles.questionnaireHeader}>
             {!showingIntroStep && (
               <View style={styles.stepIndicatorRow}>
-                {questionnaireSteps.map((step, index) => (
-                  <View
-                    key={step.title}
-                    style={[
-                      styles.stepIndicator,
-                      index < currentQuestionIndex && styles.stepIndicatorComplete,
-                      index === currentQuestionIndex && styles.stepIndicatorActive,
-                    ]}
-                  />
-                ))}
+                <ProgressSegments
+                  total={questionnaireSteps.length}
+                  activeIndex={currentQuestionIndex}
+                />
               </View>
             )}
           </View>
@@ -754,20 +749,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  stepIndicator: {
-    backgroundColor: "#E3E8EF",
-    borderRadius: 999,
-    flex: 1,
-    height: 4,
-  },
-  stepIndicatorActive: {
-    backgroundColor: colors.light.primary,
-  },
-  stepIndicatorComplete: {
-    backgroundColor: colors.light.accent2,
-  },
   stepIndicatorRow: {
-    flexDirection: "row",
     gap: 8,
   },
   subtitle: {
