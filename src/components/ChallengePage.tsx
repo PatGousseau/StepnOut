@@ -215,6 +215,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   listContent: {
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   heroSection: {
