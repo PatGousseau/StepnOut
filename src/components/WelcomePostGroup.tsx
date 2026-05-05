@@ -85,8 +85,14 @@ const styles: Record<string, ViewStyle | TextStyle> = {
   container: {
     flexDirection: "row",
     alignItems: "center",
+    borderBottomColor: "#ccc",
+    borderBottomWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    marginBottom: 8,
     paddingVertical: 12,
     paddingHorizontal: 8,
+    paddingBottom: 16,
     gap: 6,
   },
   containerExpanded: {

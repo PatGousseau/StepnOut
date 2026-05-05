@@ -311,6 +311,9 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
   };
 
+  const isChallengePost = !!post.challenge_id;
+  const isQuestPost = !!post.quest_id;
+
   const handleImageLongPress = async () => {
     try {
       const urls = await imageService.getPostImageUrl(post.media?.file_path || "", "original");
@@ -425,7 +428,11 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   return (
     <Pressable
       // onPress={handlePostPress}
-      style={[containerStyle, post.challenge_id ? challengeContainerStyle : null, { position: "relative" }]}
+      style={[
+        containerStyle,
+        (isChallengePost || isQuestPost) ? challengeContainerStyle : null,
+        { position: "relative" },
+      ]}
     >
       <View style={headerStyle}>
         <TouchableOpacity onPress={handleProfilePress}>
@@ -458,7 +465,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
         </ActionsMenu>
       </View>
-      {post.challenge_id && (
+      {isChallengePost && (
         <>
           <TouchableOpacity onPress={handleChallengePress}>
             <View style={challengeBoxStyle}>
@@ -501,6 +508,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </View>
           )}
         </>
+      )}
+      {isQuestPost && (
+        <View style={questBoxStyle}>
+          <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+            <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
+          </Text>
+        </View>
       )}
       {post.body && !post.media?.file_path ? (
         <Pressable onPress={handleDoubleTap}>
@@ -731,6 +745,19 @@ const challengeBoxStyle: ViewStyle = {
   width: "100%",
 };
 
+const questBoxStyle: ViewStyle = {
+  alignSelf: "flex-start",
+  backgroundColor: "#FFF0DE",
+  borderColor: "#F2B36C",
+  borderRadius: 8,
+  borderWidth: 1.25,
+  marginBottom: 8,
+  marginTop: 4,
+  paddingHorizontal: 16,
+  paddingVertical: 4,
+  width: "100%",
+};
+
 const comfortRatingStyle: ViewStyle = {
   alignItems: "center",
   flexDirection: "row",
@@ -785,12 +812,15 @@ const miniSliderFill: ViewStyle = {
 
 
 const challengeContainerStyle: ViewStyle = {
-  // backgroundColor: '#ffeecc',
-  // borderWidth: 1,
 };
 
 const challengeTitleStyle: TextStyle = {
   color: colors.light.primary,
+  fontSize: 13,
+};
+
+const questTitleStyle: TextStyle = {
+  color: "#B86A20",
   fontSize: 13,
 };
 

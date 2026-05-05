@@ -89,12 +89,22 @@ export interface SideQuest {
   updated_at: string;
 }
 
+export interface SideQuestDraw {
+  id: number;
+  user_id: string;
+  quest_id: number;
+  local_day: string;
+  created_at: string;
+}
+
 export interface RankedSideQuest extends SideQuest {
   match_score: number;
   matched_goal_tags: SideQuestGoal[];
   matched_type_tags: SideQuestMeaningfulType[];
   matched_outcome_tags: SideQuestProgressDefinition[];
 }
+
+export type DailySideQuestStatus = "undrawn" | "revealed" | "exhausted";
 
 export interface SideQuestQuestionnaireDraft {
   goal: SideQuestGoal[];

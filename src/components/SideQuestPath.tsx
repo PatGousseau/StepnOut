@@ -1,9 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, Easing, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { ProgressSegments } from "./ProgressSegments";
+import { QuestCard, ShareQuestExperience } from "./Quest";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSideQuests } from "../hooks/useSideQuests";
 import { colors } from "../constants/Colors";
@@ -126,12 +128,21 @@ export const SideQuestPath: React.FC = () => {
     rankedSideQuests,
     sideQuestsLoading,
     sideQuestsError,
+    todaysQuest,
+    todaysQuestState,
+    todaysQuestLoading,
+    drawTodaysQuest,
     saveProfile,
     savingProfile,
+    localDay,
   } = useSideQuests();
   const [draft, setDraft] = useState<SideQuestQuestionnaireDraft>(SIDE_QUEST_EMPTY_DRAFT);
   const [editingPreferences, setEditingPreferences] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
+  const [isDrawingQuest, setIsDrawingQuest] = useState(false);
+  const hatRotate = useRef(new Animated.Value(0)).current;
+  const hatScale = useRef(new Animated.Value(1)).current;
+  const revealOpacity = useRef(new Animated.Value(1)).current;
   const needsOnboarding = !profile;
 
   useEffect(() => {
@@ -351,6 +362,69 @@ export const SideQuestPath: React.FC = () => {
     }
   };
 
+  const animateHat = async () => {
+    hatRotate.setValue(0);
+    hatScale.setValue(1);
+    revealOpacity.setValue(0.4);
+
+    await new Promise<void>((resolve) => {
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(hatScale, {
+            toValue: 1.08,
+            duration: 220,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(hatScale, {
+            toValue: 1,
+            duration: 200,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(hatRotate, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.inOut(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => resolve());
+    });
+  };
+
+  const handleDrawQuest = async () => {
+    if (isDrawingQuest) return;
+
+    setIsDrawingQuest(true);
+    captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_STARTED, {
+      ranked_count: rankedSideQuests.length,
+      local_day: localDay,
+    });
+
+    try {
+      const [, result] = await Promise.all([animateHat(), drawTodaysQuest()]);
+      if (result.status === "exhausted") {
+        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_EXHAUSTED, {
+          local_day: localDay,
+        });
+      } else {
+        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_COMPLETED, {
+          local_day: localDay,
+        });
+      }
+    } catch (error) {
+      Alert.alert(t("Error"), (error as Error).message);
+    } finally {
+      Animated.timing(revealOpacity, {
+        toValue: 1,
+        duration: 240,
+        useNativeDriver: true,
+      }).start();
+      setIsDrawingQuest(false);
+    }
+  };
+
   if (profileLoading) {
     return <Loader />;
   }
@@ -371,10 +445,7 @@ export const SideQuestPath: React.FC = () => {
           <View style={styles.questionnaireHeader}>
             {!showingIntroStep && (
               <View style={styles.stepIndicatorRow}>
-                <ProgressSegments
-                  total={questionnaireSteps.length}
-                  activeIndex={currentQuestionIndex}
-                />
+                <ProgressSegments total={questionnaireSteps.length} activeIndex={currentQuestionIndex} />
               </View>
             )}
           </View>
@@ -402,10 +473,7 @@ export const SideQuestPath: React.FC = () => {
 
           <View style={styles.questionActions}>
             <TouchableOpacity
-              style={[
-                styles.questionBackButton,
-                showingIntroStep && styles.questionSecondaryButtonHidden,
-              ]}
+              style={[styles.questionBackButton, showingIntroStep && styles.questionSecondaryButtonHidden]}
               disabled={showingIntroStep}
               onPress={handleBackQuestion}
             >
@@ -418,9 +486,7 @@ export const SideQuestPath: React.FC = () => {
                 disabled={!questionnaireComplete || savingProfile}
                 onPress={submitProfile}
               >
-                <Text style={styles.questionNextButtonText}>
-                  {savingProfile ? t("Saving...") : t("Done")}
-                </Text>
+                <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -428,9 +494,7 @@ export const SideQuestPath: React.FC = () => {
                 disabled={!showingIntroStep && !currentStep?.isComplete}
                 onPress={handleNextQuestion}
               >
-                <Text style={styles.questionNextButtonText}>
-                  {showingIntroStep ? t("Let's begin") : t("Next")}
-                </Text>
+                <Text style={styles.questionNextButtonText}>{showingIntroStep ? t("Let's begin") : t("Next")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -439,7 +503,7 @@ export const SideQuestPath: React.FC = () => {
     );
   }
 
-  if (sideQuestsLoading) {
+  if (sideQuestsLoading || (todaysQuestLoading && !todaysQuest)) {
     return <Loader />;
   }
 
@@ -458,7 +522,7 @@ export const SideQuestPath: React.FC = () => {
         <View style={styles.headerCopy}>
           <Text style={styles.pageTitle}>{t("Side quests for right now")}</Text>
           <Text style={styles.subtitle}>
-            {t("Ranked to fit the kind of break from routine you want right now.")}
+            {t("Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.")}
           </Text>
         </View>
         <TouchableOpacity
@@ -482,27 +546,65 @@ export const SideQuestPath: React.FC = () => {
             {t("Once side quests are added, they will show up here ranked for your preferences.")}
           </Text>
         </View>
-      ) : (
-        rankedSideQuests.map((quest, index) => (
-          <View key={quest.id} style={styles.questCard}>
-            <View style={styles.questHeader}>
-              <Text style={styles.questRank}>{`#${index + 1}`}</Text>
-              <View style={styles.matchPills}>
-                {quest.matched_goal_tags.slice(0, 2).map((tag) => (
-                  <View key={`${quest.id}-${tag}`} style={styles.matchPill}>
+      ) : todaysQuestState === "exhausted" && !todaysQuest ? (
+        <View style={styles.emptyStateCard}>
+          <Text style={styles.emptyStateTitle}>{t("You have finished every quest in the hat.")}</Text>
+          <Text style={styles.emptyStateBody}>
+            {t("There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.")}
+          </Text>
+        </View>
+      ) : todaysQuest ? (
+        <Animated.View style={{ opacity: revealOpacity }}>
+          <QuestCard quest={todaysQuest} />
+          <View style={styles.questActions}>
+            <View style={styles.matchPills}>
+              {rankedSideQuests
+                .find((quest) => quest.id === todaysQuest.id)
+                ?.matched_goal_tags.slice(0, 2)
+                .map((tag) => (
+                  <View key={`${todaysQuest.id}-${tag}`} style={styles.matchPill}>
                     <Text style={styles.matchPillText}>{t(getGoalOptionLabel(tag))}</Text>
                   </View>
                 ))}
-              </View>
             </View>
-            <Text style={styles.questTitle}>{quest.title}</Text>
-            <Text style={styles.questSummary}>{quest.summary}</Text>
-            <Text style={styles.metaLabel}>{t("Why this works")}</Text>
-            <Text style={styles.metaText}>{quest.why_it_hits}</Text>
-            <Text style={styles.metaLabel}>{t("Try it like this")}</Text>
-            <Text style={styles.metaText}>{quest.instructions}</Text>
+            <ShareQuestExperience quest={todaysQuest} />
           </View>
-        ))
+        </Animated.View>
+      ) : (
+        <View style={styles.hatStage}>
+          <View style={styles.hatCard}>
+            <Text style={styles.hatEyebrow}>{t("One pull per day")}</Text>
+            <Text style={styles.hatTitle}>{t("Reach into the hat")}</Text>
+            <Text style={styles.hatBody}>
+              {t("We will pick one quest from your ranked list, weighted toward the ones that fit you best today.")}
+            </Text>
+            <Animated.View
+              style={[
+                styles.hatIconWrap,
+                {
+                  transform: [
+                    {
+                      rotate: hatRotate.interpolate({
+                        inputRange: [0, 0.25, 0.5, 0.75, 1],
+                        outputRange: ["0deg", "-8deg", "10deg", "-6deg", "0deg"],
+                      }),
+                    },
+                    { scale: hatScale },
+                  ],
+                },
+              ]}
+            >
+              <MaterialCommunityIcons name="hat-fedora" size={110} color="#E78945" />
+            </Animated.View>
+            <TouchableOpacity
+              style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
+              disabled={isDrawingQuest}
+              onPress={handleDrawQuest}
+            >
+              <Text style={styles.drawButtonText}>{isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       )}
     </ScrollView>
   );
@@ -527,6 +629,19 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
+  drawButton: {
+    alignItems: "center",
+    backgroundColor: "#E78945",
+    borderRadius: 14,
+    justifyContent: "center",
+    minHeight: 48,
+    paddingHorizontal: 18,
+  },
+  drawButtonText: {
+    color: colors.neutral.white,
+    fontSize: 15,
+    fontWeight: "700",
+  },
   emptyStateBody: {
     color: colors.light.lightText,
     fontSize: 15,
@@ -542,6 +657,45 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 8,
+  },
+  hatBody: {
+    color: colors.light.text,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  hatCard: {
+    backgroundColor: "#FFF7EF",
+    borderColor: "#F2D2A8",
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 24,
+  },
+  hatEyebrow: {
+    color: "#B86A20",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    marginBottom: 8,
+    textAlign: "center",
+    textTransform: "uppercase",
+  },
+  hatIconWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 22,
+  },
+  hatStage: {
+    paddingTop: 12,
+  },
+  hatTitle: {
+    color: colors.light.text,
+    fontSize: 30,
+    fontWeight: "800",
+    lineHeight: 34,
+    marginBottom: 12,
+    textAlign: "center",
   },
   headerCopy: {
     flex: 1,
@@ -585,13 +739,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   matchPill: {
-    backgroundColor: "#EEF2F7",
+    backgroundColor: "#FFE7CE",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   matchPillText: {
-    color: colors.light.primary,
+    color: "#B86A20",
     fontSize: 12,
     fontWeight: "600",
   },
@@ -599,20 +753,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
-  },
-  metaLabel: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    marginBottom: 6,
-    marginTop: 12,
-    textTransform: "uppercase",
-  },
-  metaText: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
+    marginBottom: 14,
   },
   optionChip: {
     backgroundColor: "#FFFFFF",
@@ -646,33 +787,8 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     marginBottom: 6,
   },
-  questCard: {
-    backgroundColor: colors.light.cardBg,
-    borderRadius: 16,
-    marginBottom: 14,
-    padding: 18,
-  },
-  questHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  questRank: {
-    color: colors.light.primary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  questSummary: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  questTitle: {
-    color: colors.light.text,
-    fontSize: 21,
-    fontWeight: "700",
-    marginBottom: 8,
+  questActions: {
+    marginTop: 14,
   },
   questionnaireContent: {
     flexGrow: 1,

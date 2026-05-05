@@ -555,6 +555,14 @@ VALUES
   (19, '33333333-3333-3333-3333-333333333333', 'The growth is real. I used to dread Mondays because of new challenges. Now I look forward to them.', null, null, false, false, now() - interval '1 day'),
   (20, '22222222-2222-2222-2222-222222222222', 'Anyone else feel like this app is basically free therapy? 😂', null, null, false, false, now() - interval '6 hours');
 
+-- Quest posts (daily side quests)
+INSERT INTO public.post (id, user_id, body, challenge_id, quest_id, media_id, is_welcome, featured, created_at)
+VALUES
+  (30, '11111111-1111-1111-1111-111111111111', 'I tried the one-block safari quest after dinner and ended up noticing a tiny ceramics studio I''ve walked past for years without seeing.', null, 2, null, false, false, now() - interval '5 days'),
+  (31, '33333333-3333-3333-3333-333333333333', 'Today''s quest was to find the best bench within walking distance. I tested three and fully support turning ordinary errands into field research.', null, 7, 18, false, false, now() - interval '2 days'),
+  (32, '22222222-2222-2222-2222-222222222222', 'Picked a quest out of the hat and wound up borrowing a random cookbook from the library. Weirdly energizing.', null, 6, null, false, false, now() - interval '20 hours'),
+  (33, '44444444-4444-4444-4444-444444444444', 'Did the market color hunt quest and came home with an aggressively orange snack lineup. Zero regrets.', null, 8, 19, false, true, now() - interval '9 hours');
+
 -- Challenge submissions with default body (no custom text)
 INSERT INTO public.post (id, user_id, body, challenge_id, media_id, is_welcome, featured, created_at)
 VALUES
