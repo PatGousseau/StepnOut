@@ -15,7 +15,7 @@ import WelcomePostGroup from "../../components/WelcomePostGroup";
 import FeedSortToggle from "../../components/FeedSortToggle";
 import { useFetchHomeData } from "../../hooks/useFetchHomeData";
 import { colors } from "../../constants/Colors";
-import InlineCreatePost from "../../components/InlineCreatePost";
+import DiscussFab from "../../components/DiscussFab";
 import { HomeChallengeBanner } from "../../components/HomeChallengeBanner";
 import { User } from "../../models/User";
 import { Loader } from "@/src/components/Loader";
@@ -70,7 +70,6 @@ const Home = () => {
   const [, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [sort, setSort] = useState<FeedSort>(defaultSort);
-  const [promptRefreshKey, setPromptRefreshKey] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
   const hasConsumedFirstTime = useRef(false);
 
@@ -103,7 +102,6 @@ const Home = () => {
     setRefreshing(true);
     try {
       await refetchPosts();
-      setPromptRefreshKey((prev) => prev + 1);
     } finally {
       setRefreshing(false);
     }
@@ -129,7 +127,6 @@ const Home = () => {
 
   const handlePostCreated = useCallback(() => {
     refetchPosts();
-    setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
   const feedItems = useMemo(() => prepareFeedItems(posts), [posts]);
@@ -189,7 +186,6 @@ const Home = () => {
     return (
       <View>
         <HomeChallengeBanner />
-        <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
         <FeedSortToggle
           value={sort}
           onChange={setSort}
@@ -198,7 +194,7 @@ const Home = () => {
         />
       </View>
     );
-  }, [handlePostCreated, promptRefreshKey, sort, t]);
+  }, [sort, t]);
 
   const renderError = useCallback(() => {
     if (!error || loading) return null;
@@ -230,6 +226,7 @@ const Home = () => {
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
       />
+      <DiscussFab onPostCreated={handlePostCreated} />
       {renderError()}
     </KeyboardAvoidingView>
   );
@@ -243,6 +240,7 @@ const styles = StyleSheet.create({
   listContent: {
     flexGrow: 1,
     padding: 16,
+    paddingBottom: 96,
   },
   loaderContainer: {
     alignItems: "center",

@@ -69,6 +69,7 @@ export const HomeChallengeBanner: React.FC = () => {
           difficulty={activeChallenge.difficulty}
           imagePath={filePath}
           daysRemaining={daysRemaining}
+          ctaLabel={t("Take the challenge")}
           onPress={handlePress}
         />
       </Animated.View>

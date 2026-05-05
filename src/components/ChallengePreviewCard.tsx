@@ -13,6 +13,7 @@ type ChallengePreviewCardProps = {
   difficulty: string;
   imagePath?: string | null;
   daysRemaining?: number | null;
+  ctaLabel?: string;
   onPress: () => void;
 };
 
@@ -22,6 +23,7 @@ export const ChallengePreviewCard: React.FC<ChallengePreviewCardProps> = ({
   difficulty,
   imagePath,
   daysRemaining,
+  ctaLabel,
   onPress,
 }) => {
   const { t } = useLanguage();
@@ -29,7 +31,7 @@ export const ChallengePreviewCard: React.FC<ChallengePreviewCardProps> = ({
     daysRemaining === null || daysRemaining === undefined
       ? null
       : t(daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days", { days: daysRemaining });
-  const descriptionLines = footerLabel ? 2 : 3;
+  const descriptionLines = footerLabel || ctaLabel ? 2 : 3;
 
   return (
     <TouchableOpacity
@@ -65,18 +67,26 @@ export const ChallengePreviewCard: React.FC<ChallengePreviewCardProps> = ({
         <Text style={styles.description} numberOfLines={descriptionLines}>
           {description}
         </Text>
-        {!!footerLabel && (
-          <View style={styles.footerSlot}>
-            <Text style={styles.footerLabel}>{footerLabel}</Text>
+        {(!!footerLabel || !!ctaLabel) && (
+          <View style={styles.footerRow}>
+            {!!footerLabel && <Text style={styles.footerLabel}>{footerLabel}</Text>}
+            {!!ctaLabel && (
+              <View style={styles.ctaPill}>
+                <Text style={styles.ctaText}>{ctaLabel}</Text>
+                <MaterialIcons name="arrow-forward" size={13} color={colors.neutral.white} />
+              </View>
+            )}
           </View>
         )}
       </View>
-      <MaterialIcons
-        name="chevron-right"
-        size={22}
-        color={colors.light.lightText}
-        style={styles.chevron}
-      />
+      {!ctaLabel && (
+        <MaterialIcons
+          name="chevron-right"
+          size={22}
+          color={colors.light.lightText}
+          style={styles.chevron}
+        />
+      )}
     </TouchableOpacity>
   );
 };
@@ -134,14 +144,33 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 4,
   },
-  footerSlot: {
-    marginTop: 6,
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 8,
   },
   footerLabel: {
     color: colors.light.accent,
     fontSize: 11,
     fontWeight: "600",
-    marginTop: 6,
+    flexShrink: 1,
+  },
+  ctaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.light.accent,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginLeft: "auto",
+  },
+  ctaText: {
+    color: colors.neutral.white,
+    fontSize: 12,
+    fontWeight: "700",
   },
   chevron: {
     alignSelf: "center",

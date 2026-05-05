@@ -231,6 +231,8 @@ export const translations = {
   Discussions: "Discussioni",
   Submissions: "Sfide",
   Discussion: "Discussione",
+  Discuss: "Discuti",
+  "Start a discussion": "Avvia una discussione",
   "How did it make you feel?\nWhat did you find difficult?":
     "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
   "Share how you completed the challenge": "Condividi come hai completato la sfida",
