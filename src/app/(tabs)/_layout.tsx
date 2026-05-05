@@ -32,6 +32,7 @@ export default function TabsLayout() {
               break;
             case 'esplora':
               iconName = 'book-outline';
+              break;
             case 'path':
               iconName = 'footsteps';
               break;
@@ -49,12 +50,6 @@ export default function TabsLayout() {
         },
       })}
     >
-      <Tabs.Screen
-        name="(auth)"
-        options={{
-          href: null,
-        }}
-      />
       <Tabs.Screen
         name="index"
         options={{

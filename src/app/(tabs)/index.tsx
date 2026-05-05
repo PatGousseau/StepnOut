@@ -7,12 +7,9 @@ import {
   Platform,
   TouchableOpacity,
   Text,
-  Animated,
-  LayoutChangeEvent,
   StyleSheet,
 } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
-import PagerView from "react-native-pager-view";
 import Post from "../../components/Post";
 import WelcomePostGroup from "../../components/WelcomePostGroup";
 import FeedSortToggle from "../../components/FeedSortToggle";
@@ -27,39 +24,40 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Post as PostType, FeedSort } from "../../types";
 
-// Discriminated union for FlatList items
 type FeedItem =
   | { type: "post"; post: PostType; key: string }
   | { type: "welcome-group"; posts: PostType[]; key: string };
 
-// Prepare posts into FeedItem array, grouping consecutive welcome posts
-const prepareFeedItems = (posts: PostType[], keyPrefix: string): FeedItem[] => {
+const prepareFeedItems = (posts: PostType[]): FeedItem[] => {
   const items: FeedItem[] = [];
   let welcomeGroup: PostType[] = [];
 
   for (const post of posts) {
     if (post.is_welcome) {
       welcomeGroup.push(post);
-    } else {
-      if (welcomeGroup.length > 0) {
-        items.push({
-          type: "welcome-group",
-          posts: welcomeGroup,
-          key: `${keyPrefix}-welcome-${items.length}`,
-        });
-        welcomeGroup = [];
-      }
-      items.push({ type: "post", post, key: `${keyPrefix}-${post.id}` });
+      continue;
     }
+
+    if (welcomeGroup.length > 0) {
+      items.push({
+        type: "welcome-group",
+        posts: welcomeGroup,
+        key: `welcome-${items.length}`,
+      });
+      welcomeGroup = [];
+    }
+
+    items.push({ type: "post", post, key: `post-${post.id}` });
   }
-  // Flush remaining welcome posts
+
   if (welcomeGroup.length > 0) {
     items.push({
       type: "welcome-group",
       posts: welcomeGroup,
-      key: `${keyPrefix}-welcome-${items.length}`,
+      key: `welcome-${items.length}`,
     });
   }
+
   return items;
 };
 
@@ -69,66 +67,26 @@ const Home = () => {
   const queryClient = useQueryClient();
   const { firstTime } = useLocalSearchParams<{ firstTime?: string }>();
   const defaultSort: FeedSort = firstTime === "true" ? "popular" : "recent";
-  const [postCounts, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>(
-    {}
-  );
+  const [, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState(0); // 0 = submissions, 1 = discussion
-  const [submissionSort, setSubmissionSort] = useState<FeedSort>(defaultSort);
-  const [discussionSort, setDiscussionSort] = useState<FeedSort>(defaultSort);
-  const {
-    challengePosts: submissionPosts,
-    discussionPosts,
-    userMap,
-    loading,
-    error,
-    loadMoreChallenges,
-    loadMoreDiscussions,
-    isFetchingNextChallengePage,
-    isFetchingNextDiscussionPage,
-    refetchPosts,
-  } = useFetchHomeData(submissionSort, discussionSort);
+  const [sort, setSort] = useState<FeedSort>(defaultSort);
   const [promptRefreshKey, setPromptRefreshKey] = useState(0);
-  const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const [expandedWelcomeGroups, setExpandedWelcomeGroups] = useState<Set<string>>(new Set());
   const hasConsumedFirstTime = useRef(false);
 
-  const pagerRef = useRef<PagerView>(null);
-  const tabIndicatorPosition = useRef(new Animated.Value(0)).current;
+  const { posts, userMap, loading, error, loadMore, isFetchingNextPage, refetchPosts } = useFetchHomeData(sort);
 
   useEffect(() => {
     if (hasConsumedFirstTime.current) return;
     if (firstTime !== "true") return;
 
     hasConsumedFirstTime.current = true;
-    setSubmissionSort("popular");
-    setDiscussionSort("popular");
+    setSort("popular");
     router.setParams({ firstTime: undefined });
   }, [firstTime, router]);
 
-  // Animate tab indicator when activeTab changes
   useEffect(() => {
-    Animated.spring(tabIndicatorPosition, {
-      toValue: activeTab,
-      useNativeDriver: true,
-      tension: 100,
-      friction: 12,
-    }).start();
-  }, [activeTab, tabIndicatorPosition]);
-
-  // Handle tab button press
-  const handleTabPress = useCallback((index: number) => {
-    pagerRef.current?.setPage(index);
-  }, []);
-
-  // Handle swipe between pages
-  const handlePageSelected = useCallback((e: { nativeEvent: { position: number } }) => {
-    setActiveTab(e.nativeEvent.position);
-  }, []);
-
-  useEffect(() => {
-    const allPosts = [...submissionPosts, ...discussionPosts];
-    const counts = allPosts.reduce(
+    const counts = posts.reduce(
       (acc, post) => ({
         ...acc,
         [post.id]: {
@@ -139,7 +97,7 @@ const Home = () => {
       {}
     );
     setPostCounts(counts);
-  }, [submissionPosts, discussionPosts]);
+  }, [posts]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -152,25 +110,20 @@ const Home = () => {
   }, [refetchPosts]);
 
   const handlePostDeleted = useCallback((postId: number) => {
-    // Optimistically remove the deleted post from the cache
     type HomePostsPage = { posts: PostType[]; hasMore: boolean };
     type HomePostsData = { pages: HomePostsPage[]; pageParams: number[] };
 
-    queryClient.setQueriesData<HomePostsData>(
-      { queryKey: ["home-posts"] },
-      (oldData) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            posts: page.posts.filter((post) => post.id !== postId),
-          })),
-        };
-      }
-    );
+    queryClient.setQueriesData<HomePostsData>({ queryKey: ["home-posts"] }, (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        pages: oldData.pages.map((page) => ({
+          ...page,
+          posts: page.posts.filter((post) => post.id !== postId),
+        })),
+      };
+    });
 
-    // Invalidate challenge completion queries so the challenge page reflects the deletion
     queryClient.invalidateQueries({ queryKey: ["challenge-completion"] });
   }, [queryClient]);
 
@@ -179,16 +132,8 @@ const Home = () => {
     setPromptRefreshKey((prev) => prev + 1);
   }, [refetchPosts]);
 
-  const submissionFeedItems = useMemo(
-    () => prepareFeedItems(submissionPosts, "sub"),
-    [submissionPosts]
-  );
-  const discussionFeedItems = useMemo(
-    () => prepareFeedItems(discussionPosts, "disc"),
-    [discussionPosts]
-  );
+  const feedItems = useMemo(() => prepareFeedItems(posts), [posts]);
 
-  // Toggle welcome group expansion
   const toggleWelcomeGroup = useCallback((key: string) => {
     setExpandedWelcomeGroups((prev) => {
       const next = new Set(prev);
@@ -201,21 +146,22 @@ const Home = () => {
     });
   }, []);
 
-  // Render item for FlatList
   const renderItem = useCallback(
     ({ item }: { item: FeedItem }) => {
       if (item.type === "welcome-group") {
         return (
           <WelcomePostGroup
             posts={item.posts}
-            userMap={userMap}
+            userMap={userMap as Record<string, User>}
             isExpanded={expandedWelcomeGroups.has(item.key)}
             onToggle={() => toggleWelcomeGroup(item.key)}
           />
         );
       }
+
       const postUser = userMap[item.post.user_id] as User;
       if (!postUser) return null;
+
       return (
         <Post
           post={item.post}
@@ -225,16 +171,8 @@ const Home = () => {
         />
       );
     },
-    [userMap, expandedWelcomeGroups, toggleWelcomeGroup, setPostCounts, handlePostDeleted]
+    [expandedWelcomeGroups, handlePostDeleted, toggleWelcomeGroup, userMap]
   );
-
-  const keyExtractor = useCallback((item: FeedItem) => item.key, []);
-
-  // Container width for tab indicator positioning
-  const onTabContainerLayout = (event: LayoutChangeEvent) => {
-    const { width } = event.nativeEvent.layout;
-    setTabContainerWidth(width);
-  };
 
   const renderEmpty = useCallback(() => {
     if (loading) return <PostsListSkeleton count={3} />;
@@ -247,37 +185,21 @@ const Home = () => {
     </View>
   );
 
-  const renderSubmissionsHeader = useCallback(() => {
+  const renderHeader = useCallback(() => {
     return (
       <View>
         <HomeChallengeBanner />
-        <FeedSortToggle
-          value={submissionSort}
-          onChange={setSubmissionSort}
-          recentLabel={t("Most recent")}
-          popularLabel={t("Popular")}
-        />
-      </View>
-    );
-  }, [submissionSort, t]);
-
-  // Discussion list header (sort toggle + InlineCreatePost)
-  const renderDiscussionHeader = useCallback(() => {
-    return (
-      <View>
-        <HomeChallengeBanner />
-        <FeedSortToggle
-          value={discussionSort}
-          onChange={setDiscussionSort}
-          recentLabel={t("Most recent")}
-          popularLabel={t("Popular")}
-        />
         <InlineCreatePost onPostCreated={handlePostCreated} refreshKey={promptRefreshKey} />
+        <FeedSortToggle
+          value={sort}
+          onChange={setSort}
+          recentLabel={t("Most recent")}
+          popularLabel={t("Popular")}
+        />
       </View>
     );
-  }, [discussionSort, handlePostCreated, promptRefreshKey, t]);
+  }, [handlePostCreated, promptRefreshKey, sort, t]);
 
-  // Error component
   const renderError = useCallback(() => {
     if (!error || loading) return null;
     return (
@@ -289,142 +211,46 @@ const Home = () => {
 
   return (
     <KeyboardAvoidingView
-      behavior={"padding"}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
-      keyboardVerticalOffset={120}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 120 : 0}
     >
-      {/* Tab buttons */}
-      <View style={styles.tabContainer} onLayout={onTabContainerLayout}>
-        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabPress(0)}>
-          <Text style={[styles.tabText, activeTab === 0 && styles.activeTabText]}>
-            {t("Submissions")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabButton} onPress={() => handleTabPress(1)}>
-          <Text style={[styles.tabText, activeTab === 1 && styles.activeTabText]}>
-            {t("Discussion")}
-          </Text>
-        </TouchableOpacity>
-        <Animated.View
-          style={[
-            styles.tabIndicator,
-            {
-              transform: [
-                {
-                  translateX: tabIndicatorPosition.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [16, tabContainerWidth / 2],
-                  }),
-                },
-              ],
-            },
-          ]}
-        />
-      </View>
-
-      {/* PagerView for horizontal tab swiping */}
-      <PagerView
-        ref={pagerRef}
-        style={styles.pagerView}
-        initialPage={0}
-        onPageSelected={handlePageSelected}
-      >
-        {/* Page 0: Submissions */}
-        <View key="submissions" style={styles.page}>
-          <FlatList
-            data={submissionFeedItems}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            onEndReached={loadMoreChallenges}
-            onEndReachedThreshold={0.5}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            ListHeaderComponent={renderSubmissionsHeader}
-            ListFooterComponent={isFetchingNextChallengePage ? renderFooter : null}
-            ListEmptyComponent={renderEmpty}
-            contentContainerStyle={styles.listContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets={true}
-          />
-          {renderError()}
-        </View>
-
-        {/* Page 1: Discussion */}
-        <View key="discussion" style={styles.page}>
-          <FlatList
-            data={discussionFeedItems}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            onEndReached={loadMoreDiscussions}
-            onEndReachedThreshold={0.5}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            ListHeaderComponent={renderDiscussionHeader}
-            ListFooterComponent={isFetchingNextDiscussionPage ? renderFooter : null}
-            ListEmptyComponent={renderEmpty}
-            contentContainerStyle={styles.listContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets={true}
-          />
-          {renderError()}
-        </View>
-      </PagerView>
+      <FlatList
+        data={feedItems}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.key}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListHeaderComponent={renderHeader}
+        ListFooterComponent={isFetchingNextPage ? renderFooter : null}
+        ListEmptyComponent={renderEmpty}
+        contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+      />
+      {renderError()}
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  tabContainer: {
-    flexDirection: "row",
     backgroundColor: colors.light.background,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.neutral.grey1 + "90",
-  },
-  tabButton: {
     flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  tabText: {
-    fontSize: 16,
-    color: colors.light.lightText,
-  },
-  activeTabText: {
-    color: colors.light.primary,
-    fontWeight: "bold",
-  },
-  tabIndicator: {
-    position: "absolute",
-    bottom: 0,
-    left: "12.5%",
-    width: "25%",
-    borderRadius: 10,
-    height: 3,
-    backgroundColor: colors.light.primary,
-  },
-  pagerView: {
-    flex: 1,
-  },
-  page: {
-    flex: 1,
-    backgroundColor: colors.light.background,
   },
   listContent: {
-    padding: 16,
     flexGrow: 1,
+    padding: 16,
   },
   loaderContainer: {
-    padding: 20,
     alignItems: "center",
+    padding: 20,
   },
   errorContainer: {
-    padding: 20,
     alignItems: "center",
+    padding: 20,
   },
   errorText: {
     color: colors.light.lightText,

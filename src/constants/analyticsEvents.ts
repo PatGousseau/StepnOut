@@ -83,6 +83,10 @@ export const SIDE_QUEST_EVENTS = {
   QUESTIONNAIRE_COMPLETED: 'side_quest_questionnaire_completed',
   QUESTIONNAIRE_CANCELLED: 'side_quest_questionnaire_cancelled',
   QUESTIONNAIRE_SAVE_FAILED: 'side_quest_questionnaire_save_failed',
+  DAILY_DRAW_STARTED: 'side_quest_daily_draw_started',
+  DAILY_DRAW_COMPLETED: 'side_quest_daily_draw_completed',
+  DAILY_DRAW_EXHAUSTED: 'side_quest_daily_draw_exhausted',
+  DAILY_QUEST_COMPLETED: 'side_quest_daily_quest_completed',
 } as const;
 
 // ============================================

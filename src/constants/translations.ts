@@ -257,8 +257,30 @@ export const translations = {
   "recently active": "attivi di recente",
   "Most recent": "Più recenti",
   Popular: "Popolari",
+  "popular": "popolare",
   "Mark as complete": "Segna come completato",
   "Challenge completed!": "Sfida completata!",
+  "Quest:": "Missione:",
+  "Quest completed!": "Missione completata!",
+  "Quest completed successfully!": "Missione completata con successo!",
+  "Share how you completed the quest": "Condividi come hai completato la missione",
+  "Just completed today's quest!": "Ho appena completato la missione di oggi!",
+  "You must be logged in to submit a quest.": "Devi essere loggato per inviare una missione.",
+  "Your quest of the day": "La tua missione del giorno",
+  "One pull per day": "Una pescata al giorno",
+  "Reach into the hat": "Infila la mano nel cappello",
+  "Pick a quest": "Pesca una missione",
+  "Shuffling...": "Sto mescolando...",
+  "Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.":
+    "Pesca una missione dal cappello ogni giorno e lascia che ti porti in una direzione leggermente inaspettata.",
+  "We will pick one quest from your ranked list, weighted toward the ones that fit you best today.":
+    "Pescheremo una missione dalla tua classifica, dando più peso a quelle che sembrano più adatte a te oggi.",
+  "You have finished every quest in the hat.":
+    "Hai finito tutte le missioni nel cappello.",
+  "There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.":
+    "Per ora non ci sono nuove missioni da pescare. Quando ne verranno aggiunte altre, potrai tirarne fuori una nuova qui.",
+  "Something went wrong. Tap to retry.":
+    "Qualcosa è andato storto. Tocca per riprovare.",
   "Past challenges": "Sfide passate",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
   "Share your thoughts...": "Condividi i tuoi pensieri...",
