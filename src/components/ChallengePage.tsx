@@ -114,18 +114,19 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
           <>
             <View style={styles.divider} />
             <View style={styles.pastSection}>
-            <Text style={styles.sectionTitle}>{t("Past challenges")}</Text>
-            {pastChallenges.map((c) => (
-              <PastChallengeCard
-                key={c.id}
-                challenge={{
-                  ...c,
-                  title: language === "it" ? c.title_it : c.title,
-                  description: language === "it" ? c.description_it : c.description,
-                }}
-                onPress={() => router.push(`/challenge/${c.id}`)}
-              />
-            ))}
+              <Text style={styles.sectionTitle}>{t("Past challenges")}</Text>
+              {pastChallenges.map((c) => (
+                <View key={c.id} style={styles.pastChallengeCard}>
+                  <PastChallengeCard
+                    challenge={{
+                      ...c,
+                      title: language === "it" ? c.title_it : c.title,
+                      description: language === "it" ? c.description_it : c.description,
+                    }}
+                    onPress={() => router.push(`/challenge/${c.id}`)}
+                  />
+                </View>
+              ))}
             </View>
           </>
         )}
@@ -264,6 +265,9 @@ const styles = StyleSheet.create({
     color: colors.light.primary,
     fontSize: 18,
     fontWeight: "700",
+    marginBottom: 12,
+  },
+  pastChallengeCard: {
     marginBottom: 12,
   },
 });
