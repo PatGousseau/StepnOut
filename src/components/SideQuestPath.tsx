@@ -457,16 +457,23 @@ export const SideQuestPath: React.FC = () => {
           >
             {showingIntroStep ? (
               <View style={styles.introSection}>
-                <View style={styles.introCard}>
-                  <View style={styles.introHeaderRow}>
+                <View style={styles.introHero}>
+                  <View style={styles.introHeroGlow} />
+                  <View style={styles.introHeroLineOne} />
+                  <View style={styles.introHeroLineTwo} />
+                  <View style={styles.introHeroLineThree} />
+                  <View style={styles.introHeroContent}>
                     <View style={styles.introBadge}>
-                      <MaterialCommunityIcons name="hat-fedora" size={20} color="#B86A20" />
+                      <MaterialCommunityIcons name="hat-fedora" size={22} color="#B86A20" />
                     </View>
                     <View style={styles.introHeaderCopy}>
                       <Text style={styles.introTitle}>{t("Side quests")}</Text>
                       <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
                     </View>
                   </View>
+                </View>
+
+                <View style={styles.introContentBlock}>
                   <Text style={styles.introBody}>
                     {t("The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.")}
                   </Text>
@@ -508,11 +515,11 @@ export const SideQuestPath: React.FC = () => {
                       </View>
                     </View>
                   </View>
-
-                  <TouchableOpacity style={styles.introButton} onPress={handleNextQuestion}>
-                    <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
-                  </TouchableOpacity>
                 </View>
+
+                <TouchableOpacity style={styles.introButton} onPress={handleNextQuestion}>
+                  <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               currentStep?.render()
@@ -766,13 +773,14 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     fontSize: 15,
     lineHeight: 22,
+    marginBottom: 2,
   },
   introButton: {
     alignItems: "center",
     backgroundColor: "#E78945",
     borderRadius: 14,
     justifyContent: "center",
-    marginTop: 22,
+    marginTop: 24,
     minHeight: 48,
     paddingHorizontal: 18,
   },
@@ -783,36 +791,83 @@ const styles = StyleSheet.create({
   },
   introBadge: {
     alignItems: "center",
-    backgroundColor: "#FFE7CE",
+    backgroundColor: "rgba(255, 245, 233, 0.9)",
     borderRadius: 999,
-    height: 46,
+    height: 50,
     justifyContent: "center",
-    marginTop: 2,
-    width: 46,
+    width: 50,
   },
-  introCard: {
-    backgroundColor: "#FFF7EF",
-    borderColor: "#F2D2A8",
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 22,
+  introContentBlock: {
+    paddingHorizontal: 4,
   },
   introEyebrow: {
     color: "#B86A20",
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
-    marginBottom: 12,
+    marginBottom: 0,
     textTransform: "uppercase",
-  },
-  introHeaderRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 14,
   },
   introHeaderCopy: {
     flex: 1,
+  },
+  introHero: {
+    backgroundColor: "#FFF3E6",
+    borderColor: "#EBC8A5",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 24,
+    overflow: "hidden",
+    padding: 20,
+    position: "relative",
+  },
+  introHeroContent: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 14,
+    position: "relative",
+    zIndex: 1,
+  },
+  introHeroGlow: {
+    backgroundColor: "rgba(240, 193, 143, 0.38)",
+    borderRadius: 999,
+    height: 160,
+    position: "absolute",
+    right: -34,
+    top: -46,
+    width: 160,
+  },
+  introHeroLineOne: {
+    borderColor: "rgba(184, 106, 32, 0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 110,
+    position: "absolute",
+    right: -18,
+    top: 18,
+    transform: [{ rotate: "14deg" }],
+    width: 110,
+  },
+  introHeroLineThree: {
+    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 86,
+    position: "absolute",
+    right: 18,
+    top: 54,
+    transform: [{ rotate: "-10deg" }],
+    width: 86,
+  },
+  introHeroLineTwo: {
+    backgroundColor: "rgba(184, 106, 32, 0.12)",
+    borderRadius: 999,
+    height: 10,
+    position: "absolute",
+    right: 26,
+    top: 32,
+    transform: [{ rotate: "-18deg" }],
+    width: 74,
   },
   introPoint: {
     alignItems: "flex-start",
@@ -849,13 +904,13 @@ const styles = StyleSheet.create({
   },
   introPoints: {
     gap: 14,
-    marginTop: 18,
+    marginTop: 20,
   },
   introSection: {
     flex: 1,
-    paddingTop: 10,
-    paddingBottom: 24,
     justifyContent: "center",
+    paddingBottom: 24,
+    paddingTop: 10,
   },
   introTitle: {
     color: colors.light.text,
