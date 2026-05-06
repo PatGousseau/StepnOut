@@ -457,14 +457,57 @@ export const SideQuestPath: React.FC = () => {
           >
             {showingIntroStep ? (
               <View style={styles.introSection}>
-                <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
-                <Text style={styles.introTitle}>{t("Set up your path")}</Text>
-                <Text style={styles.introBody}>
-                  {t("Not everything worthwhile has to be part of the main plot. Sometimes the best moments come from doing something a little unexpected: a detour, a tiny adventure, a plan you would not normally make on an ordinary day.")}
-                </Text>
-                <Text style={styles.introBody}>
-                  {t("This path is here to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable for your real life.")}
-                </Text>
+                <View style={styles.introCard}>
+                  <View style={styles.introBadge}>
+                    <MaterialCommunityIcons name="hat-fedora" size={20} color="#B86A20" />
+                  </View>
+                  <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
+                  <Text style={styles.introTitle}>{t("Tell us what fits you")}</Text>
+                  <Text style={styles.introLead}>
+                    {t("Small prompts, real-life fit, a little surprise.")}
+                  </Text>
+                  <Text style={styles.introBody}>
+                    {t("The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.")}
+                  </Text>
+
+                  <View style={styles.introPoints}>
+                    <View style={styles.introPoint}>
+                      <View style={styles.introPointIcon}>
+                        <MaterialCommunityIcons name="tune-variant" size={16} color="#B86A20" />
+                      </View>
+                      <View style={styles.introPointCopy}>
+                        <Text style={styles.introPointTitle}>{t("Built around your mood")}</Text>
+                        <Text style={styles.introPointText}>
+                          {t("We'll shape quests around what you're craving more of right now.")}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.introPoint}>
+                      <View style={styles.introPointIcon}>
+                        <MaterialCommunityIcons name="flash-outline" size={16} color="#B86A20" />
+                      </View>
+                      <View style={styles.introPointCopy}>
+                        <Text style={styles.introPointTitle}>{t("Easy to act on")}</Text>
+                        <Text style={styles.introPointText}>
+                          {t("Nothing here should feel like homework or a major production.")}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.introPoint}>
+                      <View style={styles.introPointIcon}>
+                        <MaterialCommunityIcons name="compass-outline" size={16} color="#B86A20" />
+                      </View>
+                      <View style={styles.introPointCopy}>
+                        <Text style={styles.introPointTitle}>{t("Just enough stretch")}</Text>
+                        <Text style={styles.introPointText}>
+                          {t("The goal is a fresh nudge, not a personality transplant.")}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
               </View>
             ) : (
               currentStep?.render()
@@ -715,17 +758,72 @@ const styles = StyleSheet.create({
   },
   introBody: {
     color: colors.light.text,
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 18,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  introBadge: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#FFE7CE",
+    borderRadius: 999,
+    height: 42,
+    justifyContent: "center",
+    marginBottom: 14,
+    width: 42,
+  },
+  introCard: {
+    backgroundColor: "#FFF7EF",
+    borderColor: "#F2D2A8",
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 22,
   },
   introEyebrow: {
-    color: colors.light.lightText,
-    fontSize: 13,
+    color: "#B86A20",
+    fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
-    marginBottom: 10,
+    marginBottom: 8,
     textTransform: "uppercase",
+  },
+  introLead: {
+    color: colors.light.text,
+    fontSize: 17,
+    fontWeight: "600",
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  introPoint: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12,
+  },
+  introPointCopy: {
+    flex: 1,
+  },
+  introPointIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFE7CE",
+    borderRadius: 999,
+    height: 30,
+    justifyContent: "center",
+    marginTop: 2,
+    width: 30,
+  },
+  introPointText: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  introPointTitle: {
+    color: colors.light.text,
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  introPoints: {
+    gap: 14,
+    marginTop: 18,
   },
   introSection: {
     justifyContent: "flex-start",
