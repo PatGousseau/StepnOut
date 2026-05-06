@@ -458,14 +458,15 @@ export const SideQuestPath: React.FC = () => {
             {showingIntroStep ? (
               <View style={styles.introSection}>
                 <View style={styles.introCard}>
-                  <View style={styles.introBadge}>
-                    <MaterialCommunityIcons name="hat-fedora" size={20} color="#B86A20" />
+                  <View style={styles.introHeaderRow}>
+                    <View style={styles.introBadge}>
+                      <MaterialCommunityIcons name="hat-fedora" size={20} color="#B86A20" />
+                    </View>
+                    <View style={styles.introHeaderCopy}>
+                      <Text style={styles.introTitle}>{t("Side quests")}</Text>
+                      <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
-                  <Text style={styles.introTitle}>{t("Tell us what fits you")}</Text>
-                  <Text style={styles.introLead}>
-                    {t("Small prompts, real-life fit, a little surprise.")}
-                  </Text>
                   <Text style={styles.introBody}>
                     {t("The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.")}
                   </Text>
@@ -473,40 +474,44 @@ export const SideQuestPath: React.FC = () => {
                   <View style={styles.introPoints}>
                     <View style={styles.introPoint}>
                       <View style={styles.introPointIcon}>
-                        <MaterialCommunityIcons name="tune-variant" size={16} color="#B86A20" />
+                        <Text style={styles.introPointNumber}>{t("1")}</Text>
                       </View>
                       <View style={styles.introPointCopy}>
-                        <Text style={styles.introPointTitle}>{t("Built around your mood")}</Text>
+                        <Text style={styles.introPointTitle}>{t("Answer a few quick questions")}</Text>
                         <Text style={styles.introPointText}>
-                          {t("We'll shape quests around what you're craving more of right now.")}
+                          {t("Tell us what sounds good, what fits your life, and how much of a stretch you want.")}
                         </Text>
                       </View>
                     </View>
 
                     <View style={styles.introPoint}>
                       <View style={styles.introPointIcon}>
-                        <MaterialCommunityIcons name="flash-outline" size={16} color="#B86A20" />
+                        <Text style={styles.introPointNumber}>{t("2")}</Text>
                       </View>
                       <View style={styles.introPointCopy}>
-                        <Text style={styles.introPointTitle}>{t("Easy to act on")}</Text>
+                        <Text style={styles.introPointTitle}>{t("Draw one side quest each day")}</Text>
                         <Text style={styles.introPointText}>
-                          {t("Nothing here should feel like homework or a major production.")}
+                          {t("Each day, you'll get the chance to pull a new quest from the hat.")}
                         </Text>
                       </View>
                     </View>
 
                     <View style={styles.introPoint}>
                       <View style={styles.introPointIcon}>
-                        <MaterialCommunityIcons name="compass-outline" size={16} color="#B86A20" />
+                        <Text style={styles.introPointNumber}>{t("3")}</Text>
                       </View>
                       <View style={styles.introPointCopy}>
-                        <Text style={styles.introPointTitle}>{t("Just enough stretch")}</Text>
+                        <Text style={styles.introPointTitle}>{t("Build a little more variety")}</Text>
                         <Text style={styles.introPointText}>
-                          {t("The goal is a fresh nudge, not a personality transplant.")}
+                          {t("Over time, these quests are meant to help you break routine and try things you might not have picked on your own.")}
                         </Text>
                       </View>
                     </View>
                   </View>
+
+                  <TouchableOpacity style={styles.introButton} onPress={handleNextQuestion}>
+                    <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             ) : (
@@ -514,33 +519,34 @@ export const SideQuestPath: React.FC = () => {
             )}
           </ScrollView>
 
-          <View style={styles.questionActions}>
-            <TouchableOpacity
-              style={[styles.questionBackButton, showingIntroStep && styles.questionSecondaryButtonHidden]}
-              disabled={showingIntroStep}
-              onPress={handleBackQuestion}
-            >
-              <Text style={styles.questionBackButtonText}>{t("Back")}</Text>
-            </TouchableOpacity>
+          {!showingIntroStep && (
+            <View style={styles.questionActions}>
+              <TouchableOpacity
+                style={styles.questionBackButton}
+                onPress={handleBackQuestion}
+              >
+                <Text style={styles.questionBackButtonText}>{t("Back")}</Text>
+              </TouchableOpacity>
 
-            {!showingIntroStep && isLastQuestion ? (
-              <TouchableOpacity
-                style={[styles.questionNextButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
-                disabled={!questionnaireComplete || savingProfile}
-                onPress={submitProfile}
-              >
-                <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.questionNextButton, !showingIntroStep && !currentStep?.isComplete && styles.disabledButton]}
-                disabled={!showingIntroStep && !currentStep?.isComplete}
-                onPress={handleNextQuestion}
-              >
-                <Text style={styles.questionNextButtonText}>{showingIntroStep ? t("Let's begin") : t("Next")}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+              {isLastQuestion ? (
+                <TouchableOpacity
+                  style={[styles.questionNextButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
+                  disabled={!questionnaireComplete || savingProfile}
+                  onPress={submitProfile}
+                >
+                  <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.questionNextButton, !currentStep?.isComplete && styles.disabledButton]}
+                  disabled={!currentStep?.isComplete}
+                  onPress={handleNextQuestion}
+                >
+                  <Text style={styles.questionNextButtonText}>{t("Next")}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -761,15 +767,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  introButton: {
+    alignItems: "center",
+    backgroundColor: "#E78945",
+    borderRadius: 14,
+    justifyContent: "center",
+    marginTop: 22,
+    minHeight: 48,
+    paddingHorizontal: 18,
+  },
+  introButtonText: {
+    color: colors.neutral.white,
+    fontSize: 15,
+    fontWeight: "700",
+  },
   introBadge: {
     alignItems: "center",
-    alignSelf: "flex-start",
     backgroundColor: "#FFE7CE",
     borderRadius: 999,
-    height: 42,
+    height: 46,
     justifyContent: "center",
-    marginBottom: 14,
-    width: 42,
+    marginTop: 2,
+    width: 46,
   },
   introCard: {
     backgroundColor: "#FFF7EF",
@@ -783,15 +802,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
-    marginBottom: 8,
+    marginBottom: 12,
     textTransform: "uppercase",
   },
-  introLead: {
-    color: colors.light.text,
-    fontSize: 17,
-    fontWeight: "600",
-    lineHeight: 24,
-    marginBottom: 10,
+  introHeaderRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 14,
+  },
+  introHeaderCopy: {
+    flex: 1,
   },
   introPoint: {
     alignItems: "flex-start",
@@ -810,6 +831,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     width: 30,
   },
+  introPointNumber: {
+    color: "#B86A20",
+    fontSize: 14,
+    fontWeight: "800",
+  },
   introPointText: {
     color: colors.light.lightText,
     fontSize: 14,
@@ -826,15 +852,16 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   introSection: {
-    justifyContent: "flex-start",
+    flex: 1,
     paddingTop: 10,
+    paddingBottom: 24,
+    justifyContent: "center",
   },
   introTitle: {
     color: colors.light.text,
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "800",
-    lineHeight: 36,
-    marginBottom: 16,
+    lineHeight: 30,
   },
   matchPill: {
     backgroundColor: "#FFE7CE",
@@ -935,9 +962,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.white,
     fontSize: 14,
     fontWeight: "700",
-  },
-  questionSecondaryButtonHidden: {
-    opacity: 0,
   },
   section: {
     paddingTop: 10,
