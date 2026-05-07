@@ -27,18 +27,24 @@ import { supabase } from "../lib/supabase";
 
 interface QuestCardProps {
   quest: SideQuest;
+  showEyebrow?: boolean;
+  variant?: "card" | "plain";
 }
 
 interface ShareQuestExperienceProps {
   quest: SideQuest;
 }
 
-export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
+export const QuestCard: React.FC<QuestCardProps> = ({
+  quest,
+  showEyebrow = true,
+  variant = "card",
+}) => {
   const { t } = useLanguage();
 
   return (
-    <View style={styles.questCard}>
-      <Text style={styles.eyebrow}>{t("Your quest of the day")}</Text>
+    <View style={[styles.questCard, variant === "plain" && styles.questCardPlain]}>
+      {showEyebrow && <Text style={styles.eyebrow}>{t("Your quest of the day")}</Text>}
       <Text style={styles.title}>{quest.title}</Text>
       <Text style={styles.summary}>{quest.summary}</Text>
 
@@ -428,6 +434,12 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     padding: 18,
+  },
+  questCardPlain: {
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderRadius: 0,
+    padding: 0,
   },
   removeButtonInline: {
     padding: 4,

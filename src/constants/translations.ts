@@ -266,6 +266,15 @@ export const translations = {
   "Shuffling...": "Sto mescolando...",
   "Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.":
     "Pesca una missione dal cappello ogni giorno e lascia che ti porti in una direzione leggermente inaspettata.",
+  "One small detour a day": "Una piccola deviazione al giorno",
+  "Answering a few questions helps us rank the quests that fit you best. Come back each day to draw one from the hat.":
+    "Rispondere a qualche domanda ci aiuta a ordinare le missioni che fanno più per te. Torna ogni giorno per pescarne una dal cappello.",
+  "Today's draw": "La pesca di oggi",
+  "Today's quest": "La missione di oggi",
+  "Picked from your side quests based on what fits you best right now.":
+    "Scelta tra le tue side quest in base a ciò che ti si addice di più in questo momento.",
+  "Each day, you can draw one side quest from the hat based on what fits you best right now.":
+    "Ogni giorno puoi pescare una side quest dal cappello in base a ciò che ti si addice di più in questo momento.",
   "We will pick one quest from your ranked list, weighted toward the ones that fit you best today.":
     "Pescheremo una missione dalla tua classifica, dando più peso a quelle che sembrano più adatte a te oggi.",
   "You have finished every quest in the hat.":
