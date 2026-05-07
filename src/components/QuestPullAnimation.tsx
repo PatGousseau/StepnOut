@@ -348,7 +348,7 @@ const SparkleStar: React.FC<{ angleDeg: number; progress: Animated.Value }> = ({
 // ─── Static (idle) hat — used when the user hasn't pulled yet ──────────────
 
 export const QuestHatIdle: React.FC = () => (
-  <View style={styles.scene} pointerEvents="none">
+  <View style={[styles.scene, styles.idleScene]} pointerEvents="none">
     <View style={styles.hatLayer}>
       <HatUpsideDownSvg />
     </View>
@@ -424,6 +424,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 22,
     textAlign: "center",
+  },
+  idleScene: {
+    height: 240,
   },
   scene: {
     alignItems: "center",
