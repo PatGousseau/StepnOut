@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,35 +28,61 @@ import { supabase } from "../lib/supabase";
 
 interface QuestCardProps {
   quest: SideQuest;
-  showEyebrow?: boolean;
-  variant?: "card" | "plain";
+  tags?: string[];
 }
 
 interface ShareQuestExperienceProps {
   quest: SideQuest;
 }
 
-export const QuestCard: React.FC<QuestCardProps> = ({
-  quest,
-  showEyebrow = true,
-  variant = "card",
-}) => {
+export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
   const { t } = useLanguage();
 
   return (
-    <View style={[styles.questCard, variant === "plain" && styles.questCardPlain]}>
-      {showEyebrow && <Text style={styles.eyebrow}>{t("Your quest of the day")}</Text>}
-      <Text style={styles.title}>{quest.title}</Text>
-      <Text style={styles.summary}>{quest.summary}</Text>
+    <View style={styles.questPage}>
+      <View style={styles.heroCard}>
+        <LinearGradient
+          colors={["#EE944F", "#C77A3C"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>{t("Why this works")}</Text>
-        <Text style={styles.sectionText}>{quest.why_it_hits}</Text>
+        <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
+        <Text style={styles.heroTitle}>{quest.title}</Text>
+        {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
+
+        {tags && tags.length > 0 && (
+          <View style={styles.heroPills}>
+            {tags.slice(0, 2).map((tag) => (
+              <View key={tag} style={styles.heroPill}>
+                <Text style={styles.heroPillText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>{t("Try it like this")}</Text>
-        <Text style={styles.sectionText}>{quest.instructions}</Text>
+      <View style={styles.detailSection}>
+        <View style={styles.detailHeader}>
+          <View style={styles.detailIcon}>
+            <MaterialCommunityIcons name="lightbulb-on-outline" size={16} color="#B86A20" />
+          </View>
+          <Text style={styles.detailLabel}>{t("Why this works")}</Text>
+        </View>
+        <Text style={styles.detailText}>{quest.why_it_hits}</Text>
+      </View>
+
+      <View style={styles.detailDivider} />
+
+      <View style={styles.detailSection}>
+        <View style={styles.detailHeader}>
+          <View style={styles.detailIcon}>
+            <MaterialCommunityIcons name="compass-outline" size={16} color="#B86A20" />
+          </View>
+          <Text style={styles.detailLabel}>{t("Try it like this")}</Text>
+        </View>
+        <Text style={styles.detailText}>{quest.instructions}</Text>
       </View>
     </View>
   );
@@ -348,13 +375,82 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  eyebrow: {
+  detailDivider: {
+    backgroundColor: "rgba(184, 106, 32, 0.18)",
+    height: 1,
+    marginVertical: 22,
+  },
+  detailHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 10,
+  },
+  detailIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFE7CE",
+    borderRadius: 999,
+    height: 30,
+    justifyContent: "center",
+    width: 30,
+  },
+  detailLabel: {
     color: "#B86A20",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 0.4,
-    marginBottom: 12,
+    letterSpacing: 0.6,
     textTransform: "uppercase",
+  },
+  detailSection: {
+    paddingHorizontal: 4,
+  },
+  detailText: {
+    color: colors.light.text,
+    fontSize: 15,
+    lineHeight: 23,
+  },
+  heroCard: {
+    borderRadius: 20,
+    marginBottom: 22,
+    overflow: "hidden",
+    padding: 22,
+  },
+  heroEyebrow: {
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.4,
+    marginBottom: 10,
+    textTransform: "uppercase",
+  },
+  heroPill: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  heroPillText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  heroPills: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 18,
+  },
+  heroSummary: {
+    color: "rgba(255, 255, 255, 0.92)",
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 12,
+  },
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 26,
+    fontWeight: "800",
+    lineHeight: 31,
   },
   keyboardView: {
     flex: 1,
@@ -428,37 +524,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#E78945",
     height: "100%",
   },
-  questCard: {
-    backgroundColor: "#FFF7EF",
-    borderColor: "#F2D2A8",
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 18,
-  },
-  questCardPlain: {
-    backgroundColor: "transparent",
-    borderWidth: 0,
-    borderRadius: 0,
-    padding: 0,
+  questPage: {
+    paddingHorizontal: 4,
   },
   removeButtonInline: {
     padding: 4,
-  },
-  section: {
-    marginTop: 14,
-  },
-  sectionLabel: {
-    color: "#B86A20",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    marginBottom: 6,
-    textTransform: "uppercase",
-  },
-  sectionText: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
   },
   submitButton: {
     alignItems: "center",
@@ -473,11 +543,6 @@ const styles = StyleSheet.create({
     color: colors.neutral.white,
     fontSize: 15,
     fontWeight: "700",
-  },
-  summary: {
-    color: colors.light.text,
-    fontSize: 16,
-    lineHeight: 23,
   },
   textInput: {
     borderColor: colors.neutral.grey2,
@@ -495,13 +560,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     height: 56,
     width: 56,
-  },
-  title: {
-    color: colors.light.text,
-    fontSize: 26,
-    fontWeight: "800",
-    lineHeight: 30,
-    marginBottom: 10,
   },
   uploadButtonText: {
     color: colors.light.text,
