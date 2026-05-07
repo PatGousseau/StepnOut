@@ -574,15 +574,26 @@ export const SideQuestPath: React.FC = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerCopy}>
-          <Text style={styles.pageTitle}>{t("Side quests for right now")}</Text>
-          <Text style={styles.subtitle}>
-            {t("Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.")}
-          </Text>
+      <View style={styles.resultsHero}>
+        <View style={styles.resultsHeroGlow} />
+        <View style={styles.resultsHeroLineOne} />
+        <View style={styles.resultsHeroLineTwo} />
+        <View style={styles.resultsHeroTopRow}>
+          <View style={styles.resultsHeroBadge}>
+            <MaterialCommunityIcons name="hat-fedora" size={20} color="#B86A20" />
+          </View>
         </View>
+        <Text style={styles.resultsEyebrow}>{t("Side quests")}</Text>
+        <Text style={styles.resultsTitle}>{t(todaysQuest ? "Today's quest" : "Today's draw")}</Text>
+        <Text style={styles.resultsBody}>
+          {t(
+            todaysQuest
+              ? "Picked from your side quests based on what fits you best right now."
+              : "Each day, you can draw one side quest from the hat based on what fits you best right now."
+          )}
+        </Text>
         <TouchableOpacity
-          style={styles.secondaryButton}
+          style={styles.resultsHeroButton}
           onPress={() => {
             captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
               entry_point: "results",
@@ -591,12 +602,15 @@ export const SideQuestPath: React.FC = () => {
             setEditingPreferences(true);
           }}
         >
-          <Text style={styles.secondaryButtonText}>{t("Edit preferences")}</Text>
+          <Text style={styles.resultsHeroButtonText}>{t("Edit preferences")}</Text>
         </TouchableOpacity>
       </View>
 
       {rankedSideQuests.length === 0 ? (
         <View style={styles.emptyStateCard}>
+          <View style={styles.emptyStateIcon}>
+            <MaterialCommunityIcons name="compass-outline" size={20} color="#B86A20" />
+          </View>
           <Text style={styles.emptyStateTitle}>{t("No side quests yet.")}</Text>
           <Text style={styles.emptyStateBody}>
             {t("Once side quests are added, they will show up here ranked for your preferences.")}
@@ -604,6 +618,9 @@ export const SideQuestPath: React.FC = () => {
         </View>
       ) : todaysQuestState === "exhausted" && !todaysQuest ? (
         <View style={styles.emptyStateCard}>
+          <View style={styles.emptyStateIcon}>
+            <MaterialCommunityIcons name="check-all" size={20} color="#B86A20" />
+          </View>
           <Text style={styles.emptyStateTitle}>{t("You have finished every quest in the hat.")}</Text>
           <Text style={styles.emptyStateBody}>
             {t("There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.")}
@@ -611,8 +628,8 @@ export const SideQuestPath: React.FC = () => {
         </View>
       ) : todaysQuest ? (
         <Animated.View style={{ opacity: revealOpacity }}>
-          <QuestCard quest={todaysQuest} />
-          <View style={styles.questActions}>
+          <View style={styles.resultsQuestMeta}>
+            <Text style={styles.resultsSectionEyebrow}>{t("Today's quest")}</Text>
             <View style={styles.matchPills}>
               {rankedSideQuests
                 .find((quest) => quest.id === todaysQuest.id)
@@ -623,13 +640,16 @@ export const SideQuestPath: React.FC = () => {
                   </View>
                 ))}
             </View>
+          </View>
+          <QuestCard quest={todaysQuest} showEyebrow={false} variant="plain" />
+          <View style={styles.questActions}>
             <ShareQuestExperience quest={todaysQuest} />
           </View>
         </Animated.View>
       ) : (
         <View style={styles.hatStage}>
           <View style={styles.hatCard}>
-            <Text style={styles.hatEyebrow}>{t("One pull per day")}</Text>
+            <Text style={styles.hatEyebrow}>{t("Today's draw")}</Text>
             <Text style={styles.hatTitle}>{t("Reach into the hat")}</Text>
             <Text style={styles.hatBody}>
               {t("We will pick one quest from your ranked list, weighted toward the ones that fit you best today.")}
@@ -704,9 +724,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   emptyStateCard: {
-    backgroundColor: colors.light.cardBg,
-    borderRadius: 16,
-    padding: 18,
+    backgroundColor: "#FFF7EF",
+    borderColor: "#F0D1A9",
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 20,
+  },
+  emptyStateIcon: {
+    alignItems: "center",
+    backgroundColor: "#FFE7CE",
+    borderRadius: 999,
+    height: 40,
+    justifyContent: "center",
+    marginBottom: 14,
+    width: 40,
   },
   emptyStateTitle: {
     color: colors.light.text,
@@ -723,8 +754,8 @@ const styles = StyleSheet.create({
   },
   hatCard: {
     backgroundColor: "#FFF7EF",
-    borderColor: "#F2D2A8",
-    borderRadius: 24,
+    borderColor: "#F0D1A9",
+    borderRadius: 20,
     borderWidth: 1,
     padding: 24,
   },
@@ -743,25 +774,15 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   hatStage: {
-    paddingTop: 12,
+    paddingTop: 6,
   },
   hatTitle: {
     color: colors.light.text,
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "800",
-    lineHeight: 34,
+    lineHeight: 32,
     marginBottom: 12,
     textAlign: "center",
-  },
-  headerCopy: {
-    flex: 1,
-    marginRight: 12,
-  },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 18,
   },
   helperText: {
     color: colors.light.lightText,
@@ -970,6 +991,110 @@ const styles = StyleSheet.create({
   questActions: {
     marginTop: 14,
   },
+  resultsBody: {
+    color: colors.light.text,
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: "88%",
+  },
+  resultsEyebrow: {
+    color: "#B86A20",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  resultsHero: {
+    backgroundColor: "#FFF3E6",
+    borderColor: "#EBC8A5",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 22,
+    overflow: "hidden",
+    padding: 20,
+    position: "relative",
+  },
+  resultsHeroBadge: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 245, 233, 0.95)",
+    borderRadius: 999,
+    height: 42,
+    justifyContent: "center",
+    width: 42,
+  },
+  resultsHeroButton: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.62)",
+    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    justifyContent: "center",
+    marginTop: 16,
+    minHeight: 36,
+    paddingHorizontal: 14,
+  },
+  resultsHeroButtonText: {
+    color: colors.light.text,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  resultsHeroGlow: {
+    backgroundColor: "rgba(240, 193, 143, 0.34)",
+    borderRadius: 999,
+    height: 150,
+    position: "absolute",
+    right: -34,
+    top: -44,
+    width: 150,
+  },
+  resultsHeroLineOne: {
+    borderColor: "rgba(184, 106, 32, 0.15)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 92,
+    position: "absolute",
+    right: -8,
+    top: 28,
+    transform: [{ rotate: "12deg" }],
+    width: 92,
+  },
+  resultsHeroLineTwo: {
+    backgroundColor: "rgba(184, 106, 32, 0.1)",
+    borderRadius: 999,
+    height: 10,
+    position: "absolute",
+    right: 34,
+    top: 36,
+    transform: [{ rotate: "-18deg" }],
+    width: 70,
+  },
+  resultsHeroTopRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginBottom: 18,
+    position: "relative",
+    zIndex: 1,
+  },
+  resultsQuestMeta: {
+    marginBottom: 10,
+  },
+  resultsSectionEyebrow: {
+    color: colors.light.primary,
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.4,
+    marginBottom: 10,
+  },
+  resultsTitle: {
+    color: colors.light.text,
+    fontSize: 31,
+    fontWeight: "800",
+    lineHeight: 35,
+    marginBottom: 10,
+    maxWidth: "78%",
+  },
   questionnaireContent: {
     flexGrow: 1,
     paddingBottom: 16,
@@ -1027,20 +1152,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 28,
     marginBottom: 10,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    borderColor: "#D7DDE8",
-    borderRadius: 999,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 42,
-    paddingHorizontal: 14,
-  },
-  secondaryButtonText: {
-    color: colors.light.text,
-    fontSize: 14,
-    fontWeight: "600",
   },
   stepIndicatorRow: {
     gap: 8,
