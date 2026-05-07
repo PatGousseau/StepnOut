@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Animated, Easing, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { ProgressSegments } from "./ProgressSegments";
 import { QuestCard, ShareQuestExperience } from "./Quest";
+import { QuestHatIdle, QuestPullAnimation } from "./QuestPullAnimation";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSideQuests } from "../hooks/useSideQuests";
 import { colors } from "../constants/Colors";
@@ -22,6 +23,7 @@ import {
 } from "../constants/sideQuestOptions";
 import { SIDE_QUEST_EVENTS } from "../constants/analyticsEvents";
 import {
+  SideQuest,
   SideQuestAvoidType,
   SideQuestGoal,
   SideQuestQuestionnaireDraft,
@@ -140,8 +142,8 @@ export const SideQuestPath: React.FC = () => {
   const [editingPreferences, setEditingPreferences] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
   const [isDrawingQuest, setIsDrawingQuest] = useState(false);
-  const hatRotate = useRef(new Animated.Value(0)).current;
-  const hatScale = useRef(new Animated.Value(1)).current;
+  const [isRevealing, setIsRevealing] = useState(false);
+  const [revealedQuest, setRevealedQuest] = useState<SideQuest | null>(null);
   const revealOpacity = useRef(new Animated.Value(1)).current;
   const needsOnboarding = !profile;
 
@@ -362,67 +364,62 @@ export const SideQuestPath: React.FC = () => {
     }
   };
 
-  const animateHat = async () => {
-    hatRotate.setValue(0);
-    hatScale.setValue(1);
-    revealOpacity.setValue(0.4);
-
-    await new Promise<void>((resolve) => {
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(hatScale, {
-            toValue: 1.08,
-            duration: 220,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(hatScale, {
-            toValue: 1,
-            duration: 200,
-            easing: Easing.inOut(Easing.quad),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.timing(hatRotate, {
-          toValue: 1,
-          duration: 1600,
-          easing: Easing.inOut(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start(() => resolve());
-    });
+  const fadeInQuest = () => {
+    revealOpacity.setValue(0);
+    Animated.timing(revealOpacity, {
+      toValue: 1,
+      duration: 320,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleDrawQuest = async () => {
     if (isDrawingQuest) return;
 
     setIsDrawingQuest(true);
+    setIsRevealing(true);
+    setRevealedQuest(null);
     captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_STARTED, {
       ranked_count: rankedSideQuests.length,
       local_day: localDay,
     });
 
     try {
-      const [, result] = await Promise.all([animateHat(), drawTodaysQuest()]);
+      const result = await drawTodaysQuest();
+
       if (result.status === "exhausted") {
-        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_EXHAUSTED, {
-          local_day: localDay,
-        });
+        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_EXHAUSTED, { local_day: localDay });
+        setIsRevealing(false);
+        setRevealedQuest(null);
+        setIsDrawingQuest(false);
+      } else if (result.quest) {
+        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_COMPLETED, { local_day: localDay });
+        // The animation is already playing — pass the quest in so it can finish the reveal.
+        setRevealedQuest(result.quest);
       } else {
-        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_COMPLETED, {
-          local_day: localDay,
-        });
+        setIsRevealing(false);
+        setRevealedQuest(null);
+        setIsDrawingQuest(false);
       }
     } catch (error) {
       Alert.alert(t("Error"), (error as Error).message);
-    } finally {
-      Animated.timing(revealOpacity, {
-        toValue: 1,
-        duration: 240,
-        useNativeDriver: true,
-      }).start();
+      setIsRevealing(false);
+      setRevealedQuest(null);
       setIsDrawingQuest(false);
     }
+  };
+
+  const handleRevealComplete = () => {
+    fadeInQuest();
+    setIsRevealing(false);
+    setRevealedQuest(null);
+    setIsDrawingQuest(false);
+  };
+
+  const handleRevealAbort = () => {
+    setIsRevealing(false);
+    setRevealedQuest(null);
+    setIsDrawingQuest(false);
   };
 
   if (profileLoading) {
@@ -559,7 +556,7 @@ export const SideQuestPath: React.FC = () => {
     );
   }
 
-  if (sideQuestsLoading || (todaysQuestLoading && !todaysQuest)) {
+  if (!isRevealing && (sideQuestsLoading || (todaysQuestLoading && !todaysQuest))) {
     return <Loader />;
   }
 
@@ -572,39 +569,49 @@ export const SideQuestPath: React.FC = () => {
     );
   }
 
+  const isExhausted = todaysQuestState === "exhausted" && !todaysQuest;
+  const showDraw = !todaysQuest && rankedSideQuests.length > 0 && !isExhausted;
+
+  const showHeroSection = !todaysQuest || isRevealing;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.resultsHero}>
-        <View style={styles.resultsHeroGlow} />
-        <View style={styles.resultsHeroLineOne} />
-        <View style={styles.resultsHeroLineTwo} />
-        <View style={styles.resultsHeroTopRow}>
-          <View style={styles.resultsHeroBadge}>
-            <MaterialCommunityIcons name="hat-fedora" size={20} color="#B86A20" />
+      {showHeroSection && (
+        <View style={styles.heroSection}>
+          <View style={styles.eyebrowWrap}>
+            <Text style={styles.eyebrow}>{t("Today's draw")}</Text>
+            {showDraw && !isRevealing && (
+              <Text style={styles.eyebrowSub}>{t("One pull per day")}</Text>
+            )}
           </View>
+
+          {isRevealing ? (
+            <QuestPullAnimation
+              quest={revealedQuest}
+              onComplete={handleRevealComplete}
+              onAbort={handleRevealAbort}
+            />
+          ) : showDraw ? (
+            <>
+              <QuestHatIdle />
+              <Text style={styles.heroBody}>
+                {t("Each day, you can draw one side quest from the hat based on what fits you best right now.")}
+              </Text>
+              <View style={styles.ctaWrap}>
+                <TouchableOpacity
+                  style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
+                  disabled={isDrawingQuest}
+                  onPress={handleDrawQuest}
+                >
+                  <Text style={styles.drawButtonText}>
+                    {isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : null}
         </View>
-        <Text style={styles.resultsEyebrow}>{t("Side quests")}</Text>
-        <Text style={styles.resultsTitle}>{t(todaysQuest ? "Today's quest" : "Today's draw")}</Text>
-        <Text style={styles.resultsBody}>
-          {t(
-            todaysQuest
-              ? "Picked from your side quests based on what fits you best right now."
-              : "Each day, you can draw one side quest from the hat based on what fits you best right now."
-          )}
-        </Text>
-        <TouchableOpacity
-          style={styles.resultsHeroButton}
-          onPress={() => {
-            captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
-              entry_point: "results",
-              question_count: questionnaireSteps.length,
-            });
-            setEditingPreferences(true);
-          }}
-        >
-          <Text style={styles.resultsHeroButtonText}>{t("Edit preferences")}</Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {rankedSideQuests.length === 0 ? (
         <View style={styles.emptyStateCard}>
@@ -616,7 +623,7 @@ export const SideQuestPath: React.FC = () => {
             {t("Once side quests are added, they will show up here ranked for your preferences.")}
           </Text>
         </View>
-      ) : todaysQuestState === "exhausted" && !todaysQuest ? (
+      ) : isExhausted && !isRevealing ? (
         <View style={styles.emptyStateCard}>
           <View style={styles.emptyStateIcon}>
             <MaterialCommunityIcons name="check-all" size={20} color="#B86A20" />
@@ -626,61 +633,36 @@ export const SideQuestPath: React.FC = () => {
             {t("There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.")}
           </Text>
         </View>
-      ) : todaysQuest ? (
-        <Animated.View style={{ opacity: revealOpacity }}>
-          <View style={styles.resultsQuestMeta}>
-            <Text style={styles.resultsSectionEyebrow}>{t("Today's quest")}</Text>
-            <View style={styles.matchPills}>
-              {rankedSideQuests
+      ) : todaysQuest && !isRevealing ? (
+        <Animated.View style={[styles.questBlock, { opacity: revealOpacity }]}>
+          <QuestCard
+            quest={todaysQuest}
+            tags={
+              rankedSideQuests
                 .find((quest) => quest.id === todaysQuest.id)
                 ?.matched_goal_tags.slice(0, 2)
-                .map((tag) => (
-                  <View key={`${todaysQuest.id}-${tag}`} style={styles.matchPill}>
-                    <Text style={styles.matchPillText}>{t(getGoalOptionLabel(tag))}</Text>
-                  </View>
-                ))}
-            </View>
-          </View>
-          <QuestCard quest={todaysQuest} showEyebrow={false} variant="plain" />
+                .map((tag) => t(getGoalOptionLabel(tag))) ?? []
+            }
+          />
           <View style={styles.questActions}>
             <ShareQuestExperience quest={todaysQuest} />
           </View>
         </Animated.View>
-      ) : (
-        <View style={styles.hatStage}>
-          <View style={styles.hatCard}>
-            <Text style={styles.hatEyebrow}>{t("Today's draw")}</Text>
-            <Text style={styles.hatTitle}>{t("Reach into the hat")}</Text>
-            <Text style={styles.hatBody}>
-              {t("We will pick one quest from your ranked list, weighted toward the ones that fit you best today.")}
-            </Text>
-            <Animated.View
-              style={[
-                styles.hatIconWrap,
-                {
-                  transform: [
-                    {
-                      rotate: hatRotate.interpolate({
-                        inputRange: [0, 0.25, 0.5, 0.75, 1],
-                        outputRange: ["0deg", "-8deg", "10deg", "-6deg", "0deg"],
-                      }),
-                    },
-                    { scale: hatScale },
-                  ],
-                },
-              ]}
-            >
-              <MaterialCommunityIcons name="hat-fedora" size={110} color="#E78945" />
-            </Animated.View>
-            <TouchableOpacity
-              style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
-              disabled={isDrawingQuest}
-              onPress={handleDrawQuest}
-            >
-              <Text style={styles.drawButtonText}>{isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      ) : null}
+
+      {!isRevealing && (
+        <TouchableOpacity
+          style={styles.editPrefs}
+          onPress={() => {
+            captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
+              entry_point: "results",
+              question_count: questionnaireSteps.length,
+            });
+            setEditingPreferences(true);
+          }}
+        >
+          <Text style={styles.editPrefsText}>{t("Edit preferences")}</Text>
+        </TouchableOpacity>
       )}
     </ScrollView>
   );
@@ -710,13 +692,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#E78945",
     borderRadius: 14,
     justifyContent: "center",
-    minHeight: 48,
-    paddingHorizontal: 18,
+    minHeight: 52,
+    shadowColor: "#B86A20",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
   },
   drawButtonText: {
     color: colors.neutral.white,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "700",
+  },
+  editPrefs: {
+    alignSelf: "center",
+    marginTop: 24,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editPrefsText: {
+    color: colors.light.lightText,
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   emptyStateBody: {
     color: colors.light.lightText,
@@ -745,44 +742,40 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
   },
-  hatBody: {
+  ctaWrap: {
+    alignSelf: "center",
+    marginTop: 4,
+    width: "80%",
+  },
+  eyebrow: {
+    color: "#B86A20",
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  eyebrowSub: {
+    color: colors.light.lightText,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  eyebrowWrap: {
+    alignSelf: "center",
+    marginBottom: 24,
+    width: "80%",
+  },
+  heroBody: {
+    alignSelf: "center",
     color: colors.light.text,
     fontSize: 15,
     lineHeight: 22,
-    marginBottom: 20,
+    marginBottom: 24,
     textAlign: "center",
+    width: "84%",
   },
-  hatCard: {
-    backgroundColor: "#FFF7EF",
-    borderColor: "#F0D1A9",
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 24,
-  },
-  hatEyebrow: {
-    color: "#B86A20",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    marginBottom: 8,
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-  hatIconWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 22,
-  },
-  hatStage: {
-    paddingTop: 6,
-  },
-  hatTitle: {
-    color: colors.light.text,
-    fontSize: 28,
-    fontWeight: "800",
-    lineHeight: 32,
-    marginBottom: 12,
-    textAlign: "center",
+  heroSection: {
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   helperText: {
     color: colors.light.lightText,
@@ -939,23 +932,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 30,
   },
-  matchPill: {
-    backgroundColor: "#FFE7CE",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  matchPillText: {
-    color: "#B86A20",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  matchPills: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginBottom: 14,
-  },
   optionChip: {
     backgroundColor: "#FFFFFF",
     borderColor: colors.neutral.grey2,
@@ -991,109 +967,8 @@ const styles = StyleSheet.create({
   questActions: {
     marginTop: 14,
   },
-  resultsBody: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
-    maxWidth: "88%",
-  },
-  resultsEyebrow: {
-    color: "#B86A20",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    textTransform: "uppercase",
-  },
-  resultsHero: {
-    backgroundColor: "#FFF3E6",
-    borderColor: "#EBC8A5",
-    borderRadius: 20,
-    borderWidth: 1,
-    marginBottom: 22,
-    overflow: "hidden",
-    padding: 20,
-    position: "relative",
-  },
-  resultsHeroBadge: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 245, 233, 0.95)",
-    borderRadius: 999,
-    height: 42,
-    justifyContent: "center",
-    width: 42,
-  },
-  resultsHeroButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.62)",
-    borderColor: "rgba(184, 106, 32, 0.14)",
-    borderRadius: 999,
-    borderWidth: 1,
-    justifyContent: "center",
-    marginTop: 16,
-    minHeight: 36,
-    paddingHorizontal: 14,
-  },
-  resultsHeroButtonText: {
-    color: colors.light.text,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  resultsHeroGlow: {
-    backgroundColor: "rgba(240, 193, 143, 0.34)",
-    borderRadius: 999,
-    height: 150,
-    position: "absolute",
-    right: -34,
-    top: -44,
-    width: 150,
-  },
-  resultsHeroLineOne: {
-    borderColor: "rgba(184, 106, 32, 0.15)",
-    borderRadius: 999,
-    borderWidth: 1,
-    height: 92,
-    position: "absolute",
-    right: -8,
-    top: 28,
-    transform: [{ rotate: "12deg" }],
-    width: 92,
-  },
-  resultsHeroLineTwo: {
-    backgroundColor: "rgba(184, 106, 32, 0.1)",
-    borderRadius: 999,
-    height: 10,
-    position: "absolute",
-    right: 34,
-    top: 36,
-    transform: [{ rotate: "-18deg" }],
-    width: 70,
-  },
-  resultsHeroTopRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginBottom: 18,
-    position: "relative",
-    zIndex: 1,
-  },
-  resultsQuestMeta: {
-    marginBottom: 10,
-  },
-  resultsSectionEyebrow: {
-    color: colors.light.primary,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    marginBottom: 10,
-  },
-  resultsTitle: {
-    color: colors.light.text,
-    fontSize: 31,
-    fontWeight: "800",
-    lineHeight: 35,
-    marginBottom: 10,
-    maxWidth: "78%",
+  questBlock: {
+    paddingTop: 4,
   },
   questionnaireContent: {
     flexGrow: 1,
