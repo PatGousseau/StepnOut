@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Easing, StyleSheet, View } from "react-native";
-import ConfettiCannon from "react-native-confetti-cannon";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import Svg, {
   Defs,
   Ellipse,
@@ -11,10 +10,8 @@ import Svg, {
 import { Text } from "./StyledText";
 import { SideQuest } from "../types/sideQuests";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 const SCENE_WIDTH = 280;
-const SCENE_HEIGHT = 300;
+const SCENE_HEIGHT = 320;
 
 const SPARKLE_ANGLES = [10, 50, 90, 130, 170, 200, 230, 270, 310, 340];
 
@@ -31,8 +28,6 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
   const sparkles = useRef(new Animated.Value(0)).current;
   const flash = useRef(new Animated.Value(0)).current;
   const stageOpacity = useRef(new Animated.Value(1)).current;
-
-  const confettiRef = useRef<ConfettiCannon | null>(null);
 
   // Track the latest quest value via a ref so the animation loop can poll for it
   // without re-running the effect.
@@ -101,11 +96,8 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
       );
       if (cancelled) return;
 
-      // Confetti fires once the card lands
-      confettiRef.current?.start();
-
-      // Hold so the user can savor it (and let the confetti rain).
-      await new Promise((resolve) => setTimeout(resolve, 1900));
+      // Hold so the user can read the quest.
+      await new Promise((resolve) => setTimeout(resolve, 3500));
       if (cancelled) return;
 
       // Fade the whole stage out
@@ -140,10 +132,10 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
     });
 
     // ── Card rising out of the brim opening ─────────────────────────────────
-    // Starts hidden (positive Y = down, inside the hat), rises high (negative Y).
+    // Starts hidden inside the hat (positive Y = down), rises clearly above the brim.
     const cardTranslateY = card.interpolate({
       inputRange: [0, 1],
-      outputRange: [80, -120],
+      outputRange: [70, -80],
     });
     const cardScale = card.interpolate({
       inputRange: [0, 0.7, 1],
@@ -173,16 +165,8 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
       outputRange: [0, 0.95, 0.5, 0],
     });
 
-    // ── Background glow (subtle pulse during anticipation) ──────────────────
-    const glowOpacity = wobble.interpolate({
-      inputRange: [0, 0.5, 1],
-      outputRange: [0.45, 0.75, 0.55],
-    });
-
     return (
       <Animated.View style={[styles.scene, { opacity: stageOpacity }]} pointerEvents="none">
-        {/* Soft ground glow */}
-        <Animated.View style={[styles.glow, { opacity: glowOpacity }]} />
 
         {/* Flash burst — only visible during the climax */}
         <Animated.View
@@ -238,19 +222,6 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
           </Animated.View>
         )}
 
-        {/* Confetti — falls from above the screen */}
-        <View pointerEvents="none" style={styles.confettiLayer}>
-          <ConfettiCannon
-            ref={confettiRef}
-            count={160}
-            origin={{ x: SCREEN_WIDTH / 2, y: -20 }}
-            fallSpeed={4200}
-            explosionSpeed={700}
-            fadeOut
-            autoStart={false}
-            colors={["#E78945", "#FFD79E", "#B86A20", "#FCE4C4", "#FFA85C", "#F4B36A"]}
-          />
-        </View>
       </Animated.View>
     );
 };
@@ -378,7 +349,6 @@ const SparkleStar: React.FC<{ angleDeg: number; progress: Animated.Value }> = ({
 
 export const QuestHatIdle: React.FC = () => (
   <View style={styles.scene} pointerEvents="none">
-    <View style={styles.glow} />
     <View style={styles.hatLayer}>
       <HatUpsideDownSvg />
     </View>
@@ -390,23 +360,16 @@ export const QuestHatIdle: React.FC = () => (
 const styles = StyleSheet.create({
   cardLayer: {
     alignItems: "center",
-    bottom: 150,
+    bottom: 110,
     left: 0,
     position: "absolute",
     right: 0,
-  },
-  confettiLayer: {
-    bottom: -SCENE_HEIGHT,
-    left: -(SCREEN_WIDTH - SCENE_WIDTH) / 2,
-    position: "absolute",
-    right: -(SCREEN_WIDTH - SCENE_WIDTH) / 2,
-    top: -200,
   },
   flashBurst: {
     alignSelf: "center",
     backgroundColor: "#FFEBC7",
     borderRadius: 999,
-    bottom: 130,
+    bottom: 110,
     height: 200,
     position: "absolute",
     shadowColor: "#FFA85C",
@@ -415,18 +378,9 @@ const styles = StyleSheet.create({
     shadowRadius: 60,
     width: 200,
   },
-  glow: {
-    alignSelf: "center",
-    backgroundColor: "rgba(231, 137, 69, 0.32)",
-    borderRadius: 120,
-    bottom: 18,
-    height: 40,
-    position: "absolute",
-    width: 200,
-  },
   hatLayer: {
     alignItems: "center",
-    bottom: 30,
+    bottom: 10,
     left: 0,
     position: "absolute",
     right: 0,
@@ -484,7 +438,7 @@ const styles = StyleSheet.create({
   },
   sparkleField: {
     alignItems: "center",
-    bottom: 120,
+    bottom: 100,
     height: 200,
     justifyContent: "center",
     position: "absolute",
