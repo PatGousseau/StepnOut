@@ -55,13 +55,11 @@ export default function NotificationsPrimeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <Image
-            source={require('../../assets/images/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={require('../../assets/images/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
         <Text style={styles.title}>
           {t('A new challenge drops every Monday.')}
@@ -96,18 +94,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.light.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 36,
-  },
   logo: {
-    width: 64,
-    height: 64,
+    width: 96,
+    height: 96,
+    marginBottom: 36,
   },
   title: {
     fontSize: 26,
