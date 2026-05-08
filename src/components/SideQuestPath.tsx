@@ -578,38 +578,44 @@ export const SideQuestPath: React.FC = () => {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {showHeroSection && (
         <View style={styles.heroSection}>
-          <View style={styles.eyebrowWrap}>
-            <Text style={styles.eyebrow}>{t("Today's draw")}</Text>
-            {showDraw && !isRevealing && (
-              <Text style={styles.eyebrowSub}>{t("One pull per day")}</Text>
-            )}
-          </View>
+          <View style={styles.heroGlow} />
+          <View style={styles.heroLineOne} />
+          <View style={styles.heroLineTwo} />
+          <View style={styles.heroLineThree} />
+          <View style={styles.heroContent}>
+            <View style={styles.eyebrowWrap}>
+              <Text style={styles.eyebrow}>{t("Today's draw")}</Text>
+              {showDraw && !isRevealing && (
+                <Text style={styles.eyebrowSub}>{t("One pull per day")}</Text>
+              )}
+            </View>
 
-          {isRevealing ? (
-            <QuestPullAnimation
-              quest={revealedQuest}
-              onComplete={handleRevealComplete}
-              onAbort={handleRevealAbort}
-            />
-          ) : showDraw ? (
-            <>
-              <QuestHatIdle />
-              <Text style={styles.heroBody}>
-                {t("Each day, you can draw one side quest from the hat based on what fits you best right now.")}
-              </Text>
-              <View style={styles.ctaWrap}>
-                <TouchableOpacity
-                  style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
-                  disabled={isDrawingQuest}
-                  onPress={handleDrawQuest}
-                >
-                  <Text style={styles.drawButtonText}>
-                    {isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : null}
+            {isRevealing ? (
+              <QuestPullAnimation
+                quest={revealedQuest}
+                onComplete={handleRevealComplete}
+                onAbort={handleRevealAbort}
+              />
+            ) : showDraw ? (
+              <>
+                <QuestHatIdle />
+                <Text style={styles.heroBody}>
+                  {t("Each day, you can draw one side quest from the hat based on what fits you best right now.")}
+                </Text>
+                <View style={styles.ctaWrap}>
+                  <TouchableOpacity
+                    style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
+                    disabled={isDrawingQuest}
+                    onPress={handleDrawQuest}
+                  >
+                    <Text style={styles.drawButtonText}>
+                      {isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : null}
+          </View>
         </View>
       )}
 
@@ -773,9 +779,62 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: "84%",
   },
+  heroContent: {
+    position: "relative",
+    zIndex: 1,
+  },
+  heroGlow: {
+    backgroundColor: "rgba(240, 193, 143, 0.38)",
+    borderRadius: 999,
+    height: 160,
+    position: "absolute",
+    right: -34,
+    top: -46,
+    width: 160,
+  },
+  heroLineOne: {
+    borderColor: "rgba(184, 106, 32, 0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 110,
+    position: "absolute",
+    right: -18,
+    top: 18,
+    transform: [{ rotate: "14deg" }],
+    width: 110,
+  },
+  heroLineThree: {
+    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 86,
+    position: "absolute",
+    right: 18,
+    top: 54,
+    transform: [{ rotate: "-10deg" }],
+    width: 86,
+  },
+  heroLineTwo: {
+    backgroundColor: "rgba(184, 106, 32, 0.12)",
+    borderRadius: 999,
+    height: 10,
+    position: "absolute",
+    right: 26,
+    top: 32,
+    transform: [{ rotate: "-18deg" }],
+    width: 74,
+  },
   heroSection: {
-    paddingTop: 12,
-    paddingBottom: 8,
+    backgroundColor: "#FFF3E6",
+    borderColor: "#EBC8A5",
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 22,
+    overflow: "hidden",
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 20,
+    position: "relative",
   },
   helperText: {
     color: colors.light.lightText,
