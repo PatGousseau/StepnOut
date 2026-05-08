@@ -981,7 +981,7 @@ const styles = StyleSheet.create({
   },
   introSection: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     paddingBottom: 24,
     paddingTop: 10,
   },
