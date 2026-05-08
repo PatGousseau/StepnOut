@@ -61,7 +61,7 @@ export const HomeChallengeBanner: React.FC = () => {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.eyebrow}>{t("Do this week's challenge")}</Text>
+      <Text style={styles.eyebrow}>{t("Complete this week's challenge")}</Text>
       <Animated.View style={{ transform: [{ scale }] }}>
         <ChallengePreviewCard
           title={title}
