@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -41,26 +40,26 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
   return (
     <View style={styles.questPage}>
       <View style={styles.heroCard}>
-        <LinearGradient
-          colors={["#EE944F", "#C77A3C"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
+        <View style={styles.heroGlow} />
+        <View style={styles.heroLineOne} />
+        <View style={styles.heroLineTwo} />
+        <View style={styles.heroLineThree} />
 
-        <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
-        <Text style={styles.heroTitle}>{quest.title}</Text>
-        {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
+        <View style={styles.heroContent}>
+          <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
+          <Text style={styles.heroTitle}>{quest.title}</Text>
+          {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
 
-        {tags && tags.length > 0 && (
-          <View style={styles.heroPills}>
-            {tags.slice(0, 2).map((tag) => (
-              <View key={tag} style={styles.heroPill}>
-                <Text style={styles.heroPillText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+          {tags && tags.length > 0 && (
+            <View style={styles.heroPills}>
+              {tags.slice(0, 2).map((tag) => (
+                <View key={tag} style={styles.heroPill}>
+                  <Text style={styles.heroPillText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.detailSection}>
@@ -410,27 +409,78 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   heroCard: {
+    backgroundColor: "#F7E4CC",
+    borderColor: "#E2BA8D",
     borderRadius: 20,
+    borderWidth: 1,
     marginBottom: 22,
     overflow: "hidden",
     padding: 22,
+    position: "relative",
+  },
+  heroContent: {
+    position: "relative",
+    zIndex: 1,
   },
   heroEyebrow: {
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: 11,
+    color: "#B86A20",
+    fontSize: 12,
     fontWeight: "700",
-    letterSpacing: 1.4,
+    letterSpacing: 0.8,
     marginBottom: 10,
     textTransform: "uppercase",
   },
-  heroPill: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  heroGlow: {
+    backgroundColor: "rgba(228, 169, 103, 0.34)",
     borderRadius: 999,
+    height: 160,
+    position: "absolute",
+    right: -34,
+    top: -46,
+    width: 160,
+  },
+  heroLineOne: {
+    borderColor: "rgba(184, 106, 32, 0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 110,
+    position: "absolute",
+    right: -18,
+    top: 18,
+    transform: [{ rotate: "14deg" }],
+    width: 110,
+  },
+  heroLineThree: {
+    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 86,
+    position: "absolute",
+    right: 18,
+    top: 54,
+    transform: [{ rotate: "-10deg" }],
+    width: 86,
+  },
+  heroLineTwo: {
+    backgroundColor: "rgba(184, 106, 32, 0.12)",
+    borderRadius: 999,
+    height: 10,
+    position: "absolute",
+    right: 26,
+    top: 32,
+    transform: [{ rotate: "-18deg" }],
+    width: 74,
+  },
+  heroPill: {
+    backgroundColor: "rgba(255, 255, 255, 0.62)",
+    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   heroPillText: {
-    color: "#FFFFFF",
+    color: colors.light.text,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -441,13 +491,13 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   heroSummary: {
-    color: "rgba(255, 255, 255, 0.92)",
+    color: colors.light.text,
     fontSize: 15,
     lineHeight: 22,
     marginTop: 12,
   },
   heroTitle: {
-    color: "#FFFFFF",
+    color: colors.light.text,
     fontSize: 26,
     fontWeight: "800",
     lineHeight: 31,
