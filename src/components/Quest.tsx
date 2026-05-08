@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   },
   ctaButton: {
     alignItems: "center",
-    backgroundColor: "#E78945",
+    backgroundColor: colors.light.primary,
     borderRadius: 10,
     padding: 14,
     width: "100%",
