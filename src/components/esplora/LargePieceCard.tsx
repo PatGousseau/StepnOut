@@ -1,10 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import {
-  CATEGORY_GRADIENTS,
   esploraCard,
   esploraSpacing,
   esploraType,
@@ -13,6 +11,7 @@ import { ContentPiece } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
+import { DecorativeCardBackground } from './DecorativeCardBackground';
 
 interface Props {
   piece: ContentPiece;
@@ -22,7 +21,6 @@ interface Props {
 
 export const LargePieceCard: React.FC<Props> = ({ piece, source, style }) => {
   const { t } = useLanguage();
-  const gradient = CATEGORY_GRADIENTS[piece.category];
 
   const handlePress = () => {
     captureEvent(ESPLORA_EVENTS.PIECE_OPENED, {
@@ -44,17 +42,7 @@ export const LargePieceCard: React.FC<Props> = ({ piece, source, style }) => {
       style={[styles.card, style]}
       accessibilityRole="button"
     >
-      <LinearGradient
-        colors={gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <LinearGradient
-        colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.45)']}
-        locations={[0, 0.45, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      <DecorativeCardBackground category={piece.category} variant="large" seed={piece.id} />
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={3}>
           {piece.title}
@@ -79,10 +67,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: esploraSpacing.md,
     justifyContent: 'space-between',
+    position: 'relative',
+    zIndex: 1,
   },
   title: {
     ...esploraType.cardTitle,
     color: colors.neutral.white,
+    textShadowColor: 'rgba(0,0,0,0.24)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   footer: {
     flexDirection: 'row',
@@ -90,6 +83,8 @@ const styles = StyleSheet.create({
   meta: {
     ...esploraType.cardMeta,
     color: colors.neutral.white,
-    opacity: 0.85,
+    textShadowColor: 'rgba(0,0,0,0.22)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
 });
