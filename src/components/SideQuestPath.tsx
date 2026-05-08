@@ -6,7 +6,7 @@ import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { ProgressSegments } from "./ProgressSegments";
 import { QuestCard, ShareQuestExperience } from "./Quest";
-import { QuestHatIdle, QuestPullAnimation } from "./QuestPullAnimation";
+import { QuestHatIdle, QuestPullAnimation, SideQuestHatSvg } from "./QuestPullAnimation";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSideQuests } from "../hooks/useSideQuests";
 import { colors } from "../constants/Colors";
@@ -461,7 +461,7 @@ export const SideQuestPath: React.FC = () => {
                   <View style={styles.introHeroLineThree} />
                   <View style={styles.introHeroContent}>
                     <View style={styles.introBadge}>
-                      <MaterialCommunityIcons name="hat-fedora" size={22} color="#B86A20" />
+                      <SideQuestHatSvg width={30} height={30} />
                     </View>
                     <View style={styles.introHeaderCopy}>
                       <Text style={styles.introTitle}>{t("Side quests")}</Text>

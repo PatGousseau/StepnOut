@@ -1,14 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
-import Svg, {
-  Defs,
-  Ellipse,
-  LinearGradient as SvgLinearGradient,
-  Path,
-  Stop,
-} from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 import { Text } from "./StyledText";
 import { SideQuest } from "../types/sideQuests";
+import SideQuestHatAsset from "../assets/images/side-quest-hat.svg";
 
 const SCENE_WIDTH = 280;
 const SCENE_HEIGHT = 320;
@@ -192,7 +187,7 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
             { transform: [{ rotate: hatRotate }, { scale: hatScale }] },
           ]}
         >
-          <HatUpsideDownSvg />
+          <SideQuestHatSvg upsideDown />
         </Animated.View>
 
         {/* Card — rises out of the brim opening at the top of the hat. */}
@@ -228,70 +223,20 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
 
 // ─── SVG pieces ────────────────────────────────────────────────────────────
 
-// Upside-down fedora — brim at top showing the dark cavity opening,
-// crown extending down as an inverted dome.
-const HAT_W = 220;
-const HAT_H = 200;
-const BRIM_LINE = 56; // y of the brim line within the SVG viewBox
+type SideQuestHatSvgProps = {
+  width?: number;
+  height?: number;
+  upsideDown?: boolean;
+};
 
-const HatUpsideDownSvg: React.FC = () => (
-  <Svg width={HAT_W} height={HAT_H} viewBox={`0 0 ${HAT_W} ${HAT_H}`}>
-    <Defs>
-      <SvgLinearGradient id="invCrown" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#5A3413" />
-        <Stop offset="0.5" stopColor="#7A4A1F" />
-        <Stop offset="1" stopColor="#A87042" />
-      </SvgLinearGradient>
-      <SvgLinearGradient id="invBrim" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#9C6936" />
-        <Stop offset="1" stopColor="#5A3413" />
-      </SvgLinearGradient>
-      <SvgLinearGradient id="invBand" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0" stopColor="#B86A20" />
-        <Stop offset="1" stopColor="#F4A65C" />
-      </SvgLinearGradient>
-    </Defs>
-
-    {/* Inverted crown — extends downward from the brim into a rounded dome */}
-    <Path
-      d={`M 50 ${BRIM_LINE} C 50 ${HAT_H - 6}, ${HAT_W - 50} ${HAT_H - 6}, ${HAT_W - 50} ${BRIM_LINE} Z`}
-      fill="url(#invCrown)"
-    />
-
-    {/* Subtle highlight on right side of inverted crown */}
-    <Path
-      d={`M ${HAT_W - 70} 70 C ${HAT_W - 60} 110, ${HAT_W - 60} 145, ${HAT_W - 80} 178`}
-      stroke="rgba(255, 230, 195, 0.22)"
-      strokeWidth={4}
-      fill="none"
-      strokeLinecap="round"
-    />
-
-    {/* Hatband — wraps just under the brim */}
-    <Path
-      d={`M 50 ${BRIM_LINE} C 50 ${BRIM_LINE + 10}, ${HAT_W - 50} ${BRIM_LINE + 10}, ${HAT_W - 50} ${BRIM_LINE} L ${HAT_W - 50} ${BRIM_LINE + 16} C ${HAT_W - 50} ${BRIM_LINE + 26}, 50 ${BRIM_LINE + 26}, 50 ${BRIM_LINE + 16} Z`}
-      fill="url(#invBand)"
-    />
-
-    {/* Brim — wide oval at top */}
-    <Path
-      d={`M 5 ${BRIM_LINE} Q ${HAT_W / 2} 18, ${HAT_W - 5} ${BRIM_LINE} Q ${HAT_W / 2} ${BRIM_LINE + 26}, 5 ${BRIM_LINE} Z`}
-      fill="url(#invBrim)"
-    />
-
-    {/* Inner cavity — dark oval (the opening of the upside-down hat) */}
-    <Ellipse cx={HAT_W / 2} cy={BRIM_LINE} rx={52} ry={9} fill="#150B03" />
-    <Ellipse cx={HAT_W / 2} cy={BRIM_LINE - 2} rx={48} ry={4} fill="rgba(0,0,0,0.55)" />
-
-    {/* Brim top sheen */}
-    <Path
-      d={`M 30 ${BRIM_LINE - 4} Q ${HAT_W / 2} 22, ${HAT_W - 30} ${BRIM_LINE - 4}`}
-      stroke="rgba(255, 220, 180, 0.3)"
-      strokeWidth={2}
-      fill="none"
-      strokeLinecap="round"
-    />
-  </Svg>
+export const SideQuestHatSvg: React.FC<SideQuestHatSvgProps> = ({
+  width = 220,
+  height = 220,
+  upsideDown = false,
+}) => (
+  <View>
+    <SideQuestHatAsset width={width} height={height} />
+  </View>
 );
 
 // ─── Sparkle ───────────────────────────────────────────────────────────────
@@ -350,7 +295,7 @@ const SparkleStar: React.FC<{ angleDeg: number; progress: Animated.Value }> = ({
 export const QuestHatIdle: React.FC = () => (
   <View style={[styles.scene, styles.idleScene]} pointerEvents="none">
     <View style={styles.hatLayer}>
-      <HatUpsideDownSvg />
+      <SideQuestHatSvg upsideDown />
     </View>
   </View>
 );
