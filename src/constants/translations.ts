@@ -218,7 +218,7 @@ export const translations = {
   "End User License Agreement": "Accettazione Accordo Utente",
   Accept: "Accetta",
   Decline: "Rifiuta",
-  "A new challenge drops every Monday.": "Ogni lunedì arriva una nuova sfida.",
+  "A new challenge drops every Monday.": "Ogni lunedì esce una nuova sfida.",
   "Turn on notifications so you don't miss it.": "Attiva le notifiche per non perderla.",
   "Turn on notifications": "Attiva le notifiche",
   hi: "ciao",
