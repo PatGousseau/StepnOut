@@ -706,11 +706,11 @@ const styles = StyleSheet.create({
   },
   drawButton: {
     alignItems: "center",
-    backgroundColor: "#E78945",
+    backgroundColor: colors.light.primary,
     borderRadius: 14,
     justifyContent: "center",
     minHeight: 52,
-    shadowColor: "#B86A20",
+    shadowColor: colors.light.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.22,
     shadowRadius: 14,
@@ -871,7 +871,7 @@ const styles = StyleSheet.create({
   },
   introButton: {
     alignItems: "center",
-    backgroundColor: "#E78945",
+    backgroundColor: colors.light.primary,
     borderRadius: 14,
     justifyContent: "center",
     marginTop: 24,
