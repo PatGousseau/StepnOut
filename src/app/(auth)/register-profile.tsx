@@ -177,7 +177,7 @@ export default function RegisterProfileScreen() {
                 .from('profiles')
                 .update({ eula_accepted: true })
                 .eq('id', userId);
-              router.replace('/(auth)/onboarding');
+              router.replace('/(tabs)?firstTime=true');
             }
           },
           {

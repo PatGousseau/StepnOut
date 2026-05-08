@@ -78,8 +78,6 @@ function RootLayoutNav() {
   // hide logo on auth screens
   const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
 
-  // hide recently active banner on onboarding
-  const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
   useAppOpenTracker(session?.user?.id, loading);
 
   // Track screen views when pathname changes
@@ -93,8 +91,6 @@ function RootLayoutNav() {
         pathname === '/register' ||
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
-        pathname === '/(auth)/onboarding' ||
-        pathname === '/onboarding' ||
         pathname === '/(auth)/register-profile' ||
         pathname === '/register-profile';
       if (isAuthRoute) return;
@@ -135,9 +131,7 @@ function RootLayoutNav() {
       pathname === '/login' ||
       pathname === '/register' ||
       pathname === '/forgot-password' ||
-      pathname === '/reset-password' ||
-      pathname === '/(auth)/onboarding' ||
-      pathname === '/onboarding';
+      pathname === '/reset-password';
 
     if (!loading && !session && !isAuthRoute) {
       router.replace('/(auth)/login');
@@ -165,8 +159,6 @@ function RootLayoutNav() {
         pathname === '/register' ||
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
-        pathname === '/(auth)/onboarding' ||
-        pathname === '/onboarding' ||
         pathname === '/(auth)/register-profile' ||
         pathname === '/register-profile';
 
@@ -368,7 +360,7 @@ function RootLayoutNav() {
         </View>
       )}
 
-      {!hideLogo && !hideRecentlyActive && <RecentlyActiveBanner hidden={isDetailPage} />}
+      {!hideLogo && <RecentlyActiveBanner hidden={isDetailPage} />}
       <Stack
         screenOptions={{
           headerShown: false,

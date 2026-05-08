@@ -94,13 +94,13 @@ export default function LoginScreen() {
       ]);
     }
 
-    // Handle first login / onboarding
+    // Handle first login
     if (profile?.first_login) {
       await supabase
         .from('profiles')
         .update({ first_login: false })
         .eq('id', userId);
-      router.replace('/(auth)/onboarding');
+      router.replace('/(tabs)?firstTime=true');
     } else {
       router.replace('/(tabs)');
     }
@@ -198,7 +198,7 @@ export default function LoginScreen() {
           .update({ first_login: false })
           .eq('id', session.user.id);
 
-        router.replace('/(auth)/onboarding');
+        router.replace('/(tabs)?firstTime=true');
       } else {
         router.replace('/(tabs)');
       }
