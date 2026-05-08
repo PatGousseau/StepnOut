@@ -1,35 +1,34 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { supabase } from './supabase'; 
+import { supabase } from './supabase';
 
-export async function registerForPushNotificationsAsync(userId: string) {
-    
-    if (!Device.isDevice) {
-        return null;
-    }
-    
-    // Check if permission is granted
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+const PROJECT_ID = '6ac120ac-1dca-4d86-9088-4dbe426901fc';
 
-    if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync({
-            ios: {
-                allowAlert: true,
-                allowSound: true,
-                allowBadge: true,
-            },
-        });
-        finalStatus = status;
-    }
+// Fires the OS permission dialog. Caller should follow up with
+// registerPushTokenIfGranted to persist the token on success.
+export async function requestNotificationPermission(): Promise<Notifications.PermissionStatus> {
+    if (!Device.isDevice) return 'undetermined' as Notifications.PermissionStatus;
+    const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+            allowAlert: true,
+            allowSound: true,
+            allowBadge: true,
+        },
+    });
+    return status;
+}
 
-    if (finalStatus !== 'granted') {
-        return null;
-    }
+// Silent: never prompts. If permission is already granted, fetches
+// the Expo push token and saves it to the user's profile.
+export async function registerPushTokenIfGranted(userId: string): Promise<string | null> {
+    if (!Device.isDevice) return null;
+
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return null;
 
     try {
         const token = (await Notifications.getExpoPushTokenAsync({
-            projectId: '6ac120ac-1dca-4d86-9088-4dbe426901fc'
+            projectId: PROJECT_ID,
         })).data;
 
         await savePushTokenToSupabase(userId, token);
@@ -41,10 +40,9 @@ export async function registerForPushNotificationsAsync(userId: string) {
 }
 
 async function savePushTokenToSupabase(userId: string, token: string) {
-    
     const { error } = await supabase
         .from('profiles')
-        .update({ push_token: token }) 
+        .update({ push_token: token })
         .eq('id', userId);
 
     if (error) {

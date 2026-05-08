@@ -5,7 +5,7 @@ import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState, Platform, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync } from '../lib/notifications';
+import { registerPushTokenIfGranted } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -76,7 +76,15 @@ function RootLayoutNav() {
     pathname === '/search-users';
 
   // hide logo on auth screens
-  const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
+  const hideLogo =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname === '/(auth)/eula' ||
+    pathname === '/eula' ||
+    pathname === '/(auth)/notifications-prime' ||
+    pathname === '/notifications-prime';
 
   useAppOpenTracker(session?.user?.id, loading);
 
@@ -92,7 +100,11 @@ function RootLayoutNav() {
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
         pathname === '/(auth)/register-profile' ||
-        pathname === '/register-profile';
+        pathname === '/register-profile' ||
+        pathname === '/(auth)/eula' ||
+        pathname === '/eula' ||
+        pathname === '/(auth)/notifications-prime' ||
+        pathname === '/notifications-prime';
       if (isAuthRoute) return;
       try {
         const { data: profile } = await supabase
@@ -131,7 +143,11 @@ function RootLayoutNav() {
       pathname === '/login' ||
       pathname === '/register' ||
       pathname === '/forgot-password' ||
-      pathname === '/reset-password';
+      pathname === '/reset-password' ||
+      pathname === '/(auth)/eula' ||
+      pathname === '/eula' ||
+      pathname === '/(auth)/notifications-prime' ||
+      pathname === '/notifications-prime';
 
     if (!loading && !session && !isAuthRoute) {
       router.replace('/(auth)/login');
@@ -143,7 +159,7 @@ function RootLayoutNav() {
     const setupPushNotifications = async () => {
       const userId = session?.user.id;
       if (userId) {
-        await registerForPushNotificationsAsync(userId);
+        await registerPushTokenIfGranted(userId);
       }
     };
     setupPushNotifications();
@@ -160,7 +176,11 @@ function RootLayoutNav() {
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
         pathname === '/(auth)/register-profile' ||
-        pathname === '/register-profile';
+        pathname === '/register-profile' ||
+        pathname === '/(auth)/eula' ||
+        pathname === '/eula' ||
+        pathname === '/(auth)/notifications-prime' ||
+        pathname === '/notifications-prime';
 
       if (isAuthRoute) {
         setShowNotificationsBanner(false);
@@ -180,7 +200,7 @@ function RootLayoutNav() {
       }
 
       // Permission granted — ensure push token is registered
-      await registerForPushNotificationsAsync(session.user.id);
+      await registerPushTokenIfGranted(session.user.id);
       const { data: profile } = await supabase
         .from('profiles')
         .select('push_token')
@@ -281,7 +301,7 @@ function RootLayoutNav() {
     });
 
     if (status === 'granted') {
-      await registerForPushNotificationsAsync(userId);
+      await registerPushTokenIfGranted(userId);
       setShowNotificationsBanner(false);
       return;
     }

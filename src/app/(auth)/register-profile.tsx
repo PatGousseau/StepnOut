@@ -19,7 +19,6 @@ import { supabase } from "../../lib/supabase";
 import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
-import { EULA_IT, EULA } from "../../constants/EULA";
 import { isInstagramUsernameValidProfile } from "../../utils/validation";
 
 export default function RegisterProfileScreen() {
@@ -37,7 +36,7 @@ export default function RegisterProfileScreen() {
   const [instagram, setInstagram] = useState('');
   const [bio, setBio] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const isSocialSignUp = isSocialUser === 'true';
   const isProfileCompletion = isIncompleteProfile === 'true';
@@ -156,7 +155,7 @@ export default function RegisterProfileScreen() {
       setLoading(true); // Ensure loading is still true if we passed the check
 
       // Complete profile setup
-      const userId = await signUp({
+      await signUp({
         username,
         displayName,
         profileMediaId,
@@ -169,25 +168,7 @@ export default function RegisterProfileScreen() {
       if (isProfileCompletion) {
         router.replace('/(tabs)');
       } else {
-        // Show EULA then go to onboarding
-        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          {
-            text: t('Accept'), onPress: async () => {
-              await supabase
-                .from('profiles')
-                .update({ eula_accepted: true })
-                .eq('id', userId);
-              router.replace('/(tabs)?firstTime=true');
-            }
-          },
-          {
-            text: t('Decline'),
-            onPress: async () => {
-              await supabase.auth.signOut();
-              router.replace('/(auth)/login');
-            }
-          }
-        ]);
+        router.replace('/(auth)/eula?firstTime=true');
       }
     } catch (error) {
       setError(t((error as Error).message));
