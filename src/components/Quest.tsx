@@ -45,43 +45,38 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
         <View style={styles.heroLineTwo} />
         <View style={styles.heroLineThree} />
 
-        <View style={styles.heroContent}>
-          <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
-          <Text style={styles.heroTitle}>{quest.title}</Text>
-          {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
+        <View style={styles.heroHeaderContent}>
+          <View style={styles.heroContent}>
+            <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
+            <Text style={styles.heroTitle}>{quest.title}</Text>
+            {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
 
-          {tags && tags.length > 0 && (
-            <View style={styles.heroPills}>
-              {tags.slice(0, 2).map((tag) => (
-                <View key={tag} style={styles.heroPill}>
-                  <Text style={styles.heroPillText}>{tag}</Text>
+            {tags && tags.length > 0 && (
+              <View style={styles.heroPills}>
+                {tags.slice(0, 2).map((tag) => (
+                  <View key={tag} style={styles.heroPill}>
+                    <Text style={styles.heroPillText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+
+        {!!quest.instructions && (
+          <>
+            <View style={styles.heroDivider} />
+            <View style={styles.heroDetailSection}>
+              <View style={styles.heroDetailHeader}>
+                <View style={styles.heroDetailIcon}>
+                  <MaterialCommunityIcons name="compass-outline" size={16} color="#B86A20" />
                 </View>
-              ))}
+                <Text style={styles.heroDetailLabel}>{t("Try this")}</Text>
+              </View>
+              <Text style={styles.heroDetailText}>{quest.instructions}</Text>
             </View>
-          )}
-        </View>
-      </View>
-
-      <View style={styles.detailSection}>
-        <View style={styles.detailHeader}>
-          <View style={styles.detailIcon}>
-            <MaterialCommunityIcons name="lightbulb-on-outline" size={16} color="#B86A20" />
-          </View>
-          <Text style={styles.detailLabel}>{t("Why this works")}</Text>
-        </View>
-        <Text style={styles.detailText}>{quest.why_it_hits}</Text>
-      </View>
-
-      <View style={styles.detailDivider} />
-
-      <View style={styles.detailSection}>
-        <View style={styles.detailHeader}>
-          <View style={styles.detailIcon}>
-            <MaterialCommunityIcons name="compass-outline" size={16} color="#B86A20" />
-          </View>
-          <Text style={styles.detailLabel}>{t("Try it like this")}</Text>
-        </View>
-        <Text style={styles.detailText}>{quest.instructions}</Text>
+          </>
+        )}
       </View>
     </View>
   );
@@ -374,39 +369,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
   },
-  detailDivider: {
-    backgroundColor: "rgba(184, 106, 32, 0.18)",
-    height: 1,
-    marginVertical: 22,
-  },
-  detailHeader: {
+  heroDetailHeader: {
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
     marginBottom: 10,
   },
-  detailIcon: {
+  heroDetailIcon: {
     alignItems: "center",
-    backgroundColor: "#FFE7CE",
-    borderRadius: 999,
-    height: 30,
     justifyContent: "center",
-    width: 30,
   },
-  detailLabel: {
+  heroDetailLabel: {
     color: "#B86A20",
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
     textTransform: "uppercase",
   },
-  detailSection: {
-    paddingHorizontal: 4,
+  heroDetailSection: {
+    backgroundColor: "#FCF1E6",
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 22,
   },
-  detailText: {
+  heroDetailText: {
     color: colors.light.text,
     fontSize: 15,
     lineHeight: 23,
+  },
+  heroDivider: {
+    backgroundColor: "rgba(184, 106, 32, 0.18)",
+    height: 1,
   },
   heroCard: {
     backgroundColor: "#F7E4CC",
@@ -415,12 +408,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 22,
     overflow: "hidden",
-    padding: 22,
     position: "relative",
   },
   heroContent: {
     position: "relative",
     zIndex: 1,
+  },
+  heroHeaderContent: {
+    padding: 22,
   },
   heroEyebrow: {
     color: "#B86A20",

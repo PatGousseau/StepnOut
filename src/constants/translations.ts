@@ -270,7 +270,6 @@ export const translations = {
   "Just completed today's quest!": "Ho appena completato la missione di oggi!",
   "You must be logged in to submit a quest.": "Devi essere loggato per inviare una missione.",
   "Your quest of the day": "La tua missione del giorno",
-  "One pull per day": "Una pescata al giorno",
   "Pick a quest": "Pesca una missione",
   "Shuffling...": "Sto mescolando...",
   "Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.":
@@ -282,8 +281,8 @@ export const translations = {
   "Today's quest": "La missione di oggi",
   "Picked from your side quests based on what fits you best right now.":
     "Scelta tra le tue side quest in base a ciò che ti si addice di più in questo momento.",
-  "Each day, you can draw one side quest from the hat based on what fits you best right now.":
-    "Ogni giorno puoi pescare una side quest dal cappello in base a ciò che ti si addice di più in questo momento.",
+  "Today's side quest is ready to be pulled. Pick from the hat and see where it leads!":
+    "La side quest di oggi è pronta per essere pescata. Pesca dal cappello e scopri dove ti porta!",
   "You have finished every quest in the hat.":
     "Hai finito tutte le missioni nel cappello.",
   "There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.":
@@ -452,6 +451,9 @@ export const translations = {
   "Once side quests are added, they will show up here ranked for your preferences.": "Quando aggiungeremo le side quest, appariranno qui ordinate in base alle tue preferenze.",
   "Why this works": "Perché funziona",
   "Try it like this": "Provala così",
+  "What to do": "Cosa fare",
+  "Try this": "Prova questo",
+  "Want a different mix of side quests?": "Vuoi un mix diverso di side quest?",
   "Edit preferences": "Modifica preferenze",
   "Back": "Indietro"
 };

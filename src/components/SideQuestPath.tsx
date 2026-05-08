@@ -122,7 +122,7 @@ function getGoalOptionLabel(goal: SideQuestGoal) {
 }
 
 export const SideQuestPath: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const {
     profile,
     profileLoading,
@@ -146,6 +146,16 @@ export const SideQuestPath: React.FC = () => {
   const [revealedQuest, setRevealedQuest] = useState<SideQuest | null>(null);
   const revealOpacity = useRef(new Animated.Value(1)).current;
   const needsOnboarding = !profile;
+  const todaysDateLabel = useMemo(() => {
+    const [year, month, day] = localDay.split("-").map(Number);
+    const date = new Date(year, month - 1, day, 12);
+
+    return new Intl.DateTimeFormat(language === "it" ? "it-IT" : "en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  }, [language, localDay]);
 
   useEffect(() => {
     setDraft(buildDraft(profile));
@@ -461,7 +471,7 @@ export const SideQuestPath: React.FC = () => {
                   <View style={styles.introHeroLineThree} />
                   <View style={styles.introHeroContent}>
                     <View style={styles.introBadge}>
-                      <SideQuestHatSvg width={30} height={30} />
+                      <SideQuestHatSvg width={44} height={44} />
                     </View>
                     <View style={styles.introHeaderCopy}>
                       <Text style={styles.introTitle}>{t("Side quests")}</Text>
@@ -584,10 +594,8 @@ export const SideQuestPath: React.FC = () => {
           <View style={styles.heroLineThree} />
           <View style={styles.heroContent}>
             <View style={styles.eyebrowWrap}>
-              <Text style={styles.eyebrow}>{t("Today's draw")}</Text>
-              {showDraw && !isRevealing && (
-                <Text style={styles.eyebrowSub}>{t("One pull per day")}</Text>
-              )}
+              <Text style={styles.eyebrow}>{t("Side Quests")}</Text>
+              <Text style={styles.eyebrowSub}>{todaysDateLabel}</Text>
             </View>
 
             {isRevealing ? (
@@ -600,7 +608,7 @@ export const SideQuestPath: React.FC = () => {
               <>
                 <QuestHatIdle />
                 <Text style={styles.heroBody}>
-                  {t("Each day, you can draw one side quest from the hat based on what fits you best right now.")}
+                  {t("Today's side quest is ready to be pulled. Pick from the hat and see where it leads!")}
                 </Text>
                 <View style={styles.ctaWrap}>
                   <TouchableOpacity
@@ -657,18 +665,21 @@ export const SideQuestPath: React.FC = () => {
       ) : null}
 
       {!isRevealing && (
-        <TouchableOpacity
-          style={styles.editPrefs}
-          onPress={() => {
-            captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
-              entry_point: "results",
-              question_count: questionnaireSteps.length,
-            });
-            setEditingPreferences(true);
-          }}
-        >
-          <Text style={styles.editPrefsText}>{t("Edit preferences")}</Text>
-        </TouchableOpacity>
+        <View style={styles.editPrefsWrap}>
+          <Text style={styles.editPrefsPrompt}>{t("Want a different mix of side quests?")}</Text>
+          <TouchableOpacity
+            style={styles.editPrefs}
+            onPress={() => {
+              captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
+                entry_point: "results",
+                question_count: questionnaireSteps.length,
+              });
+              setEditingPreferences(true);
+            }}
+          >
+            <Text style={styles.editPrefsText}>{t("Edit preferences")}</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </ScrollView>
   );
@@ -711,15 +722,24 @@ const styles = StyleSheet.create({
   },
   editPrefs: {
     alignSelf: "center",
-    marginTop: 24,
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  editPrefsPrompt: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
   },
   editPrefsText: {
     color: colors.light.lightText,
     fontSize: 13,
     fontWeight: "600",
     textDecorationLine: "underline",
+  },
+  editPrefsWrap: {
+    alignItems: "center",
+    marginTop: 24,
   },
   emptyStateBody: {
     color: colors.light.lightText,
@@ -755,7 +775,7 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: "#B86A20",
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -780,49 +800,50 @@ const styles = StyleSheet.create({
     width: "84%",
   },
   heroContent: {
+    minHeight: 410,
     position: "relative",
     zIndex: 1,
   },
   heroGlow: {
-    backgroundColor: "rgba(240, 193, 143, 0.38)",
+    backgroundColor: "rgba(240, 193, 143, 0.34)",
     borderRadius: 999,
-    height: 160,
+    height: 152,
+    left: -40,
     position: "absolute",
-    right: -34,
-    top: -46,
-    width: 160,
+    top: -52,
+    width: 152,
   },
   heroLineOne: {
     borderColor: "rgba(184, 106, 32, 0.18)",
     borderRadius: 999,
     borderWidth: 1,
-    height: 110,
+    height: 108,
+    left: -10,
     position: "absolute",
-    right: -18,
-    top: 18,
-    transform: [{ rotate: "14deg" }],
-    width: 110,
+    top: 20,
+    transform: [{ rotate: "16deg" }],
+    width: 108,
   },
   heroLineThree: {
     borderColor: "rgba(184, 106, 32, 0.14)",
     borderRadius: 999,
     borderWidth: 1,
-    height: 86,
+    height: 74,
+    left: 74,
     position: "absolute",
-    right: 18,
-    top: 54,
+    top: 56,
     transform: [{ rotate: "-10deg" }],
-    width: 86,
+    width: 74,
   },
   heroLineTwo: {
     backgroundColor: "rgba(184, 106, 32, 0.12)",
     borderRadius: 999,
-    height: 10,
+    height: 16,
+    left: 92,
     position: "absolute",
-    right: 26,
-    top: 32,
+    top: 10,
     transform: [{ rotate: "-18deg" }],
-    width: 74,
+    width: 64,
   },
   heroSection: {
     backgroundColor: "#FFF3E6",
@@ -866,9 +887,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(255, 245, 233, 0.9)",
     borderRadius: 999,
-    height: 50,
+    height: 64,
     justifyContent: "center",
-    width: 50,
+    width: 64,
   },
   introContentBlock: {
     paddingHorizontal: 4,
@@ -891,13 +912,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 24,
     overflow: "hidden",
-    padding: 20,
+    paddingVertical: 20,
+    paddingLeft: 16,
+    paddingRight: 20,
     position: "relative",
   },
   introHeroContent: {
-    alignItems: "flex-start",
+    alignItems: "center",
     flexDirection: "row",
-    gap: 14,
+    gap: 10,
     position: "relative",
     zIndex: 1,
   },

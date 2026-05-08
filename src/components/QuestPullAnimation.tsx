@@ -3,6 +3,7 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { Text } from "./StyledText";
 import { SideQuest } from "../types/sideQuests";
+import { colors } from "../constants/Colors";
 import SideQuestHatAsset from "../assets/images/side-quest-hat.svg";
 
 const SCENE_WIDTH = 280;
@@ -206,9 +207,11 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
             ]}
           >
             <View style={styles.questCard}>
-              <View style={styles.questCardSheen} />
+              <View style={styles.questCardGlow} />
+              <View style={styles.questCardLineOne} />
+              <View style={styles.questCardLineTwo} />
+              <View style={styles.questCardLineThree} />
               <Animated.View style={{ opacity: cardTextOpacity, alignItems: "center" }}>
-                <Text style={styles.questCardEyebrow}>YOUR QUEST</Text>
                 <Text style={styles.questCardTitle} numberOfLines={3}>
                   {revealedQuest.title}
                 </Text>
@@ -333,7 +336,9 @@ const styles = StyleSheet.create({
   questCard: {
     alignItems: "center",
     backgroundColor: "#E78945",
+    borderColor: "#D87934",
     borderRadius: 18,
+    borderWidth: 1,
     elevation: 12,
     justifyContent: "center",
     minHeight: 120,
@@ -346,29 +351,53 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     width: 220,
   },
-  questCardEyebrow: {
-    color: "rgba(255, 255, 255, 0.85)",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1.4,
-    marginBottom: 8,
-  },
-  questCardSheen: {
-    backgroundColor: "rgba(255, 255, 255, 0.22)",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    height: 36,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
   questCardTitle: {
-    color: "#FFFFFF",
+    color: colors.neutral.white,
     fontSize: 17,
     fontWeight: "800",
     lineHeight: 22,
     textAlign: "center",
+  },
+  questCardGlow: {
+    backgroundColor: "rgba(255, 225, 192, 0.24)",
+    borderRadius: 999,
+    height: 120,
+    position: "absolute",
+    right: -26,
+    top: -30,
+    width: 120,
+  },
+  questCardLineOne: {
+    borderColor: "rgba(255, 244, 229, 0.22)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 78,
+    position: "absolute",
+    right: -12,
+    top: 12,
+    transform: [{ rotate: "14deg" }],
+    width: 78,
+  },
+  questCardLineTwo: {
+    backgroundColor: "rgba(255, 244, 229, 0.18)",
+    borderRadius: 999,
+    height: 8,
+    position: "absolute",
+    right: 18,
+    top: 24,
+    transform: [{ rotate: "-18deg" }],
+    width: 52,
+  },
+  questCardLineThree: {
+    borderColor: "rgba(255, 244, 229, 0.18)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 60,
+    position: "absolute",
+    right: 10,
+    top: 40,
+    transform: [{ rotate: "-10deg" }],
+    width: 60,
   },
   idleScene: {
     height: 240,
