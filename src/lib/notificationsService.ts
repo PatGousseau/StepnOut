@@ -161,7 +161,6 @@ export async function sendCommentNotification(
 // Handle sending notifications for new challenges
 export async function sendNewChallengeNotification(recipientId: string, challengeId: string, challengeTitle: string, triggerUserId: string) {
     // Save notification to database so it persists (and shows in the in-app badge).
-    // trigger_user_id must equal auth.uid() to satisfy the notifications RLS insert policy.
     const { error: dbError } = await supabase
         .from('notifications')
         .insert([{
@@ -213,18 +212,16 @@ async function getAllUserIds(): Promise<string[]> {
     return allIds;
 }
 
+// Trigger user for system-sent notifications (e.g. weekly "new challenge"),
+// so the in-app sidebar attributes them to "Stepn Out" instead of the admin.
+const STEPNOUT_USER_ID = 'a7ce5ebb-00fc-40d7-b8be-1dfd906a13c7';
+
 // Handle sending notifications to all users about a new challenge
 export async function sendNewChallengeNotificationToAll(challengeId: string, challengeTitle: string) {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-        throw userError ?? new Error('Not authenticated');
-    }
-
     const userIds = await getAllUserIds();
 
-    // Send notification to each user
     const notifications = userIds.map(userId =>
-        sendNewChallengeNotification(userId, challengeId, challengeTitle, user.id)
+        sendNewChallengeNotification(userId, challengeId, challengeTitle, STEPNOUT_USER_ID)
     );
 
     await Promise.all(notifications);
