@@ -84,6 +84,7 @@ export const FEED_EVENTS = {
 // UI EVENTS
 // ============================================
 export const UI_EVENTS = {
+  PUSH_NOTIFICATION_CLICKED: 'ui_push_notification_clicked',
   NOTIFICATIONS_OPENED: 'ui_notifications_opened',
   MENU_OPENED: 'ui_menu_opened',
   FEEDBACK_MODAL_OPENED: 'ui_feedback_modal_opened',
