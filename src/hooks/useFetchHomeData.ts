@@ -335,13 +335,14 @@ export const useFetchHomeData = (
     });
   }, [allPosts.length, userMap, updateDiagnostics]);
 
-  // Initialize likes when posts change
+  // Initialize likes when posts change, and re-seed when the user's liked-post
+  // pre-fetch resolves so the red heart paints in sync with everything else.
   useEffect(() => {
     if (allPosts.length > 0) {
-      initializePostLikes(allPosts);
+      initializePostLikes(allPosts, userLikedPostIds);
       initializePostReactions(allPosts);
     }
-  }, [allPosts.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allPosts.length, userLikedPostIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMoreChallenges = useCallback(() => {
     if (!challengeLoading && !isFetchingNextChallengePage && hasMoreChallenges) {

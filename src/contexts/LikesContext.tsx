@@ -17,7 +17,10 @@ interface LikesContextType {
     userId: string,
     commentUserId: string
   ) => Promise<void>;
-  initializePostLikes: (posts: Post[]) => Promise<void>;
+  initializePostLikes: (
+    posts: Post[],
+    seedLikedMap?: { [postId: number]: boolean }
+  ) => Promise<void>;
   initializeCommentLikes: (comments: Comment[]) => Promise<void>;
 }
 
@@ -31,7 +34,11 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [pendingLikes, setPendingLikes] = useState<{ [id: number]: boolean }>({});
   const { user } = useAuth();
 
-  const initializeLikes = async (items: (Post | Comment)[], type: "post" | "comment") => {
+  const initializeLikes = async (
+    items: (Post | Comment)[],
+    type: "post" | "comment",
+    seedLikedMap?: { [id: number]: boolean }
+  ) => {
     const ids = items.map((item) => item.id);
 
     const setLikedItems = type === "post" ? setLikedPosts : setLikedComments;
@@ -47,13 +54,20 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ),
     }));
 
-    // seed liked state from items that already carry a `liked` field to avoid grey→red flash
+    // seed liked state synchronously. Prefer the pre-fetched seed map when provided.
     setLikedItems((prev) => ({
       ...prev,
       ...Object.fromEntries(
-        items.map((item) => [item.id, item.liked ?? false])
+        items.map((item) => [
+          item.id,
+          seedLikedMap ? !!seedLikedMap[item.id] : (item.liked ?? false),
+        ])
       ),
     }));
+
+    // Caller already has authoritative liked data — skip the redundant network round-trip
+    // that would otherwise cause hearts to lag behind the rest of the feed.
+    if (seedLikedMap) return;
 
     const [likesMap, countsMap] = await Promise.all([
       type === "post"
@@ -156,7 +170,8 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           toggleLike({ id: postId, type: "post" }, userId, postUserId),
         toggleCommentLike: (commentId, postId, userId, commentUserId) =>
           toggleLike({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId),
-        initializePostLikes: (posts) => initializeLikes(posts, "post"),
+        initializePostLikes: (posts, seedLikedMap) =>
+          initializeLikes(posts, "post", seedLikedMap),
         initializeCommentLikes: (comments) => initializeLikes(comments, "comment"),
       }}
     >
