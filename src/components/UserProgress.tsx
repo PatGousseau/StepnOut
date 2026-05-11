@@ -4,6 +4,7 @@ import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
+import { useActiveChallenge } from '../hooks/useActiveChallenge';
 
 interface UserProgressProps {
   challengeData: {
@@ -76,12 +77,41 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
 
 const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) => {
   const { t } = useLanguage();
+  const router = useRouter();
   const breakdown = [
     { key: 'easy', label: t('Easy'), count: challengeData.easy, color: '#66BB6A' },
     { key: 'medium', label: t('Medium'), count: challengeData.medium, color: '#FFA726' },
     { key: 'hard', label: t('Hard'), count: challengeData.hard, color: '#EF5350' },
   ];
   const total = breakdown.reduce((sum, level) => sum + level.count, 0);
+  const isEmpty = total === 0;
+  const { activeChallenge } = useActiveChallenge();
+
+  if (isEmpty) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.emptyTitle}>{t('Your Challenge History')}</Text>
+        <Text style={styles.emptyExplainer}>
+          {t("Once you complete a challenge, it'll appear here.")}
+        </Text>
+
+        {activeChallenge?.title && (
+          <Text style={styles.thisWeekLine}>
+            {t('This week:')}{' '}
+            <Text style={styles.thisWeekName}>{activeChallenge.title}</Text>
+          </Text>
+        )}
+
+        <TouchableOpacity
+          style={styles.emptyCtaButton}
+          onPress={() => router.push('/(tabs)/challenge')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.emptyCtaText}>{t('Take this challenge')}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -91,24 +121,20 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
       </View>
 
       <View style={styles.progressBarTrack}>
-        {total === 0 ? (
-          <View style={styles.emptyProgressFill} />
-        ) : (
-          breakdown
-            .filter((level) => level.count > 0)
-            .map((level) => (
-              <View
-                key={level.key}
-                style={[
-                  styles.progressBarSegment,
-                  {
-                    backgroundColor: level.color,
-                    flex: level.count,
-                  },
-                ]}
-              />
-            ))
-        )}
+        {breakdown
+          .filter((level) => level.count > 0)
+          .map((level) => (
+            <View
+              key={level.key}
+              style={[
+                styles.progressBarSegment,
+                {
+                  backgroundColor: level.color,
+                  flex: level.count,
+                },
+              ]}
+            />
+          ))}
       </View>
 
       <View style={styles.breakdownContainer}>
@@ -152,9 +178,37 @@ const styles = StyleSheet.create({
   progressBarSegment: {
     height: '100%',
   },
-  emptyProgressFill: {
-    backgroundColor: '#D5D9E0',
-    flex: 1,
+  emptyTitle: {
+    color: '#0D1B1E',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  emptyExplainer: {
+    color: '#7F8C8D',
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  thisWeekLine: {
+    color: '#0D1B1E',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  thisWeekName: {
+    fontWeight: '600',
+  },
+  emptyCtaButton: {
+    alignItems: 'center',
+    backgroundColor: colors.light.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+  },
+  emptyCtaText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
   streakRow: {
     marginTop: 0,

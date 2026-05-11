@@ -17,7 +17,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { EULA_IT, EULA } from '../../constants/EULA';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -34,7 +33,7 @@ export default function LoginScreen() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
   const { signIn } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -73,34 +72,19 @@ export default function LoginScreen() {
       return;
     }
 
-    // Handle EULA
-    if (!profile?.eula_accepted) {
-      Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-        {
-          text: t('Accept'), onPress: async () => {
-            await supabase
-              .from('profiles')
-              .update({ eula_accepted: true })
-              .eq('id', userId);
-          }
-        },
-        {
-          text: t('Decline'),
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/(auth)/login');
-          }
-        }
-      ]);
-    }
-
-    // Handle first login / onboarding
     if (profile?.first_login) {
       await supabase
         .from('profiles')
         .update({ first_login: false })
         .eq('id', userId);
-      router.replace('/(auth)/onboarding');
+    }
+
+    if (!profile?.eula_accepted) {
+      router.replace(profile?.first_login
+        ? '/(auth)/eula?firstTime=true'
+        : '/(auth)/eula');
+    } else if (profile?.first_login) {
+      router.replace('/(auth)/notifications-prime?firstTime=true');
     } else {
       router.replace('/(tabs)');
     }
@@ -175,30 +159,19 @@ export default function LoginScreen() {
         return;
       }
 
-      if (!profile?.eula_accepted) {
-        Alert.alert(t('End User License Agreement'), language === 'it' ? EULA_IT : EULA, [
-          {
-            text: t('Accept'), onPress: async () => {
-              await supabase
-                .from('profiles')
-                .update({ eula_accepted: true })
-                .eq('id', session.user.id);
-            }
-          },
-          {
-            text: t('Decline'),
-            onPress: () => router.replace('/(auth)/login')
-          }
-        ]);
-      }
-
       if (profile?.first_login) {
         await supabase
           .from('profiles')
           .update({ first_login: false })
           .eq('id', session.user.id);
+      }
 
-        router.replace('/(auth)/onboarding');
+      if (!profile?.eula_accepted) {
+        router.replace(profile?.first_login
+          ? '/(auth)/eula?firstTime=true'
+          : '/(auth)/eula');
+      } else if (profile?.first_login) {
+        router.replace('/(auth)/notifications-prime?firstTime=true');
       } else {
         router.replace('/(tabs)');
       }
