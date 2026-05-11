@@ -55,12 +55,6 @@ export default function EulaScreen() {
     }
   };
 
-  const handleDecline = async () => {
-    captureEvent(UI_EVENTS.EULA_DECLINED);
-    await supabase.auth.signOut();
-    router.replace('/(auth)/login');
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -84,9 +78,6 @@ export default function EulaScreen() {
           <Text style={styles.acceptButtonText}>
             {submitting ? t('Saving...') : t('Accept')}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleDecline} disabled={submitting}>
-          <Text style={styles.declineText}>{t('Decline')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -147,9 +138,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
-  },
-  declineText: {
-    color: colors.light.lightText,
-    fontSize: 14,
   },
 });

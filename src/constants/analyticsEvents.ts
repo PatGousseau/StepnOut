@@ -95,7 +95,6 @@ export const UI_EVENTS = {
   NOTIFICATIONS_PRIME_CTA_CLICKED: 'ui_notifications_prime_cta_clicked',
   EULA_SHOWN: 'ui_eula_shown',
   EULA_ACCEPTED: 'ui_eula_accepted',
-  EULA_DECLINED: 'ui_eula_declined',
 } as const;
 
 // ============================================
