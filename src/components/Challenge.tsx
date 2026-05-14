@@ -1,16 +1,12 @@
 import React from "react";
 import { Text } from "../components/StyledText";
 import { colors } from "../constants/Colors";
-import { TouchableOpacity, Image, Animated, TextInput } from "react-native";
+import { TouchableOpacity, Image } from "react-native";
 import { useAuth } from "../contexts/AuthContext";
 import { useState, useRef, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { ComfortSlider } from "./ComfortSlider";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
-import { KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { Challenge } from "../types";
-import { Loader } from "../components/Loader";
 import ShareChallenge from "../components/ShareChallenge";
 import { View, StyleSheet } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
@@ -18,11 +14,11 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { isVideo as isVideoUtil } from "../utils/utils";
 import { router } from "expo-router";
 import { imageService } from "../services/imageService";
-import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getChallengeDifficultyColor } from "../utils/challengeDifficulty";
+import { CompletionPostComposer } from "./CompletionPostComposer";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -65,9 +61,17 @@ interface PatrizioExampleProps {
   challenge: Challenge;
 }
 
+type PatrizioSubmission = {
+  id: number;
+  media: {
+    file_path: string;
+    thumbnail_path?: string | null;
+  };
+} | null;
+
 export const PatrizioExample: React.FC<PatrizioExampleProps> = ({ challenge }) => {
   const { t } = useLanguage();
-  const [patrizioSubmission, setPatrizioSubmission] = useState<any>(null);
+  const [patrizioSubmission, setPatrizioSubmission] = useState<PatrizioSubmission>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrls, setImageUrls] = useState<{ previewUrl: string; fullUrl: string }>({
     previewUrl: "",
@@ -161,14 +165,9 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
   const { t } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [modalVisible, setModalVisible] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [showNotification, setShowNotification] = useState(false);
-  const notificationAnim = useRef(new Animated.Value(0)).current;
-  const [fullScreenPreview, setFullScreenPreview] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const submittedTextRef = useRef('');
-  const [comfortRating, setComfortRating] = useState<number>(3);
+  const submittedTextRef = useRef("");
+  const [submittedMediaPreview, setSubmittedMediaPreview] = useState<string | null>(null);
 
   // Use React Query to check if user has completed the challenge
   const { data: hasCompleted = false, isLoading: checkingCompletion } = useQuery({
@@ -189,311 +188,48 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
     staleTime: 30000,
   });
 
-  const {
-    selectedMedia,
-    postText,
-    setPostText,
-    isUploading,
-    isSubmitting,
-    uploadProgress,
-    handleMediaUpload,
-    handleRemoveMedia,
-    handleSubmit,
-  } = useMediaUpload({
-    onUploadComplete: () => {
-      setModalVisible(false);
-      // Mark challenge as completed in the cache
-      queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
-      // Refresh home feed so the new post appears
-      queryClient.invalidateQueries({ queryKey: ["home-posts"] });
-      // Track challenge completed
-      captureEvent(CHALLENGE_EVENTS.COMPLETED, {
-        challenge_id: challenge.id,
-        challenge_title: challenge.title,
-        challenge_difficulty: challenge.difficulty,
-        has_media: !!selectedMedia,
-        is_video: selectedMedia?.isVideo || false,
-        comfort_zone_rating: comfortRating,
-      });
-      // Update user properties
-      setUserProperties({
-        [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),
-      });
-      setTimeout(() => {
-        setShowShareModal(true);
-        captureEvent(CHALLENGE_EVENTS.SHARE_MODAL_OPENED, {
-          challenge_id: challenge.id,
-        });
-      }, 100);
-    },
-    successMessage: t("Challenge completed successfully!"),
-  });
-
-  const onSubmit = async () => {
-    if (!user) {
-      alert(t("You must be logged in to submit a challenge."));
-      return;
-    }
-
-    // Use placeholder text if user didn't input anything
-    const placeholderText = t("Just completed this week's challenge!");
-    const textToSubmit = postText && postText.trim() ? postText : placeholderText;
-    submittedTextRef.current = textToSubmit.trim();
-
-    await handleSubmit(
-      {
-        user_id: user.id,
-        challenge_id: challenge.id,
-        comfort_zone_rating: comfortRating,
-      },
-      textToSubmit
-    );
-  };
-
-  // Add fadeIn/fadeOut functions
-  const fadeIn = () => {
-    setModalVisible(true);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const fadeOut = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setModalVisible(false);
-    });
-  };
-
   return (
     <>
-      {showNotification && (
-        <Animated.View
-          style={[
-            shareStyles.notification,
-            {
-              opacity: notificationAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 0.9],
-              }),
-            },
-          ]}
-        >
-          <Text style={shareStyles.notificationText}>{t("Your post has been submitted!")}</Text>
-        </Animated.View>
-      )}
-
-      <TouchableOpacity
-        style={[shareStyles.button, hasCompleted && shareStyles.completedButton]}
-        onPress={fadeIn}
-        disabled={hasCompleted || checkingCompletion}
-      >
-        <View style={shareStyles.buttonContent}>
-          {hasCompleted && (
-            <MaterialIcons name="check-circle" size={20} color="#2D5016" style={shareStyles.checkIcon} />
-          )}
-          <Text style={[shareStyles.buttonText, hasCompleted && shareStyles.completedButtonText]}>
-            {hasCompleted ? t("Challenge completed!") : t("Mark as complete")}
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={fadeOut}
-        statusBarTranslucent={true}
-      >
-        <Animated.View
-          style={[StyleSheet.absoluteFillObject, shareStyles.modalOverlay, { opacity: fadeAnim }]}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={shareStyles.keyboardView}
-          >
-            <TouchableOpacity
-              style={shareStyles.modalContainer}
-              activeOpacity={1}
-              onPress={fadeOut}
-            >
-              <View
-                style={shareStyles.modalContent}
-                onStartShouldSetResponder={() => true}
-                onTouchEnd={(e) => e.stopPropagation()}
-              >
-                <View style={shareStyles.modalHeader}>
-                  <Text style={shareStyles.modalTitle}>{t("How did it go?")}</Text>
-                  <Text style={shareStyles.modalSubtitle}>
-                    {t("Share how you completed the challenge")}
-                  </Text>
-                  <TouchableOpacity onPress={fadeOut} style={shareStyles.closeButton}>
-                    <MaterialIcons name="close" size={20} color={colors.light.text} />
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
-                  {selectedMedia ? (
-                    <View style={shareStyles.mediaSelectedRow}>
-                      <TouchableOpacity
-                        style={shareStyles.thumbnailWrapper}
-                        onPress={() => setFullScreenPreview(true)}
-                        disabled={isUploading}
-                      >
-                        <Image
-                          source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
-                          style={shareStyles.thumbnail}
-                          resizeMode="cover"
-                        />
-                        {selectedMedia.isVideo && (
-                          <View style={shareStyles.thumbnailPlayOverlay}>
-                            <MaterialIcons name="play-circle-filled" size={26} color="white" />
-                          </View>
-                        )}
-                        {isUploading && (
-                          <View style={shareStyles.uploadingOverlay}>
-                            <Loader />
-                          </View>
-                        )}
-                      </TouchableOpacity>
-
-                      <View style={shareStyles.mediaSelectedTextContainer}>
-                        <Text style={shareStyles.mediaSelectedTitle}>
-                          {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
-                        </Text>
-                        <Text style={shareStyles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
-                      </View>
-
-                      <TouchableOpacity
-                        style={shareStyles.removeButtonInline}
-                        onPress={handleRemoveMedia}
-                        disabled={isUploading}
-                      >
-                        <MaterialIcons name="close" size={18} color={colors.neutral.darkGrey} />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View style={shareStyles.mediaEmptyRow}>
-                      {isUploading ? (
-                        <Loader />
-                      ) : (
-                        <View style={shareStyles.uploadMediaContainer}>
-                          <View style={shareStyles.mediaIconsContainer}>
-                            <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
-                            <MaterialCommunityIcons
-                              name="video"
-                              size={18}
-                              color={colors.neutral.darkGrey}
-                            />
-                          </View>
-                          <Text style={shareStyles.uploadButtonText}>
-                            {t("Add photo/video (optional)")}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {uploadProgress !== null && (
-                  <View style={shareStyles.uploadProgressContainer}>
-                    <Text style={shareStyles.uploadProgressText}>
-                      {t("Uploading media...")} {Math.round(uploadProgress)}%
-                    </Text>
-                    <View style={shareStyles.progressBarContainer}>
-                      <View 
-                        style={[
-                          shareStyles.progressBarFill, 
-                          { width: `${uploadProgress}%` }
-                        ]} 
-                      />
-                    </View>
-                  </View>
-                )}
-
-                <TextInput
-                  style={[shareStyles.textInput, { fontSize: 13 }]}
-                  multiline
-                  scrollEnabled
-                  autoFocus
-                  placeholder={t("Just completed this week's challenge!")}
-                  placeholderTextColor="#999"
-                  onChangeText={setPostText}
-                />
-
-                <View style={shareStyles.sliderSection}>
-                  <View style={shareStyles.sliderHeader}>
-                    <Text style={shareStyles.sliderLabel}>
-                      {t("How far out of your comfort zone was this?")}
-                    </Text>
-                  </View>
-                  <ComfortSlider
-                    value={comfortRating}
-                    onValueChange={setComfortRating}
-                    minimumValue={1}
-                    maximumValue={5}
-                    minimumTrackTintColor={colors.light.accent}
-                    maximumTrackTintColor={colors.neutral.grey2}
-                    thumbTintColor={colors.light.accent}
-                    thumbSize={18}
-                  />
-                  <Text style={shareStyles.sliderEndLabel}>
-                    {t(["Chill", "Uneasy", "Nervous", "Scary", "Way out there"][comfortRating - 1])}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    shareStyles.modalButton,
-                    shareStyles.submitButton,
-                    (isUploading || isSubmitting) && shareStyles.disabledButton,
-                  ]}
-                  onPress={onSubmit}
-                  disabled={isUploading || isSubmitting}
-                >
-                  <Text
-                    style={[shareStyles.buttonText, (isUploading || isSubmitting) && shareStyles.disabledButtonText]}
-                  >
-                    {t(isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </KeyboardAvoidingView>
-        </Animated.View>
-      </Modal>
-
-      <Modal
-        transparent={true}
-        visible={fullScreenPreview}
-        onRequestClose={() => setFullScreenPreview(false)}
-        statusBarTranslucent={true}
-      >
-        <TouchableOpacity
-          style={shareStyles.fullScreenOverlay}
-          activeOpacity={1}
-          onPress={() => setFullScreenPreview(false)}
-        >
-          <View style={shareStyles.fullScreenImageWrapper}>
-            <Image
-              source={{ uri: selectedMedia?.previewUrl || "" }}
-              style={shareStyles.fullScreenImage}
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      <CompletionPostComposer
+        variant="challenge"
+        completed={hasCompleted}
+        checkingCompletion={checkingCompletion}
+        buildSubmitData={({ userId, comfortRating }) => ({
+          user_id: userId,
+          challenge_id: challenge.id,
+          comfort_zone_rating: comfortRating,
+        })}
+        onCompleted={({ selectedMedia, submittedText, comfortRating }) => {
+          submittedTextRef.current = submittedText;
+          setSubmittedMediaPreview(selectedMedia?.previewUrl || null);
+          queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
+          queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+          captureEvent(CHALLENGE_EVENTS.COMPLETED, {
+            challenge_id: challenge.id,
+            challenge_title: challenge.title,
+            challenge_difficulty: challenge.difficulty,
+            has_media: !!selectedMedia,
+            is_video: selectedMedia?.isVideo || false,
+            comfort_zone_rating: comfortRating,
+          });
+          setUserProperties({
+            [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),
+          });
+          setTimeout(() => {
+            setShowShareModal(true);
+            captureEvent(CHALLENGE_EVENTS.SHARE_MODAL_OPENED, {
+              challenge_id: challenge.id,
+            });
+          }, 100);
+        }}
+      />
 
       <ShareChallenge
         isVisible={showShareModal}
         onClose={() => setShowShareModal(false)}
         title={challenge.title}
         challengeId={challenge.id}
-        mediaPreview={selectedMedia?.previewUrl || null}
+        mediaPreview={submittedMediaPreview}
         streakCount={1}
         postText={submittedTextRef.current || t("Just completed this week's challenge!")}
       />
@@ -587,282 +323,6 @@ const patrizioStyles = StyleSheet.create({
   },
   title: {
     color: colors.light.primary,
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
-
-const shareStyles = StyleSheet.create({
-  button: {
-    alignItems: "center",
-    backgroundColor: colors.light.accent,
-    borderRadius: 8,
-    padding: 14,
-    width: "100%",
-  },
-  buttonContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  checkIcon: {
-    marginRight: 8,
-  },
-  completedButton: {
-    backgroundColor: colors.light.easyGreen,
-  },
-  completedButtonText: {
-    color: "#2D5016",
-    fontWeight: '600',
-  },
-  closeButton: {
-    padding: 8,
-    position: "absolute",
-    right: -15,
-    top: -15,
-  },
-  disabledButton: {
-    backgroundColor: colors.neutral.grey2,
-    opacity: 0.7,
-  },
-  disabledButtonText: {
-    color: colors.neutral.darkGrey,
-  },
-  fullScreenImage: {
-    height: "100%",
-    width: "100%",
-  },
-  fullScreenOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.9)",
-    flex: 1,
-    justifyContent: "center",
-  },
-  keyboardView: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  mediaEmptyRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-    justifyContent: "flex-start",
-    width: "100%",
-  },
-  mediaIconsContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  mediaSelectedRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
-  },
-  mediaSelectedTextContainer: {
-    flex: 1,
-  },
-  mediaSelectedTitle: {
-    color: colors.neutral.black,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  mediaSelectedSubtitle: {
-    color: colors.neutral.darkGrey,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  mediaUploadButton: {
-    alignItems: "center",
-    backgroundColor: colors.neutral.grey2,
-    borderRadius: 12,
-    flexDirection: "row",
-    minHeight: 64,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    width: "100%",
-  },
-  uploadMediaContainer: {
-    flexDirection: "column",
-    gap: 8,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  thumbnail: {
-    borderRadius: 10,
-    height: 44,
-    width: 44,
-  },
-  thumbnailPlayOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 10,
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  thumbnailWrapper: {
-    borderRadius: 10,
-    position: "relative",
-  },
-  modalButton: {
-    alignItems: "center",
-    backgroundColor: colors.light.secondary,
-    borderRadius: 48,
-    marginVertical: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-  },
-  modalContainer: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "flex-end",
-    width: "100%",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    flex: 1,
-    marginTop: 60,
-    padding: 20,
-    width: "100%",
-  },
-  modalHeader: {
-    position: "relative",
-  },
-  modalOverlay: {
-    backgroundColor: "rgba(0,0,0,0.5)",
-    flex: 1,
-  },
-  modalSubtitle: {
-    color: "#666",
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  modalTitle: {
-    color: colors.light.text,
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  notification: {
-    backgroundColor: colors.light.accent,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    left: 0,
-    padding: 10,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  notificationText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  removeButtonInline: {
-    alignItems: "center",
-    backgroundColor: colors.neutral.grey2,
-    borderRadius: 999,
-    height: 32,
-    justifyContent: "center",
-    width: 32,
-  },
-  submitButton: {
-    backgroundColor: colors.light.accent,
-    marginTop: 16,
-  },
-  textInput: {
-    backgroundColor: colors.neutral.white,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    borderWidth: 1,
-    color: colors.neutral.black,
-    flex: 1,
-    marginVertical: 10,
-    padding: 10,
-    textAlignVertical: "top",
-  },
-  uploadButtonText: {
-    color: colors.neutral.darkGrey,
-    flex: 1,
-    fontSize: 14,
-  },
-  uploadingOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 10,
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 2,
-  },
-  fullScreenImageWrapper: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-  },
-  uploadProgressContainer: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    marginTop: 10,
-    padding: 10,
-  },
-  uploadProgressText: {
-    color: "#666",
-    fontSize: 12,
-    marginBottom: 5,
-  },
-  progressBarContainer: {
-    backgroundColor: "#ddd",
-    borderRadius: 2,
-    height: 4,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    backgroundColor: colors.light.accent,
-    borderRadius: 2,
-    height: "100%",
-  },
-  sliderEndLabel: {
-    color: colors.light.accent,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  sliderHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  sliderLabel: {
-    color: colors.light.text,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  sliderLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: -4,
-  },
-  sliderSection: {
-    marginVertical: 8,
-  },
-  sliderValue: {
-    color: colors.light.accent,
     fontSize: 16,
     fontWeight: "bold",
   },
