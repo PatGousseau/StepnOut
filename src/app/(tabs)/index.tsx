@@ -188,8 +188,8 @@ const Home = () => {
     </View>
   );
 
-  const renderHeader = useCallback(() => {
-    return (
+  const header = useMemo(
+    () => (
       <View>
         <HomeChallengeBanner />
         <FeedSortToggle
@@ -199,8 +199,9 @@ const Home = () => {
           popularLabel={t("Popular")}
         />
       </View>
-    );
-  }, [sort, t]);
+    ),
+    [sort, t]
+  );
 
   const renderError = useCallback(() => {
     if (!error || loading) return null;
@@ -224,7 +225,7 @@ const Home = () => {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={header}
         ListFooterComponent={isFetchingNextPage ? renderFooter : null}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={styles.listContent}
