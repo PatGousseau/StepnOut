@@ -107,7 +107,7 @@ const Home = () => {
     }
   }, [refetchPosts]);
 
-  const handlePostDeleted = useCallback((postId: number) => {
+  const handlePostDeleted = useCallback((post: PostType) => {
     type HomePostsPage = { posts: PostType[]; hasMore: boolean };
     type HomePostsData = { pages: HomePostsPage[]; pageParams: number[] };
 
@@ -117,12 +117,18 @@ const Home = () => {
         ...oldData,
         pages: oldData.pages.map((page) => ({
           ...page,
-          posts: page.posts.filter((post) => post.id !== postId),
+          posts: page.posts.filter((pagePost) => pagePost.id !== post.id),
         })),
       };
     });
 
-    queryClient.invalidateQueries({ queryKey: ["challenge-completion"] });
+    if (post.challenge_id) {
+      queryClient.invalidateQueries({ queryKey: ["challenge-completion", post.challenge_id] });
+    }
+
+    if (post.quest_id) {
+      queryClient.invalidateQueries({ queryKey: ["quest-completion", post.quest_id] });
+    }
   }, [queryClient]);
 
   const handlePostCreated = useCallback(() => {
