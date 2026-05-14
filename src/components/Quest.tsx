@@ -306,7 +306,7 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
 const styles = StyleSheet.create({
   comfortButton: {
     alignItems: "center",
-    borderColor: "#E7BE8D",
+    borderColor: colors.sideQuest.bgBorder,
     borderRadius: 999,
     borderWidth: 1,
     height: 34,
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   heroDetailSection: {
-    backgroundColor: "#FCF1E6",
+    backgroundColor: colors.sideQuest.bg,
     paddingHorizontal: 22,
     paddingTop: 18,
     paddingBottom: 22,
@@ -402,8 +402,8 @@ const styles = StyleSheet.create({
     height: 1,
   },
   heroCard: {
-    backgroundColor: "#F7E4CC",
-    borderColor: "#E2BA8D",
+    backgroundColor: colors.sideQuest.bgAlt,
+    borderColor: colors.sideQuest.bgBorder,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 22,
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   heroGlow: {
-    backgroundColor: "rgba(228, 169, 103, 0.34)",
+    backgroundColor: colors.sideQuest.tint,
     borderRadius: 999,
     height: 160,
     position: "absolute",
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     width: 74,
   },
   heroPill: {
-    backgroundColor: "rgba(255, 255, 255, 0.62)",
+    backgroundColor: colors.sideQuest.overlay,
     borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
