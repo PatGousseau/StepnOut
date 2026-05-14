@@ -62,7 +62,7 @@ export default function TabsLayout() {
               iconName = 'trophy';
               break;
             case 'esplora':
-              iconName = 'book-outline';
+              iconName = 'book';
               break;
             case 'path':
               iconName = 'footsteps';
