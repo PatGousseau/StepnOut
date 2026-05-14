@@ -263,30 +263,30 @@ export const translations = {
   "popular": "popolare",
   "Mark as complete": "Segna come completato",
   "Challenge completed!": "Sfida completata!",
-  "Quest:": "Missione:",
-  "Quest completed!": "Missione completata!",
-  "Quest completed successfully!": "Missione completata con successo!",
-  "Share how you completed the quest": "Condividi come hai completato la missione",
-  "Just completed today's quest!": "Ho appena completato la missione di oggi!",
-  "You must be logged in to submit a quest.": "Devi essere loggato per inviare una missione.",
-  "Your quest of the day": "La tua missione del giorno",
-  "Pick a quest": "Pesca una missione",
+  "Quest:": "Quest:",
+  "Quest completed!": "Quest completata!",
+  "Quest completed successfully!": "Quest completata con successo!",
+  "Share how you completed the quest": "Condividi come hai completato la quest",
+  "Just completed today's quest!": "Ho appena completato la quest di oggi!",
+  "You must be logged in to submit a quest.": "Devi essere loggato per inviare una quest.",
+  "Your quest of the day": "La tua quest del giorno",
+  "Pick a quest": "Pesca una quest",
   "Shuffling...": "Sto mescolando...",
   "Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.":
-    "Pesca una missione dal cappello ogni giorno e lascia che ti porti in una direzione leggermente inaspettata.",
+    "Pesca una quest dal cappello ogni giorno e lascia che ti porti in una direzione leggermente inaspettata.",
   "One small detour a day": "Una piccola deviazione al giorno",
   "Answering a few questions helps us rank the quests that fit you best. Come back each day to draw one from the hat.":
-    "Rispondere a qualche domanda ci aiuta a ordinare le missioni che fanno più per te. Torna ogni giorno per pescarne una dal cappello.",
+    "Rispondere a qualche domanda ci aiuta a ordinare le quest che fanno più per te. Torna ogni giorno per pescarne una dal cappello.",
   "Today's draw": "La pesca di oggi",
-  "Today's quest": "La missione di oggi",
+  "Today's quest": "La quest di oggi",
   "Picked from your side quests based on what fits you best right now.":
     "Scelta tra le tue side quest in base a ciò che ti si addice di più in questo momento.",
   "Today's side quest is ready to be pulled. Pick from the hat and see where it leads!":
     "La side quest di oggi è pronta per essere pescata. Pesca dal cappello e scopri dove ti porta!",
   "You have finished every quest in the hat.":
-    "Hai finito tutte le missioni nel cappello.",
+    "Hai finito tutte le quest nel cappello.",
   "There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.":
-    "Per ora non ci sono nuove missioni da pescare. Quando ne verranno aggiunte altre, potrai tirarne fuori una nuova qui.",
+    "Per ora non ci sono nuove quest da pescare. Quando ne verranno aggiunte altre, potrai tirarne fuori una nuova qui.",
   "Something went wrong. Tap to retry.":
     "Qualcosa è andato storto. Tocca per riprovare.",
   "Past challenges": "Sfide passate",
