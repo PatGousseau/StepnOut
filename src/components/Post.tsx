@@ -54,7 +54,7 @@ interface PostProps {
     React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>
   >;
   isPostPage?: boolean;
-  onPostDeleted?: (postId: number) => void;
+  onPostDeleted?: (post: PostType) => void;
 }
 
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false, onPostDeleted }) => {
@@ -455,8 +455,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           type="post"
           contentId={post.id}
           contentUserId={post.user_id}
-          onDelete={(id) => {
-            onPostDeleted?.(id);
+          onDelete={() => {
+            onPostDeleted?.(post);
             if (isPostPage) {
               router.back();
             }

@@ -495,7 +495,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 post={item.post}
                 postUser={userProfile}
                 setPostCounts={() => { }}
-                onPostDeleted={() => { }}
+                onPostDeleted={() => {}}
               />
             );
           }
