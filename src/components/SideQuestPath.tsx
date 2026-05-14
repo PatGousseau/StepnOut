@@ -630,7 +630,7 @@ export const SideQuestPath: React.FC = () => {
       {rankedSideQuests.length === 0 ? (
         <View style={styles.emptyStateCard}>
           <View style={styles.emptyStateIcon}>
-            <MaterialCommunityIcons name="compass-outline" size={20} color="#B86A20" />
+            <MaterialCommunityIcons name="compass-outline" size={20} color={colors.sideQuest.text} />
           </View>
           <Text style={styles.emptyStateTitle}>{t("No side quests yet.")}</Text>
           <Text style={styles.emptyStateBody}>
@@ -640,7 +640,7 @@ export const SideQuestPath: React.FC = () => {
       ) : isExhausted && !isRevealing ? (
         <View style={styles.emptyStateCard}>
           <View style={styles.emptyStateIcon}>
-            <MaterialCommunityIcons name="check-all" size={20} color="#B86A20" />
+            <MaterialCommunityIcons name="check-all" size={20} color={colors.sideQuest.text} />
           </View>
           <Text style={styles.emptyStateTitle}>{t("You have finished every quest in the hat.")}</Text>
           <Text style={styles.emptyStateBody}>
@@ -755,7 +755,7 @@ const styles = StyleSheet.create({
   },
   emptyStateIcon: {
     alignItems: "center",
-    backgroundColor: "#FFE7CE",
+    backgroundColor: colors.sideQuest.bgAlt,
     borderRadius: 999,
     height: 40,
     justifyContent: "center",
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
     width: "80%",
   },
   eyebrow: {
-    color: "#B86A20",
+    color: colors.sideQuest.text,
     fontSize: 24,
     fontWeight: "700",
     textAlign: "center",
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   heroGlow: {
-    backgroundColor: "rgba(240, 193, 143, 0.34)",
+    backgroundColor: colors.sideQuest.tint,
     borderRadius: 999,
     height: 152,
     left: -40,
@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
     width: 152,
   },
   heroLineOne: {
-    borderColor: "rgba(184, 106, 32, 0.18)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 108,
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
     width: 108,
   },
   heroLineThree: {
-    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 74,
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     width: 74,
   },
   heroLineTwo: {
-    backgroundColor: "rgba(184, 106, 32, 0.12)",
+    backgroundColor: colors.sideQuest.fill,
     borderRadius: 999,
     height: 16,
     left: 92,
@@ -846,8 +846,8 @@ const styles = StyleSheet.create({
     width: 64,
   },
   heroSection: {
-    backgroundColor: "#FFF3E6",
-    borderColor: "#EBC8A5",
+    backgroundColor: colors.sideQuest.bg,
+    borderColor: colors.sideQuest.bgBorder,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 22,
@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
   },
   introBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(255, 245, 233, 0.9)",
+    backgroundColor: colors.sideQuest.overlay,
     borderRadius: 999,
     height: 64,
     justifyContent: "center",
@@ -895,7 +895,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   introEyebrow: {
-    color: "#B86A20",
+    color: colors.sideQuest.text,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
@@ -906,8 +906,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   introHero: {
-    backgroundColor: "#FFF3E6",
-    borderColor: "#EBC8A5",
+    backgroundColor: colors.sideQuest.bg,
+    borderColor: colors.sideQuest.bgBorder,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 24,
@@ -925,7 +925,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   introHeroGlow: {
-    backgroundColor: "rgba(240, 193, 143, 0.38)",
+    backgroundColor: colors.sideQuest.tint,
     borderRadius: 999,
     height: 160,
     position: "absolute",
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
     width: 160,
   },
   introHeroLineOne: {
-    borderColor: "rgba(184, 106, 32, 0.18)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 110,
@@ -945,7 +945,7 @@ const styles = StyleSheet.create({
     width: 110,
   },
   introHeroLineThree: {
-    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 86,
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
     width: 86,
   },
   introHeroLineTwo: {
-    backgroundColor: "rgba(184, 106, 32, 0.12)",
+    backgroundColor: colors.sideQuest.fill,
     borderRadius: 999,
     height: 10,
     position: "absolute",
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
   },
   introPointIcon: {
     alignItems: "center",
-    backgroundColor: "#FFE7CE",
+    backgroundColor: colors.sideQuest.bgAlt,
     borderRadius: 999,
     height: 30,
     justifyContent: "center",
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
     width: 30,
   },
   introPointNumber: {
-    color: "#B86A20",
+    color: colors.sideQuest.text,
     fontSize: 14,
     fontWeight: "800",
   },

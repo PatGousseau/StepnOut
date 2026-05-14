@@ -69,7 +69,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
             <View style={styles.heroDetailSection}>
               <View style={styles.heroDetailHeader}>
                 <View style={styles.heroDetailIcon}>
-                  <MaterialCommunityIcons name="compass-outline" size={16} color="#B86A20" />
+                  <MaterialCommunityIcons name="compass-outline" size={16} color={colors.sideQuest.text} />
                 </View>
                 <Text style={styles.heroDetailLabel}>{t("Try this")}</Text>
               </View>
@@ -184,7 +184,7 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
       >
         <View style={styles.ctaButtonContent}>
           {completed && (
-            <MaterialIcons name="check-circle" size={20} color="#7C4A14" style={styles.checkIcon} />
+            <MaterialIcons name="check-circle" size={20} color={colors.sideQuest.textStrong} style={styles.checkIcon} />
           )}
           <Text style={[styles.ctaButtonText, completed && styles.completedButtonText]}>
             {completed ? t("Quest completed!") : t("Mark as complete")}
@@ -314,11 +314,11 @@ const styles = StyleSheet.create({
     width: 34,
   },
   comfortButtonActive: {
-    backgroundColor: "#E78945",
-    borderColor: "#E78945",
+    backgroundColor: colors.sideQuest.base,
+    borderColor: colors.sideQuest.base,
   },
   comfortButtonText: {
-    color: "#B86A20",
+    color: colors.sideQuest.text,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -339,10 +339,10 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   completedButton: {
-    backgroundColor: "#F5D1A9",
+    backgroundColor: colors.sideQuest.bgMuted,
   },
   completedButtonText: {
-    color: "#7C4A14",
+    color: colors.sideQuest.textStrong,
   },
   checkIcon: {
     marginRight: 8,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   heroDetailLabel: {
-    color: "#B86A20",
+    color: colors.sideQuest.text,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   heroDivider: {
-    backgroundColor: "rgba(184, 106, 32, 0.18)",
+    backgroundColor: colors.sideQuest.border,
     height: 1,
   },
   heroCard: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     padding: 22,
   },
   heroEyebrow: {
-    color: "#B86A20",
+    color: colors.sideQuest.text,
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.8,
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     width: 160,
   },
   heroLineOne: {
-    borderColor: "rgba(184, 106, 32, 0.18)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 110,
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     width: 110,
   },
   heroLineThree: {
-    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     height: 86,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     width: 86,
   },
   heroLineTwo: {
-    backgroundColor: "rgba(184, 106, 32, 0.12)",
+    backgroundColor: colors.sideQuest.fill,
     borderRadius: 999,
     height: 10,
     position: "absolute",
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   },
   heroPill: {
     backgroundColor: "rgba(255, 255, 255, 0.62)",
-    borderColor: "rgba(184, 106, 32, 0.14)",
+    borderColor: colors.sideQuest.border,
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 10,
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   progressBarFill: {
-    backgroundColor: "#E78945",
+    backgroundColor: colors.sideQuest.base,
     height: "100%",
   },
   questPage: {
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: "center",
-    backgroundColor: "#E78945",
+    backgroundColor: colors.sideQuest.base,
     borderRadius: 12,
     padding: 14,
   },

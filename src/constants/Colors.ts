@@ -3,7 +3,7 @@ export const colors = {
     background: '#F5F2ED',  // off-white background
     primary: '#4D5382',     // e.g. banner
     secondary: '#EBDACC',   // e.g. take challenge
-    accent: '#4D5382',      // e.g. submit button -> orange '#E78945'
+    accent: '#4D5382',
     text: '#333',        // dark text 
     lightText: '#7F8C8D',   // Light
     cardBg: '#EBDACC',      // White
@@ -25,5 +25,23 @@ export const colors = {
     white: '#FFFFFF',
     black: '#000000',
     grey3: '#5A5A5A',
+  },
+  sideQuest: {
+    base: '#E78945',
+    text: '#B86A20',
+    textStrong: '#7C4A14',
+    bg: '#FFF3E6',
+    bgBorder: '#EBC8A5',
+    bgAlt: '#FFE7CE',
+    bgMuted: '#F5D1A9',
+    overlay: 'rgba(255, 245, 233, 0.9)',
+    highlight: '#FFEBC7',
+    highlightAlt: '#F4B36A',
+    highlightSoft: '#FFE5C2',
+    tint: 'rgba(240, 193, 143, 0.38)',
+    border: 'rgba(184, 106, 32, 0.16)',
+    fill: 'rgba(184, 106, 32, 0.12)',
+    shine: 'rgba(255, 225, 192, 0.24)',
+    shineSoft: 'rgba(255, 244, 229, 0.18)',
   },
 };

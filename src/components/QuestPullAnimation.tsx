@@ -286,8 +286,8 @@ const SparkleStar: React.FC<{ angleDeg: number; progress: Animated.Value }> = ({
       }}
     >
       <Svg width={24} height={24} viewBox="0 0 24 24">
-        <Path d="M 12 0 L 14 10 L 24 12 L 14 14 L 12 24 L 10 14 L 0 12 L 10 10 Z" fill="#F4B36A" />
-        <Path d="M 12 4 L 13 11 L 20 12 L 13 13 L 12 20 L 11 13 L 4 12 L 11 11 Z" fill="#FFE5C2" />
+        <Path d="M 12 0 L 14 10 L 24 12 L 14 14 L 12 24 L 10 14 L 0 12 L 10 10 Z" fill={colors.sideQuest.highlightAlt} />
+        <Path d="M 12 4 L 13 11 L 20 12 L 13 13 L 12 20 L 11 13 L 4 12 L 11 11 Z" fill={colors.sideQuest.highlightSoft} />
       </Svg>
     </Animated.View>
   );
@@ -315,12 +315,12 @@ const styles = StyleSheet.create({
   },
   flashBurst: {
     alignSelf: "center",
-    backgroundColor: "#FFEBC7",
+    backgroundColor: colors.sideQuest.highlight,
     borderRadius: 999,
     bottom: 110,
     height: 200,
     position: "absolute",
-    shadowColor: "#FFA85C",
+    shadowColor: colors.sideQuest.base,
     shadowOffset: { height: 0, width: 0 },
     shadowOpacity: 0.9,
     shadowRadius: 60,
@@ -335,8 +335,8 @@ const styles = StyleSheet.create({
   },
   questCard: {
     alignItems: "center",
-    backgroundColor: "#E78945",
-    borderColor: "#D87934",
+    backgroundColor: colors.sideQuest.base,
+    borderColor: colors.sideQuest.base,
     borderRadius: 18,
     borderWidth: 1,
     elevation: 12,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   questCardGlow: {
-    backgroundColor: "rgba(255, 225, 192, 0.24)",
+    backgroundColor: colors.sideQuest.shine,
     borderRadius: 999,
     height: 120,
     position: "absolute",
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     width: 120,
   },
   questCardLineOne: {
-    borderColor: "rgba(255, 244, 229, 0.22)",
+    borderColor: colors.sideQuest.shineSoft,
     borderRadius: 999,
     borderWidth: 1,
     height: 78,
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     width: 78,
   },
   questCardLineTwo: {
-    backgroundColor: "rgba(255, 244, 229, 0.18)",
+    backgroundColor: colors.sideQuest.shineSoft,
     borderRadius: 999,
     height: 8,
     position: "absolute",
@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     width: 52,
   },
   questCardLineThree: {
-    borderColor: "rgba(255, 244, 229, 0.18)",
+    borderColor: colors.sideQuest.shineSoft,
     borderRadius: 999,
     borderWidth: 1,
     height: 60,
