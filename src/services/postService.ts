@@ -69,17 +69,17 @@ function getCommentPreviews(post: PostRecord) {
 
 function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
-  const { comments, ...rest } = post;
+  const { comments, profiles, challenges, side_quests, likes, ...rest } = post;
 
   return {
     ...rest,
     media_id: post.media_id ?? undefined,
     media: mediaUrl ? { file_path: mediaUrl } : post.media ? { file_path: post.media.file_path } : undefined,
-    likes_count: post.likes?.[0]?.count ?? 0,
+    likes_count: likes?.[0]?.count ?? 0,
     comments_count: comments?.length ?? 0,
     liked: likedPosts[post.id] ?? false,
-    challenge_title: post.challenges?.title,
-    quest_title: post.side_quests?.title,
+    challenge_title: challenges?.title,
+    quest_title: side_quests?.title,
     comment_previews: getCommentPreviews(post),
   };
 }

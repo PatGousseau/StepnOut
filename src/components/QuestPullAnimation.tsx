@@ -181,14 +181,14 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
           </View>
         </View>
 
-        {/* Hat — held upside down, the whole thing wobbles. */}
+        {/* Hat — the whole thing wobbles. */}
         <Animated.View
           style={[
             styles.hatLayer,
             { transform: [{ rotate: hatRotate }, { scale: hatScale }] },
           ]}
         >
-          <SideQuestHatSvg upsideDown />
+          <SideQuestHatSvg />
         </Animated.View>
 
         {/* Card — rises out of the brim opening at the top of the hat. */}
@@ -229,13 +229,11 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
 type SideQuestHatSvgProps = {
   width?: number;
   height?: number;
-  upsideDown?: boolean;
 };
 
 export const SideQuestHatSvg: React.FC<SideQuestHatSvgProps> = ({
   width = 220,
   height = 220,
-  upsideDown = false,
 }) => (
   <View>
     <SideQuestHatAsset width={width} height={height} />
@@ -298,7 +296,7 @@ const SparkleStar: React.FC<{ angleDeg: number; progress: Animated.Value }> = ({
 export const QuestHatIdle: React.FC = () => (
   <View style={[styles.scene, styles.idleScene]} pointerEvents="none">
     <View style={styles.hatLayer}>
-      <SideQuestHatSvg upsideDown />
+      <SideQuestHatSvg />
     </View>
   </View>
 );
