@@ -69,15 +69,23 @@ function getCommentPreviews(post: PostRecord) {
 
 function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
-  const { comments, profiles, challenges, side_quests, likes, ...rest } = post;
+  const { comments, likes, challenges, side_quests } = post;
 
   return {
-    ...rest,
+    id: post.id,
+    user_id: post.user_id,
+    body: post.body,
     media_id: post.media_id ?? undefined,
     media: mediaUrl ? { file_path: mediaUrl } : post.media ? { file_path: post.media.file_path } : undefined,
+    created_at: post.created_at,
+    featured: post.featured,
+    challenge_id: post.challenge_id ?? null,
+    quest_id: post.quest_id ?? null,
+    comfort_zone_rating: post.comfort_zone_rating ?? null,
     likes_count: likes?.[0]?.count ?? 0,
     comments_count: comments?.length ?? 0,
     liked: likedPosts[post.id] ?? false,
+    is_welcome: post.is_welcome ?? null,
     challenge_title: challenges?.title,
     quest_title: side_quests?.title,
     comment_previews: getCommentPreviews(post),
@@ -127,7 +135,7 @@ export const postService = {
     pageParam: number,
     blockedUserIds: string[],
     postsPerPage: number = 20
-  ): Promise<{ posts: Post[]; hasMore: boolean }> {
+  ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
     const select = `${BASE_SELECT}, challenges!inner (title), side_quests:quest_id (title)`;
 
     let query = supabase
@@ -147,8 +155,7 @@ export const postService = {
     if (error) throw error;
 
     const rows = (data ?? []) as PostRecord[];
-    const posts = rows.map((p) => normalizePost(p));
-    return { posts, hasMore: posts.length === postsPerPage };
+    return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
   async fetchLikes(ids: number[], type: LikeableItem["type"], userId?: string) {
@@ -600,7 +607,7 @@ export const postService = {
     pageParam: number,
     blockedUserIds: string[],
     postsPerPage: number = 20
-  ): Promise<{ posts: Post[]; hasMore: boolean }> {
+  ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
     const select = `${BASE_SELECT}, challenges:challenge_id (title), side_quests:quest_id (title)`;
 
     let query = supabase
@@ -651,12 +658,10 @@ export const postService = {
         .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
         .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
 
-      const posts = merged.map((p) => normalizePost(p));
-      return { posts, hasMore: rows.length === postsPerPage };
+      return { posts: merged, hasMore: rows.length === postsPerPage };
     }
 
-    const posts = rows.map((p) => normalizePost(p));
-    return { posts, hasMore: posts.length === postsPerPage };
+    return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
   async fetchPopularPosts(
@@ -664,7 +669,7 @@ export const postService = {
     pageParam: number,
     blockedUserIds: string[],
     postsPerPage: number = 20
-  ): Promise<{ posts: Post[]; hasMore: boolean }> {
+  ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
     const offset = (pageParam - 1) * postsPerPage;
 
     const { data: idRows, error: rpcError } = await supabase.rpc("get_popular_post_ids", {
@@ -693,8 +698,7 @@ export const postService = {
     const postMap = new Map(rows.map((p) => [p.id, p]));
     const posts = orderedIds
       .map((id) => postMap.get(id))
-      .filter((p): p is PostRecord => !!p)
-      .map((p) => normalizePost(p));
+      .filter((p): p is PostRecord => !!p);
 
     return { posts, hasMore: orderedIds.length === postsPerPage };
   },
