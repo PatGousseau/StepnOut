@@ -325,28 +325,52 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       >
         <View style={styles.profileHeader}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => setShowFullImage(true)} disabled={imageUploading}>
-              {imageUploading ? (
-                <View style={[styles.avatar, styles.avatarLoader]}>
-                  <Loader />
-                </View>
-              ) : userProfile?.profileImageUrl ? (
-                <Image source={{ uri: userProfile.profileImageUrl }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}>
-                  <MaterialCommunityIcons name="account-circle" size={80} color="#e1e1e1" />
-                </View>
-              )}
-              {isEditing && (
+            {(() => {
+              const showAddPhotoAffordance =
+                isOwnProfile && !userProfile?.profileImageUrl && !isEditing;
+              return (
                 <TouchableOpacity
-                  style={styles.editAvatarButton}
-                  onPress={handleUpdateProfilePicture}
+                  onPress={() => {
+                    if (showAddPhotoAffordance) {
+                      handleUpdateProfilePicture();
+                    } else {
+                      setShowFullImage(true);
+                    }
+                  }}
                   disabled={imageUploading}
                 >
-                  <FontAwesome name="pencil" size={14} color={colors.light.primary} />
+                  {imageUploading ? (
+                    <View style={[styles.avatar, styles.avatarLoader]}>
+                      <Loader />
+                    </View>
+                  ) : userProfile?.profileImageUrl ? (
+                    <Image source={{ uri: userProfile.profileImageUrl }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}>
+                      <MaterialCommunityIcons name="account-circle" size={80} color="#e1e1e1" />
+                    </View>
+                  )}
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={styles.editAvatarButton}
+                      onPress={handleUpdateProfilePicture}
+                      disabled={imageUploading}
+                    >
+                      <FontAwesome name="pencil" size={14} color={colors.light.primary} />
+                    </TouchableOpacity>
+                  )}
+                  {showAddPhotoAffordance && (
+                    <View style={styles.addPhotoChipWrap} pointerEvents="none">
+                      <View style={styles.addPhotoChip}>
+                        <Text style={styles.addPhotoChipText} numberOfLines={1}>
+                          {t('Add Photo')}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </TouchableOpacity>
-              )}
-            </TouchableOpacity>
+              );
+            })()}
 
             <View style={styles.userInfo}>
               {isEditing ? (
@@ -474,19 +498,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </>
         )}
 
-        <View style={styles.filterRow}>
-          {(["all", "post", "comment"] as const).map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
-              onPress={() => setActivityFilter(filter)}
-            >
-              <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
-                {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {(activityItems.length > 0 || activityLoading) && (
+          <View style={styles.filterRow}>
+            {(["all", "post", "comment"] as const).map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
+                onPress={() => setActivityFilter(filter)}
+              >
+                <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
+                  {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {filteredActivityItems.map((item) => {
           if (item.type === "post") {
             return (
@@ -712,6 +739,32 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingBottom: 16,
     paddingLeft: 8,
+  },
+  addPhotoChipWrap: {
+    position: "absolute",
+    bottom: -10,
+    left: -30,
+    right: -30,
+    alignItems: "center",
+  },
+  addPhotoChip: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderColor: colors.light.primary,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  addPhotoChipText: {
+    color: colors.light.primary,
+    fontSize: 11,
+    fontWeight: "500",
   },
   commentPostContextText: {
     color: colors.light.lightText,
