@@ -747,8 +747,8 @@ const challengeBoxStyle: ViewStyle = {
 
 const questBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
-  backgroundColor: "#FFF0DE",
-  borderColor: "#F2B36C",
+  backgroundColor: colors.sideQuest.bg,
+  borderColor: colors.sideQuest.text,
   borderRadius: 8,
   borderWidth: 1.25,
   marginBottom: 8,
@@ -820,7 +820,7 @@ const challengeTitleStyle: TextStyle = {
 };
 
 const questTitleStyle: TextStyle = {
-  color: "#B86A20",
+  color: colors.sideQuest.text,
   fontSize: 13,
 };
 
