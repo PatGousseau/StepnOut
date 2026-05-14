@@ -131,7 +131,7 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
     // Starts hidden inside the hat (positive Y = down), rises clearly above the brim.
     const cardTranslateY = card.interpolate({
       inputRange: [0, 1],
-      outputRange: [70, -80],
+      outputRange: [70, -96],
     });
     const cardScale = card.interpolate({
       inputRange: [0, 0.7, 1],
