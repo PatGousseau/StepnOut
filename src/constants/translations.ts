@@ -375,6 +375,7 @@ export const translations = {
   "This path is here to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable for your real life.": "Questo percorso è qui per aiutarti a uscire dal pilota automatico con spunti che sembrano divertenti, nuovi e sorprendentemente fattibili nella tua vita reale.",
   "The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.": "L'obiettivo è aiutarti a uscire dal pilota automatico con spunti che sembrano divertenti, nuovi e sorprendentemente fattibili nella vita reale.",
   "Side quests": "Side quests",
+  "Side quests completed": "Side quest completate",
   "Answer a few quick questions": "Rispondi a qualche domanda veloce",
   "Tell us what sounds good, what fits your life, and how much of a stretch you want.": "Dicci cosa ti attira, cosa si adatta alla tua vita e quanta spinta vuoi.",
   "Draw one side quest each day": "Pesca una side quest al giorno",
