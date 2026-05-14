@@ -41,10 +41,10 @@ export const HomeChallengeBanner: React.FC = () => {
     if (!activeChallenge?.created_at) return null;
     const created = new Date(activeChallenge.created_at as unknown as string);
     const days = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
-    return Math.max(0, 7 - days);
+    return 7 - days;
   }, [activeChallenge?.created_at]);
 
-  if (loading || !activeChallenge) return null;
+  if (loading || !activeChallenge || daysRemaining === null || daysRemaining <= 0) return null;
 
   const title = language === "it" ? activeChallenge.title_it : activeChallenge.title;
   const description =
@@ -61,7 +61,7 @@ export const HomeChallengeBanner: React.FC = () => {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.eyebrow}>{t("This week's challenge")}</Text>
+      <Text style={styles.eyebrow}>{t("Complete this week's challenge")}</Text>
       <Animated.View style={{ transform: [{ scale }] }}>
         <ChallengePreviewCard
           title={title}

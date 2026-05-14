@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { ProgressSegments } from "./ProgressSegments";
+import { QuestCard, ShareQuestExperience } from "./Quest";
+import { QuestHatIdle, QuestPullAnimation, SideQuestHatSvg } from "./QuestPullAnimation";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useSideQuests } from "../hooks/useSideQuests";
 import { colors } from "../constants/Colors";
@@ -20,6 +23,7 @@ import {
 } from "../constants/sideQuestOptions";
 import { SIDE_QUEST_EVENTS } from "../constants/analyticsEvents";
 import {
+  SideQuest,
   SideQuestAvoidType,
   SideQuestGoal,
   SideQuestQuestionnaireDraft,
@@ -118,7 +122,7 @@ function getGoalOptionLabel(goal: SideQuestGoal) {
 }
 
 export const SideQuestPath: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const {
     profile,
     profileLoading,
@@ -126,13 +130,32 @@ export const SideQuestPath: React.FC = () => {
     rankedSideQuests,
     sideQuestsLoading,
     sideQuestsError,
+    todaysQuest,
+    todaysQuestState,
+    todaysQuestLoading,
+    drawTodaysQuest,
     saveProfile,
     savingProfile,
+    localDay,
   } = useSideQuests();
   const [draft, setDraft] = useState<SideQuestQuestionnaireDraft>(SIDE_QUEST_EMPTY_DRAFT);
   const [editingPreferences, setEditingPreferences] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
+  const [isDrawingQuest, setIsDrawingQuest] = useState(false);
+  const [isRevealing, setIsRevealing] = useState(false);
+  const [revealedQuest, setRevealedQuest] = useState<SideQuest | null>(null);
+  const revealOpacity = useRef(new Animated.Value(1)).current;
   const needsOnboarding = !profile;
+  const todaysDateLabel = useMemo(() => {
+    const [year, month, day] = localDay.split("-").map(Number);
+    const date = new Date(year, month - 1, day, 12);
+
+    return new Intl.DateTimeFormat(language === "it" ? "it-IT" : "en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  }, [language, localDay]);
 
   useEffect(() => {
     setDraft(buildDraft(profile));
@@ -351,6 +374,64 @@ export const SideQuestPath: React.FC = () => {
     }
   };
 
+  const fadeInQuest = () => {
+    revealOpacity.setValue(0);
+    Animated.timing(revealOpacity, {
+      toValue: 1,
+      duration: 320,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleDrawQuest = async () => {
+    if (isDrawingQuest) return;
+
+    setIsDrawingQuest(true);
+    setIsRevealing(true);
+    setRevealedQuest(null);
+    captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_STARTED, {
+      ranked_count: rankedSideQuests.length,
+      local_day: localDay,
+    });
+
+    try {
+      const result = await drawTodaysQuest();
+
+      if (result.status === "exhausted") {
+        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_EXHAUSTED, { local_day: localDay });
+        setIsRevealing(false);
+        setRevealedQuest(null);
+        setIsDrawingQuest(false);
+      } else if (result.quest) {
+        captureEvent(SIDE_QUEST_EVENTS.DAILY_DRAW_COMPLETED, { local_day: localDay });
+        // The animation is already playing — pass the quest in so it can finish the reveal.
+        setRevealedQuest(result.quest);
+      } else {
+        setIsRevealing(false);
+        setRevealedQuest(null);
+        setIsDrawingQuest(false);
+      }
+    } catch (error) {
+      Alert.alert(t("Error"), (error as Error).message);
+      setIsRevealing(false);
+      setRevealedQuest(null);
+      setIsDrawingQuest(false);
+    }
+  };
+
+  const handleRevealComplete = () => {
+    fadeInQuest();
+    setIsRevealing(false);
+    setRevealedQuest(null);
+    setIsDrawingQuest(false);
+  };
+
+  const handleRevealAbort = () => {
+    setIsRevealing(false);
+    setRevealedQuest(null);
+    setIsDrawingQuest(false);
+  };
+
   if (profileLoading) {
     return <Loader />;
   }
@@ -371,10 +452,7 @@ export const SideQuestPath: React.FC = () => {
           <View style={styles.questionnaireHeader}>
             {!showingIntroStep && (
               <View style={styles.stepIndicatorRow}>
-                <ProgressSegments
-                  total={questionnaireSteps.length}
-                  activeIndex={currentQuestionIndex}
-                />
+                <ProgressSegments total={questionnaireSteps.length} activeIndex={currentQuestionIndex} />
               </View>
             )}
           </View>
@@ -386,60 +464,109 @@ export const SideQuestPath: React.FC = () => {
           >
             {showingIntroStep ? (
               <View style={styles.introSection}>
-                <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
-                <Text style={styles.introTitle}>{t("Set up your path")}</Text>
-                <Text style={styles.introBody}>
-                  {t("Not everything worthwhile has to be part of the main plot. Sometimes the best moments come from doing something a little unexpected: a detour, a tiny adventure, a plan you would not normally make on an ordinary day.")}
-                </Text>
-                <Text style={styles.introBody}>
-                  {t("This path is here to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable for your real life.")}
-                </Text>
+                <View style={styles.introHero}>
+                  <View style={styles.introHeroGlow} />
+                  <View style={styles.introHeroLineOne} />
+                  <View style={styles.introHeroLineTwo} />
+                  <View style={styles.introHeroLineThree} />
+                  <View style={styles.introHeroContent}>
+                    <View style={styles.introBadge}>
+                      <SideQuestHatSvg width={44} height={44} />
+                    </View>
+                    <View style={styles.introHeaderCopy}>
+                      <Text style={styles.introTitle}>{t("Side quests")}</Text>
+                      <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.introContentBlock}>
+                  <Text style={styles.introBody}>
+                    {t("The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.")}
+                  </Text>
+
+                  <View style={styles.introPoints}>
+                    <View style={styles.introPoint}>
+                      <View style={styles.introPointIcon}>
+                        <Text style={styles.introPointNumber}>{t("1")}</Text>
+                      </View>
+                      <View style={styles.introPointCopy}>
+                        <Text style={styles.introPointTitle}>{t("Answer a few quick questions")}</Text>
+                        <Text style={styles.introPointText}>
+                          {t("Tell us what sounds good, what fits your life, and how much of a stretch you want.")}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.introPoint}>
+                      <View style={styles.introPointIcon}>
+                        <Text style={styles.introPointNumber}>{t("2")}</Text>
+                      </View>
+                      <View style={styles.introPointCopy}>
+                        <Text style={styles.introPointTitle}>{t("Draw one side quest each day")}</Text>
+                        <Text style={styles.introPointText}>
+                          {t("Each day, you'll get the chance to pull a new quest from the hat.")}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.introPoint}>
+                      <View style={styles.introPointIcon}>
+                        <Text style={styles.introPointNumber}>{t("3")}</Text>
+                      </View>
+                      <View style={styles.introPointCopy}>
+                        <Text style={styles.introPointTitle}>{t("Build a little more variety")}</Text>
+                        <Text style={styles.introPointText}>
+                          {t("Over time, these quests are meant to help you break routine and try things you might not have picked on your own.")}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={styles.introButton} onPress={handleNextQuestion}>
+                  <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               currentStep?.render()
             )}
           </ScrollView>
 
-          <View style={styles.questionActions}>
-            <TouchableOpacity
-              style={[
-                styles.questionBackButton,
-                showingIntroStep && styles.questionSecondaryButtonHidden,
-              ]}
-              disabled={showingIntroStep}
-              onPress={handleBackQuestion}
-            >
-              <Text style={styles.questionBackButtonText}>{t("Back")}</Text>
-            </TouchableOpacity>
+          {!showingIntroStep && (
+            <View style={styles.questionActions}>
+              <TouchableOpacity
+                style={styles.questionBackButton}
+                onPress={handleBackQuestion}
+              >
+                <Text style={styles.questionBackButtonText}>{t("Back")}</Text>
+              </TouchableOpacity>
 
-            {!showingIntroStep && isLastQuestion ? (
-              <TouchableOpacity
-                style={[styles.questionNextButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
-                disabled={!questionnaireComplete || savingProfile}
-                onPress={submitProfile}
-              >
-                <Text style={styles.questionNextButtonText}>
-                  {savingProfile ? t("Saving...") : t("Done")}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={[styles.questionNextButton, !showingIntroStep && !currentStep?.isComplete && styles.disabledButton]}
-                disabled={!showingIntroStep && !currentStep?.isComplete}
-                onPress={handleNextQuestion}
-              >
-                <Text style={styles.questionNextButtonText}>
-                  {showingIntroStep ? t("Let's begin") : t("Next")}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
+              {isLastQuestion ? (
+                <TouchableOpacity
+                  style={[styles.questionNextButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
+                  disabled={!questionnaireComplete || savingProfile}
+                  onPress={submitProfile}
+                >
+                  <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.questionNextButton, !currentStep?.isComplete && styles.disabledButton]}
+                  disabled={!currentStep?.isComplete}
+                  onPress={handleNextQuestion}
+                >
+                  <Text style={styles.questionNextButtonText}>{t("Next")}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
   }
 
-  if (sideQuestsLoading) {
+  if (!isRevealing && (sideQuestsLoading || (todaysQuestLoading && !todaysQuest))) {
     return <Loader />;
   }
 
@@ -452,57 +579,107 @@ export const SideQuestPath: React.FC = () => {
     );
   }
 
+  const isExhausted = todaysQuestState === "exhausted" && !todaysQuest;
+  const showDraw = !todaysQuest && rankedSideQuests.length > 0 && !isExhausted;
+
+  const showHeroSection = !todaysQuest || isRevealing;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerCopy}>
-          <Text style={styles.pageTitle}>{t("Side quests for right now")}</Text>
-          <Text style={styles.subtitle}>
-            {t("Ranked to fit the kind of break from routine you want right now.")}
-          </Text>
+      {showHeroSection && (
+        <View style={styles.heroSection}>
+          <View style={styles.heroGlow} />
+          <View style={styles.heroLineOne} />
+          <View style={styles.heroLineTwo} />
+          <View style={styles.heroLineThree} />
+          <View style={styles.heroContent}>
+            <View style={styles.eyebrowWrap}>
+              <Text style={styles.eyebrow}>{t("Side Quests")}</Text>
+              <Text style={styles.eyebrowSub}>{todaysDateLabel}</Text>
+            </View>
+
+            {isRevealing ? (
+              <QuestPullAnimation
+                quest={revealedQuest}
+                onComplete={handleRevealComplete}
+                onAbort={handleRevealAbort}
+              />
+            ) : showDraw ? (
+              <>
+                <QuestHatIdle />
+                <Text style={styles.heroBody}>
+                  {t("Today's side quest is ready to be pulled. Pick from the hat and see where it leads!")}
+                </Text>
+                <View style={styles.ctaWrap}>
+                  <TouchableOpacity
+                    style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
+                    disabled={isDrawingQuest}
+                    onPress={handleDrawQuest}
+                  >
+                    <Text style={styles.drawButtonText}>
+                      {isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : null}
+          </View>
         </View>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => {
-            captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
-              entry_point: "results",
-              question_count: questionnaireSteps.length,
-            });
-            setEditingPreferences(true);
-          }}
-        >
-          <Text style={styles.secondaryButtonText}>{t("Edit preferences")}</Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {rankedSideQuests.length === 0 ? (
         <View style={styles.emptyStateCard}>
+          <View style={styles.emptyStateIcon}>
+            <MaterialCommunityIcons name="compass-outline" size={20} color={colors.sideQuest.text} />
+          </View>
           <Text style={styles.emptyStateTitle}>{t("No side quests yet.")}</Text>
           <Text style={styles.emptyStateBody}>
             {t("Once side quests are added, they will show up here ranked for your preferences.")}
           </Text>
         </View>
-      ) : (
-        rankedSideQuests.map((quest, index) => (
-          <View key={quest.id} style={styles.questCard}>
-            <View style={styles.questHeader}>
-              <Text style={styles.questRank}>{`#${index + 1}`}</Text>
-              <View style={styles.matchPills}>
-                {quest.matched_goal_tags.slice(0, 2).map((tag) => (
-                  <View key={`${quest.id}-${tag}`} style={styles.matchPill}>
-                    <Text style={styles.matchPillText}>{t(getGoalOptionLabel(tag))}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-            <Text style={styles.questTitle}>{quest.title}</Text>
-            <Text style={styles.questSummary}>{quest.summary}</Text>
-            <Text style={styles.metaLabel}>{t("Why this works")}</Text>
-            <Text style={styles.metaText}>{quest.why_it_hits}</Text>
-            <Text style={styles.metaLabel}>{t("Try it like this")}</Text>
-            <Text style={styles.metaText}>{quest.instructions}</Text>
+      ) : isExhausted && !isRevealing ? (
+        <View style={styles.emptyStateCard}>
+          <View style={styles.emptyStateIcon}>
+            <MaterialCommunityIcons name="check-all" size={20} color={colors.sideQuest.text} />
           </View>
-        ))
+          <Text style={styles.emptyStateTitle}>{t("You have finished every quest in the hat.")}</Text>
+          <Text style={styles.emptyStateBody}>
+            {t("There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.")}
+          </Text>
+        </View>
+      ) : todaysQuest && !isRevealing ? (
+        <Animated.View style={[styles.questBlock, { opacity: revealOpacity }]}>
+          <QuestCard
+            quest={todaysQuest}
+            tags={
+              rankedSideQuests
+                .find((quest) => quest.id === todaysQuest.id)
+                ?.matched_goal_tags.slice(0, 2)
+                .map((tag) => t(getGoalOptionLabel(tag))) ?? []
+            }
+          />
+          <View style={styles.questActions}>
+            <ShareQuestExperience quest={todaysQuest} />
+          </View>
+        </Animated.View>
+      ) : null}
+
+      {!isRevealing && (
+        <View style={styles.editPrefsWrap}>
+          <Text style={styles.editPrefsPrompt}>{t("Want a different mix of side quests?")}</Text>
+          <TouchableOpacity
+            style={styles.editPrefs}
+            onPress={() => {
+              captureEvent(SIDE_QUEST_EVENTS.PREFERENCES_EDIT_STARTED, {
+                entry_point: "results",
+                question_count: questionnaireSteps.length,
+              });
+              setEditingPreferences(true);
+            }}
+          >
+            <Text style={styles.editPrefsText}>{t("Edit preferences")}</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </ScrollView>
   );
@@ -527,15 +704,63 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
+  drawButton: {
+    alignItems: "center",
+    backgroundColor: colors.light.primary,
+    borderRadius: 14,
+    justifyContent: "center",
+    minHeight: 52,
+    shadowColor: colors.light.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+  },
+  drawButtonText: {
+    color: colors.neutral.white,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  editPrefs: {
+    alignSelf: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editPrefsPrompt: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+  },
+  editPrefsText: {
+    color: colors.light.lightText,
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  editPrefsWrap: {
+    alignItems: "center",
+    marginTop: 24,
+  },
   emptyStateBody: {
     color: colors.light.lightText,
     fontSize: 15,
     lineHeight: 22,
   },
   emptyStateCard: {
-    backgroundColor: colors.light.cardBg,
-    borderRadius: 16,
-    padding: 18,
+    backgroundColor: "#FFF7EF",
+    borderColor: "#F0D1A9",
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 20,
+  },
+  emptyStateIcon: {
+    alignItems: "center",
+    backgroundColor: colors.sideQuest.bgAlt,
+    borderRadius: 999,
+    height: 40,
+    justifyContent: "center",
+    marginBottom: 14,
+    width: 40,
   },
   emptyStateTitle: {
     color: colors.light.text,
@@ -543,15 +768,94 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
   },
-  headerCopy: {
-    flex: 1,
-    marginRight: 12,
+  ctaWrap: {
+    alignSelf: "center",
+    marginTop: 4,
+    width: "80%",
   },
-  headerRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 18,
+  eyebrow: {
+    color: colors.sideQuest.text,
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  eyebrowSub: {
+    color: colors.light.lightText,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  eyebrowWrap: {
+    alignSelf: "center",
+    marginBottom: 24,
+    width: "80%",
+  },
+  heroBody: {
+    alignSelf: "center",
+    color: colors.light.text,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 24,
+    textAlign: "center",
+    width: "84%",
+  },
+  heroContent: {
+    minHeight: 410,
+    position: "relative",
+    zIndex: 1,
+  },
+  heroGlow: {
+    backgroundColor: colors.sideQuest.tint,
+    borderRadius: 999,
+    height: 152,
+    left: -40,
+    position: "absolute",
+    top: -52,
+    width: 152,
+  },
+  heroLineOne: {
+    borderColor: colors.sideQuest.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 108,
+    left: -10,
+    position: "absolute",
+    top: 20,
+    transform: [{ rotate: "16deg" }],
+    width: 108,
+  },
+  heroLineThree: {
+    borderColor: colors.sideQuest.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 74,
+    left: 74,
+    position: "absolute",
+    top: 56,
+    transform: [{ rotate: "-10deg" }],
+    width: 74,
+  },
+  heroLineTwo: {
+    backgroundColor: colors.sideQuest.fill,
+    borderRadius: 999,
+    height: 16,
+    left: 92,
+    position: "absolute",
+    top: 10,
+    transform: [{ rotate: "-18deg" }],
+    width: 64,
+  },
+  heroSection: {
+    backgroundColor: colors.sideQuest.bg,
+    borderColor: colors.sideQuest.bgBorder,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 22,
+    overflow: "hidden",
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 20,
+    position: "relative",
   },
   helperText: {
     color: colors.light.lightText,
@@ -561,58 +865,154 @@ const styles = StyleSheet.create({
   },
   introBody: {
     color: colors.light.text,
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 18,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  introButton: {
+    alignItems: "center",
+    backgroundColor: colors.light.primary,
+    borderRadius: 14,
+    justifyContent: "center",
+    marginTop: 24,
+    minHeight: 48,
+    paddingHorizontal: 18,
+  },
+  introButtonText: {
+    color: colors.neutral.white,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  introBadge: {
+    alignItems: "center",
+    backgroundColor: colors.sideQuest.overlay,
+    borderRadius: 999,
+    height: 64,
+    justifyContent: "center",
+    width: 64,
+  },
+  introContentBlock: {
+    paddingHorizontal: 4,
   },
   introEyebrow: {
-    color: colors.light.lightText,
-    fontSize: 13,
+    color: colors.sideQuest.text,
+    fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.6,
-    marginBottom: 10,
+    marginBottom: 0,
     textTransform: "uppercase",
   },
+  introHeaderCopy: {
+    flex: 1,
+  },
+  introHero: {
+    backgroundColor: colors.sideQuest.bg,
+    borderColor: colors.sideQuest.bgBorder,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 24,
+    overflow: "hidden",
+    paddingVertical: 20,
+    paddingLeft: 16,
+    paddingRight: 20,
+    position: "relative",
+  },
+  introHeroContent: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+    position: "relative",
+    zIndex: 1,
+  },
+  introHeroGlow: {
+    backgroundColor: colors.sideQuest.tint,
+    borderRadius: 999,
+    height: 160,
+    position: "absolute",
+    right: -34,
+    top: -46,
+    width: 160,
+  },
+  introHeroLineOne: {
+    borderColor: colors.sideQuest.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 110,
+    position: "absolute",
+    right: -18,
+    top: 18,
+    transform: [{ rotate: "14deg" }],
+    width: 110,
+  },
+  introHeroLineThree: {
+    borderColor: colors.sideQuest.border,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 86,
+    position: "absolute",
+    right: 18,
+    top: 54,
+    transform: [{ rotate: "-10deg" }],
+    width: 86,
+  },
+  introHeroLineTwo: {
+    backgroundColor: colors.sideQuest.fill,
+    borderRadius: 999,
+    height: 10,
+    position: "absolute",
+    right: 26,
+    top: 32,
+    transform: [{ rotate: "-18deg" }],
+    width: 74,
+  },
+  introPoint: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 12,
+  },
+  introPointCopy: {
+    flex: 1,
+  },
+  introPointIcon: {
+    alignItems: "center",
+    backgroundColor: colors.sideQuest.bgAlt,
+    borderRadius: 999,
+    height: 30,
+    justifyContent: "center",
+    marginTop: 2,
+    width: 30,
+  },
+  introPointNumber: {
+    color: colors.sideQuest.text,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  introPointText: {
+    color: colors.light.lightText,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  introPointTitle: {
+    color: colors.light.text,
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 3,
+  },
+  introPoints: {
+    gap: 14,
+    marginTop: 20,
+  },
   introSection: {
+    flex: 1,
     justifyContent: "flex-start",
+    paddingBottom: 24,
     paddingTop: 10,
   },
   introTitle: {
     color: colors.light.text,
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: "800",
-    lineHeight: 36,
-    marginBottom: 16,
-  },
-  matchPill: {
-    backgroundColor: "#EEF2F7",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  matchPillText: {
-    color: colors.light.primary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  matchPills: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  metaLabel: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-    marginBottom: 6,
-    marginTop: 12,
-    textTransform: "uppercase",
-  },
-  metaText: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 30,
   },
   optionChip: {
     backgroundColor: "#FFFFFF",
@@ -646,33 +1046,11 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     marginBottom: 6,
   },
-  questCard: {
-    backgroundColor: colors.light.cardBg,
-    borderRadius: 16,
-    marginBottom: 14,
-    padding: 18,
+  questActions: {
+    marginTop: 14,
   },
-  questHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  questRank: {
-    color: colors.light.primary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  questSummary: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  questTitle: {
-    color: colors.light.text,
-    fontSize: 21,
-    fontWeight: "700",
-    marginBottom: 8,
+  questBlock: {
+    paddingTop: 4,
   },
   questionnaireContent: {
     flexGrow: 1,
@@ -722,9 +1100,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  questionSecondaryButtonHidden: {
-    opacity: 0,
-  },
   section: {
     paddingTop: 10,
   },
@@ -734,20 +1109,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: 28,
     marginBottom: 10,
-  },
-  secondaryButton: {
-    alignItems: "center",
-    borderColor: "#D7DDE8",
-    borderRadius: 999,
-    borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 42,
-    paddingHorizontal: 14,
-  },
-  secondaryButtonText: {
-    color: colors.light.text,
-    fontSize: 14,
-    fontWeight: "600",
   },
   stepIndicatorRow: {
     gap: 8,

@@ -4,10 +4,9 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { useLikes } from "../contexts/LikesContext";
 import { useReactions } from "../contexts/ReactionsContext";
-import { postService } from "../services/postService";
-import { Post } from "../types";
+import { formatFeedPosts, postService } from "../services/postService";
+import { PostRecord } from "../types";
 import { User, UserProfile } from "../models/User";
-import { imageService } from "../services/imageService";
 import { isDefaultChallengePostBody } from "../constants/defaultChallengePostText";
 
 interface UserMap {
@@ -19,48 +18,6 @@ interface PostLikes {
 }
 
 const EMPTY_LIKED_POSTS: PostLikes = {};
-
-function formatPosts(posts: unknown[], likedPosts: PostLikes): { posts: Post[]; userMap: UserMap } {
-  const extractedUserMap: UserMap = {};
-
-  const formattedPosts = (posts as Array<Record<string, unknown>>)
-    .filter((post) => {
-      const body = typeof post.body === "string" ? post.body.trim() : "";
-      if (!body) return false;
-      if (isDefaultChallengePostBody(body)) return false;
-      return true;
-    })
-    .map((post) => {
-      if (post.profiles) {
-        const profile = post.profiles;
-        extractedUserMap[post.user_id] = {
-          id: profile.id,
-          username: profile.username,
-          name: profile.name,
-          profileImageUrl: profile.profile_media?.file_path
-            ? imageService.getProfileImageUrlSync(profile.profile_media.file_path)
-            : null,
-        } as UserProfile;
-      }
-
-      let mediaUrl = post.media?.file_path;
-      if (mediaUrl && !mediaUrl.startsWith("http")) {
-        mediaUrl = imageService.getPostImageUrlSync(mediaUrl);
-      }
-
-      return {
-        ...post,
-        media: mediaUrl ? { file_path: mediaUrl } : post.media,
-        likes_count: post.likes?.[0]?.count ?? 0,
-        comments_count: post.comments?.length ?? 0,
-        liked: likedPosts[post.id] ?? false,
-        challenge_title: post.challenges?.title,
-        profiles: undefined,
-      } as Post;
-    });
-
-  return { posts: formattedPosts, userMap: extractedUserMap };
-}
 
 export function useFetchChallengePosts(challengeId?: number) {
   const { user } = useAuth();
@@ -85,7 +42,7 @@ export function useFetchChallengePosts(challengeId?: number) {
     refetchOnReconnect: false,
   });
 
-  const blockedUserIds = blockedUsers ?? [];
+  const blockedUserIds = useMemo(() => blockedUsers ?? [], [blockedUsers]);
 
   const { data: userLikedPostIds } = useQuery({
     queryKey: ["user-liked-posts", user?.id],
@@ -144,8 +101,17 @@ export function useFetchChallengePosts(challengeId?: number) {
   });
 
   const { posts, userMap } = useMemo(() => {
-    const pages = data?.pages.flatMap((p) => p.posts) ?? [];
-    return formatPosts(pages, likedPosts);
+    const pages = (data?.pages.flatMap((p) => p.posts) ?? []) as PostRecord[];
+    const formatted = formatFeedPosts(pages, likedPosts);
+    return {
+      posts: formatted.posts.filter((post) => {
+        const body = typeof post.body === "string" ? post.body.trim() : "";
+        if (!body) return false;
+        if (isDefaultChallengePostBody(body)) return false;
+        return true;
+      }),
+      userMap: formatted.userMap as UserMap,
+    };
   }, [data, likedPosts]);
 
   useEffect(() => {

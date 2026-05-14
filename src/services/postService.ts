@@ -1,36 +1,8 @@
 import { supabase } from "../lib/supabase";
 import { sendLikeNotification, sendReactionNotification } from "../lib/notificationsService";
 import { imageService } from "../services/imageService";
-import { LikeableItem, Post, ReactionSummary, ReactionUser } from "../types";
-
-interface PostDataComment {
-  id: number;
-  body: string;
-  created_at: string;
-  user_id: string;
-  parent_comment_id: number | null;
-  profiles: { username: string } | null;
-}
-
-interface PostData {
-  id: number;
-  user_id: string;
-  body: string | null;
-  created_at: string;
-  challenge_id: number | null;
-  is_welcome: boolean | null;
-  media_id: number | null;
-  media: { file_path: string | null; upload_status: string | null } | null;
-  profiles: {
-    id: string;
-    username: string;
-    name: string;
-    profile_media: { file_path: string } | null;
-  } | null;
-  likes: { count: number }[];
-  comments: PostDataComment[];
-  challenges?: { title: string } | null;
-}
+import { LikeableItem, Post, PostCommentRecord, PostRecord, ReactionSummary, ReactionUser } from "../types";
+import { UserProfile } from "../models/User";
 
 const BASE_SELECT = `
   *,
@@ -59,7 +31,18 @@ const BASE_SELECT = `
   )
 `;
 
-function getCommentPreviews(post: PostData) {
+function resolveMediaUrl(filePath?: string | null): string | null {
+  if (!filePath) return null;
+  if (filePath.startsWith("http")) return filePath;
+
+  if (/\.(mp4|mov|avi|wmv)$/i.test(filePath)) {
+    return imageService.getPublicMediaUrlSync(filePath);
+  }
+
+  return imageService.getPostImageUrlSync(filePath);
+}
+
+function getCommentPreviews(post: PostRecord) {
   if (!post.comments || post.comments.length === 0) return undefined;
 
   const sortedComments = [...post.comments].sort(
@@ -73,7 +56,7 @@ function getCommentPreviews(post: PostData) {
   }
   const previews = sortedComments
     .slice(0, 3)
-    .filter((c): c is PostDataComment & { profiles: { username: string } } =>
+    .filter((c): c is PostCommentRecord & { profiles: { username: string } } =>
       !!c.body && !!c.profiles?.username
     )
     .map((c) => ({
@@ -84,16 +67,63 @@ function getCommentPreviews(post: PostData) {
   return previews.length > 0 ? previews : undefined;
 }
 
-function processPost(post: PostData, isChallenge: boolean) {
+function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+  const mediaUrl = resolveMediaUrl(post.media?.file_path);
+  const { comments, likes, challenges, side_quests } = post;
+
   return {
-    ...post,
-    ...(isChallenge ? { challenge_title: post.challenges?.title } : {}),
+    id: post.id,
+    user_id: post.user_id,
+    body: post.body,
+    media_id: post.media_id ?? undefined,
+    media: mediaUrl ? { file_path: mediaUrl } : post.media ? { file_path: post.media.file_path } : undefined,
+    created_at: post.created_at,
+    featured: post.featured,
+    challenge_id: post.challenge_id ?? null,
+    quest_id: post.quest_id ?? null,
+    comfort_zone_rating: post.comfort_zone_rating ?? null,
+    likes_count: likes?.[0]?.count ?? 0,
+    comments_count: comments?.length ?? 0,
+    liked: likedPosts[post.id] ?? false,
+    is_welcome: post.is_welcome ?? null,
+    challenge_title: challenges?.title,
+    quest_title: side_quests?.title,
     comment_previews: getCommentPreviews(post),
-    comments: undefined,
   };
 }
 
-function applyBlockedFilter(query: any, blockedUserIds: string[]) {
+export function formatFeedPosts(
+  posts: PostRecord[],
+  likedPosts: Record<number, boolean> = {}
+): { posts: Post[]; userMap: Record<string, UserProfile> } {
+  const userMap: Record<string, UserProfile> = {};
+
+  const normalizedPosts = posts.map((post) => {
+    if (post.profiles) {
+      userMap[post.user_id] = {
+        id: post.profiles.id,
+        username: post.profiles.username,
+        name: post.profiles.name,
+        profileImageUrl: post.profiles.profile_media?.file_path
+          ? imageService.getProfileImageUrlSync(post.profiles.profile_media.file_path)
+          : null,
+      };
+    }
+
+    return normalizePost(post, likedPosts);
+  });
+
+  return { posts: normalizedPosts, userMap };
+}
+
+export function formatSinglePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+  return normalizePost(post, likedPosts);
+}
+
+function applyBlockedFilter<T extends { not: (column: string, operator: string, value: string) => T }>(
+  query: T,
+  blockedUserIds: string[]
+) {
   if (blockedUserIds.length === 0) return query;
   const quotedList = `(${blockedUserIds.map((id) => `"${id}"`).join(",")})`;
   return query.not("user_id", "in", quotedList);
@@ -105,8 +135,8 @@ export const postService = {
     pageParam: number,
     blockedUserIds: string[],
     postsPerPage: number = 20
-  ): Promise<{ posts: Post[]; hasMore: boolean }> {
-    const select = `${BASE_SELECT}, challenges!inner (title)`;
+  ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
+    const select = `${BASE_SELECT}, challenges!inner (title), side_quests:quest_id (title)`;
 
     let query = supabase
       .from("post")
@@ -124,9 +154,8 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as PostData[];
-    const posts = rows.map((p) => processPost(p, true));
-    return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
+    const rows = (data ?? []) as PostRecord[];
+    return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
   async fetchLikes(ids: number[], type: LikeableItem["type"], userId?: string) {
@@ -573,15 +602,12 @@ export const postService = {
     postService.fetchItemLikesCounts(commentIds, "comment"),
 
   async fetchRecentPosts(
-    feedType: "challenge" | "discussion",
+    feedType: "challenge" | "discussion" | "all",
     pageParam: number,
     blockedUserIds: string[],
     postsPerPage: number = 20
-  ): Promise<{ posts: Post[]; hasMore: boolean }> {
-    const isChallenge = feedType === "challenge";
-    const select = isChallenge
-      ? `${BASE_SELECT}, challenges!inner (title)`
-      : BASE_SELECT;
+  ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
+    const select = `${BASE_SELECT}, challenges:challenge_id (title), side_quests:quest_id (title)`;
 
     let query = supabase
       .from("post")
@@ -589,10 +615,10 @@ export const postService = {
       .not("media.upload_status", "in", '("failed","pending")')
       .order("created_at", { ascending: false });
 
-    if (isChallenge) {
+    if (feedType === "challenge") {
       query = query.not("challenge_id", "is", null);
-    } else {
-      query = query.is("challenge_id", null).eq("is_welcome", false);
+    } else if (feedType === "discussion") {
+      query = query.is("challenge_id", null).is("quest_id", null).eq("is_welcome", false);
     }
 
     query = applyBlockedFilter(query, blockedUserIds);
@@ -603,10 +629,9 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as PostData[];
+    const rows = (data ?? []) as PostRecord[];
 
-    // For discussions, fetch welcome posts within the same time range and merge them in
-    if (!isChallenge && rows.length > 0) {
+    if (feedType === "discussion" && rows.length > 0) {
       const newest = rows[0].created_at;
       const oldest = rows[rows.length - 1].created_at;
 
@@ -628,24 +653,22 @@ export const postService = {
       const { data: welcomeData, error: welcomeError } = await welcomeQuery;
       if (welcomeError) throw welcomeError;
 
-      const merged = [...rows, ...((welcomeData ?? []) as PostData[])]
+      const merged = [...rows, ...((welcomeData ?? []) as PostRecord[])]
         .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
         .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
 
-      const posts = merged.map((p) => processPost(p, false));
-      return { posts: posts as Post[], hasMore: rows.length === postsPerPage };
+      return { posts: merged, hasMore: rows.length === postsPerPage };
     }
 
-    const posts = rows.map((p) => processPost(p, isChallenge));
-    return { posts: posts as Post[], hasMore: posts.length === postsPerPage };
+    return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
   async fetchPopularPosts(
-    feedType: "challenge" | "discussion",
+    feedType: "challenge" | "discussion" | "all",
     pageParam: number,
     blockedUserIds: string[],
     postsPerPage: number = 20
-  ): Promise<{ posts: Post[]; hasMore: boolean }> {
+  ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
     const offset = (pageParam - 1) * postsPerPage;
 
     const { data: idRows, error: rpcError } = await supabase.rpc("get_popular_post_ids", {
@@ -661,10 +684,7 @@ export const postService = {
     }
 
     const orderedIds: number[] = idRows.map((r: { post_id: number }) => r.post_id);
-    const isChallenge = feedType === "challenge";
-    const select = isChallenge
-      ? `${BASE_SELECT}, challenges!inner (title)`
-      : BASE_SELECT;
+    const select = `${BASE_SELECT}, challenges:challenge_id (title), side_quests:quest_id (title)`;
 
     const { data, error } = await supabase
       .from("post")
@@ -673,13 +693,12 @@ export const postService = {
 
     if (error) throw error;
 
-    const rows = (data ?? []) as PostData[];
+    const rows = (data ?? []) as PostRecord[];
     const postMap = new Map(rows.map((p) => [p.id, p]));
     const posts = orderedIds
       .map((id) => postMap.get(id))
-      .filter((p): p is PostData => !!p)
-      .map((p) => processPost(p, isChallenge));
+      .filter((p): p is PostRecord => !!p);
 
-    return { posts: posts as Post[], hasMore: orderedIds.length === postsPerPage };
+    return { posts, hasMore: orderedIds.length === postsPerPage };
   },
 };

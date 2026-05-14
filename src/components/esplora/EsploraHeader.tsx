@@ -1,5 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
@@ -8,7 +12,13 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
 
-export const EsploraHeader: React.FC = () => {
+type EsploraHeaderProps = {
+  scrollY: Animated.Value;
+};
+
+const HEADER_COLLAPSE_DISTANCE = 56;
+
+export const EsploraHeader: React.FC<EsploraHeaderProps> = ({ scrollY }) => {
   const { t } = useLanguage();
 
   const handleSavedPress = () => {
@@ -16,9 +26,71 @@ export const EsploraHeader: React.FC = () => {
     router.push('/esplora/saved');
   };
 
+  const titleScale = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE],
+    outputRange: [1, 0.78],
+    extrapolate: 'clamp',
+  });
+
+  const titleTranslateY = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE],
+    outputRange: [-2, 1],
+    extrapolate: 'clamp',
+  });
+
+  const paddingTop = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE],
+    outputRange: [esploraSpacing.md, esploraSpacing.sm],
+    extrapolate: 'clamp',
+  });
+
+  const paddingBottom = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE],
+    outputRange: [esploraSpacing.md, esploraSpacing.sm],
+    extrapolate: 'clamp',
+  });
+
+  const paddingLeft = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE],
+    outputRange: [esploraSpacing.horizontalPadding, esploraSpacing.md],
+    extrapolate: 'clamp',
+  });
+
+  const borderBottomWidth = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE * 0.75, HEADER_COLLAPSE_DISTANCE],
+    outputRange: [0, 0, StyleSheet.hairlineWidth],
+    extrapolate: 'clamp',
+  });
+
+  const borderBottomColor = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE_DISTANCE * 0.75, HEADER_COLLAPSE_DISTANCE],
+    outputRange: ['rgba(0,0,0,0)', 'rgba(0,0,0,0)', '#d1d5db'],
+    extrapolate: 'clamp',
+  });
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.wordmark}>{t('Esplora')}</Text>
+    <Animated.View
+      style={[
+        styles.container,
+        {
+          paddingTop,
+          paddingBottom,
+          paddingLeft,
+          borderBottomWidth,
+          borderBottomColor,
+        },
+      ]}
+    >
+      <Animated.Text
+        style={[
+          styles.wordmark,
+          {
+            transform: [{ scale: titleScale }, { translateY: titleTranslateY }],
+          },
+        ]}
+      >
+        {t('Esplora')}
+      </Animated.Text>
       <TouchableOpacity
         onPress={handleSavedPress}
         hitSlop={12}
@@ -27,18 +99,16 @@ export const EsploraHeader: React.FC = () => {
       >
         <Ionicons name="bookmark-outline" size={22} color={colors.light.text} />
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: esploraSpacing.horizontalPadding,
-    paddingTop: esploraSpacing.lg,
-    paddingBottom: esploraSpacing.md,
+    paddingRight: esploraSpacing.horizontalPadding,
   },
   wordmark: {
     ...esploraType.wordmark,

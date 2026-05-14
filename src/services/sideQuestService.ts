@@ -1,7 +1,9 @@
 import { supabase } from "../lib/supabase";
 import {
+  RankedSideQuest,
   SideQuest,
   SideQuestAvoidType,
+  SideQuestDraw,
   SideQuestGoal,
   SideQuestHardSituation,
   SideQuestMeaningfulType,
@@ -35,6 +37,15 @@ type SideQuestRow = Omit<
   type_tags: string[] | null;
   outcome_tags: string[] | null;
   avoid_flags: string[] | null;
+};
+
+type SideQuestDrawRow = SideQuestDraw;
+
+type ClaimDailyQuestRow = {
+  status: "created" | "existing" | "exhausted";
+  draw_id: number | null;
+  draw_local_day: string;
+  quest: SideQuestRow | null;
 };
 
 function toArray<T extends string>(value: T[] | T | null | undefined): T[] {
@@ -194,6 +205,10 @@ function normalizeSideQuest(row: SideQuestRow): SideQuest {
   };
 }
 
+function normalizeDraw(row: SideQuestDrawRow): SideQuestDraw {
+  return row;
+}
+
 export const sideQuestService = {
   async fetchProfile(userId: string): Promise<SideQuestProfile | null> {
     const { data, error } = await supabase
@@ -250,5 +265,55 @@ export const sideQuestService = {
 
     if (error) throw error;
     return (data || []).map((row) => normalizeSideQuest(row as SideQuestRow));
+  },
+
+  async fetchDailyDraw(userId: string, localDay: string): Promise<{ draw: SideQuestDraw; quest: SideQuest } | null> {
+    const { data, error } = await supabase
+      .from("side_quest_draws")
+      .select("id, user_id, quest_id, local_day, created_at, side_quests (*)")
+      .eq("user_id", userId)
+      .eq("local_day", localDay)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data || !data.side_quests) return null;
+
+    return {
+      draw: normalizeDraw({
+        id: data.id,
+        user_id: data.user_id,
+        quest_id: data.quest_id,
+        local_day: data.local_day,
+        created_at: data.created_at,
+      } as SideQuestDrawRow),
+      quest: normalizeSideQuest(data.side_quests as unknown as SideQuestRow),
+    };
+  },
+
+  async claimDailyQuest(userId: string, rankedQuests: RankedSideQuest[], localDay: string): Promise<{
+    status: "created" | "existing" | "exhausted";
+    draw: SideQuestDraw | null;
+    quest: SideQuest | null;
+  }> {
+    const rankedIds = rankedQuests.map((quest) => quest.id);
+    const { data, error } = await supabase.rpc("claim_daily_side_quest", {
+      ranked_quest_ids: rankedIds,
+      requested_local_day: localDay,
+    });
+
+    if (error) throw error;
+
+    const row = (Array.isArray(data) ? data[0] : data) as ClaimDailyQuestRow | null;
+    if (!row || row.status === "exhausted" || !row.quest || !row.draw_id) {
+      return { status: "exhausted", draw: null, quest: null };
+    }
+
+    const persisted = await this.fetchDailyDraw(userId, localDay);
+
+    return {
+      status: row.status,
+      draw: persisted?.draw || null,
+      quest: persisted?.quest || normalizeSideQuest(row.quest as unknown as SideQuestRow),
+    };
   },
 };

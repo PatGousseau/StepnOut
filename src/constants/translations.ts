@@ -48,6 +48,7 @@ export const translations = {
   "Ends in (days) days": "Termina tra (days) giorni",
   "Past challenge": "Sfida passata",
   "This week's challenge": "La sfida di questa settimana",
+  "Complete this week's challenge": "Completa la sfida settimanale",
   "Suggested reading": "Lettura consigliata",
   "1 card": "1 carta",
   "{n} cards": "{n} carte",
@@ -231,6 +232,8 @@ export const translations = {
   Discussions: "Discussioni",
   Submissions: "Sfide",
   Discussion: "Discussione",
+  Discuss: "Discuti",
+  "Start a discussion": "Avvia una discussione",
   "How did it make you feel?\nWhat did you find difficult?":
     "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
   "Share how you completed the challenge": "Condividi come hai completato la sfida",
@@ -247,8 +250,35 @@ export const translations = {
   "recently active": "attivi di recente",
   "Most recent": "Più recenti",
   Popular: "Popolari",
+  "popular": "popolare",
   "Mark as complete": "Segna come completato",
   "Challenge completed!": "Sfida completata!",
+  "Quest:": "Quest:",
+  "Quest completed!": "Quest completata!",
+  "Quest completed successfully!": "Quest completata con successo!",
+  "Share how you completed the quest": "Condividi come hai completato la quest",
+  "Just completed today's quest!": "Ho appena completato la quest di oggi!",
+  "You must be logged in to submit a quest.": "Devi essere loggato per inviare una quest.",
+  "Your quest of the day": "La tua quest del giorno",
+  "Pick a quest": "Pesca una quest",
+  "Shuffling...": "Sto mescolando...",
+  "Pick one quest out of the hat each day and let it pull you somewhere slightly unexpected.":
+    "Pesca una quest dal cappello ogni giorno e lascia che ti porti in una direzione leggermente inaspettata.",
+  "One small detour a day": "Una piccola deviazione al giorno",
+  "Answering a few questions helps us rank the quests that fit you best. Come back each day to draw one from the hat.":
+    "Rispondere a qualche domanda ci aiuta a ordinare le quest che fanno più per te. Torna ogni giorno per pescarne una dal cappello.",
+  "Today's draw": "La pesca di oggi",
+  "Today's quest": "La quest di oggi",
+  "Picked from your side quests based on what fits you best right now.":
+    "Scelta tra le tue side quest in base a ciò che ti si addice di più in questo momento.",
+  "Today's side quest is ready to be pulled. Pick from the hat and see where it leads!":
+    "La side quest di oggi è pronta per essere pescata. Pesca dal cappello e scopri dove ti porta!",
+  "You have finished every quest in the hat.":
+    "Hai finito tutte le quest nel cappello.",
+  "There are no new quests left to draw right now. Once more quests are added, you will be able to pull a new one here.":
+    "Per ora non ci sono nuove quest da pescare. Quando ne verranno aggiunte altre, potrai tirarne fuori una nuova qui.",
+  "Something went wrong. Tap to retry.":
+    "Qualcosa è andato storto. Tocca per riprovare.",
   "Past challenges": "Sfide passate",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
   "Share your thoughts...": "Condividi i tuoi pensieri...",
@@ -343,6 +373,14 @@ export const translations = {
   "A break from the usual": "Una pausa dal solito",
   "Not everything worthwhile has to be part of the main plot. Sometimes the best moments come from doing something a little unexpected: a detour, a tiny adventure, a plan you would not normally make on an ordinary day.": "Non tutto ciò che vale la pena vivere deve far parte della trama principale. A volte i momenti migliori arrivano da qualcosa di un po' inatteso: una deviazione, una piccola avventura, un piano che in una giornata normale non faresti.",
   "This path is here to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable for your real life.": "Questo percorso è qui per aiutarti a uscire dal pilota automatico con spunti che sembrano divertenti, nuovi e sorprendentemente fattibili nella tua vita reale.",
+  "The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.": "L'obiettivo è aiutarti a uscire dal pilota automatico con spunti che sembrano divertenti, nuovi e sorprendentemente fattibili nella vita reale.",
+  "Side quests": "Side quests",
+  "Answer a few quick questions": "Rispondi a qualche domanda veloce",
+  "Tell us what sounds good, what fits your life, and how much of a stretch you want.": "Dicci cosa ti attira, cosa si adatta alla tua vita e quanta spinta vuoi.",
+  "Draw one side quest each day": "Pesca una side quest al giorno",
+  "Each day, you'll get the chance to pull a new quest from the hat.": "Ogni giorno avrai la possibilità di pescare una nuova quest dal cappello.",
+  "Build a little more variety": "Aggiungi un po' più di varietà",
+  "Over time, these quests are meant to help you break routine and try things you might not have picked on your own.": "Con il tempo, queste quest servono ad aiutarti a rompere la routine e provare cose che forse non avresti scelto da solo.",
   "Let's begin": "Iniziamo",
   "Choose all that sound right": "Scegli tutto ciò che ti suona giusto",
   "Choose all that fit your life": "Scegli tutto ciò che rispecchia la tua vita",
@@ -403,6 +441,9 @@ export const translations = {
   "Once side quests are added, they will show up here ranked for your preferences.": "Quando aggiungeremo le side quest, appariranno qui ordinate in base alle tue preferenze.",
   "Why this works": "Perché funziona",
   "Try it like this": "Provala così",
+  "What to do": "Cosa fare",
+  "Try this": "Prova questo",
+  "Want a different mix of side quests?": "Vuoi un mix diverso di side quest?",
   "Edit preferences": "Modifica preferenze",
   "Back": "Indietro"
 };

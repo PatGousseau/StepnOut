@@ -66,7 +66,7 @@ export const ChallengePreviewCard: React.FC<ChallengePreviewCardProps> = ({
           {description}
         </Text>
         {!!footerLabel && (
-          <View style={styles.footerSlot}>
+          <View style={styles.footerRow}>
             <Text style={styles.footerLabel}>{footerLabel}</Text>
           </View>
         )}
@@ -134,14 +134,18 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 4,
   },
-  footerSlot: {
-    marginTop: 6,
+  footerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 8,
   },
   footerLabel: {
     color: colors.light.accent,
     fontSize: 11,
     fontWeight: "600",
-    marginTop: 6,
+    flexShrink: 1,
   },
   chevron: {
     alignSelf: "center",

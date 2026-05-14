@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { postService } from "../services/postService";
 import { useAuth } from "./AuthContext";
 import { Comment, LikeableItem, Post, ReactionSummary } from "../types";
@@ -59,7 +59,7 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [commentReactions, setCommentReactions] = useState<ReactionMap>({});
   const [pending, setPending] = useState<{ [key: string]: boolean }>({});
 
-  const initializeReactions = async (items: (Post | Comment)[], type: LikeableItem["type"]) => {
+  const initializeReactions = useCallback(async (items: (Post | Comment)[], type: LikeableItem["type"]) => {
     const ids = items.map((i) => i.id);
     if (ids.length === 0) return;
 
@@ -70,9 +70,9 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       ...prev,
       ...map,
     }));
-  };
+  }, [user?.id]);
 
-  const toggleReaction = async (
+  const toggleReaction = useCallback(async (
     item: LikeableItem,
     userId: string,
     targetUserId: string,
@@ -115,25 +115,49 @@ export const ReactionsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     } finally {
       setPending((prev) => ({ ...prev, [key]: false }));
     }
-  };
+  }, [commentReactions, pending, postReactions]);
+
+  const initializePostReactions = useCallback(
+    (posts: Post[]) => initializeReactions(posts, "post"),
+    [initializeReactions]
+  );
+  const initializeCommentReactions = useCallback(
+    (comments: Comment[]) => initializeReactions(comments, "comment"),
+    [initializeReactions]
+  );
+  const togglePostReaction = useCallback(
+    (postId: number, userId: string, postUserId: string, emoji: string) =>
+      toggleReaction({ id: postId, type: "post" }, userId, postUserId, emoji),
+    [toggleReaction]
+  );
+  const toggleCommentReaction = useCallback(
+    (
+      commentId: number,
+      postId: number,
+      userId: string,
+      commentUserId: string,
+      emoji: string
+    ) => toggleReaction({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId, emoji),
+    [toggleReaction]
+  );
 
   const value = useMemo(
     () => ({
       postReactions,
       commentReactions,
-      initializePostReactions: (posts: Post[]) => initializeReactions(posts, "post"),
-      initializeCommentReactions: (comments: Comment[]) => initializeReactions(comments, "comment"),
-      togglePostReaction: (postId: number, userId: string, postUserId: string, emoji: string) =>
-        toggleReaction({ id: postId, type: "post" }, userId, postUserId, emoji),
-      toggleCommentReaction: (
-        commentId: number,
-        postId: number,
-        userId: string,
-        commentUserId: string,
-        emoji: string
-      ) => toggleReaction({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId, emoji),
+      initializePostReactions,
+      initializeCommentReactions,
+      togglePostReaction,
+      toggleCommentReaction,
     }),
-    [postReactions, commentReactions, user?.id, pending]
+    [
+      commentReactions,
+      initializeCommentReactions,
+      initializePostReactions,
+      postReactions,
+      toggleCommentReaction,
+      togglePostReaction,
+    ]
   );
 
   return <ReactionsContext.Provider value={value}>{children}</ReactionsContext.Provider>;

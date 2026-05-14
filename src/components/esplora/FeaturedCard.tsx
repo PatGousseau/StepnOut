@@ -1,10 +1,8 @@
 import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import {
-  CATEGORY_GRADIENTS,
   CATEGORY_LABEL_KEYS,
   esploraSpacing,
   esploraType,
@@ -13,6 +11,7 @@ import { ContentPiece } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { captureEvent } from '../../lib/posthog';
 import { ESPLORA_EVENTS } from '../../constants/analyticsEvents';
+import { DecorativeCardBackground } from './DecorativeCardBackground';
 
 interface Props {
   piece: ContentPiece;
@@ -22,7 +21,6 @@ const FEATURED_HEIGHT = Math.round(Dimensions.get('window').width * 0.9);
 
 export const FeaturedCard: React.FC<Props> = ({ piece }) => {
   const { t } = useLanguage();
-  const gradient = CATEGORY_GRADIENTS[piece.category];
 
   const handlePress = () => {
     captureEvent(ESPLORA_EVENTS.PIECE_OPENED, {
@@ -42,17 +40,7 @@ export const FeaturedCard: React.FC<Props> = ({ piece }) => {
         style={styles.card}
         accessibilityRole="button"
       >
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <LinearGradient
-          colors={['rgba(0,0,0,0.15)', 'rgba(0,0,0,0.0)', 'rgba(0,0,0,0.65)']}
-          locations={[0, 0.4, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+        <DecorativeCardBackground category={piece.category} variant="featured" seed={piece.id} />
         <View style={styles.content}>
           <Text style={styles.category}>
             {t(CATEGORY_LABEL_KEYS[piece.category])}
@@ -87,17 +75,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: esploraSpacing.lg,
+    position: 'relative',
+    zIndex: 1,
   },
   category: {
     ...esploraType.categoryLabel,
     color: colors.neutral.white,
-    opacity: 0.85,
     marginBottom: esploraSpacing.sm,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   hook: {
     ...esploraType.hookLarge,
     color: colors.neutral.white,
     fontSize: 26,
     lineHeight: 34,
+    textShadowColor: 'rgba(0,0,0,0.24)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
 });

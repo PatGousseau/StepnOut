@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
-  ScrollView,
+  Animated,
   StyleSheet,
   Text,
   View,
@@ -25,6 +25,7 @@ export default function EsploraScreen() {
   const featuredQuery = useFeaturedPiece();
   const { sections, isLoading, pieces } = useCategorySections();
   const { initializeBookmarks } = useBookmarks();
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const allPieces = useMemo(() => {
     return [
@@ -45,10 +46,15 @@ export default function EsploraScreen() {
 
   return (
     <View style={styles.container}>
-      <EsploraHeader />
-      <ScrollView
+      <EsploraHeader scrollY={scrollY} />
+      <Animated.ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
       >
         {loading ? (
           <View style={styles.loader}>
@@ -69,7 +75,7 @@ export default function EsploraScreen() {
             )}
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

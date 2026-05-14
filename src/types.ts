@@ -1,5 +1,55 @@
 export type FeedSort = "recent" | "popular";
 
+export interface PostCommentPreview {
+  username: string;
+  text: string;
+  replyToUsername?: string;
+}
+
+export interface PostProfileRecord {
+  id: string;
+  username: string;
+  name: string;
+  profile_media: {
+    file_path: string;
+  } | null;
+}
+
+export interface PostCommentRecord {
+  id: number;
+  body: string;
+  created_at: string;
+  user_id: string;
+  parent_comment_id: number | null;
+  profiles: { username: string } | null;
+}
+
+export interface PostRecord {
+  id: number;
+  user_id: string;
+  body: string | null;
+  media_id?: number | null;
+  media?: {
+    file_path: string | null;
+    upload_status?: string | null;
+  } | null;
+  created_at: string;
+  featured: boolean;
+  challenge_id?: number | null;
+  challenge_title?: string;
+  quest_id?: number | null;
+  quest_title?: string;
+  comfort_zone_rating?: number | null;
+  likes?: {
+    count: number;
+  }[];
+  comments?: PostCommentRecord[];
+  profiles?: PostProfileRecord | null;
+  challenges?: { title: string } | null;
+  side_quests?: { title: string } | null;
+  is_welcome?: boolean | null;
+}
+
 export interface Challenge {
     id: number;
     title: string;
@@ -20,28 +70,26 @@ export interface Challenge {
   export interface Post {
     id: number;
     user_id: string;
-    body: string;
+    body: string | null;
     media_id?: number;
     media?: {
-      file_path: string;
+      file_path: string | null;
     };
     created_at: string;
     featured: boolean;
-    challenge_id?: number;
+    challenge_id?: number | null;
     challenge_title?: string;
-    comfort_zone_rating?: number;
+    quest_id?: number | null;
+    quest_title?: string;
+    comfort_zone_rating?: number | null;
     likes_count: number;
     comments_count: number;
     liked: boolean;
     likes?: {
       count: number;
-    };
-    is_welcome?: boolean;
-    comment_previews?: {
-      username: string;
-      text: string;
-      replyToUsername?: string;
     }[];
+    is_welcome?: boolean | null;
+    comment_previews?: PostCommentPreview[];
   }
 
   export interface ChallengeProgress {
