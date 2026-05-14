@@ -5,6 +5,7 @@ import { colors } from '../constants/Colors';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
+import { SideQuestProgress } from '../types';
 
 interface UserProgressProps {
   challengeData: {
@@ -13,6 +14,7 @@ interface UserProgressProps {
     hard: number;
   };
   weekData: WeekData[];
+  sideQuestData: SideQuestProgress;
 }
 
 interface WeekData {
@@ -75,7 +77,7 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
   );
 };
 
-const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) => {
+const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData, sideQuestData }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const breakdown = [
@@ -115,37 +117,52 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.yourProgressText}>{t('Your Challenge History')}</Text>
-      <View style={styles.streakRow}>
-        <StreakCalendar weekData={weekData} />
-      </View>
+      <View style={styles.body}>
+        <Text style={styles.yourProgressText}>{t('Your Challenge History')}</Text>
+        <View style={styles.streakRow}>
+          <StreakCalendar weekData={weekData} />
+        </View>
 
-      <View style={styles.progressBarTrack}>
-        {breakdown
-          .filter((level) => level.count > 0)
-          .map((level) => (
-            <View
-              key={level.key}
-              style={[
-                styles.progressBarSegment,
-                {
-                  backgroundColor: level.color,
-                  flex: level.count,
-                },
-              ]}
-            />
+        <View style={styles.progressBarTrack}>
+          {total === 0 ? (
+            <View style={styles.emptyProgressFill} />
+          ) : (
+            breakdown
+              .filter((level) => level.count > 0)
+              .map((level) => (
+                <View
+                  key={level.key}
+                  style={[
+                    styles.progressBarSegment,
+                    {
+                      backgroundColor: level.color,
+                      flex: level.count,
+                    },
+                  ]}
+                />
+              ))
+          )}
+        </View>
+
+        <View style={styles.breakdownContainer}>
+          {breakdown.map((level) => (
+            <View key={level.key} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: level.color }]} />
+              <Text style={styles.challengeLabel}>{level.label}</Text>
+              <Text style={styles.challengeCount}>{level.count}</Text>
+            </View>
           ))}
+        </View>
       </View>
 
-      <View style={styles.breakdownContainer}>
-        {breakdown.map((level) => (
-          <View key={level.key} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: level.color }]} />
-            <Text style={styles.challengeLabel}>{level.label}</Text>
-            <Text style={styles.challengeCount}>{level.count}</Text>
-          </View>
-        ))}
-      </View>
+      {sideQuestData.total > 0 && (
+        <View style={styles.footerStrap}>
+          <Text style={styles.footerStrapText}>
+            {t('Side quests completed')}:{' '}
+            <Text style={styles.footerStrapCount}>{sideQuestData.total}</Text>
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -158,7 +175,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 4,
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  body: {
     padding: 16,
+  },
+  footerStrap: {
+    backgroundColor: '#EEF1F6',
+    borderTopColor: '#D7DDE8',
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  footerStrapText: {
+    color: '#0D1B1E',
+    fontSize: 14,
+  },
+  footerStrapCount: {
+    color: '#0D1B1E',
+    fontSize: 14,
+    fontWeight: '700',
   },
   yourProgressText: {
     color: '#0D1B1E',
@@ -269,6 +305,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 14,
   },
+
 });
 
 export default UserProgress;
