@@ -93,11 +93,18 @@ export interface Challenge {
   }
 
   export interface ChallengeProgress {
-    easy: number;  
-    medium: number; 
-    hard: number;   
+    easy: number;
+    medium: number;
+    hard: number;
   }
-  
+
+  export interface SideQuestProgress {
+    total: number;
+    easy_win: number;
+    moderate_push: number;
+    bold_nudge: number;
+  }
+
   export interface WeekData {
     week: number;
     hasStreak: boolean;
@@ -108,10 +115,11 @@ export interface Challenge {
     isActive: boolean;
     isCompleted: boolean;
   }
-  
+
   export interface UserProgress {
     challengeData: ChallengeProgress;
     weekData: WeekData[];
+    sideQuestData: SideQuestProgress;
   }
 
   export interface Notification {
