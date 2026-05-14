@@ -184,7 +184,7 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
       >
         <View style={styles.ctaButtonContent}>
           {completed && (
-            <MaterialIcons name="check-circle" size={20} color={colors.sideQuest.textStrong} style={styles.checkIcon} />
+            <MaterialIcons name="check-circle" size={20} color="#2D5016" style={styles.checkIcon} />
           )}
           <Text style={[styles.ctaButtonText, completed && styles.completedButtonText]}>
             {completed ? t("Quest completed!") : t("Mark as complete")}
@@ -339,10 +339,11 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   completedButton: {
-    backgroundColor: colors.sideQuest.bgMuted,
+    backgroundColor: colors.light.easyGreen,
   },
   completedButtonText: {
-    color: colors.sideQuest.textStrong,
+    color: "#2D5016",
+    fontWeight: "600",
   },
   checkIcon: {
     marginRight: 8,
