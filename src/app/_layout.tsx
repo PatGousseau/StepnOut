@@ -22,6 +22,7 @@ import { LikesProvider } from '../contexts/LikesContext';
 import { ReactionsProvider } from '../contexts/ReactionsContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
+import UpdateAvailableModal from '../components/UpdateAvailableModal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PostHogProvider } from 'posthog-react-native';
 import { captureScreen, captureEvent } from '../lib/posthog';
@@ -449,6 +450,7 @@ function RootLayoutNav() {
         isVisible={showFeedback}
         onClose={() => setShowFeedback(false)}
       />
+      {!hideLogo && <UpdateAvailableModal />}
     </SafeAreaView>
   );
 }
