@@ -135,7 +135,7 @@ export const postService = {
       const { data, error } = await supabase
         .from("likes")
         .select(`${idField}, user_id`)
-        .eq("emoji", "❤️")
+        .in("emoji", ["❤️", "❤"])
         .in(idField, ids);
 
       if (error) throw error;
@@ -388,8 +388,9 @@ export const postService = {
         .select("id")
         .eq(idField, id)
         .eq("user_id", userId)
-        .eq("emoji", "❤️")
-        .single();
+        .in("emoji", ["❤️", "❤"])
+        .limit(1)
+        .maybeSingle();
 
       if (existingLike) {
         const { error } = await supabase.from("likes").delete().eq("id", existingLike.id);

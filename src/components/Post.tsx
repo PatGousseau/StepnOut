@@ -548,8 +548,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 if (!user) return;
                 togglePostReaction(post.id, user.id, post.user_id, emoji);
               }}
-              isLiked={!!likedPosts[post.id]}
-              likeCount={likeCounts[post.id] || 0}
+              isLiked={likedPosts[post.id] ?? post.liked ?? false}
+              likeCount={likeCounts[post.id] ?? post.likes_count ?? 0}
               onLikeToggle={() => handleLikePress(false)}
             />
           </View>

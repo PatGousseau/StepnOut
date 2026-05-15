@@ -211,7 +211,7 @@ export const useFetchHomeData = (
         .from("likes")
         .select("post_id")
         .eq("user_id", user.id)
-        .eq("emoji", "❤️")
+        .in("emoji", ["❤️", "❤"])
         .not("post_id", "is", null);
       if (error) throw error;
       const likedMap: PostLikes = {};
