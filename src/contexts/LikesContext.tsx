@@ -65,9 +65,8 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ),
     }));
 
-    // Caller already has authoritative liked data — skip the redundant network round-trip
-    // that would otherwise cause hearts to lag behind the rest of the feed.
-    if (seedLikedMap) return;
+    // Even when we seed liked state for first paint, still fetch authoritative liked state
+    // from backend to avoid stale/empty seed maps forcing all hearts to appear unliked.
 
     const [likesMap, countsMap] = await Promise.all([
       type === "post"
