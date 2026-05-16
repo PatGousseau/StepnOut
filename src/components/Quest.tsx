@@ -250,6 +250,7 @@ const styles = StyleSheet.create({
     lineHeight: 31,
   },
   questPage: {
-    paddingHorizontal: 4,
+    alignSelf: "center",
+    width: "90%",
   },
 });

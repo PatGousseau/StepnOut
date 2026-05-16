@@ -598,31 +598,41 @@ export const SideQuestPath: React.FC = () => {
               <Text style={styles.eyebrowSub}>{todaysDateLabel}</Text>
             </View>
 
-            {isRevealing ? (
-              <QuestPullAnimation
-                quest={revealedQuest}
-                onComplete={handleRevealComplete}
-                onAbort={handleRevealAbort}
-              />
-            ) : showDraw ? (
-              <>
-                <QuestHatIdle />
-                <Text style={styles.heroBody}>
+            {(showDraw || isRevealing) && (
+              <View style={styles.heroStage}>
+                <View style={styles.heroVisualSlot}>
+                  <View style={[styles.heroVisualBase, isRevealing && styles.heroVisualBaseHidden]}>
+                    <QuestHatIdle />
+                  </View>
+                </View>
+
+                <Text style={[styles.heroBody, isRevealing && styles.heroBodyHidden]}>
                   {t("Today's side quest is ready to be pulled. Pick from the hat and see where it leads!")}
                 </Text>
-                <View style={styles.ctaWrap}>
-                  <TouchableOpacity
-                    style={[styles.drawButton, isDrawingQuest && styles.disabledButton]}
-                    disabled={isDrawingQuest}
-                    onPress={handleDrawQuest}
-                  >
-                    <Text style={styles.drawButtonText}>
-                      {isDrawingQuest ? t("Shuffling...") : t("Pick a quest")}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : null}
+
+                {isRevealing && (
+                  <View style={styles.heroAnimationOverlay}>
+                    <QuestPullAnimation
+                      quest={revealedQuest}
+                      onComplete={handleRevealComplete}
+                      onAbort={handleRevealAbort}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+
+            {(showDraw || isRevealing) && (
+              <View style={styles.ctaWrap}>
+                <TouchableOpacity
+                  style={[styles.drawButton, (isDrawingQuest || isRevealing) && styles.disabledButton]}
+                  disabled={isDrawingQuest || isRevealing}
+                  onPress={handleDrawQuest}
+                >
+                  <Text style={styles.drawButtonText}>{t("Pick a quest")}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -698,6 +708,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    flexGrow: 1,
     padding: 16,
     paddingBottom: 32,
   },
@@ -739,7 +750,8 @@ const styles = StyleSheet.create({
   },
   editPrefsWrap: {
     alignItems: "center",
-    marginTop: 24,
+    marginTop: "auto",
+    paddingTop: 24,
   },
   emptyStateBody: {
     color: colors.light.lightText,
@@ -799,10 +811,39 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: "84%",
   },
+  heroAnimationOverlay: {
+    alignItems: "center",
+    bottom: 0,
+    justifyContent: "flex-start",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
+  },
+  heroBodyHidden: {
+    opacity: 0,
+  },
   heroContent: {
     minHeight: 410,
     position: "relative",
     zIndex: 1,
+  },
+  heroStage: {
+    position: "relative",
+  },
+  heroVisualBase: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  heroVisualBaseHidden: {
+    opacity: 0,
+  },
+  heroVisualSlot: {
+    alignItems: "center",
+    height: 240,
+    justifyContent: "flex-end",
+    marginBottom: 4,
+    position: "relative",
   },
   heroGlow: {
     backgroundColor: colors.sideQuest.tint,
@@ -1047,7 +1088,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   questActions: {
-    marginTop: 14,
+    alignSelf: "center",
+    marginTop: 0,
+    width: "80%",
   },
   questBlock: {
     paddingTop: 4,
