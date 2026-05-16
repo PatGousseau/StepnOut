@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Alert, Linking, Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
+import { AppAlert } from '../components/AppAlert';
 import { useUploadProgress } from '../contexts/UploadProgressContext';
 import { createProgressManager } from '../utils/progressManager';
 import { selectMediaForPreview, MediaSelectionResult } from '../utils/handleMediaUpload';
@@ -55,7 +56,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
       
       // Check if it's a permissions error
       if (error?.message?.includes('permissions not granted')) {
-        Alert.alert(
+        AppAlert.show(
           t('Photo Access Required'),
           t('Please enable photo library access in Settings to share photos and videos.'),
           [

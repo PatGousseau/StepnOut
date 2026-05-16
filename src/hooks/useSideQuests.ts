@@ -17,27 +17,30 @@ export function useSideQuests() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const localDay = getLocalDayString();
+  const userId = user?.id;
 
   const profileQuery = useQuery({
-    queryKey: ["side-quest-profile", user?.id],
+    queryKey: ["side-quest-profile", userId],
     queryFn: () => sideQuestService.fetchProfile(user!.id),
-    enabled: !!user?.id,
+    enabled: !!userId,
     staleTime: 30000,
   });
 
   const sideQuestsQuery = useQuery({
     queryKey: ["side-quests"],
     queryFn: () => sideQuestService.fetchSideQuests(),
-    enabled: !!user?.id && !!profileQuery.data,
+    enabled: !!userId && !!profileQuery.data,
     staleTime: 30000,
   });
 
   const saveProfileMutation = useMutation({
     mutationFn: (draft: SideQuestQuestionnaireDraft) =>
       sideQuestService.saveProfile(user!.id, draft),
-    onSuccess: async () => {
+    onSuccess: async (profile) => {
+      if (!userId) return;
+      queryClient.setQueryData(["side-quest-profile", userId], profile);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["side-quest-profile", user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ["side-quest-profile", userId] }),
         queryClient.invalidateQueries({ queryKey: ["side-quests"] }),
       ]);
     },
@@ -49,16 +52,17 @@ export function useSideQuests() {
   }, [profileQuery.data, sideQuestsQuery.data]);
 
   const dailyDrawQuery = useQuery({
-    queryKey: ["side-quest-draw", user?.id, localDay],
+    queryKey: ["side-quest-draw", userId, localDay],
     queryFn: () => sideQuestService.fetchDailyDraw(user!.id, localDay),
-    enabled: !!user?.id && !!profileQuery.data && rankedSideQuests.length > 0,
+    enabled: !!userId && !!profileQuery.data && rankedSideQuests.length > 0,
     staleTime: 30000,
   });
 
   const drawDailyQuestMutation = useMutation({
     mutationFn: () => sideQuestService.claimDailyQuest(user!.id, rankedSideQuests, localDay),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["side-quest-draw", user?.id, localDay] });
+      if (!userId) return;
+      await queryClient.invalidateQueries({ queryKey: ["side-quest-draw", userId, localDay] });
     },
   });
 

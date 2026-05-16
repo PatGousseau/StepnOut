@@ -5,7 +5,7 @@ import { View, Text, TouchableOpacity, Linking, StyleSheet, AppState, Platform, 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync } from '../lib/notifications';
+import { registerPushTokenIfGranted } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import NotificationSidebar from '../components/NotificationSidebar';
 import MenuSidebar from '../components/MenuSidebar';
 import FeedbackModal from '../components/FeedbackModal';
+import { AppAlertHost } from '../components/AppAlert';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
@@ -89,10 +90,16 @@ function RootLayoutNav() {
     pathname === '/esplora/saved';
 
   // hide logo on auth screens
-  const hideLogo = pathname === '/login' || pathname === '/register' || pathname === '/forgot-password' || pathname === '/reset-password';
+  const hideLogo =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname === '/(auth)/eula' ||
+    pathname === '/eula' ||
+    pathname === '/(auth)/notifications-prime' ||
+    pathname === '/notifications-prime';
 
-  // hide recently active banner on onboarding
-  const hideRecentlyActive = pathname === '/(auth)/onboarding' || pathname === '/onboarding';
   useAppOpenTracker(session?.user?.id, loading);
 
   // Track screen views when pathname changes
@@ -106,10 +113,12 @@ function RootLayoutNav() {
         pathname === '/register' ||
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
-        pathname === '/(auth)/onboarding' ||
-        pathname === '/onboarding' ||
         pathname === '/(auth)/register-profile' ||
-        pathname === '/register-profile';
+        pathname === '/register-profile' ||
+        pathname === '/(auth)/eula' ||
+        pathname === '/eula' ||
+        pathname === '/(auth)/notifications-prime' ||
+        pathname === '/notifications-prime';
       if (isAuthRoute) return;
       try {
         const { data: profile } = await supabase
@@ -149,8 +158,10 @@ function RootLayoutNav() {
       pathname === '/register' ||
       pathname === '/forgot-password' ||
       pathname === '/reset-password' ||
-      pathname === '/(auth)/onboarding' ||
-      pathname === '/onboarding';
+      pathname === '/(auth)/eula' ||
+      pathname === '/eula' ||
+      pathname === '/(auth)/notifications-prime' ||
+      pathname === '/notifications-prime';
 
     if (!loading && !session && !isAuthRoute) {
       router.replace('/(auth)/login');
@@ -162,7 +173,7 @@ function RootLayoutNav() {
     const setupPushNotifications = async () => {
       const userId = session?.user.id;
       if (userId) {
-        await registerForPushNotificationsAsync(userId);
+        await registerPushTokenIfGranted(userId);
       }
     };
     setupPushNotifications();
@@ -178,10 +189,12 @@ function RootLayoutNav() {
         pathname === '/register' ||
         pathname === '/forgot-password' ||
         pathname === '/reset-password' ||
-        pathname === '/(auth)/onboarding' ||
-        pathname === '/onboarding' ||
         pathname === '/(auth)/register-profile' ||
-        pathname === '/register-profile';
+        pathname === '/register-profile' ||
+        pathname === '/(auth)/eula' ||
+        pathname === '/eula' ||
+        pathname === '/(auth)/notifications-prime' ||
+        pathname === '/notifications-prime';
 
       if (isAuthRoute) {
         setShowNotificationsBanner(false);
@@ -201,7 +214,7 @@ function RootLayoutNav() {
       }
 
       // Permission granted — ensure push token is registered
-      await registerForPushNotificationsAsync(session.user.id);
+      await registerPushTokenIfGranted(session.user.id);
       const { data: profile } = await supabase
         .from('profiles')
         .select('push_token')
@@ -235,20 +248,42 @@ function RootLayoutNav() {
         const postId = data['postId'] ?? data['post_id'];
         const challengeId = data['challengeId'] ?? data['challenge_id'];
 
+        let destination: 'post' | 'challenge' | 'none' = 'none';
+        let postIdStr: string | undefined;
+        let challengeIdStr: string | undefined;
+
         if (typeof postId === 'string' || typeof postId === 'number') {
-          const postIdStr = String(postId);
-          if (postIdStr.length > 0) {
-            router.push(`/post/${postIdStr}`);
-            return;
+          const s = String(postId);
+          if (s.length > 0) {
+            destination = 'post';
+            postIdStr = s;
+          }
+        }
+        if (destination === 'none' && (typeof challengeId === 'string' || typeof challengeId === 'number')) {
+          const s = String(challengeId);
+          if (s.length > 0) {
+            destination = 'challenge';
+            challengeIdStr = s;
           }
         }
 
-        if (typeof challengeId === 'string' || typeof challengeId === 'number') {
-          const challengeIdStr = String(challengeId);
-          if (challengeIdStr.length > 0) {
-            router.push(`/challenge/${challengeIdStr}`);
-            return;
-          }
+        const typeVal = data['type'];
+        captureEvent(UI_EVENTS.PUSH_NOTIFICATION_CLICKED, {
+          destination,
+          ...(postIdStr ? { post_id: postIdStr } : {}),
+          ...(challengeIdStr ? { challenge_id: challengeIdStr } : {}),
+          ...(typeof typeVal === 'string' ? { notification_type: typeVal } : {}),
+          ...(response.actionIdentifier ? { action_identifier: response.actionIdentifier } : {}),
+        });
+
+        if (postIdStr) {
+          router.push(`/post/${postIdStr}`);
+          return;
+        }
+
+        if (challengeIdStr) {
+          router.push(`/challenge/${challengeIdStr}`);
+          return;
         }
 
         console.log('Notification tapped (no navigable data):', data);
@@ -302,7 +337,7 @@ function RootLayoutNav() {
     });
 
     if (status === 'granted') {
-      await registerForPushNotificationsAsync(userId);
+      await registerPushTokenIfGranted(userId);
       setShowNotificationsBanner(false);
       return;
     }
@@ -383,7 +418,7 @@ function RootLayoutNav() {
         </View>
       )}
 
-      {/* {!hideLogo && !hideRecentlyActive && <RecentlyActiveBanner hidden={isDetailPage} />} */}
+      {!hideLogo && <RecentlyActiveBanner hidden={isDetailPage} />}
       <Stack
         screenOptions={{
           headerShown: false,
@@ -439,6 +474,7 @@ function RootLayoutNav() {
         isVisible={showFeedback}
         onClose={() => setShowFeedback(false)}
       />
+      <AppAlertHost />
     </SafeAreaView>
   );
 }

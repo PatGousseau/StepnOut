@@ -100,6 +100,7 @@ export const FEED_EVENTS = {
 // UI EVENTS
 // ============================================
 export const UI_EVENTS = {
+  PUSH_NOTIFICATION_CLICKED: 'ui_push_notification_clicked',
   NOTIFICATIONS_OPENED: 'ui_notifications_opened',
   MENU_OPENED: 'ui_menu_opened',
   FEEDBACK_MODAL_OPENED: 'ui_feedback_modal_opened',
@@ -107,6 +108,10 @@ export const UI_EVENTS = {
   NOTIFICATIONS_BANNER_ENABLE_CLICKED: 'ui_notifications_banner_enable_clicked',
   NOTIFICATIONS_BANNER_NOT_NOW_CLICKED: 'ui_notifications_banner_not_now_clicked',
   NOTIFICATIONS_BANNER_DONT_ASK_AGAIN_CLICKED: 'ui_notifications_banner_dont_ask_again_clicked',
+  NOTIFICATIONS_PRIME_SHOWN: 'ui_notifications_prime_shown',
+  NOTIFICATIONS_PRIME_CTA_CLICKED: 'ui_notifications_prime_cta_clicked',
+  EULA_SHOWN: 'ui_eula_shown',
+  EULA_ACCEPTED: 'ui_eula_accepted',
 } as const;
 
 // ============================================

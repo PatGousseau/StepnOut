@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../constants/Colors';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { FeatureActionButton } from './FeatureActionButton';
 
 const FeedbackButton: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -121,12 +122,15 @@ const FeedbackButton: React.FC = () => {
                     >
                       <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.submitButton}
+                    <FeatureActionButton
+                      fullWidth={false}
                       onPress={handleSubmit}
-                    >
-                      <Text style={styles.submitButtonText}>Submit</Text>
-                    </TouchableOpacity>
+                      showIcon={false}
+                      style={styles.submitButton}
+                      title="Submit"
+                      tone="indigo"
+                      variant="pill"
+                    />
                   </View>
                 </>
               )}
@@ -195,14 +199,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   submitButton: {
-    backgroundColor: colors.light.primary,
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    alignSelf: 'flex-end',
   },
   successMessage: {
     alignItems: 'center',

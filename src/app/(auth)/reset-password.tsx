@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Pressable, Keyboard } from 'react-native';
+import { TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable, Keyboard } from 'react-native';
+import { AppAlert } from '../../components/AppAlert';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
+import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getRecoveryTokens, clearRecoveryTokens } from '../../contexts/AuthContext';
@@ -14,12 +16,12 @@ export default function ResetPasswordScreen() {
 
   const handleUpdatePassword = async () => {
     if (!password || !confirmPassword) {
-      Alert.alert(t('Error'), t('Please fill in all fields'));
+      AppAlert.show(t('Error'), t('Please fill in all fields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert(t('Error'), t('Passwords do not match'));
+      AppAlert.show(t('Error'), t('Passwords do not match'));
       return;
     }
 
@@ -50,14 +52,14 @@ export default function ResetPasswordScreen() {
 
       clearRecoveryTokens();
 
-      Alert.alert(t('Success'), t('Password updated'), [
+      AppAlert.show(t('Success'), t('Password updated'), [
         {
           text: t('OK'),
           onPress: () => router.replace('/(auth)/login'),
         },
       ]);
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -86,13 +88,14 @@ export default function ResetPasswordScreen() {
           secureTextEntry
         />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleUpdatePassword}
+        <FeatureActionButton
           disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? t('Updating...') : t('Update password')}</Text>
-        </TouchableOpacity>
+          onPress={handleUpdatePassword}
+          showIcon={false}
+          title={loading ? t('Updating...') : t('Update password')}
+          tone="indigo"
+          variant="pill"
+        />
 
         <TouchableOpacity style={styles.linkButton} onPress={() => router.replace('/(auth)/login')}>
           <Text style={styles.linkText}>{t('Back to login')}</Text>
@@ -124,20 +127,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 15,
     padding: 15,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    padding: 15,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   linkButton: {
     alignItems: 'center',

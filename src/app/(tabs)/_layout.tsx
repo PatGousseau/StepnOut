@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View, GestureResponderEvent, Platform } from 'react-native';
 import { colors } from '../../constants/Colors';
@@ -13,20 +14,22 @@ type ChallengeTabButtonProps = {
 
 function ChallengeTabButton({
   onPress,
-  accessibilityState,
   accessibilityLabel,
 }: ChallengeTabButtonProps) {
-  const focused = !!accessibilityState?.selected;
+  const pathname = usePathname();
+  const focused = pathname === '/challenge' || pathname.startsWith('/challenge/');
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={accessibilityState}
+      accessibilityState={{ selected: focused }}
       style={styles.challengeButtonHit}
     >
-      <View style={[styles.challengeCircle, focused && styles.challengeCircleFocused]}>
-        <Ionicons name="trophy" size={26} color="white" />
+      <View style={styles.challengeButtonWrap}>
+        <View style={styles.challengeCircle}>
+          <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={26} color="white" />
+        </View>
       </View>
     </Pressable>
   );
@@ -39,7 +42,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: colors.light.primary,
+        tabBarActiveTintColor: colors.light.primarySoft,
         tabBarStyle: {
           paddingTop: 10,
           paddingBottom: Platform.OS === 'ios' ? 0 : 48,
@@ -59,7 +62,7 @@ export default function TabsLayout() {
               iconName = 'trophy';
               break;
             case 'esplora':
-              iconName = 'book-outline';
+              iconName = 'book';
               break;
             case 'path':
               iconName = 'footsteps';
@@ -126,17 +129,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  challengeCircle: {
+  challengeButtonWrap: {
     position: 'absolute',
-    top: -18,
+    top: -22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 76,
+    height: 76,
+  },
+  challengeCircle: {
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: colors.light.accent,
+    backgroundColor: colors.light.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  challengeCircleFocused: {
-    transform: [{ scale: 1.06 }],
+    borderWidth: 1,
+    borderColor: colors.light.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });

@@ -228,12 +228,14 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
     });
   }, [posts.length, userMap, updateDiagnostics]);
 
+  // Initialize likes when posts change, and re-seed when the user's liked-post
+  // pre-fetch resolves so the red heart paints in sync with everything else.
   useEffect(() => {
     if (postsForInitialization.length > 0) {
-      initializePostLikes(postsForInitialization);
+      initializePostLikes(postsForInitialization, userLikedPostIds);
       initializePostReactions(postsForInitialization);
     }
-  }, [initializePostLikes, initializePostReactions, postsForInitialization]);
+  }, [initializePostLikes, initializePostReactions, postsForInitialization, userLikedPostIds]);
 
   useEffect(() => {
     if (isLoading) {

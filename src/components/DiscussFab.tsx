@@ -8,16 +8,16 @@ import {
   Platform,
   Image,
   ScrollView,
-  TextStyle,
   ViewStyle,
   ImageStyle,
+  TextStyle,
 } from "react-native";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Text } from "./StyledText";
+import { FeatureActionButton } from "./FeatureActionButton";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
@@ -35,7 +35,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
   const {
     selectedMedia,
     setPostText,
-    isUploading,
+    isSubmitting,
     uploadProgress,
     handleMediaUpload: baseHandleMediaUpload,
     handleRemoveMedia,
@@ -73,21 +73,23 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
 
   return (
     <>
-      <TouchableOpacity
-        style={[fabStyle, { bottom: bottomOffset }]}
+      <FeatureActionButton
+        fullWidth={false}
+        icon={<MaterialIcons name="chat-bubble-outline" size={18} color="white" />}
+        iconPosition="start"
         onPress={handleOpen}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={t("Start a discussion")}
-      >
-        <MaterialIcons name="chat-bubble-outline" size={18} color="white" />
-        <Text style={fabLabelStyle}>{t("Discuss")}</Text>
-      </TouchableOpacity>
+        showIcon
+        style={[fabStyle, { bottom: bottomOffset }]}
+        title={t("Discuss")}
+        tone="indigo"
+        variant="pill"
+      />
 
       <Modal
         transparent
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
+        statusBarTranslucent
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -104,89 +106,111 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
             >
               <View style={modalContentStyle}>
                 <View style={modalHeaderStyle}>
+                  <View style={headerGlowStyle} />
+                  <View style={headerRingStyle} />
+                  <View style={headerFillStyle} />
                   <Text style={modalTitleStyle}>{t("Start a discussion")}</Text>
                   <TouchableOpacity
                     style={closeButtonStyle}
                     onPress={() => setModalVisible(false)}
                   >
-                    <MaterialIcons name="close" size={20} color={colors.light.text} />
+                    <MaterialIcons
+                      name="close"
+                      size={20}
+                      color={colors.light.text}
+                      style={closeIconStyle}
+                    />
                   </TouchableOpacity>
                 </View>
+                <View style={modalBodyStyle}>
+                  {selectedMedia ? (
+                    <View style={mediaPreviewContainerStyle}>
+                      <Image
+                        source={{
+                          uri: selectedMedia.isVideo
+                            ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
+                            : selectedMedia.previewUrl,
+                        }}
+                        style={mediaPreviewStyle}
+                        resizeMode="contain"
+                      />
+                      <TouchableOpacity
+                        style={removeMediaButtonStyle}
+                        onPress={handleRemoveMedia}
+                      >
+                        <MaterialIcons name="close" size={12} color="white" />
+                      </TouchableOpacity>
+                      {selectedMedia.isVideo && (
+                        <View style={videoIndicatorStyle}>
+                          <MaterialIcons name="play-circle-filled" size={24} color="white" />
+                        </View>
+                      )}
+                    </View>
+                  ) : null}
 
-                {isUploading ? (
-                  <View style={mediaPreviewContainerStyle}>
-                    <Loader />
-                  </View>
-                ) : selectedMedia ? (
-                  <View style={mediaPreviewContainerStyle}>
-                    <Image
-                      source={{
-                        uri: selectedMedia.isVideo
-                          ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
-                          : selectedMedia.previewUrl,
-                      }}
-                      style={mediaPreviewStyle}
-                      resizeMode="contain"
-                    />
-                    <TouchableOpacity
-                      style={removeMediaButtonStyle}
-                      onPress={handleRemoveMedia}
-                    >
-                      <MaterialIcons name="close" size={12} color="white" />
-                    </TouchableOpacity>
-                    {selectedMedia.isVideo && (
-                      <View style={videoIndicatorStyle}>
-                        <MaterialIcons name="play-circle-filled" size={24} color="white" />
-                      </View>
-                    )}
-                  </View>
-                ) : null}
-
-                <TextInput
-                  style={textInputStyle}
-                  multiline
-                  scrollEnabled
-                  textAlignVertical="top"
-                  autoFocus
+                  <TextInput
+                    style={textInputStyle}
+                    multiline
+                    scrollEnabled
+                    textAlignVertical="top"
+                    autoFocus
                   placeholder={t(
                     "Share your thoughts, start a discussion, or share an achievement..."
                   )}
                   placeholderTextColor="#999"
+                  maxLength={1000}
                   onChangeText={setPostText}
                 />
 
-                <View style={mediaUploadContainerStyle}>
-                  <TouchableOpacity style={mediaUploadIconStyle} onPress={handleMediaUpload}>
-                    <MaterialIcons
-                      name="add-photo-alternate"
-                      size={24}
-                      color={colors.light.primary}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[submitButtonStyle, isUploading && disabledButtonStyle]}
-                    onPress={onSubmit}
-                    disabled={isUploading}
-                  >
-                    <Text style={[submitTextStyle, isUploading && disabledButtonTextStyle]}>
-                      {t("Submit")}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {uploadProgress !== null && (
-                  <View style={uploadProgressContainerStyle}>
-                    <Text style={uploadProgressTextStyle}>
-                      {t("Uploading media...")} {Math.round(uploadProgress)}%
-                    </Text>
-                    <View style={progressBarContainerStyle}>
-                      <View
-                        style={[progressBarFillStyle, { width: `${uploadProgress}%` }]}
+                  <View style={mediaUploadContainerStyle}>
+                    <TouchableOpacity
+                      style={[
+                        mediaUploadButtonStyle,
+                        selectedMedia ? mediaUploadButtonDisabledStyle : null,
+                      ]}
+                      onPress={handleMediaUpload}
+                      disabled={!!selectedMedia}
+                    >
+                      <MaterialIcons
+                        name="add-photo-alternate"
+                        size={20}
+                        color={selectedMedia ? colors.neutral.darkGrey : colors.light.primary}
                       />
-                    </View>
+                      <Text
+                        style={[
+                          mediaUploadTextStyle,
+                          selectedMedia ? mediaUploadTextDisabledStyle : null,
+                        ]}
+                      >
+                        {t("Add media")}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <FeatureActionButton
+                      disabled={isSubmitting}
+                      fullWidth={false}
+                      onPress={onSubmit}
+                      showIcon={false}
+                      style={submitButtonStyle}
+                      title={t(isSubmitting ? "Submitting..." : "Submit")}
+                      tone="indigo"
+                      variant="pill"
+                    />
                   </View>
-                )}
+
+                  {uploadProgress !== null && (
+                    <View style={uploadProgressContainerStyle}>
+                      <Text style={uploadProgressTextStyle}>
+                        {t("Uploading media...")} {Math.round(uploadProgress)}%
+                      </Text>
+                      <View style={progressBarContainerStyle}>
+                        <View
+                          style={[progressBarFillStyle, { width: `${uploadProgress}%` }]}
+                        />
+                      </View>
+                    </View>
+                  )}
+                </View>
               </View>
             </ScrollView>
           </View>
@@ -199,24 +223,11 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
 const fabStyle: ViewStyle = {
   position: "absolute",
   right: 16,
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 8,
-  backgroundColor: colors.light.accent,
-  borderRadius: 999,
-  paddingHorizontal: 18,
-  paddingVertical: 12,
   shadowColor: "#000",
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.18,
   shadowRadius: 8,
   elevation: 6,
-};
-
-const fabLabelStyle: TextStyle = {
-  color: "white",
-  fontSize: 14,
-  fontWeight: "700",
 };
 
 const keyboardViewStyle: ViewStyle = {
@@ -243,44 +254,104 @@ const scrollContentStyle: ViewStyle = {
 
 const modalContentStyle: ViewStyle = {
   backgroundColor: "white",
-  borderRadius: 10,
+  borderColor: colors.light.accent2,
+  borderRadius: 26,
+  borderWidth: 1,
   marginVertical: 20,
-  padding: 20,
+  overflow: "hidden",
+  padding: 0,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 14 },
+  shadowOpacity: 0.16,
+  shadowRadius: 24,
   width: "100%",
+  elevation: 8,
 };
 
 const modalHeaderStyle: ViewStyle = {
   position: "relative",
-  marginBottom: 12,
+  backgroundColor: colors.light.accent3,
+  borderBottomColor: colors.light.accent2,
+  borderBottomWidth: 1,
+  overflow: "hidden",
+  paddingHorizontal: 20,
+  paddingTop: 18,
+  paddingBottom: 18,
+};
+
+const headerGlowStyle: ViewStyle = {
+  backgroundColor: "rgba(103, 109, 160, 0.22)",
+  borderRadius: 999,
+  height: 160,
+  position: "absolute",
+  right: -42,
+  top: -52,
+  width: 160,
+};
+
+const headerRingStyle: ViewStyle = {
+  borderColor: "rgba(77, 83, 130, 0.14)",
+  borderRadius: 999,
+  borderWidth: 1,
+  height: 104,
+  position: "absolute",
+  right: -14,
+  top: 18,
+  transform: [{ rotate: "16deg" }],
+  width: 104,
+};
+
+const headerFillStyle: ViewStyle = {
+  backgroundColor: "rgba(77, 83, 130, 0.09)",
+  borderRadius: 999,
+  height: 12,
+  position: "absolute",
+  right: 28,
+  top: 34,
+  transform: [{ rotate: "-18deg" }],
+  width: 74,
 };
 
 const modalTitleStyle: TextStyle = {
-  color: colors.light.text,
-  fontSize: 18,
+  color: colors.light.primary,
+  fontSize: 21,
   fontWeight: "700",
+  lineHeight: 25,
+  maxWidth: "84%",
 };
 
 const closeButtonStyle: ViewStyle = {
-  padding: 8,
+  alignItems: "center",
+  backgroundColor: "rgba(255,255,255,0.82)",
+  borderColor: colors.light.accent2,
+  borderRadius: 999,
+  borderWidth: 1,
+  height: 36,
+  justifyContent: "center",
   position: "absolute",
-  right: -12,
-  top: -12,
+  right: 14,
+  top: 14,
+  width: 36,
+};
+
+const closeIconStyle: TextStyle = {
+  transform: [{ translateX: 0.5 }, { translateY: 0.5 }],
 };
 
 const mediaPreviewContainerStyle: ViewStyle = {
   position: "relative",
   width: "100%",
   aspectRatio: 1.5,
-  borderRadius: 8,
-  marginVertical: 10,
+  borderRadius: 18,
+  marginBottom: 14,
   overflow: "hidden",
 };
 
 const mediaPreviewStyle: ImageStyle = {
   width: "100%",
   height: "100%",
-  borderRadius: 8,
-  backgroundColor: "#f0f0f0",
+  borderRadius: 18,
+  backgroundColor: colors.light.accent3,
 };
 
 const removeMediaButtonStyle: ViewStyle = {
@@ -306,55 +377,68 @@ const videoIndicatorStyle: ViewStyle = {
 };
 
 const textInputStyle: TextStyle = {
-  borderColor: "#ccc",
-  borderRadius: 8,
+  backgroundColor: "#FCFBF9",
+  borderColor: colors.light.accent2,
+  borderRadius: 18,
   borderWidth: 1,
   height: 130,
-  marginTop: 8,
-  marginBottom: 4,
-  padding: 10,
+  marginBottom: 6,
+  paddingHorizontal: 14,
+  paddingVertical: 14,
   textAlignVertical: "top",
+  color: colors.light.text,
+  fontSize: 15,
+  lineHeight: 22,
+};
+
+const mediaUploadButtonStyle: ViewStyle = {
+  alignItems: "center",
+  backgroundColor: colors.light.accent3,
+  borderColor: colors.light.accent2,
+  borderRadius: 48,
+  borderWidth: 1,
+  flexShrink: 1,
+  flexDirection: "row",
+  gap: 8,
+  justifyContent: "center",
+  paddingHorizontal: 18,
+  paddingVertical: 7,
+};
+
+const mediaUploadTextStyle: TextStyle = {
+  color: colors.light.primary,
+  flexShrink: 1,
+  fontSize: 13,
+  fontWeight: "600",
+};
+
+const mediaUploadTextDisabledStyle: TextStyle = {
+  color: colors.neutral.darkGrey,
+};
+
+const mediaUploadButtonDisabledStyle: ViewStyle = {
+  backgroundColor: "#F3F3F3",
+  borderColor: "#DADADA",
 };
 
 const mediaUploadContainerStyle: ViewStyle = {
-  flexDirection: "row",
   alignItems: "center",
+  flexDirection: "row",
+  flexWrap: "wrap",
   justifyContent: "space-between",
-  marginTop: 12,
-};
-
-const mediaUploadIconStyle: ViewStyle = {
-  alignItems: "flex-start",
-  paddingBottom: 4,
+  gap: 12,
+  marginTop: 14,
 };
 
 const submitButtonStyle: ViewStyle = {
-  alignItems: "center",
   alignSelf: "flex-end",
-  backgroundColor: colors.light.accent,
-  borderRadius: 48,
-  padding: 8,
-  paddingHorizontal: 20,
-};
-
-const submitTextStyle: TextStyle = {
-  color: "white",
-  fontWeight: "bold",
-};
-
-const disabledButtonStyle: ViewStyle = {
-  backgroundColor: "#cccccc",
-};
-
-const disabledButtonTextStyle: TextStyle = {
-  color: "#666666",
 };
 
 const uploadProgressContainerStyle: ViewStyle = {
-  marginTop: 10,
-  padding: 10,
-  backgroundColor: "#f5f5f5",
-  borderRadius: 8,
+  backgroundColor: colors.light.accent3,
+  borderRadius: 14,
+  marginTop: 14,
+  padding: 12,
 };
 
 const uploadProgressTextStyle: TextStyle = {
@@ -374,6 +458,10 @@ const progressBarFillStyle: ViewStyle = {
   height: "100%",
   backgroundColor: colors.light.accent,
   borderRadius: 2,
+};
+
+const modalBodyStyle: ViewStyle = {
+  padding: 20,
 };
 
 export default DiscussFab;

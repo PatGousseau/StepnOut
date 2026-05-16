@@ -9,7 +9,6 @@ import {
   Text,
   StyleSheet,
 } from "react-native";
-import { useQueryClient } from "@tanstack/react-query";
 import Post from "../../components/Post";
 import WelcomePostGroup from "../../components/WelcomePostGroup";
 import FeedSortToggle from "../../components/FeedSortToggle";
@@ -64,7 +63,6 @@ const prepareFeedItems = (posts: PostType[]): FeedItem[] => {
 const Home = () => {
   const { t } = useLanguage();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { firstTime } = useLocalSearchParams<{ firstTime?: string }>();
   const defaultSort: FeedSort = firstTime === "true" ? "popular" : "recent";
   const [, setPostCounts] = useState<Record<number, { likes: number; comments: number }>>({});
@@ -107,24 +105,6 @@ const Home = () => {
     }
   }, [refetchPosts]);
 
-  const handlePostDeleted = useCallback((postId: number) => {
-    type HomePostsPage = { posts: PostType[]; hasMore: boolean };
-    type HomePostsData = { pages: HomePostsPage[]; pageParams: number[] };
-
-    queryClient.setQueriesData<HomePostsData>({ queryKey: ["home-posts"] }, (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page) => ({
-          ...page,
-          posts: page.posts.filter((post) => post.id !== postId),
-        })),
-      };
-    });
-
-    queryClient.invalidateQueries({ queryKey: ["challenge-completion"] });
-  }, [queryClient]);
-
   const handlePostCreated = useCallback(() => {
     refetchPosts();
   }, [refetchPosts]);
@@ -164,11 +144,10 @@ const Home = () => {
           post={item.post}
           postUser={postUser}
           setPostCounts={setPostCounts}
-          onPostDeleted={handlePostDeleted}
         />
       );
     },
-    [expandedWelcomeGroups, handlePostDeleted, toggleWelcomeGroup, userMap]
+    [expandedWelcomeGroups, toggleWelcomeGroup, userMap]
   );
 
   const renderEmpty = useCallback(() => {
@@ -182,8 +161,8 @@ const Home = () => {
     </View>
   );
 
-  const renderHeader = useCallback(() => {
-    return (
+  const header = useMemo(
+    () => (
       <View>
         <HomeChallengeBanner />
         <FeedSortToggle
@@ -193,8 +172,9 @@ const Home = () => {
           popularLabel={t("Popular")}
         />
       </View>
-    );
-  }, [sort, t]);
+    ),
+    [sort, t]
+  );
 
   const renderError = useCallback(() => {
     if (!error || loading) return null;
@@ -218,7 +198,7 @@ const Home = () => {
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={header}
         ListFooterComponent={isFetchingNextPage ? renderFooter : null}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={styles.listContent}

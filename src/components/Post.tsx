@@ -17,6 +17,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { Ionicons } from "@expo/vector-icons";
+import { MenuProvider } from "react-native-popup-menu";
 import { AnimatedSendButton } from "./AnimatedSendButton";
 import CommentPreviewRow from "./CommentPreviewRow";
 import { CommentsModal } from "./Comments";
@@ -45,6 +47,7 @@ import { POST_EVENTS, COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { sendCommentNotification } from "../lib/notificationsService";
 import { translationService } from "../services/translationService";
 import { useInstagramShare } from "../hooks/useInstagramShare";
+import { usePostDeleteCleanup } from "../hooks/usePostDeleteCleanup";
 import InstagramStoryCard from "./InstagramStoryCard";
 
 interface PostProps {
@@ -54,7 +57,7 @@ interface PostProps {
     React.SetStateAction<{ [key: number]: { likes: number; comments: number } }>
   >;
   isPostPage?: boolean;
-  onPostDeleted?: (postId: number) => void;
+  onPostDeleted?: (post: PostType) => void;
 }
 
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false, onPostDeleted }) => {
@@ -62,7 +65,26 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
   const { postReactions, togglePostReaction } = useReactions();
   const { user, isAdmin, username: currentUserUsername } = useAuth();
+  const cleanupAfterDelete = usePostDeleteCleanup();
   const [showComments, setShowComments] = useState(false);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const deleteProgress = useRef(new Animated.Value(1)).current;
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const animateDeletion = useCallback(() => {
+    setIsDeleting(true);
+    Animated.timing(deleteProgress, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: false,
+    }).start(() => {
+      cleanupAfterDelete(post);
+      onPostDeleted?.(post);
+      if (isPostPage) {
+        router.back();
+      }
+    });
+  }, [cleanupAfterDelete, deleteProgress, isPostPage, onPostDeleted, post]);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
@@ -425,7 +447,38 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     );
   }
 
+  const deleteAnimatedStyle = isDeleting
+    ? {
+        opacity: deleteProgress,
+        transform: [
+          {
+            scale: deleteProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.94, 1],
+            }),
+          },
+        ],
+        height:
+          containerHeight != null
+            ? deleteProgress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, containerHeight],
+              })
+            : undefined,
+        overflow: "hidden" as const,
+      }
+    : null;
+
   return (
+    <Animated.View
+      onLayout={(e) => {
+        if (!isDeleting) {
+          setContainerHeight(e.nativeEvent.layout.height);
+        }
+      }}
+      style={deleteAnimatedStyle}
+      pointerEvents={isDeleting ? "none" : "auto"}
+    >
     <Pressable
       // onPress={handlePostPress}
       style={[
@@ -455,23 +508,21 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           type="post"
           contentId={post.id}
           contentUserId={post.user_id}
-          onDelete={(id) => {
-            onPostDeleted?.(id);
-            if (isPostPage) {
-              router.back();
-            }
-          }}
+          onDelete={animateDeletion}
         >
-          <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
+          <MaterialCommunityIcons name="dots-horizontal" size={20} color={colors.neutral.grey1} />
         </ActionsMenu>
       </View>
       {isChallengePost && (
         <>
           <TouchableOpacity onPress={handleChallengePress}>
             <View style={challengeBoxStyle}>
-              <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-                <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
-              </Text>
+              <View style={tagRowStyle}>
+                <Ionicons name="trophy" size={14} color={colors.light.primary} />
+                <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
           {post.comfort_zone_rating != null && (
@@ -511,9 +562,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       {isQuestPost && (
         <View style={questBoxStyle}>
-          <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-            <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
-          </Text>
+          <View style={tagRowStyle}>
+            <Ionicons name="footsteps" size={14} color={colors.sideQuest.text} />
+            <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
+            </Text>
+          </View>
         </View>
       )}
       {post.body && !post.media?.file_path ? (
@@ -657,28 +711,30 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           visible={showComments}
           onRequestClose={() => setShowComments(false)}
         >
-          <View style={modalOverlayStyle}>
-            <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
-              <View style={modalBackgroundStyle} />
-            </TouchableWithoutFeedback>
+          <MenuProvider skipInstanceCheck>
+            <View style={modalOverlayStyle}>
+              <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
+                <View style={modalBackgroundStyle} />
+              </TouchableWithoutFeedback>
 
-            <KeyboardAvoidingView
-              behavior="padding"
-              style={modalContainerStyle}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-            >
-              <CommentsModal
-                initialComments={commentList}
-                onClose={() => setShowComments(false)}
-                loading={commentsLoading}
-                postId={post.id}
-                postUserId={postUser.id}
-                onCommentAdded={handleCommentAdded}
-                addComment={addCommentMutation}
-                isAddingComment={isAddingComment}
-              />
-            </KeyboardAvoidingView>
-          </View>
+              <KeyboardAvoidingView
+                behavior="padding"
+                style={modalContainerStyle}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+              >
+                <CommentsModal
+                  initialComments={commentList}
+                  onClose={() => setShowComments(false)}
+                  loading={commentsLoading}
+                  postId={post.id}
+                  postUserId={postUser.id}
+                  onCommentAdded={handleCommentAdded}
+                  addComment={addCommentMutation}
+                  isAddingComment={isAddingComment}
+                />
+              </KeyboardAvoidingView>
+            </View>
+          </MenuProvider>
         </Modal>
 
         <Modal
@@ -721,6 +777,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         </Modal>
       </View>
     </Pressable>
+    </Animated.View>
   );
 };
 
@@ -734,27 +791,27 @@ const discomfortLabels: Record<number, string> = {
 
 const challengeBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
-  backgroundColor: colors.light.accent2,
-  borderColor: colors.light.primary,
-  borderRadius: 8,
-  borderWidth: 1.25,
+  backgroundColor: "#EEEFFC",
+  borderColor: "#B7BCE0",
+  borderRadius: 999,
+  borderWidth: 1,
   marginBottom: 4,
   marginTop: 4,
-  paddingHorizontal: 16,
-  paddingVertical: 4,
+  paddingHorizontal: 14,
+  paddingVertical: 6,
   width: "100%",
 };
 
 const questBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
-  backgroundColor: colors.sideQuest.bg,
-  borderColor: colors.sideQuest.text,
-  borderRadius: 8,
-  borderWidth: 1.25,
+  backgroundColor: colors.sideQuest.highlightSoft,
+  borderColor: colors.sideQuest.bgBorder,
+  borderRadius: 999,
+  borderWidth: 1,
   marginBottom: 8,
   marginTop: 4,
-  paddingHorizontal: 16,
-  paddingVertical: 4,
+  paddingHorizontal: 14,
+  paddingVertical: 6,
   width: "100%",
 };
 
@@ -764,6 +821,12 @@ const comfortRatingStyle: ViewStyle = {
   gap: 8,
   marginBottom: 4,
   marginTop: 4,
+};
+
+const tagRowStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  gap: 6,
 };
 
 const comfortRatingLabelStyle: TextStyle = {

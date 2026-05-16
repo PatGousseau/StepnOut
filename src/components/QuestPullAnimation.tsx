@@ -7,7 +7,7 @@ import { colors } from "../constants/Colors";
 import SideQuestHatAsset from "../assets/images/side-quest-hat.svg";
 
 const SCENE_WIDTH = 280;
-const SCENE_HEIGHT = 320;
+const SCENE_HEIGHT = 240;
 
 const SPARKLE_ANGLES = [10, 50, 90, 130, 170, 200, 230, 270, 310, 340];
 
@@ -93,7 +93,7 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
       if (cancelled) return;
 
       // Hold so the user can read the quest.
-      await new Promise((resolve) => setTimeout(resolve, 3500));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       if (cancelled) return;
 
       // Fade the whole stage out
@@ -126,12 +126,17 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
       outputRange: [1, 1.1, 1],
       extrapolate: "clamp",
     });
+    const hatTranslateY = wobble.interpolate({
+      inputRange: [0, 0.2, 1],
+      outputRange: [0, 42, 84],
+      extrapolate: "clamp",
+    });
 
     // ── Card rising out of the brim opening ─────────────────────────────────
     // Starts hidden inside the hat (positive Y = down), rises clearly above the brim.
     const cardTranslateY = card.interpolate({
       inputRange: [0, 1],
-      outputRange: [70, -80],
+      outputRange: [74, -56],
     });
     const cardScale = card.interpolate({
       inputRange: [0, 0.7, 1],
@@ -162,7 +167,10 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
     });
 
     return (
-      <Animated.View style={[styles.scene, { opacity: stageOpacity }]} pointerEvents="none">
+      <Animated.View
+        style={[styles.scene, { opacity: stageOpacity }]}
+        pointerEvents="none"
+      >
 
         {/* Flash burst — only visible during the climax */}
         <Animated.View
@@ -181,14 +189,14 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
           </View>
         </View>
 
-        {/* Hat — held upside down, the whole thing wobbles. */}
+        {/* Hat — the whole thing wobbles. */}
         <Animated.View
           style={[
             styles.hatLayer,
-            { transform: [{ rotate: hatRotate }, { scale: hatScale }] },
+            { transform: [{ translateY: hatTranslateY }, { rotate: hatRotate }, { scale: hatScale }] },
           ]}
         >
-          <SideQuestHatSvg upsideDown />
+          <SideQuestHatSvg />
         </Animated.View>
 
         {/* Card — rises out of the brim opening at the top of the hat. */}
@@ -229,13 +237,11 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
 type SideQuestHatSvgProps = {
   width?: number;
   height?: number;
-  upsideDown?: boolean;
 };
 
 export const SideQuestHatSvg: React.FC<SideQuestHatSvgProps> = ({
   width = 220,
   height = 220,
-  upsideDown = false,
 }) => (
   <View>
     <SideQuestHatAsset width={width} height={height} />
@@ -296,9 +302,9 @@ const SparkleStar: React.FC<{ angleDeg: number; progress: Animated.Value }> = ({
 // ─── Static (idle) hat — used when the user hasn't pulled yet ──────────────
 
 export const QuestHatIdle: React.FC = () => (
-  <View style={[styles.scene, styles.idleScene]} pointerEvents="none">
+  <View style={styles.scene} pointerEvents="none">
     <View style={styles.hatLayer}>
-      <SideQuestHatSvg upsideDown />
+      <SideQuestHatSvg />
     </View>
   </View>
 );
@@ -308,7 +314,7 @@ export const QuestHatIdle: React.FC = () => (
 const styles = StyleSheet.create({
   cardLayer: {
     alignItems: "center",
-    bottom: 110,
+    bottom: 68,
     left: 0,
     position: "absolute",
     right: 0,
@@ -317,7 +323,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     backgroundColor: colors.sideQuest.highlight,
     borderRadius: 999,
-    bottom: 110,
+    bottom: 68,
     height: 200,
     position: "absolute",
     shadowColor: colors.sideQuest.base,
@@ -399,14 +405,12 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-10deg" }],
     width: 60,
   },
-  idleScene: {
-    height: 240,
-  },
   scene: {
     alignItems: "center",
     alignSelf: "center",
     height: SCENE_HEIGHT,
     justifyContent: "flex-end",
+    overflow: "visible",
     width: SCENE_WIDTH,
   },
   sparkleAnchor: {
@@ -415,7 +419,7 @@ const styles = StyleSheet.create({
   },
   sparkleField: {
     alignItems: "center",
-    bottom: 100,
+    bottom: 68,
     height: 200,
     justifyContent: "center",
     position: "absolute",

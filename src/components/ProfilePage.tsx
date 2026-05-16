@@ -7,15 +7,16 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   RefreshControl,
   TextInput,
   Linking,
 } from "react-native";
+import { AppAlert } from './AppAlert';
 import UserProgress from "./UserProgress";
 import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
+import { Post as PostType } from "../types";
 import useUserProgress from "../hooks/useUserProgress";
 import { useProfileActivity } from "../hooks/useProfileActivity";
 import { router } from "expo-router";
@@ -42,7 +43,6 @@ type ProfilePageProps = {
   userId?: string;
 };
 
-
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -60,6 +60,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     hasMore: hasMoreActivity,
     fetchNextPage,
     refresh: refreshActivity,
+    removePost,
   } = useProfileActivity(targetUserId);
   const [activityFilter, setActivityFilter] = useState<"all" | "post" | "comment">("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -100,7 +101,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const handleUpdateProfilePicture = async () => {
     try {
       if (!user?.id) {
-        Alert.alert(t("Error"), t("User not authenticated"));
+        AppAlert.show(t("Error"), t("User not authenticated"));
         return;
       }
 
@@ -130,7 +131,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           [USER_PROPERTIES.HAS_PROFILE_PICTURE]: true,
         });
       } else if (result.error) {
-        Alert.alert("Error", result.error);
+        AppAlert.show("Error", result.error);
       }
     } finally {
       setImageUploading(false);
@@ -142,14 +143,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       if (editedInstagram && editedInstagram !== userProfile?.instagram) {
         const instagramRegex = /^[a-zA-Z0-9._]+$/;
         if (!instagramRegex.test(editedInstagram)) {
-          Alert.alert(t("Error"), t("Instagram usernames can only use letters, numbers, underscores and periods."));
+          AppAlert.show(t("Error"), t("Instagram usernames can only use letters, numbers, underscores and periods."));
           return;
         }
 
         try {
           const isValid = await isInstagramUsernameValidProfile(editedInstagram);
           if (!isValid) {
-            Alert.alert(t("Error"), t("Instagram profile not found. Check your username"));
+            AppAlert.show(t("Error"), t("Instagram profile not found. Check your username"));
             return;
           }
         } catch (err) {
@@ -187,10 +188,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           });
         }
       } else if (result.error) {
-        Alert.alert("Error", result.error);
+        AppAlert.show("Error", result.error);
       }
     } catch (error) {
-      Alert.alert("Error", (error as Error).message);
+      AppAlert.show("Error", (error as Error).message);
     }
   };
 
@@ -198,6 +199,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     if (activityLoading || !hasMoreActivity) return;
     fetchNextPage();
   };
+
+  const handlePostDeleted = useCallback(
+    (post: PostType) => {
+      removePost(post.id);
+    },
+    [removePost]
+  );
 
   const handleSignOut = async () => {
     try {
@@ -215,10 +223,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
         await signOut();
       } else if (result.error) {
-        Alert.alert("Error", result.error || t("Failed to Delete account"));
+        AppAlert.show("Error", result.error || t("Failed to Delete account"));
       }
     } catch (error) {
-      Alert.alert("Error", (error as Error).message);
+      AppAlert.show("Error", (error as Error).message);
     }
   };
 
@@ -292,7 +300,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     return <ProfileSkeleton />;
   }
 
-
   if (error || profileError) {
     return (
       <Text>
@@ -325,28 +332,52 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       >
         <View style={styles.profileHeader}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => setShowFullImage(true)} disabled={imageUploading}>
-              {imageUploading ? (
-                <View style={[styles.avatar, styles.avatarLoader]}>
-                  <Loader />
-                </View>
-              ) : userProfile?.profileImageUrl ? (
-                <Image source={{ uri: userProfile.profileImageUrl }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}>
-                  <MaterialCommunityIcons name="account-circle" size={80} color="#e1e1e1" />
-                </View>
-              )}
-              {isEditing && (
+            {(() => {
+              const showAddPhotoAffordance =
+                isOwnProfile && !userProfile?.profileImageUrl && !isEditing;
+              return (
                 <TouchableOpacity
-                  style={styles.editAvatarButton}
-                  onPress={handleUpdateProfilePicture}
+                  onPress={() => {
+                    if (showAddPhotoAffordance) {
+                      handleUpdateProfilePicture();
+                    } else {
+                      setShowFullImage(true);
+                    }
+                  }}
                   disabled={imageUploading}
                 >
-                  <FontAwesome name="pencil" size={14} color={colors.light.primary} />
+                  {imageUploading ? (
+                    <View style={[styles.avatar, styles.avatarLoader]}>
+                      <Loader />
+                    </View>
+                  ) : userProfile?.profileImageUrl ? (
+                    <Image source={{ uri: userProfile.profileImageUrl }} style={styles.avatar} />
+                  ) : (
+                    <View style={[styles.avatar, { justifyContent: "center", alignItems: "center" }]}>
+                      <MaterialCommunityIcons name="account-circle" size={80} color="#e1e1e1" />
+                    </View>
+                  )}
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={styles.editAvatarButton}
+                      onPress={handleUpdateProfilePicture}
+                      disabled={imageUploading}
+                    >
+                      <FontAwesome name="pencil" size={14} color={colors.light.primary} />
+                    </TouchableOpacity>
+                  )}
+                  {showAddPhotoAffordance && (
+                    <View style={styles.addPhotoChipWrap} pointerEvents="none">
+                      <View style={styles.addPhotoChip}>
+                        <Text style={styles.addPhotoChipText} numberOfLines={1}>
+                          {t('Add Photo')}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </TouchableOpacity>
-              )}
-            </TouchableOpacity>
+              );
+            })()}
 
             <View style={styles.userInfo}>
               {isEditing ? (
@@ -478,19 +509,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           </>
         )}
 
-        <View style={styles.filterRow}>
-          {(["all", "post", "comment"] as const).map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
-              onPress={() => setActivityFilter(filter)}
-            >
-              <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
-                {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {(activityItems.length > 0 || activityLoading) && (
+          <View style={styles.filterRow}>
+            {(["all", "post", "comment"] as const).map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                style={[styles.filterPill, activityFilter === filter && styles.filterPillActive]}
+                onPress={() => setActivityFilter(filter)}
+              >
+                <Text style={[styles.filterPillText, activityFilter === filter && styles.filterPillTextActive]}>
+                  {filter === "all" ? t("All") : filter === "post" ? t("Posts") : t("Comments")}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {filteredActivityItems.map((item) => {
           if (item.type === "post") {
             return (
@@ -499,7 +533,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 post={item.post}
                 postUser={userProfile}
                 setPostCounts={() => { }}
-                onPostDeleted={() => { }}
+                onPostDeleted={handlePostDeleted}
               />
             );
           }
@@ -510,7 +544,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               style={styles.commentCard}
               onPress={() => {
                 if (!item.comment.post) {
-                  Alert.alert(t("Post not found"), t("This post may have been deleted."));
+                  AppAlert.show(t("Post not found"), t("This post may have been deleted."));
                   return;
                 }
                 router.push(`/post/${item.comment.post_id}`);
@@ -716,6 +750,32 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingBottom: 16,
     paddingLeft: 8,
+  },
+  addPhotoChipWrap: {
+    position: "absolute",
+    bottom: -10,
+    left: -30,
+    right: -30,
+    alignItems: "center",
+  },
+  addPhotoChip: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderColor: colors.light.primary,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  addPhotoChipText: {
+    color: colors.light.primary,
+    fontSize: 11,
+    fontWeight: "500",
   },
   commentPostContextText: {
     color: colors.light.lightText,
