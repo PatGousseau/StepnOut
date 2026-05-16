@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  TouchableOpacity,
   SafeAreaView,
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
+import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { colors } from '../../constants/Colors';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -70,14 +70,14 @@ export default function NotificationsPrimeScreen() {
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.ctaButton, submitting && styles.buttonDisabled]}
-          onPress={handleEnable}
+        <FeatureActionButton
           disabled={submitting}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.ctaText}>{t('Turn on notifications')}</Text>
-        </TouchableOpacity>
+          onPress={handleEnable}
+          showIcon={false}
+          title={t('Turn on notifications')}
+          tone="indigo"
+          variant="pill"
+        />
       </View>
     </SafeAreaView>
   );
@@ -116,19 +116,5 @@ const styles = StyleSheet.create({
   actions: {
     paddingHorizontal: 20,
     paddingBottom: 24,
-  },
-  ctaButton: {
-    backgroundColor: colors.light.primary,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  ctaText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });

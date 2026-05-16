@@ -3,6 +3,7 @@ import { TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, P
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { colors } from '../../constants/Colors';
+import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -57,13 +58,14 @@ export default function ForgotPasswordScreen() {
           keyboardType="email-address"
         />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleSendReset}
+        <FeatureActionButton
           disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? t('Sending...') : t('Send reset email')}</Text>
-        </TouchableOpacity>
+          onPress={handleSendReset}
+          showIcon={false}
+          title={loading ? t('Sending...') : t('Send reset email')}
+          tone="indigo"
+          variant="pill"
+        />
 
         <TouchableOpacity style={styles.linkButton} onPress={() => router.back()}>
           <Text style={styles.linkText}>{t('Back to login')}</Text>
@@ -100,20 +102,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 15,
     padding: 15,
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    padding: 15,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   linkButton: {
     alignItems: 'center',

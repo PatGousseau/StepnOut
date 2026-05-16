@@ -165,15 +165,16 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
                     />
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[submitButtonStyle, isUploading && disabledButtonStyle]}
-                    onPress={onSubmit}
+                  <FeatureActionButton
                     disabled={isUploading}
-                  >
-                    <Text style={[submitTextStyle, isUploading && disabledButtonTextStyle]}>
-                      {t("Submit")}
-                    </Text>
-                  </TouchableOpacity>
+                    fullWidth={false}
+                    onPress={onSubmit}
+                    showIcon={false}
+                    style={submitButtonStyle}
+                    title={t("Submit")}
+                    tone="indigo"
+                    variant="pill"
+                  />
                 </View>
 
                 {uploadProgress !== null && (
@@ -317,25 +318,7 @@ const mediaUploadIconStyle: ViewStyle = {
 };
 
 const submitButtonStyle: ViewStyle = {
-  alignItems: "center",
   alignSelf: "flex-end",
-  backgroundColor: colors.light.accent,
-  borderRadius: 48,
-  padding: 8,
-  paddingHorizontal: 20,
-};
-
-const submitTextStyle: TextStyle = {
-  color: "white",
-  fontWeight: "bold",
-};
-
-const disabledButtonStyle: ViewStyle = {
-  backgroundColor: "#cccccc",
-};
-
-const disabledButtonTextStyle: TextStyle = {
-  color: "#666666",
 };
 
 const uploadProgressContainerStyle: ViewStyle = {

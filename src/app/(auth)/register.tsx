@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
+import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { useLanguage } from '@/src/contexts/LanguageContext';
 import { supabase } from '../../lib/supabase';
@@ -134,13 +135,14 @@ export default function RegisterScreen() {
           <Text style={styles.formErrorText}>{error}</Text>
         )}
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleNextStep}
+        <FeatureActionButton
           disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? t('Checking...') : t('Next')}</Text>
-        </TouchableOpacity>
+          onPress={handleNextStep}
+          showIcon={false}
+          title={loading ? t('Checking...') : t('Next')}
+          tone="indigo"
+          variant="pill"
+        />
         
         <TouchableOpacity 
           style={styles.linkButton}
@@ -154,20 +156,6 @@ export default function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    padding: 15,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   container: {
     backgroundColor: colors.light.background,
     flex: 1,
@@ -216,12 +204,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
-  },
-  requiredText: {
-    color: '#666',
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
   },
   stepnOut: {
     color: colors.light.primary,

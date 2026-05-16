@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { captureEvent } from '../lib/posthog';
 import { UI_EVENTS } from '../constants/analyticsEvents';
+import { FeatureActionButton } from './FeatureActionButton';
 
 interface FeedbackModalProps {
   isVisible: boolean;
@@ -124,12 +125,15 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ isVisible, onClose }) => 
                   >
                     <Text style={styles.cancelButtonText}>{t('Cancel')}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.submitButton}
+                  <FeatureActionButton
+                    fullWidth={false}
                     onPress={handleSubmit}
-                  >
-                    <Text style={styles.submitButtonText}>{t('Submit')}</Text>
-                  </TouchableOpacity>
+                    showIcon={false}
+                    style={styles.submitButton}
+                    title={t('Submit')}
+                    tone="indigo"
+                    variant="pill"
+                  />
                 </View>
               </>
             )}
@@ -181,14 +185,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   submitButton: {
-    backgroundColor: colors.light.primary,
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    alignSelf: 'flex-end',
   },
   successMessage: {
     alignItems: 'center',

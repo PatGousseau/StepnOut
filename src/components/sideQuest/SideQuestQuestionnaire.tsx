@@ -516,9 +516,11 @@ export function SideQuestQuestionnaire({
                         </View>
                       </View>
 
-                      <TouchableOpacity style={styles.introButton} onPress={goNext}>
-                        <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
-                      </TouchableOpacity>
+                      <FeatureActionButton
+                        onPress={goNext}
+                        title={t("Let's begin")}
+                        tone="indigo"
+                      />
                     </View>
                   ) : (
                     questionnaireSteps[pageIndex].render({
@@ -589,20 +591,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     marginBottom: 2,
-  },
-  introButton: {
-    alignItems: "center",
-    backgroundColor: colors.light.primary,
-    borderRadius: 14,
-    justifyContent: "center",
-    marginTop: 24,
-    minHeight: 48,
-    paddingHorizontal: 18,
-  },
-  introButtonText: {
-    color: colors.neutral.white,
-    fontSize: 15,
-    fontWeight: "700",
   },
   introContentBlock: {
     paddingHorizontal: 4,

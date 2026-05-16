@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   View,
-  StyleSheet,
   TouchableOpacity,
   Modal,
   TextInput,
@@ -22,6 +21,7 @@ import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { FeatureActionButton } from "./FeatureActionButton";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -155,15 +155,16 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                     />
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[submitButtonStyle, isUploading && disabledButtonStyle]}
-                    onPress={onSubmit}
+                  <FeatureActionButton
                     disabled={isUploading}
-                  >
-                    <Text style={[buttonTextStyle, isUploading && disabledButtonTextStyle]}>
-                      {t("Submit")}
-                    </Text>
-                  </TouchableOpacity>
+                    fullWidth={false}
+                    onPress={onSubmit}
+                    showIcon={false}
+                    style={submitButtonStyle}
+                    title={t("Submit")}
+                    tone="indigo"
+                    variant="pill"
+                  />
                 </View>
 
                 {uploadProgress !== null && (
@@ -195,19 +196,6 @@ const mediaUploadContainerStyle: ViewStyle = {
   alignItems: "center",
   justifyContent: "space-between",
   marginTop: 12,
-};
-
-const buttonTextStyle: TextStyle = {
-  color: "white",
-  fontWeight: "bold",
-};
-
-const disabledButtonStyle: ViewStyle = {
-  backgroundColor: "#cccccc",
-};
-
-const disabledButtonTextStyle: TextStyle = {
-  color: "#666666",
 };
 
 const keyboardViewStyle: ViewStyle = {
@@ -286,12 +274,7 @@ const scrollContentStyle: ViewStyle = {
 };
 
 const submitButtonStyle: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: colors.light.accent,
-  borderRadius: 48,
-  padding: 8,
   alignSelf: "flex-end",
-  paddingHorizontal: 20,
 };
 
 const textInputStyle: TextStyle = {
