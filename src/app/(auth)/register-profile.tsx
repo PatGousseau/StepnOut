@@ -51,15 +51,16 @@ export default function RegisterProfileScreen() {
         .from('profiles')
         .select('username, name, instagram, bio, profile_media_id, profile_media:media!profiles_profile_media_id_fkey(file_path)')
         .eq('id', user.id)
-        .single<ExistingProfileRow>();
-      if (!profile) return;
-      if (profile.username) setUsername(profile.username);
-      if (profile.name) setDisplayName(profile.name);
-      if (profile.instagram) setInstagram(profile.instagram);
-      if (profile.bio) setBio(profile.bio);
-      if (profile.profile_media_id) {
-        setProfileMediaId(profile.profile_media_id);
-        const filePath = profile.profile_media?.file_path;
+        .single();
+      const existingProfile = profile as ExistingProfileRow | null;
+      if (!existingProfile) return;
+      if (existingProfile.username) setUsername(existingProfile.username);
+      if (existingProfile.name) setDisplayName(existingProfile.name);
+      if (existingProfile.instagram) setInstagram(existingProfile.instagram);
+      if (existingProfile.bio) setBio(existingProfile.bio);
+      if (existingProfile.profile_media_id) {
+        setProfileMediaId(existingProfile.profile_media_id);
+        const filePath = existingProfile.profile_media?.file_path;
         if (filePath) {
           const { data } = supabase.storage.from('challenge-uploads').getPublicUrl(filePath);
           setProfileImage(data.publicUrl);
@@ -387,13 +388,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-  type ExistingProfileRow = {
-    username: string | null;
-    name: string | null;
-    instagram: string | null;
-    bio: string | null;
-    profile_media_id: number | null;
-    profile_media?: {
-      file_path?: string | null;
-    } | null;
-  };
+
+type ExistingProfileRow = {
+  username: string | null;
+  name: string | null;
+  instagram: string | null;
+  bio: string | null;
+  profile_media_id: number | null;
+  profile_media?: {
+    file_path?: string | null;
+  } | null;
+};
