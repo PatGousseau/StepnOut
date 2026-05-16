@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.light.background,
+    backgroundColor: colors.light.accent3,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.neutral.grey1 + "70",

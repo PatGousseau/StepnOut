@@ -35,7 +35,8 @@ export function useSideQuests() {
   const saveProfileMutation = useMutation({
     mutationFn: (draft: SideQuestQuestionnaireDraft) =>
       sideQuestService.saveProfile(user!.id, draft),
-    onSuccess: async () => {
+    onSuccess: async (profile) => {
+      queryClient.setQueryData(["side-quest-profile", user?.id], profile);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["side-quest-profile", user?.id] }),
         queryClient.invalidateQueries({ queryKey: ["side-quests"] }),
