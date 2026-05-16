@@ -7,15 +7,16 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   RefreshControl,
   TextInput,
   Linking,
 } from "react-native";
+import { AppAlert } from './AppAlert';
 import UserProgress from "./UserProgress";
 import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
+import { Post as PostType } from "../types";
 import useUserProgress from "../hooks/useUserProgress";
 import { useProfileActivity } from "../hooks/useProfileActivity";
 import { router } from "expo-router";
@@ -42,7 +43,6 @@ type ProfilePageProps = {
   userId?: string;
 };
 
-
 export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const { user, signOut } = useAuth();
   const { t } = useLanguage();
@@ -60,6 +60,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     hasMore: hasMoreActivity,
     fetchNextPage,
     refresh: refreshActivity,
+    removePost,
   } = useProfileActivity(targetUserId);
   const [activityFilter, setActivityFilter] = useState<"all" | "post" | "comment">("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -100,7 +101,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const handleUpdateProfilePicture = async () => {
     try {
       if (!user?.id) {
-        Alert.alert(t("Error"), t("User not authenticated"));
+        AppAlert.show(t("Error"), t("User not authenticated"));
         return;
       }
 
@@ -130,7 +131,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           [USER_PROPERTIES.HAS_PROFILE_PICTURE]: true,
         });
       } else if (result.error) {
-        Alert.alert("Error", result.error);
+        AppAlert.show("Error", result.error);
       }
     } finally {
       setImageUploading(false);
@@ -142,14 +143,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       if (editedInstagram && editedInstagram !== userProfile?.instagram) {
         const instagramRegex = /^[a-zA-Z0-9._]+$/;
         if (!instagramRegex.test(editedInstagram)) {
-          Alert.alert(t("Error"), t("Instagram usernames can only use letters, numbers, underscores and periods."));
+          AppAlert.show(t("Error"), t("Instagram usernames can only use letters, numbers, underscores and periods."));
           return;
         }
 
         try {
           const isValid = await isInstagramUsernameValidProfile(editedInstagram);
           if (!isValid) {
-            Alert.alert(t("Error"), t("Instagram profile not found. Check your username"));
+            AppAlert.show(t("Error"), t("Instagram profile not found. Check your username"));
             return;
           }
         } catch (err) {
@@ -187,10 +188,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           });
         }
       } else if (result.error) {
-        Alert.alert("Error", result.error);
+        AppAlert.show("Error", result.error);
       }
     } catch (error) {
-      Alert.alert("Error", (error as Error).message);
+      AppAlert.show("Error", (error as Error).message);
     }
   };
 
@@ -198,6 +199,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     if (activityLoading || !hasMoreActivity) return;
     fetchNextPage();
   };
+
+  const handlePostDeleted = useCallback(
+    (post: PostType) => {
+      removePost(post.id);
+    },
+    [removePost]
+  );
 
   const handleSignOut = async () => {
     try {
@@ -215,10 +223,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
         captureEvent(PROFILE_EVENTS.ACCOUNT_DELETED);
         await signOut();
       } else if (result.error) {
-        Alert.alert("Error", result.error || t("Failed to Delete account"));
+        AppAlert.show("Error", result.error || t("Failed to Delete account"));
       }
     } catch (error) {
-      Alert.alert("Error", (error as Error).message);
+      AppAlert.show("Error", (error as Error).message);
     }
   };
 
@@ -291,7 +299,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
   }
-
 
   if (error || profileError) {
     return (
@@ -522,7 +529,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 post={item.post}
                 postUser={userProfile}
                 setPostCounts={() => { }}
-                onPostDeleted={() => {}}
+                onPostDeleted={handlePostDeleted}
               />
             );
           }
@@ -533,7 +540,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               style={styles.commentCard}
               onPress={() => {
                 if (!item.comment.post) {
-                  Alert.alert(t("Post not found"), t("This post may have been deleted."));
+                  AppAlert.show(t("Post not found"), t("This post may have been deleted."));
                   return;
                 }
                 router.push(`/post/${item.comment.post_id}`);

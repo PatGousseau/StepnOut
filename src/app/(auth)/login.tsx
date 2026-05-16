@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Image,
   Keyboard,
   Pressable,
 } from 'react-native';
+import { AppAlert } from '../../components/AppAlert';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
@@ -92,7 +92,7 @@ export default function LoginScreen() {
 
   const handleGoogleSignIn = async (idToken: string | undefined) => {
     if (!idToken) {
-      Alert.alert(t('Error'), t('Failed to get Google credentials'));
+      AppAlert.show(t('Error'), t('Failed to get Google credentials'));
       return;
     }
 
@@ -100,7 +100,7 @@ export default function LoginScreen() {
       setGoogleLoading(true);
       await handleSocialSignIn('google', idToken);
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setGoogleLoading(false);
     }
@@ -127,7 +127,7 @@ export default function LoginScreen() {
       if ((error as { code?: string })?.code === 'ERR_REQUEST_CANCELED') {
         return;
       }
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setAppleLoading(false);
     }
@@ -135,7 +135,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert(t('Error'), t('Please fill in all fields'));
+      AppAlert.show(t('Error'), t('Please fill in all fields'));
       return;
     }
     try {
@@ -176,7 +176,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }

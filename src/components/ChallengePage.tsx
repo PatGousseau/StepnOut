@@ -6,7 +6,7 @@ import { colors } from "../constants/Colors";
 import { ChallengeCard, ShareExperience } from "./Challenge";
 import { useLanguage } from "../contexts/LanguageContext";
 import { ChallengeSkeleton } from "./Skeleton";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { challengeService } from "../services/challengeService";
 import { usePastChallenges } from "../hooks/usePastChallenges";
 import { useFeaturedPiece } from "../hooks/useEsploraHome";
@@ -15,7 +15,6 @@ import { RelatedPieceCard } from "./esplora/RelatedPieceCard";
 import { useFetchChallengePosts } from "../hooks/useFetchChallengePosts";
 import Post from "./Post";
 import { User } from "../models/User";
-import { Post as PostType } from "../types";
 
 interface ChallengePageProps {
   id?: number;
@@ -24,7 +23,6 @@ interface ChallengePageProps {
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const { t, language } = useLanguage();
   const params = useLocalSearchParams();
-  const queryClient = useQueryClient();
 
   const challengeId = id ?? (params.id ? parseInt(String(params.id)) : undefined);
 
@@ -142,30 +140,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     setRefreshing(false);
   }, [refetch, refetchPastChallengePosts]);
 
-  const handlePostDeleted = useCallback((post: PostType) => {
-    type ChallengePostsPage = { posts: PostType[]; hasMore: boolean };
-    type ChallengePostsData = { pages: ChallengePostsPage[]; pageParams: number[] };
-
-    queryClient.setQueriesData<ChallengePostsData>({ queryKey: ["challenge-posts", challengeId] }, (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page) => ({
-          ...page,
-          posts: page.posts.filter((pagePost) => pagePost.id !== post.id),
-        })),
-      };
-    });
-
-    if (post.challenge_id) {
-      queryClient.invalidateQueries({ queryKey: ["challenge-completion", post.challenge_id] });
-    }
-
-    if (post.quest_id) {
-      queryClient.invalidateQueries({ queryKey: ["quest-completion", post.quest_id] });
-    }
-  }, [challengeId, queryClient]);
-
   if (isLoading) {
     return <ChallengeSkeleton />;
   }
@@ -194,7 +168,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
         renderItem={({ item }) => {
           const postUser = pastChallengeUserMap[item.user_id] as User;
           if (!postUser) return null;
-          return <Post post={item} postUser={postUser} onPostDeleted={handlePostDeleted} />;
+          return <Post post={item} postUser={postUser} />;
         }}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={header}
