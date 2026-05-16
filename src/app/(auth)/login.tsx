@@ -32,7 +32,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [, setAppleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const { signIn } = useAuth();
   const { t } = useLanguage();
 
@@ -256,7 +256,7 @@ export default function LoginScreen() {
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
             cornerRadius={5}
-            style={styles.appleButton}
+            style={[styles.appleButton, appleLoading && styles.buttonDisabled]}
             onPress={handleAppleSignIn}
           />
         )}
