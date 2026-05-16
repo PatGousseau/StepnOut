@@ -270,7 +270,12 @@ export const SideQuestPath: React.FC = () => {
   const showHeroSection = !todaysQuest || isRevealing;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <SideQuestDailyDraw
         isDrawingQuest={isDrawingQuest}
         isRevealing={isRevealing}
