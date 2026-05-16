@@ -11,7 +11,6 @@ import {
   ViewStyle,
   TextStyle,
   ImageStyle,
-  Dimensions,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -542,7 +541,6 @@ const Comment: React.FC<CommentProps> = ({
               contentId={id}
               contentUserId={userId}
               onDelete={onCommentDeleted}
-              menuOffset={-Dimensions.get("window").height * 0.25 + 20}
             >
               <MaterialCommunityIcons name="dots-horizontal" size={18} color={colors.neutral.grey1} />
             </ActionsMenu>

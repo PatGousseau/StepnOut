@@ -1,13 +1,15 @@
 import React from "react";
 import { ViewStyle, TextStyle, View } from "react-native";
 import { AppAlert } from './AppAlert';
-import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
+import { Menu, MenuTrigger, MenuOptions, MenuOption, renderers } from "react-native-popup-menu";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { postService } from "../services/postService";
 import { MaterialIcons } from "@expo/vector-icons";
+
+const { Popover } = renderers;
 
 type ContentType = "post" | "comment";
 
@@ -24,7 +26,6 @@ interface MenuProps {
   contentId: number;
   contentUserId: string;
   onDelete?: (id: number) => void;
-  menuOffset?: number;
 }
 
 interface ProfileActionsProps {
@@ -40,7 +41,6 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   contentId,
   contentUserId,
   onDelete,
-  menuOffset = 20,
 }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -140,17 +140,13 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   };
 
   return (
-    <Menu style={menuContainer}>
+    <Menu
+      style={menuContainer}
+      renderer={Popover}
+      rendererProps={{ placement: 'top' }}
+    >
       <MenuTrigger>{children}</MenuTrigger>
-      <MenuOptions
-        customStyles={{
-          ...optionsStyles,
-          optionsContainer: {
-            ...optionsStyles.optionsContainer,
-            marginTop: menuOffset,
-          },
-        }}
-      >
+      <MenuOptions customStyles={optionsStyles}>
         {getActions().map((action, index) => (
           <React.Fragment key={index}>
             <MenuOption onSelect={action.onSelect}>
@@ -247,7 +243,9 @@ const optionsStyles = {
   optionsContainer: {
     borderRadius: 8,
     width: 200,
-    backgroundColor: colors.neutral.grey2,
+    backgroundColor: colors.neutral.white,
+    borderWidth: 1,
+    borderColor: colors.neutral.grey2,
     shadowColor: "transparent",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
