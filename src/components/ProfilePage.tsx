@@ -203,35 +203,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
   const handlePostDeleted = useCallback(
     (post: PostType) => {
       removePost(post.id);
-
-      type FeedPage = { posts: PostType[]; hasMore: boolean };
-      type FeedData = { pages: FeedPage[]; pageParams: number[] };
-      const stripPost = (oldData: FeedData | undefined) => {
-        if (!oldData) return oldData;
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            posts: page.posts.filter((p) => p.id !== post.id),
-          })),
-        };
-      };
-      queryClient.setQueriesData<FeedData>({ queryKey: ["home-posts"] }, stripPost);
-      if (post.challenge_id) {
-        queryClient.setQueriesData<FeedData>(
-          { queryKey: ["challenge-posts", post.challenge_id] },
-          stripPost
-        );
-      }
-
-      if (post.challenge_id) {
-        queryClient.invalidateQueries({ queryKey: ["challenge-completion", post.challenge_id] });
-      }
-      if (post.quest_id) {
-        queryClient.invalidateQueries({ queryKey: ["quest-completion", post.quest_id] });
-      }
     },
-    [removePost, queryClient]
+    [removePost]
   );
 
   const handleSignOut = async () => {

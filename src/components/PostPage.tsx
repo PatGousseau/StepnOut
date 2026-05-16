@@ -16,13 +16,11 @@ import { colors } from '../constants/Colors';
 import { Post as PostType } from '../types';  // todo: rename one of the Post types
 import { Loader } from './Loader';
 import { useLikes } from '../contexts/LikesContext';
-import { useQueryClient } from '@tanstack/react-query';
 const PostPage = () => {
   const params = useLocalSearchParams();
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const postId = idParam ? parseInt(idParam) : null;
-  const queryClient = useQueryClient();
-  
+
   const { posts, userMap, loading, fetchPost } = useFetchHomeData();
   const { initializePostReactions } = useReactions();
   const { initializePostLikes, likeCounts } = useLikes();
@@ -91,41 +89,6 @@ const PostPage = () => {
 
   const postUser = post ? (userMap?.[post.user_id] ?? fetchedPostUser) : null;
 
-  const handlePostDeleted = (deletedPost: PostType) => {
-    type PaginatedPostsPage = { posts: PostType[]; hasMore: boolean };
-    type PaginatedPostsData = { pages: PaginatedPostsPage[]; pageParams: number[] };
-
-    queryClient.setQueriesData<PaginatedPostsData>({ queryKey: ["home-posts"] }, (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page) => ({
-          ...page,
-          posts: page.posts.filter((pagePost) => pagePost.id !== deletedPost.id),
-        })),
-      };
-    });
-
-    queryClient.setQueriesData<PaginatedPostsData>({ queryKey: ["challenge-posts"] }, (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page) => ({
-          ...page,
-          posts: page.posts.filter((pagePost) => pagePost.id !== deletedPost.id),
-        })),
-      };
-    });
-
-    if (deletedPost.challenge_id) {
-      queryClient.invalidateQueries({ queryKey: ["challenge-completion", deletedPost.challenge_id] });
-    }
-
-    if (deletedPost.quest_id) {
-      queryClient.invalidateQueries({ queryKey: ["quest-completion", deletedPost.quest_id] });
-    }
-  };
-
   // avoid flashing "post not found" while we're still resolving data from a notification deep-link
   const isResolvingPost = !!postId && (!post || !postUser);
 
@@ -171,7 +134,6 @@ const PostPage = () => {
           postUser={postUser}
           setPostCounts={() => {}}
           isPostPage={true}
-          onPostDeleted={handlePostDeleted}
         />
       </ScrollView>
     </KeyboardAvoidingView>

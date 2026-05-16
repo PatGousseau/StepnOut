@@ -45,6 +45,7 @@ import { POST_EVENTS, COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { sendCommentNotification } from "../lib/notificationsService";
 import { translationService } from "../services/translationService";
 import { useInstagramShare } from "../hooks/useInstagramShare";
+import { usePostDeleteCleanup } from "../hooks/usePostDeleteCleanup";
 import InstagramStoryCard from "./InstagramStoryCard";
 
 interface PostProps {
@@ -62,6 +63,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
   const { postReactions, togglePostReaction } = useReactions();
   const { user, isAdmin, username: currentUserUsername } = useAuth();
+  const cleanupAfterDelete = usePostDeleteCleanup();
   const [showComments, setShowComments] = useState(false);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -456,6 +458,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           contentId={post.id}
           contentUserId={post.user_id}
           onDelete={() => {
+            cleanupAfterDelete(post);
             onPostDeleted?.(post);
             if (isPostPage) {
               router.back();
