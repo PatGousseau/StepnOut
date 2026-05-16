@@ -52,6 +52,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const submittedTextRef = useRef("");
   const showComfortSlider = variant === "challenge";
+  const isQuestVariant = variant === "quest";
 
   const config = {
     challenge: {
@@ -147,25 +148,59 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
   return (
     <>
       <TouchableOpacity
-        style={[styles.button, completed && { backgroundColor: config.completedBackgroundColor }]}
+        style={[
+          styles.button,
+          isQuestVariant && styles.questButton,
+          completed && { backgroundColor: config.completedBackgroundColor },
+          isQuestVariant && completed && styles.questButtonCompleted,
+          checkingCompletion && styles.buttonDisabledState,
+        ]}
         onPress={fadeIn}
         disabled={completed || checkingCompletion}
       >
-        <View style={styles.buttonContent}>
-          {completed && (
-            <MaterialIcons
-              name="check-circle"
-              size={20}
-              color={config.completedCheckColor}
-              style={styles.checkIcon}
-            />
-          )}
-          <Text
-            style={[styles.buttonText, completed && { color: config.completedTextColor, fontWeight: "600" }]}
-          >
-            {completed ? t(config.completedLabelKey) : t(config.ctaLabelKey)}
-          </Text>
-        </View>
+        {isQuestVariant ? (
+          <>
+            <View style={styles.questButtonGlow} />
+            <View style={styles.questButtonOrbit} />
+            <View style={styles.questButtonContent}>
+              <View style={[styles.questArrowChip, completed && styles.questArrowChipCompleted]}>
+                <MaterialCommunityIcons
+                  name={completed ? "check" : "arrow-top-right"}
+                  size={18}
+                  color={completed ? config.completedCheckColor : colors.neutral.white}
+                />
+              </View>
+              <View style={styles.questButtonRow}>
+                <View style={styles.questButtonTextWrap}>
+                  <Text
+                    style={[
+                      styles.questButtonTitle,
+                      completed && { color: config.completedTextColor },
+                    ]}
+                  >
+                    {t(completed ? config.completedLabelKey : config.ctaLabelKey)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </>
+        ) : (
+          <View style={styles.buttonContent}>
+            {completed && (
+              <MaterialIcons
+                name="check-circle"
+                size={20}
+                color={config.completedCheckColor}
+                style={styles.checkIcon}
+              />
+            )}
+            <Text
+              style={[styles.buttonText, completed && { color: config.completedTextColor, fontWeight: "600" }]}
+            >
+              {completed ? t(config.completedLabelKey) : t(config.ctaLabelKey)}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
 
       <Modal
@@ -361,8 +396,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.light.accent,
     borderRadius: 8,
+    overflow: "hidden",
     padding: 14,
+    position: "relative",
     width: "100%",
+  },
+  buttonDisabledState: {
+    opacity: 0.7,
   },
   buttonContent: {
     alignItems: "center",
@@ -501,6 +541,79 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.accent,
     borderRadius: 2,
     height: "100%",
+  },
+  questArrowChip: {
+    alignItems: "center",
+    backgroundColor: "rgba(115, 54, 38, 0.92)",
+    borderRadius: 999,
+    height: 28,
+    justifyContent: "center",
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: 28,
+  },
+  questArrowChipCompleted: {
+    backgroundColor: "rgba(45, 80, 22, 0.14)",
+  },
+  questButton: {
+    backgroundColor: colors.sideQuest.base,
+    borderColor: colors.sideQuest.text,
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 58,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: colors.sideQuest.textStrong,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+  },
+  questButtonCompleted: {
+    borderColor: "rgba(45, 80, 22, 0.18)",
+  },
+  questButtonContent: {
+    justifyContent: "center",
+    position: "relative",
+    width: "100%",
+    zIndex: 1,
+  },
+  questButtonGlow: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderRadius: 999,
+    height: 82,
+    position: "absolute",
+    right: -8,
+    top: -22,
+    width: 82,
+  },
+  questButtonOrbit: {
+    borderColor: "rgba(255,255,255,0.2)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 54,
+    position: "absolute",
+    right: 10,
+    top: 10,
+    transform: [{ rotate: "-14deg" }],
+    width: 54,
+  },
+  questButtonTextWrap: {
+    flex: 1,
+    justifyContent: "center",
+    paddingRight: 36,
+  },
+  questButtonTitle: {
+    color: colors.neutral.white,
+    fontSize: 17,
+    fontWeight: "800",
+    lineHeight: 17,
+    textAlign: "left",
+  },
+  questButtonRow: {
+    justifyContent: "center",
+    minHeight: 38,
   },
   removeButtonInline: {
     alignItems: "center",
