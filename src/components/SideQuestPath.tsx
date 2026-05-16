@@ -169,7 +169,7 @@ function QuestionnaireFlow({
   const currentStep = currentQuestionIndex >= 0 ? steps[currentQuestionIndex] : null;
   const isLastQuestion = currentQuestionIndex === steps.length - 1;
   const canSwipeBack = currentPageIndex > 0;
-  const canSwipeForward = !showingIntroStep && !isLastQuestion && !!currentStep?.isComplete;
+  const canSwipeForward = !showingIntroStep && !!currentStep?.isComplete;
 
   useEffect(() => {
     return () => {
@@ -262,7 +262,7 @@ function QuestionnaireFlow({
           Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
         onPanResponderMove: (_, gestureState) => {
           const baseOffset = -currentPageIndex * pageWidth;
-          const minOffset = canSwipeForward ? -(currentPageIndex + 1) * pageWidth : baseOffset;
+          const minOffset = canSwipeForward && !isLastQuestion ? -(currentPageIndex + 1) * pageWidth : baseOffset;
           const maxOffset = canSwipeBack ? -(currentPageIndex - 1) * pageWidth : baseOffset;
           const nextOffset = baseOffset + gestureState.dx;
           translateX.setValue(Math.max(minOffset, Math.min(maxOffset, nextOffset)));
@@ -279,8 +279,13 @@ function QuestionnaireFlow({
               gestureState.vx < -QUESTION_SWIPE_VELOCITY_THRESHOLD / 1000
             );
 
-          if (shouldGoForward) {
+          if (shouldGoForward && !isLastQuestion) {
             goNext();
+            return;
+          }
+
+          if (shouldGoForward && isLastQuestion) {
+            onSubmit();
             return;
           }
 
@@ -295,7 +300,7 @@ function QuestionnaireFlow({
           resetToCurrentPage();
         },
       }),
-    [canSwipeBack, canSwipeForward, currentPageIndex, goBack, goNext, isTransitioning, pageWidth, resetToCurrentPage, translateX]
+    [canSwipeBack, canSwipeForward, currentPageIndex, goBack, goNext, isLastQuestion, isTransitioning, onSubmit, pageWidth, resetToCurrentPage, translateX]
   );
 
   const pages = hasIntro
