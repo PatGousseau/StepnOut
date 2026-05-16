@@ -462,7 +462,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             }
           }}
         >
-          <Icon name="ellipsis-h" size={16} color={colors.neutral.grey1} />
+          <MaterialCommunityIcons name="dots-horizontal" size={20} color={colors.neutral.grey1} />
         </ActionsMenu>
       </View>
       {isChallengePost && (

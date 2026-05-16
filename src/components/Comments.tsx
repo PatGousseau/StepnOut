@@ -544,7 +544,7 @@ const Comment: React.FC<CommentProps> = ({
               onDelete={onCommentDeleted}
               menuOffset={-Dimensions.get("window").height * 0.25 + 20}
             >
-              <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
+              <MaterialCommunityIcons name="dots-horizontal" size={18} color={colors.neutral.grey1} />
             </ActionsMenu>
           </View>
         </View>
