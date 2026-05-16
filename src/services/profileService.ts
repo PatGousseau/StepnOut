@@ -1,6 +1,7 @@
+import { AppAlert } from '../components/AppAlert';
 import { supabase } from "../lib/supabase";
 import { selectMediaForPreview, uploadMediaInBackground } from "../utils/handleMediaUpload";
-import { Alert } from "react-native";
+
 import { User, UserProfile } from "../models/User";
 import { imageService } from "./imageService";
 
@@ -151,7 +152,7 @@ export const profileService = {
   ): Promise<{ success: boolean; error?: string }> {
     return new Promise((resolve) => {
       // First confirmation
-      Alert.alert(
+      AppAlert.show(
         t("Delete account"),
         t("Are you sure you want to proceed? This will permanently delete your account."),
         [
@@ -165,7 +166,7 @@ export const profileService = {
             style: "destructive",
             onPress: () => {
               // Second confirmation
-              Alert.alert(
+              AppAlert.show(
                 t("Final Warning"),
                 t(
                   "This action cannot be undone. All your data will be permanently deleted. Are you absolutely sure?"

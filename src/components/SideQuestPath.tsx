@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { AppAlert } from './AppAlert';
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -137,7 +140,7 @@ export const SideQuestPath: React.FC = () => {
         step_index: -1,
         message: (error as Error).message,
       });
-      Alert.alert(t("Error"), (error as Error).message);
+      AppAlert.show(t("Error"), (error as Error).message);
     }
   };
 
@@ -179,7 +182,7 @@ export const SideQuestPath: React.FC = () => {
         setIsDrawingQuest(false);
       }
     } catch (error) {
-      Alert.alert(t("Error"), (error as Error).message);
+      AppAlert.show(t("Error"), (error as Error).message);
       setIsRevealing(false);
       setRevealedQuest(null);
       setIsDrawingQuest(false);

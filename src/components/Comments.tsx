@@ -11,7 +11,6 @@ import {
   ViewStyle,
   TextStyle,
   ImageStyle,
-  Dimensions,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -33,7 +32,6 @@ import { useLikes } from "../contexts/LikesContext";
 import { useReactions } from "../contexts/ReactionsContext";
 import { ReactionsBar } from "./ReactionsBar";
 import { ActionsMenu } from "./ActionsMenu";
-import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
@@ -371,34 +369,32 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   return (
-    <MenuProvider skipInstanceCheck>
-      <Animated.View
-        style={[
-          containerStyle,
-          {
-            transform: [{ translateY }],
-          },
-        ]}
-      >
-        <SafeAreaView style={safeAreaStyle}>
-          <View {...panResponder.panHandlers} style={dragHandleStyle}>
-            <View style={dragIndicatorStyle} />
-          </View>
+    <Animated.View
+      style={[
+        containerStyle,
+        {
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <SafeAreaView style={safeAreaStyle}>
+        <View {...panResponder.panHandlers} style={dragHandleStyle}>
+          <View style={dragIndicatorStyle} />
+        </View>
 
-          <CommentsList
-            comments={comments}
-            loading={loading}
-            flatListRef={flatListRef}
-            onClose={onClose}
-            postId={postId}
-            postUserId={postUserId}
-            onCommentAdded={onCommentAdded}
-            addComment={addComment}
-            isAddingComment={isAddingComment}
-          />
-        </SafeAreaView>
-      </Animated.View>
-    </MenuProvider>
+        <CommentsList
+          comments={comments}
+          loading={loading}
+          flatListRef={flatListRef}
+          onClose={onClose}
+          postId={postId}
+          postUserId={postUserId}
+          onCommentAdded={onCommentAdded}
+          addComment={addComment}
+          isAddingComment={isAddingComment}
+        />
+      </SafeAreaView>
+    </Animated.View>
   );
 };
 
@@ -542,9 +538,8 @@ const Comment: React.FC<CommentProps> = ({
               contentId={id}
               contentUserId={userId}
               onDelete={onCommentDeleted}
-              menuOffset={-Dimensions.get("window").height * 0.25 + 20}
             >
-              <Icon name="ellipsis-h" size={14} color={colors.neutral.grey1} />
+              <MaterialCommunityIcons name="dots-horizontal" size={18} color={colors.neutral.grey1} />
             </ActionsMenu>
           </View>
         </View>

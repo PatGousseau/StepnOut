@@ -17,6 +17,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import NotificationSidebar from '../components/NotificationSidebar';
 import MenuSidebar from '../components/MenuSidebar';
 import FeedbackModal from '../components/FeedbackModal';
+import { AppAlertHost } from '../components/AppAlert';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
@@ -475,6 +476,7 @@ function RootLayoutNav() {
         onClose={() => setShowFeedback(false)}
       />
       {!hideLogo && <UpdateAvailableModal />}
+      <AppAlertHost />
     </SafeAreaView>
   );
 }
