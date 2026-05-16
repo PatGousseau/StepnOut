@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Defs, Ellipse, LinearGradient, Mask, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
@@ -12,23 +12,22 @@ const SWIRL_DURATION = 3400;
 const TROPHY_ROTATIONS = 4;
 const SPIRAL_REVOLUTIONS = 3.25;
 const SPIRAL_SAMPLES = 144;
-const TAIL_PADDING = 24;
-const TAIL_WIDTH_MIN = 3;
-const TAIL_WIDTH_MAX = 78;
+const TRAIL_DOT_COUNT = 110;
+const TRAIL_DOT_MIN = 4;
+const TRAIL_DOT_MAX = 56;
+
+type TrailDot = {
+  x: number;
+  y: number;
+  size: number;
+  threshold: number;
+};
 
 type SwirlPath = {
   input: number[];
   xs: number[];
   ys: number[];
-  d: string;
-  polygonD: string;
-  length: number;
-  dashoffsetOutput: number[];
-  maskStrokeWidth: number;
-  svgWidth: number;
-  svgHeight: number;
-  svgLeft: number;
-  svgTop: number;
+  dots: TrailDot[];
 };
 
 const buildSwirlPath = (): SwirlPath => {
@@ -38,7 +37,6 @@ const buildSwirlPath = (): SwirlPath => {
   const input: number[] = [];
   const xs: number[] = [];
   const ys: number[] = [];
-  const widths: number[] = [];
   for (let i = 0; i <= SPIRAL_SAMPLES; i++) {
     const p = i / SPIRAL_SAMPLES;
     const radiusFactor = Math.pow(1 - p, 1.6);
@@ -46,77 +44,36 @@ const buildSwirlPath = (): SwirlPath => {
     input.push(p);
     xs.push(Math.cos(angle) * maxRadiusX * radiusFactor);
     ys.push(Math.sin(angle) * maxRadiusY * radiusFactor);
-    widths.push(TAIL_WIDTH_MIN + (TAIL_WIDTH_MAX - TAIL_WIDTH_MIN) * p);
   }
   xs[xs.length - 1] = 0;
   ys[ys.length - 1] = 0;
 
-  const svgWidth = maxRadiusX * 2 + TAIL_PADDING * 2 + TAIL_WIDTH_MAX;
-  const svgHeight = maxRadiusY * 2 + TAIL_PADDING * 2 + TAIL_WIDTH_MAX;
-  const offsetX = maxRadiusX + TAIL_PADDING + TAIL_WIDTH_MAX / 2;
-  const offsetY = maxRadiusY + TAIL_PADDING + TAIL_WIDTH_MAX / 2;
-
-  let d = `M ${xs[0] + offsetX} ${ys[0] + offsetY}`;
-  const cumLengths: number[] = [0];
+  const cumLen: number[] = [0];
   for (let i = 1; i < xs.length; i++) {
-    d += ` L ${xs[i] + offsetX} ${ys[i] + offsetY}`;
-    cumLengths.push(
-      cumLengths[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1])
-    );
+    cumLen.push(cumLen[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]));
   }
-  const length = cumLengths[cumLengths.length - 1];
-  const dashoffsetOutput = cumLengths.map(c => length - c);
+  const totalLen = cumLen[cumLen.length - 1];
 
-  const N = xs.length;
-  const outerPts: [number, number][] = new Array(N);
-  const innerPts: [number, number][] = new Array(N);
-  for (let i = 0; i < N; i++) {
-    let dx: number;
-    let dy: number;
-    if (i === 0) {
-      dx = xs[1] - xs[0];
-      dy = ys[1] - ys[0];
-    } else if (i === N - 1) {
-      dx = xs[i] - xs[i - 1];
-      dy = ys[i] - ys[i - 1];
-    } else {
-      dx = xs[i + 1] - xs[i - 1];
-      dy = ys[i + 1] - ys[i - 1];
-    }
-    const tLen = Math.hypot(dx, dy) || 1;
-    const nx = -dy / tLen;
-    const ny = dx / tLen;
-    const hw = widths[i] / 2;
-    outerPts[i] = [xs[i] + nx * hw + offsetX, ys[i] + ny * hw + offsetY];
-    innerPts[i] = [xs[i] - nx * hw + offsetX, ys[i] - ny * hw + offsetY];
+  const dots: TrailDot[] = [];
+  let j = 0;
+  for (let i = 0; i < TRAIL_DOT_COUNT; i++) {
+    const targetLen = (i / (TRAIL_DOT_COUNT - 1)) * totalLen;
+    while (j < cumLen.length - 2 && cumLen[j + 1] < targetLen) j++;
+    const segLen = cumLen[j + 1] - cumLen[j] || 1;
+    const t = (targetLen - cumLen[j]) / segLen;
+    const x = xs[j] + (xs[j + 1] - xs[j]) * t;
+    const y = ys[j] + (ys[j + 1] - ys[j]) * t;
+    const p = input[j] + (input[j + 1] - input[j]) * t;
+    dots.push({
+      x,
+      y,
+      size: TRAIL_DOT_MIN + (TRAIL_DOT_MAX - TRAIL_DOT_MIN) * p,
+      threshold: p,
+    });
   }
 
-  let polygonD = `M ${outerPts[0][0]} ${outerPts[0][1]}`;
-  for (let i = 1; i < N; i++) {
-    polygonD += ` L ${outerPts[i][0]} ${outerPts[i][1]}`;
-  }
-  for (let i = N - 1; i >= 0; i--) {
-    polygonD += ` L ${innerPts[i][0]} ${innerPts[i][1]}`;
-  }
-  polygonD += ' Z';
-
-  return {
-    input,
-    xs,
-    ys,
-    d,
-    polygonD,
-    length,
-    dashoffsetOutput,
-    maskStrokeWidth: TAIL_WIDTH_MAX + 6,
-    svgWidth,
-    svgHeight,
-    svgLeft: (BURST_SIZE - svgWidth) / 2,
-    svgTop: (BURST_SIZE - svgHeight) / 2,
-  };
+  return { input, xs, ys, dots };
 };
-
-const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 interface CompletionBurstProps {
   title: string;
@@ -251,6 +208,58 @@ const Sparkle: React.FC<{ index: number; trigger: number }> = ({ index, trigger 
   );
 };
 
+const TrailDot: React.FC<{
+  dot: TrailDot;
+  trophyProgress: Animated.Value;
+  tailOpacity: Animated.Value;
+}> = ({ dot, trophyProgress, tailOpacity }) => {
+  const ramp = 0.03;
+  const fade = 0.22;
+  const peakIn = dot.threshold;
+  const peakOut = Math.min(1, peakIn + fade);
+  const inputRange: number[] = [];
+  const outputRange: number[] = [];
+  if (peakIn > 0) {
+    const start = Math.max(0, peakIn - ramp);
+    if (start < peakIn) {
+      inputRange.push(start);
+      outputRange.push(0);
+    }
+  }
+  inputRange.push(peakIn);
+  outputRange.push(1);
+  if (peakOut > peakIn) {
+    inputRange.push(peakOut);
+    outputRange.push(0);
+  }
+  if (peakOut < 1) {
+    inputRange.push(1);
+    outputRange.push(0);
+  }
+  const reveal = trophyProgress.interpolate({
+    inputRange,
+    outputRange,
+    extrapolate: 'clamp',
+  });
+  const opacity = Animated.multiply(reveal, tailOpacity);
+  const half = dot.size / 2;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: BURST_SIZE / 2 + dot.x - half,
+        top: BURST_SIZE / 2 + dot.y - half,
+        width: dot.size,
+        height: dot.size,
+        borderRadius: half,
+        backgroundColor: '#FFE27A',
+        opacity,
+      }}
+    />
+  );
+};
+
 const Trophy: React.FC<{ size: number }> = ({ size }) => (
   <Svg width={size} height={size} viewBox="0 0 100 100">
     <Defs>
@@ -359,19 +368,11 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
 
   const glowPulse = useRef(new Animated.Value(0)).current;
   const titleProgress = useRef(new Animated.Value(0)).current;
-  const tailProgress = useRef(new Animated.Value(0)).current;
   const tailOpacity = useRef(new Animated.Value(1)).current;
   const [burstKey, setBurstKey] = useState(0);
 
   useEffect(() => {
     const loops: Animated.CompositeAnimation[] = [];
-
-    Animated.timing(tailProgress, {
-      toValue: 1,
-      duration: SWIRL_DURATION,
-      easing: Easing.bezier(0.32, 0, 0.32, 1),
-      useNativeDriver: false,
-    }).start();
 
     Animated.parallel([
       Animated.timing(trophyProgress, {
@@ -396,9 +397,9 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
 
       Animated.timing(tailOpacity, {
         toValue: 0,
-        duration: 220,
+        duration: 320,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }).start();
 
       ringOpacity.setValue(1);
@@ -518,7 +519,7 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
     return () => {
       loops.forEach(l => l.stop());
     };
-  }, [trophyProgress, trophyScale, bob, raysScale, raysOpacity, raysRotate, ringScale, ringOpacity, ringScale2, ringOpacity2, glowPulse, titleProgress, tailProgress, tailOpacity]);
+  }, [trophyProgress, trophyScale, bob, raysScale, raysOpacity, raysRotate, ringScale, ringOpacity, ringScale2, ringOpacity2, glowPulse, titleProgress, tailOpacity]);
 
   const tx = trophyProgress.interpolate({ inputRange: swirlPath.input, outputRange: swirlPath.xs });
   const ty = trophyProgress.interpolate({ inputRange: swirlPath.input, outputRange: swirlPath.ys });
@@ -538,11 +539,6 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
   const glowFinal = Animated.multiply(raysOpacity, glowOpacity);
 
   const titleTranslate = titleProgress.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
-
-  const tailDashOffset = tailProgress.interpolate({
-    inputRange: swirlPath.input,
-    outputRange: swirlPath.dashoffsetOutput,
-  });
 
   return (
     <View style={styles.container} pointerEvents="none">
@@ -582,49 +578,14 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
           <ShockRing />
         </Animated.View>
 
-        <Animated.View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: swirlPath.svgLeft,
-            top: swirlPath.svgTop,
-            width: swirlPath.svgWidth,
-            height: swirlPath.svgHeight,
-            opacity: tailOpacity,
-          }}
-        >
-          <Svg width={swirlPath.svgWidth} height={swirlPath.svgHeight}>
-            <Defs>
-              <Mask
-                id="tailMask"
-                maskUnits="userSpaceOnUse"
-                x="0"
-                y="0"
-                width={swirlPath.svgWidth}
-                height={swirlPath.svgHeight}
-              >
-                <Rect
-                  x="0"
-                  y="0"
-                  width={swirlPath.svgWidth}
-                  height={swirlPath.svgHeight}
-                  fill="black"
-                />
-                <AnimatedPath
-                  d={swirlPath.d}
-                  stroke="white"
-                  strokeWidth={swirlPath.maskStrokeWidth}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                  strokeDasharray={`${swirlPath.length}, ${swirlPath.length}`}
-                  strokeDashoffset={tailDashOffset}
-                />
-              </Mask>
-            </Defs>
-            <Path d={swirlPath.polygonD} fill="#FFE27A" mask="url(#tailMask)" />
-          </Svg>
-        </Animated.View>
+        {swirlPath.dots.map((dot, i) => (
+          <TrailDot
+            key={`trail-${i}`}
+            dot={dot}
+            trophyProgress={trophyProgress}
+            tailOpacity={tailOpacity}
+          />
+        ))}
 
         <Animated.View
           style={[
