@@ -17,18 +17,18 @@ INSERT INTO auth.users (
   raw_app_meta_data, raw_user_meta_data
 )
 VALUES
-  ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'alice@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}'),
-  ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'bob@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}'),
-  ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'charlie@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}'),
-  ('44444444-4444-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(), '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}');
+  ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'alice@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now() - interval '30 days', now() - interval '30 days', now() - interval '30 days', '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}'),
+  ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'bob@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now() - interval '30 days', now() - interval '30 days', now() - interval '30 days', '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}'),
+  ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'charlie@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now() - interval '30 days', now() - interval '30 days', now() - interval '30 days', '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}'),
+  ('44444444-4444-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@test.com', extensions.crypt('password123', extensions.gen_salt('bf')), now() - interval '30 days', now() - interval '30 days', now() - interval '30 days', '', '', '', '', '', '', '', '', '{"provider": "email", "providers": ["email"]}', '{}');
 
 -- Create identities for users (required for auth to work)
 INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, created_at, updated_at)
 VALUES
-  ('11111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', '{"sub": "11111111-1111-1111-1111-111111111111", "email": "alice@test.com"}', 'email', '11111111-1111-1111-1111-111111111111', now(), now()),
-  ('22222222-2222-2222-2222-222222222222', '22222222-2222-2222-2222-222222222222', '{"sub": "22222222-2222-2222-2222-222222222222", "email": "bob@test.com"}', 'email', '22222222-2222-2222-2222-222222222222', now(), now()),
-  ('33333333-3333-3333-3333-333333333333', '33333333-3333-3333-3333-333333333333', '{"sub": "33333333-3333-3333-3333-333333333333", "email": "charlie@test.com"}', 'email', '33333333-3333-3333-3333-333333333333', now(), now()),
-  ('44444444-4444-4444-4444-444444444444', '44444444-4444-4444-4444-444444444444', '{"sub": "44444444-4444-4444-4444-444444444444", "email": "admin@test.com"}', 'email', '44444444-4444-4444-4444-444444444444', now(), now());
+  ('11111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', '{"sub": "11111111-1111-1111-1111-111111111111", "email": "alice@test.com"}', 'email', '11111111-1111-1111-1111-111111111111', now() - interval '30 days', now() - interval '30 days'),
+  ('22222222-2222-2222-2222-222222222222', '22222222-2222-2222-2222-222222222222', '{"sub": "22222222-2222-2222-2222-222222222222", "email": "bob@test.com"}', 'email', '22222222-2222-2222-2222-222222222222', now() - interval '30 days', now() - interval '30 days'),
+  ('33333333-3333-3333-3333-333333333333', '33333333-3333-3333-3333-333333333333', '{"sub": "33333333-3333-3333-3333-333333333333", "email": "charlie@test.com"}', 'email', '33333333-3333-3333-3333-333333333333', now() - interval '30 days', now() - interval '30 days'),
+  ('44444444-4444-4444-4444-444444444444', '44444444-4444-4444-4444-444444444444', '{"sub": "44444444-4444-4444-4444-444444444444", "email": "admin@test.com"}', 'email', '44444444-4444-4444-4444-444444444444', now() - interval '30 days', now() - interval '30 days');
 
 -- =============================================================================
 -- MEDIA (placeholder entries for posts, challenges, and profiles)
@@ -63,10 +63,10 @@ VALUES
 SELECT setval('public.media_id_seq', (SELECT MAX(id) FROM public.media));
 
 -- Update profiles with full data (trigger created basic profiles)
-UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10 WHERE id = '11111111-1111-1111-1111-111111111111';
-UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11 WHERE id = '22222222-2222-2222-2222-222222222222';
-UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12 WHERE id = '33333333-3333-3333-3333-333333333333';
-UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13 WHERE id = '44444444-4444-4444-4444-444444444444';
+UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '11111111-1111-1111-1111-111111111111';
+UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '22222222-2222-2222-2222-222222222222';
+UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '33333333-3333-3333-3333-333333333333';
+UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '44444444-4444-4444-4444-444444444444';
 
 -- =============================================================================
 -- CHALLENGES
