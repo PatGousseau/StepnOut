@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { challengeService } from "../services/challengeService";
 import { usePastChallenges } from "../hooks/usePastChallenges";
 import { useFeaturedPiece } from "../hooks/useEsploraHome";
-import { PastChallengeCard } from "./PastChallengeCard";
+import { ChallengePreviewCard } from "./ChallengePreviewCard";
 import { RelatedPieceCard } from "./esplora/RelatedPieceCard";
 import { useFetchChallengePosts } from "../hooks/useFetchChallengePosts";
 import Post from "./Post";
@@ -119,12 +119,11 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
               <Text style={styles.sectionTitle}>{t("Past challenges")}</Text>
               {pastChallenges.map((c) => (
                 <View key={c.id} style={styles.pastChallengeCard}>
-                  <PastChallengeCard
-                    challenge={{
-                      ...c,
-                      title: language === "it" ? c.title_it : c.title,
-                      description: language === "it" ? c.description_it : c.description,
-                    }}
+                  <ChallengePreviewCard
+                    title={language === "it" ? c.title_it : c.title}
+                    description={language === "it" ? c.description_it : c.description}
+                    difficulty={c.difficulty}
+                    imagePath={c.media?.file_path}
                     onPress={() => router.push(`/challenge/${c.id}`)}
                   />
                 </View>
