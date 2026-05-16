@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { MenuProvider } from "react-native-popup-menu";
 import { AnimatedSendButton } from "./AnimatedSendButton";
 import CommentPreviewRow from "./CommentPreviewRow";
 import { CommentsModal } from "./Comments";
@@ -660,28 +661,30 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           visible={showComments}
           onRequestClose={() => setShowComments(false)}
         >
-          <View style={modalOverlayStyle}>
-            <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
-              <View style={modalBackgroundStyle} />
-            </TouchableWithoutFeedback>
+          <MenuProvider skipInstanceCheck>
+            <View style={modalOverlayStyle}>
+              <TouchableWithoutFeedback onPress={() => setShowComments(false)}>
+                <View style={modalBackgroundStyle} />
+              </TouchableWithoutFeedback>
 
-            <KeyboardAvoidingView
-              behavior="padding"
-              style={modalContainerStyle}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-            >
-              <CommentsModal
-                initialComments={commentList}
-                onClose={() => setShowComments(false)}
-                loading={commentsLoading}
-                postId={post.id}
-                postUserId={postUser.id}
-                onCommentAdded={handleCommentAdded}
-                addComment={addCommentMutation}
-                isAddingComment={isAddingComment}
-              />
-            </KeyboardAvoidingView>
-          </View>
+              <KeyboardAvoidingView
+                behavior="padding"
+                style={modalContainerStyle}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+              >
+                <CommentsModal
+                  initialComments={commentList}
+                  onClose={() => setShowComments(false)}
+                  loading={commentsLoading}
+                  postId={post.id}
+                  postUserId={postUser.id}
+                  onCommentAdded={handleCommentAdded}
+                  addComment={addCommentMutation}
+                  isAddingComment={isAddingComment}
+                />
+              </KeyboardAvoidingView>
+            </View>
+          </MenuProvider>
         </Modal>
 
         <Modal

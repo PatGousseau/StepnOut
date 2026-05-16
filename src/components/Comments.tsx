@@ -32,7 +32,6 @@ import { useLikes } from "../contexts/LikesContext";
 import { useReactions } from "../contexts/ReactionsContext";
 import { ReactionsBar } from "./ReactionsBar";
 import { ActionsMenu } from "./ActionsMenu";
-import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
@@ -370,34 +369,32 @@ export const CommentsModal: React.FC<CommentsProps> = ({
   }, [initialComments]);
 
   return (
-    <MenuProvider skipInstanceCheck>
-      <Animated.View
-        style={[
-          containerStyle,
-          {
-            transform: [{ translateY }],
-          },
-        ]}
-      >
-        <SafeAreaView style={safeAreaStyle}>
-          <View {...panResponder.panHandlers} style={dragHandleStyle}>
-            <View style={dragIndicatorStyle} />
-          </View>
+    <Animated.View
+      style={[
+        containerStyle,
+        {
+          transform: [{ translateY }],
+        },
+      ]}
+    >
+      <SafeAreaView style={safeAreaStyle}>
+        <View {...panResponder.panHandlers} style={dragHandleStyle}>
+          <View style={dragIndicatorStyle} />
+        </View>
 
-          <CommentsList
-            comments={comments}
-            loading={loading}
-            flatListRef={flatListRef}
-            onClose={onClose}
-            postId={postId}
-            postUserId={postUserId}
-            onCommentAdded={onCommentAdded}
-            addComment={addComment}
-            isAddingComment={isAddingComment}
-          />
-        </SafeAreaView>
-      </Animated.View>
-    </MenuProvider>
+        <CommentsList
+          comments={comments}
+          loading={loading}
+          flatListRef={flatListRef}
+          onClose={onClose}
+          postId={postId}
+          postUserId={postUserId}
+          onCommentAdded={onCommentAdded}
+          addComment={addComment}
+          isAddingComment={isAddingComment}
+        />
+      </SafeAreaView>
+    </Animated.View>
   );
 };
 
