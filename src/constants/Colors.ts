@@ -13,6 +13,7 @@ export const colors = {
     mediumYellow: '#FFE5B4', 
     hardRed: '#FFB3B3', 
     accent2: '#E5E7F5',
+    accent3: '#F1F2FB',
   },
   dark: {
     text: '#fff',  // light text
