@@ -5,19 +5,18 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
 import { useMediaUpload } from "../hooks/useMediaUpload";
-import { Loader } from "./Loader";
 import { ComfortSlider } from "./ComfortSlider";
 import { MediaSelectionResult } from "../utils/handleMediaUpload";
 import { FeatureActionButton } from "./FeatureActionButton";
@@ -65,6 +64,14 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
       sliderAccentColor: colors.light.accent,
       sliderLabelColor: colors.light.text,
       sliderValueColor: colors.light.accent,
+      headerAccentColor: colors.light.primary,
+      headerBackgroundColor: colors.light.accent3,
+      headerBorderColor: colors.light.accent2,
+      headerTintColor: "rgba(103, 109, 160, 0.22)",
+      headerRingColor: "rgba(77, 83, 130, 0.14)",
+      headerFillColor: "rgba(77, 83, 130, 0.09)",
+      actionBackgroundColor: colors.light.accent3,
+      actionBorderColor: colors.light.accent2,
       tone: "indigo" as const,
     },
     quest: {
@@ -77,6 +84,14 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
       sliderAccentColor: colors.sideQuest.base,
       sliderLabelColor: colors.light.text,
       sliderValueColor: colors.sideQuest.text,
+      headerAccentColor: colors.sideQuest.text,
+      headerBackgroundColor: colors.sideQuest.highlightSoft,
+      headerBorderColor: colors.sideQuest.bgBorder,
+      headerTintColor: colors.sideQuest.tint,
+      headerRingColor: colors.sideQuest.border,
+      headerFillColor: colors.sideQuest.fill,
+      actionBackgroundColor: colors.sideQuest.highlightSoft,
+      actionBorderColor: colors.sideQuest.bgBorder,
       tone: "coral" as const,
     },
   }[variant];
@@ -85,7 +100,6 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
     selectedMedia,
     postText,
     setPostText,
-    isUploading,
     isSubmitting,
     uploadProgress,
     handleMediaUpload,
@@ -165,147 +179,162 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.keyboardView}
           >
-            <TouchableOpacity
-              style={styles.modalContainer}
-              activeOpacity={1}
-              onPress={fadeOut}
-            >
-              <View
-                style={styles.modalContent}
-                onStartShouldSetResponder={() => true}
-                onTouchEnd={(e) => e.stopPropagation()}
-              >
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{t("How did it go?")}</Text>
-                  <Text style={styles.modalSubtitle}>{t(config.modalSubtitleKey)}</Text>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <View
+                  style={[
+                    styles.modalHeader,
+                    {
+                      backgroundColor: config.headerBackgroundColor,
+                      borderBottomColor: config.headerBorderColor,
+                    },
+                  ]}
+                >
+                  <View style={[styles.headerGlow, { backgroundColor: config.headerTintColor }]} />
+                  <View style={[styles.headerRing, { borderColor: config.headerRingColor }]} />
+                  <View style={[styles.headerFill, { backgroundColor: config.headerFillColor }]} />
+                  <Text style={[styles.modalTitle, { color: config.headerAccentColor }]}>
+                    {t("How did it go?")}
+                  </Text>
+                  <Text style={[styles.modalSubtitle, { color: config.headerAccentColor }]}>
+                    {t(config.modalSubtitleKey)}
+                  </Text>
                   <TouchableOpacity onPress={fadeOut} style={styles.closeButton}>
-                    <MaterialIcons name="close" size={20} color={colors.light.text} />
+                    <MaterialIcons
+                      name="close"
+                      size={20}
+                      color={colors.light.text}
+                      style={styles.closeIcon}
+                    />
                   </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity style={styles.mediaUploadButton} onPress={handleMediaUpload}>
-                  {selectedMedia ? (
-                    <View style={styles.mediaSelectedRow}>
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
+                >
+                  <View style={styles.modalBody}>
+                    {selectedMedia ? (
                       <TouchableOpacity
-                        style={styles.thumbnailWrapper}
+                        style={styles.mediaPreviewContainer}
                         onPress={() => setFullScreenPreview(true)}
-                        disabled={isUploading}
+                        disabled={false}
+                        activeOpacity={0.92}
                       >
                         <Image
                           source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
-                          style={styles.thumbnail}
+                          style={styles.mediaPreview}
                           resizeMode="cover"
                         />
                         {selectedMedia.isVideo && (
-                          <View style={styles.thumbnailPlayOverlay}>
+                          <View style={styles.mediaPreviewPlayOverlay}>
                             <MaterialIcons name="play-circle-filled" size={26} color="white" />
                           </View>
                         )}
-                        {isUploading && (
-                          <View style={styles.uploadingOverlay}>
-                            <Loader />
-                          </View>
-                        )}
+                        <TouchableOpacity
+                          style={styles.removeMediaButton}
+                          onPress={handleRemoveMedia}
+                          disabled={false}
+                        >
+                          <MaterialIcons name="close" size={12} color="white" />
+                        </TouchableOpacity>
                       </TouchableOpacity>
+                    ) : null}
 
-                      <View style={styles.mediaSelectedTextContainer}>
-                        <Text style={styles.mediaSelectedTitle}>
-                          {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
+                    {uploadProgress !== null && (
+                      <View style={styles.uploadProgressContainer}>
+                        <Text style={styles.uploadProgressText}>
+                          {t("Uploading media...")} {Math.round(uploadProgress)}%
                         </Text>
-                        <Text style={styles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
+                        <View style={styles.progressBarContainer}>
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              { width: `${uploadProgress}%` },
+                            ]}
+                          />
+                        </View>
                       </View>
+                    )}
 
-                      <TouchableOpacity
-                        style={styles.removeButtonInline}
-                        onPress={handleRemoveMedia}
-                        disabled={isUploading}
-                      >
-                        <MaterialIcons name="close" size={18} color={colors.neutral.darkGrey} />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View style={styles.mediaEmptyRow}>
-                      {isUploading ? (
-                        <Loader />
-                      ) : (
-                        <View style={styles.uploadMediaContainer}>
-                          <View style={styles.mediaIconsContainer}>
-                            <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
-                            <MaterialCommunityIcons
-                              name="video"
-                              size={18}
-                              color={colors.neutral.darkGrey}
-                            />
-                          </View>
-                          <Text style={styles.uploadButtonText}>
-                            {t("Add photo/video (optional)")}
+                    <TextInput
+                      style={styles.textInput}
+                      multiline
+                      scrollEnabled
+                    autoFocus
+                    placeholder={t(config.placeholderTextKey)}
+                    placeholderTextColor="#999"
+                    maxLength={1000}
+                    onChangeText={setPostText}
+                  />
+
+                    {showComfortSlider && (
+                      <View style={styles.sliderSection}>
+                        <View style={styles.sliderHeader}>
+                          <Text style={[styles.sliderLabel, { color: config.sliderLabelColor }]}>
+                            {t("How far out of your comfort zone was this?")}
                           </Text>
                         </View>
-                      )}
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                {uploadProgress !== null && (
-                  <View style={styles.uploadProgressContainer}>
-                    <Text style={styles.uploadProgressText}>
-                      {t("Uploading media...")} {Math.round(uploadProgress)}%
-                    </Text>
-                    <View style={styles.progressBarContainer}>
-                      <View
-                        style={[
-                          styles.progressBarFill,
-                          { width: `${uploadProgress}%` },
-                        ]}
-                      />
-                    </View>
+                        <ComfortSlider
+                          value={comfortRating}
+                          onValueChange={setComfortRating}
+                          minimumValue={1}
+                          maximumValue={5}
+                          minimumTrackTintColor={config.sliderAccentColor}
+                          maximumTrackTintColor={colors.neutral.grey2}
+                          thumbTintColor={config.sliderAccentColor}
+                          thumbSize={18}
+                        />
+                        <Text style={[styles.sliderEndLabel, { color: config.sliderValueColor }]}>
+                          {t(discomfortLabels[comfortRating - 1])}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                )}
-
-                <TextInput
-                  style={[styles.textInput, { fontSize: 13 }]}
-                  multiline
-                  scrollEnabled
-                  autoFocus
-                  placeholder={t(config.placeholderTextKey)}
-                  placeholderTextColor="#999"
-                  onChangeText={setPostText}
-                />
-
-                {showComfortSlider && (
-                  <View style={styles.sliderSection}>
-                    <View style={styles.sliderHeader}>
-                      <Text style={[styles.sliderLabel, { color: config.sliderLabelColor }]}>
-                        {t("How far out of your comfort zone was this?")}
-                      </Text>
-                    </View>
-                    <ComfortSlider
-                      value={comfortRating}
-                      onValueChange={setComfortRating}
-                      minimumValue={1}
-                      maximumValue={5}
-                      minimumTrackTintColor={config.sliderAccentColor}
-                      maximumTrackTintColor={colors.neutral.grey2}
-                      thumbTintColor={config.sliderAccentColor}
-                      thumbSize={18}
+                </ScrollView>
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.mediaActionButton,
+                      {
+                        backgroundColor: config.actionBackgroundColor,
+                        borderColor: config.actionBorderColor,
+                      },
+                      selectedMedia ? styles.mediaActionButtonDisabled : null,
+                    ]}
+                    onPress={handleMediaUpload}
+                    disabled={!!selectedMedia}
+                  >
+                    <MaterialIcons
+                      name="add-photo-alternate"
+                      size={20}
+                      color={selectedMedia ? colors.neutral.darkGrey : config.headerAccentColor}
                     />
-                    <Text style={[styles.sliderEndLabel, { color: config.sliderValueColor }]}>
-                      {t(discomfortLabels[comfortRating - 1])}
+                    <Text
+                      style={[
+                        styles.mediaActionText,
+                        { color: selectedMedia ? colors.neutral.darkGrey : config.headerAccentColor },
+                      ]}
+                    >
+                      {t("Add media")}
                     </Text>
-                  </View>
-                )}
+                  </TouchableOpacity>
 
-                <FeatureActionButton
-                  disabled={isUploading || isSubmitting}
-                  onPress={onSubmit}
-                  showIcon={false}
-                  style={styles.submitButton}
-                  title={t(isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit")}
-                  tone={config.tone}
-                  variant="pill"
-                />
+                  <FeatureActionButton
+                    disabled={isSubmitting}
+                    fullWidth={false}
+                    onPress={onSubmit}
+                    showIcon={false}
+                    style={styles.submitButton}
+                    title={t(isSubmitting ? "Submitting..." : "Submit")}
+                    tone={config.tone}
+                    variant="pill"
+                  />
+                </View>
               </View>
-            </TouchableOpacity>
+            </View>
           </KeyboardAvoidingView>
         </Animated.View>
       </Modal>
@@ -335,11 +364,34 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
 };
 
 const styles = StyleSheet.create({
+  actionRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    justifyContent: "space-between",
+    marginBottom: -12,
+    marginHorizontal: -20,
+    marginTop: "auto",
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
   closeButton: {
-    padding: 8,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.82)",
+    borderColor: colors.light.accent2,
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: "center",
     position: "absolute",
-    right: -15,
-    top: -15,
+    right: 20,
+    top: 18,
+    width: 36,
+  },
+  closeIcon: {
+    transform: [{ translateX: 0.5 }, { translateY: 0.5 }],
   },
   fullScreenImage: {
     height: "100%",
@@ -361,45 +413,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  mediaEmptyRow: {
+  mediaActionButton: {
     alignItems: "center",
+    borderRadius: 48,
+    borderWidth: 1,
     flexDirection: "row",
-    gap: 10,
-    justifyContent: "flex-start",
-    width: "100%",
-  },
-  mediaIconsContainer: {
-    flexDirection: "row",
+    flexShrink: 1,
     gap: 8,
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 7,
   },
-  mediaSelectedRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    width: "100%",
+  mediaActionButtonDisabled: {
+    backgroundColor: "#F3F3F3",
+    borderColor: "#DADADA",
   },
-  mediaSelectedSubtitle: {
-    color: colors.neutral.darkGrey,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  mediaSelectedTextContainer: {
-    flex: 1,
-  },
-  mediaSelectedTitle: {
-    color: colors.neutral.black,
-    fontSize: 14,
+  mediaActionText: {
+    flexShrink: 1,
+    fontSize: 13,
     fontWeight: "600",
-  },
-  mediaUploadButton: {
-    alignItems: "center",
-    backgroundColor: colors.neutral.grey2,
-    borderRadius: 12,
-    flexDirection: "row",
-    minHeight: 64,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    width: "100%",
   },
   modalContainer: {
     alignItems: "center",
@@ -416,23 +448,97 @@ const styles = StyleSheet.create({
     padding: 20,
     width: "100%",
   },
+  headerFill: {
+    borderRadius: 999,
+    height: 12,
+    position: "absolute",
+    right: 34,
+    top: 36,
+    transform: [{ rotate: "-18deg" }],
+    width: 76,
+  },
+  headerGlow: {
+    borderRadius: 999,
+    height: 170,
+    position: "absolute",
+    right: -46,
+    top: -60,
+    width: 170,
+  },
+  headerRing: {
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 108,
+    position: "absolute",
+    right: -14,
+    top: 22,
+    transform: [{ rotate: "16deg" }],
+    width: 108,
+  },
   modalHeader: {
+    borderBottomWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginBottom: 20,
+    marginHorizontal: -20,
+    marginTop: -20,
+    overflow: "hidden",
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+    paddingTop: 18,
     position: "relative",
   },
   modalOverlay: {
     backgroundColor: "rgba(0,0,0,0.5)",
     flex: 1,
   },
+  modalBody: {
+    flexGrow: 1,
+  },
+  modalScroll: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 16,
+  },
   modalSubtitle: {
-    color: "#666",
     fontSize: 14,
-    marginBottom: 20,
+    lineHeight: 20,
+    maxWidth: "82%",
+    opacity: 0.82,
   },
   modalTitle: {
-    color: colors.light.text,
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 21,
+    fontWeight: "700",
+    lineHeight: 25,
+    marginBottom: 6,
+    maxWidth: "82%",
+  },
+  mediaPreview: {
+    backgroundColor: colors.light.accent3,
+    borderRadius: 18,
+    height: "100%",
+    width: "100%",
+  },
+  mediaPreviewContainer: {
+    borderRadius: 18,
+    height: 96,
     marginBottom: 4,
+    overflow: "hidden",
+    position: "relative",
+    width: "100%",
+  },
+  mediaPreviewPlayOverlay: {
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 18,
+    bottom: 0,
+    justifyContent: "center",
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   progressBarContainer: {
     backgroundColor: "#ddd",
@@ -445,13 +551,16 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     height: "100%",
   },
-  removeButtonInline: {
+  removeMediaButton: {
     alignItems: "center",
-    backgroundColor: colors.neutral.grey2,
-    borderRadius: 999,
-    height: 32,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 12,
+    height: 18,
     justifyContent: "center",
-    width: 32,
+    position: "absolute",
+    right: 8,
+    top: 8,
+    width: 18,
   },
   sliderEndLabel: {
     fontSize: 13,
@@ -470,57 +579,22 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   submitButton: {
-    marginTop: 16,
+    alignSelf: "flex-end",
   },
   textInput: {
-    backgroundColor: colors.neutral.white,
-    borderColor: "#ccc",
-    borderRadius: 8,
+    backgroundColor: "#FCFBF9",
+    borderColor: colors.light.accent2,
+    borderRadius: 18,
     borderWidth: 1,
-    color: colors.neutral.black,
-    flex: 1,
+    color: colors.light.text,
+    flexGrow: 1,
     marginVertical: 10,
-    padding: 10,
+    fontSize: 15,
+    lineHeight: 22,
+    minHeight: 130,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     textAlignVertical: "top",
-  },
-  thumbnail: {
-    borderRadius: 10,
-    height: 44,
-    width: 44,
-  },
-  thumbnailPlayOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 10,
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-  thumbnailWrapper: {
-    borderRadius: 10,
-    position: "relative",
-  },
-  uploadingOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 10,
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    zIndex: 2,
-  },
-  uploadMediaContainer: {
-    alignItems: "center",
-    flexDirection: "column",
-    gap: 8,
-    justifyContent: "center",
-    width: "100%",
   },
   uploadProgressContainer: {
     backgroundColor: "#f5f5f5",
@@ -532,10 +606,5 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 12,
     marginBottom: 5,
-  },
-  uploadButtonText: {
-    color: colors.neutral.darkGrey,
-    flex: 1,
-    fontSize: 14,
   },
 });
