@@ -109,22 +109,24 @@ export function FeatureActionButton({
       onPress={onPress}
       disabled={disabled}
     >
-      <View
-        style={[
-          styles.glow,
-          isPill && styles.pillGlow,
-          !isPill && !hasSubtitle && styles.compactCardGlow,
-          { backgroundColor: completed ? "rgba(255,255,255,0.14)" : palette.glowColor },
-        ]}
-      />
-      <View
-        style={[
-          styles.orbit,
-          isPill && styles.pillOrbit,
-          !isPill && !hasSubtitle && styles.compactCardOrbit,
-          { borderColor: completed ? "rgba(255,255,255,0.16)" : palette.orbitColor },
-        ]}
-      />
+      {!isPill && (
+        <>
+          <View
+            style={[
+              styles.glow,
+              !hasSubtitle && styles.compactCardGlow,
+              { backgroundColor: completed ? "rgba(255,255,255,0.14)" : palette.glowColor },
+            ]}
+          />
+          <View
+            style={[
+              styles.orbit,
+              !hasSubtitle && styles.compactCardOrbit,
+              { borderColor: completed ? "rgba(255,255,255,0.16)" : palette.orbitColor },
+            ]}
+          />
+        </>
+      )}
 
       <View
         style={[
@@ -287,12 +289,6 @@ const styles = StyleSheet.create({
   pillContent: {
     justifyContent: "center",
   },
-  pillGlow: {
-    height: 40,
-    right: -14,
-    top: -18,
-    width: 40,
-  },
   pillIconWrap: {
     marginLeft: 10,
     marginRight: 0,
@@ -300,12 +296,6 @@ const styles = StyleSheet.create({
   pillLeadingIconWrap: {
     marginLeft: 0,
     marginRight: 8,
-  },
-  pillOrbit: {
-    height: 24,
-    right: -2,
-    top: 1,
-    width: 24,
   },
   pillSubtitle: {
     marginTop: 1,
