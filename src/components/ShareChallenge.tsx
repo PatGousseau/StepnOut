@@ -48,6 +48,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   const bodyProgress = useRef(new Animated.Value(0)).current;
   const [burstSession, setBurstSession] = React.useState(0);
   const [contentMounted, setContentMounted] = React.useState(false);
+  const openedCountRef = useRef(0);
 
   React.useEffect(() => {
     const loadProfileImage = async () => {
@@ -86,6 +87,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
       return () => clearTimeout(unmountTimer);
     }
 
+    openedCountRef.current = completionCount;
     setContentMounted(true);
     setBurstSession(s => s + 1);
     countAnim.setValue(0);
@@ -94,7 +96,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 
     const t1 = setTimeout(() => confettiRef.current?.start(), 3300);
 
-    const target = completionCount;
+    const target = openedCountRef.current;
     const listener = countAnim.addListener(({ value }) => {
       setDisplayCount(Math.round(value));
     });
@@ -118,7 +120,8 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
       clearTimeout(t1);
       countAnim.removeListener(listener);
     };
-  }, [isVisible, completionCount, countAnim, bodyProgress]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
 
   const handleShare = async () => {
     try {
@@ -250,7 +253,7 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 
               <Text style={styles.inspireText}>
                 <MaterialCommunityIcons name="shimmer" size={14} color={colors.light.accent} />
-                {' '}{t('Inspire your friend to be the (count)th!', { count: completionCount + 1 })}
+                {' '}{t('Inspire your friend to be the (count)th!', { count: displayCount + 1 })}
               </Text>
             </View>
 

@@ -471,7 +471,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   return (
     <Animated.View
       onLayout={(e) => {
-        if (containerHeight == null) {
+        if (!isDeleting) {
           setContainerHeight(e.nativeEvent.layout.height);
         }
       }}

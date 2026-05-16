@@ -95,6 +95,12 @@ export const AppAlertHost: React.FC = () => {
     if (cancel) handlePress(cancel);
   };
 
+  const handleRequestClose = () => {
+    const cancel = buttons.find((b) => b.style === 'cancel');
+    if (cancel) handlePress(cancel);
+    else AppAlert.hide();
+  };
+
   const stacked = buttons.length > 2;
 
   return (
@@ -103,7 +109,7 @@ export const AppAlertHost: React.FC = () => {
       transparent
       animationType="none"
       statusBarTranslucent
-      onRequestClose={handleBackdrop}
+      onRequestClose={handleRequestClose}
     >
       <TouchableOpacity
         activeOpacity={1}
