@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Pressable, Keyboard } from 'react-native';
+import { TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable, Keyboard } from 'react-native';
+import { AppAlert } from '../../components/AppAlert';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { colors } from '../../constants/Colors';
@@ -15,7 +16,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSendReset = async () => {
     if (!email) {
-      Alert.alert(t('Error'), t('Please enter your email'));
+      AppAlert.show(t('Error'), t('Please enter your email'));
       return;
     }
 
@@ -29,14 +30,14 @@ export default function ForgotPasswordScreen() {
 
       if (error) throw error;
 
-      Alert.alert(t('Success'), t('Password reset email sent'), [
+      AppAlert.show(t('Success'), t('Password reset email sent'), [
         {
           text: t('OK'),
           onPress: () => router.replace('/(auth)/login'),
         },
       ]);
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }

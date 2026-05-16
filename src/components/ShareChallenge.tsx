@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity, Share, Modal, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Share, Modal, Image, ActivityIndicator, Animated, Easing } from 'react-native';
 import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -15,6 +15,7 @@ import InstagramStoryCard from './InstagramStoryCard';
 import { captureRef } from 'react-native-view-shot';
 import { instagramShareService } from '../services/instagramShareService';
 import { Image as ExpoImage } from 'expo-image';
+import CompletionBurst from './CompletionBurst';
 
 interface ShareChallengeProps {
   isVisible: boolean;
@@ -42,6 +43,12 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   const [isSharing, setIsSharing] = React.useState(false);
   const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(null);
   const { completionCount } = useActiveChallenge();
+  const countAnim = useRef(new Animated.Value(0)).current;
+  const [displayCount, setDisplayCount] = React.useState(0);
+  const bodyProgress = useRef(new Animated.Value(0)).current;
+  const [burstSession, setBurstSession] = React.useState(0);
+  const [contentMounted, setContentMounted] = React.useState(false);
+  const openedCountRef = useRef(0);
 
   React.useEffect(() => {
     const loadProfileImage = async () => {
@@ -70,13 +77,50 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
   }, [isVisible]);
 
   useEffect(() => {
-    if (isVisible) {
-      setTimeout(() => {
-        if (confettiRef.current) {
-          confettiRef.current.start();
-        }
-      }, 100);
+    if (!isVisible) {
+      const unmountTimer = setTimeout(() => {
+        setContentMounted(false);
+        countAnim.setValue(0);
+        bodyProgress.setValue(0);
+        setDisplayCount(0);
+      }, 320);
+      return () => clearTimeout(unmountTimer);
     }
+
+    openedCountRef.current = completionCount;
+    setContentMounted(true);
+    setBurstSession(s => s + 1);
+    countAnim.setValue(0);
+    bodyProgress.setValue(0);
+    setDisplayCount(0);
+
+    const t1 = setTimeout(() => confettiRef.current?.start(), 3300);
+
+    const target = openedCountRef.current;
+    const listener = countAnim.addListener(({ value }) => {
+      setDisplayCount(Math.round(value));
+    });
+    Animated.timing(countAnim, {
+      toValue: target,
+      duration: 1100,
+      delay: 1650,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    Animated.timing(bodyProgress, {
+      toValue: 1,
+      duration: 520,
+      delay: 1700,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    return () => {
+      clearTimeout(t1);
+      countAnim.removeListener(listener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVisible]);
 
   const handleShare = async () => {
@@ -160,17 +204,6 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <ConfettiCannon
-          ref={confettiRef}
-          count={200}
-          origin={{x: -10, y: 0}}
-          fallSpeed={3000}
-          explosionSpeed={1000}
-          fadeOut={true}
-          colors={['#FFD700', '#FFA500', '#FF69B4', '#87CEEB', '#98FB98']}
-          autoStartDelay={0}
-        />
-
         {/* Hidden Instagram Story Card for capture */}
         <InstagramStoryCard
           ref={storyCardRef}
@@ -184,66 +217,95 @@ const ShareChallenge: React.FC<ShareChallengeProps> = ({
 
         <View style={styles.modalContent}>
           <View style={styles.celebrationContainer}>
-            <Text style={styles.title}>{t(celebrationText)}</Text>
+            {contentMounted && (
+              <CompletionBurst key={burstSession} title={t(celebrationText)} />
+            )}
           </View>
 
-          {mediaPreview && (
-            <Image
-              source={{ uri: mediaPreview }}
-              style={styles.mediaPreview}
-              resizeMode="cover"
-            />
-          )}
-          <View style={styles.socialProofContainer}>
-            <Text style={styles.socialProofText}>
-              <Text style={styles.highlight}>
-                {t('(count) people', { count: completionCount })}
-              </Text>
-              {' '}
-              {t('have stepped out of their comfort zone this week.')}
-            </Text>
-
-            <Text style={styles.inspireText}>
-              <MaterialCommunityIcons name="shimmer" size={14} color={colors.light.accent} />
-              {' '}{t('Inspire your friend to be the (count)th!', { count: completionCount + 1 })}
-            </Text>
-          </View>
-
-          <View style={styles.shareButtons}>
-            <TouchableOpacity
-              style={styles.instagramButton}
-              onPress={handleInstagramShare}
-              disabled={isSharing}
-            >
-              {isSharing ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <MaterialCommunityIcons name="instagram" size={20} color="white" />
-              )}
-              <Text style={styles.buttonText}>
-                {isSharing ? t('Sharing...') : t('Share to Instagram Story')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.friendButton}
-              onPress={handleShare}
-            >
-              <MaterialCommunityIcons name="send" size={18} color="white" style={{ transform: [{ rotate: '-30deg' }] }} />
-              <Text style={styles.friendButtonText}>{t('Share with a friend')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => {
-              captureEvent(CHALLENGE_EVENTS.SHARE_SKIPPED, {
-                challenge_id: challengeId,
-              });
-              onClose();
+          <Animated.View
+            style={{
+              opacity: bodyProgress,
+              transform: [
+                {
+                  translateY: bodyProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
             }}
           >
-            <Text style={styles.skipText}>{t('Skip')}</Text>
-          </TouchableOpacity>
+            {mediaPreview && (
+              <Image
+                source={{ uri: mediaPreview }}
+                style={styles.mediaPreview}
+                resizeMode="cover"
+              />
+            )}
+            <View style={styles.socialProofContainer}>
+              <Text style={styles.socialProofText}>
+                <Text style={styles.highlight}>
+                  {t('(count) people', { count: displayCount })}
+                </Text>
+                {' '}
+                {t('have stepped out of their comfort zone this week.')}
+              </Text>
+
+              <Text style={styles.inspireText}>
+                <MaterialCommunityIcons name="shimmer" size={14} color={colors.light.accent} />
+                {' '}{t('Inspire your friend to be the (count)th!', { count: displayCount + 1 })}
+              </Text>
+            </View>
+
+            <View style={styles.shareButtons}>
+              <TouchableOpacity
+                style={styles.instagramButton}
+                onPress={handleInstagramShare}
+                disabled={isSharing}
+              >
+                {isSharing ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <MaterialCommunityIcons name="instagram" size={20} color="white" />
+                )}
+                <Text style={styles.buttonText}>
+                  {isSharing ? t('Sharing...') : t('Share to Instagram Story')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.friendButton}
+                onPress={handleShare}
+              >
+                <MaterialCommunityIcons name="send" size={18} color="white" style={{ transform: [{ rotate: '-30deg' }] }} />
+                <Text style={styles.friendButtonText}>{t('Share with a friend')}</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                captureEvent(CHALLENGE_EVENTS.SHARE_SKIPPED, {
+                  challenge_id: challengeId,
+                });
+                onClose();
+              }}
+            >
+              <Text style={styles.skipText}>{t('Skip')}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+          <ConfettiCannon
+            ref={confettiRef}
+            count={90}
+            origin={{x: -10, y: -20}}
+            fallSpeed={2800}
+            explosionSpeed={600}
+            fadeOut={true}
+            colors={['#FFE27A', '#FFB347', '#FF6B3D', '#FFD166', '#F5F2ED']}
+            autoStart={false}
+          />
         </View>
       </View>
     </Modal>
@@ -325,6 +387,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.background,
     borderRadius: 24,
     maxWidth: 400,
+    overflow: 'visible',
     paddingVertical: 24,
     paddingHorizontal: 26,
     width: '90%',
@@ -354,13 +417,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     marginBottom: 12,
-    textAlign: 'center',
-  },
-  title: {
-    color: colors.light.text,
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 4,
     textAlign: 'center',
   },
 });

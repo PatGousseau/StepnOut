@@ -7,10 +7,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
   Keyboard,
   Pressable,
 } from "react-native";
+import { AppAlert } from '../../components/AppAlert';
 import { router, useLocalSearchParams } from "expo-router";
 import { colors } from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
@@ -114,7 +114,7 @@ export default function RegisterProfileScreen() {
         setProfileImage(file.uri);
       } catch (error) {
         console.error("Error uploading profile image:", error);
-        Alert.alert(t("Error"), t("Failed to upload profile image"));
+        AppAlert.show(t("Error"), t("Failed to upload profile image"));
       } finally {
         setImageUploading(false);
       }

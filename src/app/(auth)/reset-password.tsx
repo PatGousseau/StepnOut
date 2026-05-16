@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Pressable, Keyboard } from 'react-native';
+import { TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable, Keyboard } from 'react-native';
+import { AppAlert } from '../../components/AppAlert';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
 import { FeatureActionButton } from '../../components/FeatureActionButton';
@@ -15,12 +16,12 @@ export default function ResetPasswordScreen() {
 
   const handleUpdatePassword = async () => {
     if (!password || !confirmPassword) {
-      Alert.alert(t('Error'), t('Please fill in all fields'));
+      AppAlert.show(t('Error'), t('Please fill in all fields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert(t('Error'), t('Passwords do not match'));
+      AppAlert.show(t('Error'), t('Passwords do not match'));
       return;
     }
 
@@ -51,14 +52,14 @@ export default function ResetPasswordScreen() {
 
       clearRecoveryTokens();
 
-      Alert.alert(t('Success'), t('Password updated'), [
+      AppAlert.show(t('Success'), t('Password updated'), [
         {
           text: t('OK'),
           onPress: () => router.replace('/(auth)/login'),
         },
       ]);
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }
