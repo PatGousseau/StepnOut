@@ -58,7 +58,6 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
     challenge: {
       completedLabelKey: "Challenge completed!",
       ctaLabelKey: "Mark as complete",
-      ctaSubtitleKey: "Share your challenge moment",
       modalSubtitleKey: "Share how you completed the challenge",
       placeholderTextKey: "Just completed this week's challenge!",
       unauthenticatedMessageKey: "You must be logged in to submit a challenge.",
@@ -71,7 +70,6 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
     quest: {
       completedLabelKey: "Quest completed!",
       ctaLabelKey: "Mark as complete",
-      ctaSubtitleKey: "Share your quest moment",
       modalSubtitleKey: "Share how you completed the quest",
       placeholderTextKey: "Just completed today's quest!",
       unauthenticatedMessageKey: "You must be logged in to submit a quest.",
@@ -149,7 +147,6 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
         completed={completed}
         disabled={completed || checkingCompletion}
         onPress={fadeIn}
-        subtitle={completed ? undefined : t(config.ctaSubtitleKey)}
         title={t(completed ? config.completedLabelKey : config.ctaLabelKey)}
         tone={config.tone}
       />
