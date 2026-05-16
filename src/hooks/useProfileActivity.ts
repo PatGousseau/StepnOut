@@ -4,7 +4,7 @@ import { supabase, supabaseStorageUrl } from "../lib/supabase";
 import { Comment, Post } from "../types";
 
 type CommentWithPost = Comment & {
-  post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title">;
+  post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title" | "quest_id" | "quest_title">;
   liked: boolean;
   likes_count: number;
 };
