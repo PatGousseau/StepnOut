@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Animated, PanResponder, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
@@ -28,6 +28,9 @@ import {
   SideQuestGoal,
   SideQuestQuestionnaireDraft,
 } from "../types/sideQuests";
+
+const QUESTION_SWIPE_DISTANCE_THRESHOLD = 90;
+const QUESTION_SWIPE_VELOCITY_THRESHOLD = 700;
 
 function buildDraft(profile: ReturnType<typeof useSideQuests>["profile"]): SideQuestQuestionnaireDraft {
   if (!profile) return SIDE_QUEST_EMPTY_DRAFT;
@@ -121,6 +124,338 @@ function getGoalOptionLabel(goal: SideQuestGoal) {
   return SIDE_QUEST_GOAL_OPTIONS.find((option) => option.id === goal)?.label || goal;
 }
 
+type QuestionnaireRenderControls = {
+  goNext: () => void;
+  isTransitioning: boolean;
+};
+
+type QuestionnaireStep = {
+  title: string;
+  render: (controls: QuestionnaireRenderControls) => React.ReactNode;
+  isComplete: boolean;
+};
+
+type QuestionnaireFlowProps = {
+  onAdvanceQuestion: (stepIndex: number, stepTitle: string) => void;
+  onStart: () => void;
+  onSubmit: () => Promise<void>;
+  questionnaireComplete: boolean;
+  savingProfile: boolean;
+  showIntroInitially: boolean;
+  steps: QuestionnaireStep[];
+};
+
+function QuestionnaireFlow({
+  onAdvanceQuestion,
+  onStart,
+  onSubmit,
+  questionnaireComplete,
+  savingProfile,
+  showIntroInitially,
+  steps,
+}: QuestionnaireFlowProps) {
+  const { t } = useLanguage();
+  const hasIntro = showIntroInitially;
+  const pageOffset = hasIntro ? 1 : 0;
+  const pageCount = steps.length + pageOffset;
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [pageWidth, setPageWidth] = useState(0);
+  const translateX = useRef(new Animated.Value(0)).current;
+  const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showingIntroStep = hasIntro && currentPageIndex === 0;
+  const currentQuestionIndex = showingIntroStep ? -1 : currentPageIndex - pageOffset;
+  const currentStep = currentQuestionIndex >= 0 ? steps[currentQuestionIndex] : null;
+  const isLastQuestion = currentQuestionIndex === steps.length - 1;
+  const canSwipeBack = currentPageIndex > 0;
+  const canSwipeForward = !showingIntroStep && !isLastQuestion && !!currentStep?.isComplete;
+
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimeoutRef.current) {
+        clearTimeout(autoAdvanceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pageWidth) return;
+    translateX.setValue(-currentPageIndex * pageWidth);
+  }, [currentPageIndex, pageWidth, translateX]);
+
+  const animateToPage = useCallback((nextPageIndex: number) => {
+    if (isTransitioning || nextPageIndex === currentPageIndex) return;
+
+    if (!pageWidth) {
+      setCurrentPageIndex(nextPageIndex);
+      return;
+    }
+
+    setIsTransitioning(true);
+    Animated.timing(translateX, {
+      toValue: -nextPageIndex * pageWidth,
+      duration: 240,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentPageIndex(nextPageIndex);
+      setIsTransitioning(false);
+    });
+  }, [currentPageIndex, isTransitioning, pageWidth, translateX]);
+
+  const goBack = useCallback(() => {
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+
+    if (!canSwipeBack || isTransitioning) return;
+    animateToPage(currentPageIndex - 1);
+  }, [animateToPage, canSwipeBack, currentPageIndex, isTransitioning]);
+
+  const goNext = useCallback(() => {
+    if (showingIntroStep) {
+      onStart();
+      animateToPage(1);
+      return;
+    }
+
+    if (!currentStep?.isComplete || isTransitioning) return;
+    onAdvanceQuestion(currentQuestionIndex, currentStep.title);
+
+    if (!isLastQuestion) {
+      animateToPage(currentPageIndex + 1);
+    }
+  }, [
+    animateToPage,
+    currentPageIndex,
+    currentQuestionIndex,
+    currentStep,
+    isLastQuestion,
+    isTransitioning,
+    onAdvanceQuestion,
+    onStart,
+    showingIntroStep,
+  ]);
+
+  const resetToCurrentPage = useCallback(() => {
+    Animated.spring(translateX, {
+      toValue: -currentPageIndex * pageWidth,
+      friction: 10,
+      tension: 90,
+      useNativeDriver: true,
+    }).start();
+  }, [currentPageIndex, pageWidth, translateX]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          (canSwipeBack || canSwipeForward) &&
+          !isTransitioning &&
+          Math.abs(gestureState.dx) > 8 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+          (canSwipeBack || canSwipeForward) &&
+          !isTransitioning &&
+          Math.abs(gestureState.dx) > 8 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+        onPanResponderMove: (_, gestureState) => {
+          const baseOffset = -currentPageIndex * pageWidth;
+          const minOffset = canSwipeForward ? -(currentPageIndex + 1) * pageWidth : baseOffset;
+          const maxOffset = canSwipeBack ? -(currentPageIndex - 1) * pageWidth : baseOffset;
+          const nextOffset = baseOffset + gestureState.dx;
+          translateX.setValue(Math.max(minOffset, Math.min(maxOffset, nextOffset)));
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          const shouldGoBack =
+            canSwipeBack && (
+              gestureState.dx > QUESTION_SWIPE_DISTANCE_THRESHOLD ||
+              gestureState.vx > QUESTION_SWIPE_VELOCITY_THRESHOLD / 1000
+            );
+          const shouldGoForward =
+            canSwipeForward && (
+              gestureState.dx < -QUESTION_SWIPE_DISTANCE_THRESHOLD ||
+              gestureState.vx < -QUESTION_SWIPE_VELOCITY_THRESHOLD / 1000
+            );
+
+          if (shouldGoForward) {
+            goNext();
+            return;
+          }
+
+          if (shouldGoBack) {
+            goBack();
+            return;
+          }
+
+          resetToCurrentPage();
+        },
+        onPanResponderTerminate: () => {
+          resetToCurrentPage();
+        },
+      }),
+    [canSwipeBack, canSwipeForward, currentPageIndex, goBack, goNext, isTransitioning, pageWidth, resetToCurrentPage, translateX]
+  );
+
+  const pages = hasIntro
+    ? [-1, ...steps.map((_, index) => index)]
+    : steps.map((_, index) => index);
+
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <View style={styles.questionnaireScreen}>
+        <View style={styles.questionnaireHeader}>
+          {!showingIntroStep && (
+            <View style={styles.stepIndicatorRow}>
+              <ProgressSegments total={steps.length} activeIndex={currentQuestionIndex} />
+            </View>
+          )}
+        </View>
+
+        <View
+          style={styles.questionnaireViewport}
+          {...panResponder.panHandlers}
+          onLayout={(event) => {
+            const nextWidth = event.nativeEvent.layout.width;
+            if (nextWidth !== pageWidth) {
+              setPageWidth(nextWidth);
+            }
+          }}
+        >
+          <Animated.View
+            style={[
+              styles.questionnairePages,
+              {
+                width: Math.max(pageWidth, 1) * pageCount,
+                transform: [{ translateX }],
+              },
+            ]}
+          >
+            {pages.map((pageIndex) => (
+              <View
+                key={pageIndex < 0 ? "intro" : `question-${pageIndex}`}
+                style={[styles.questionnairePage, { width: Math.max(pageWidth, 1) }]}
+              >
+                <ScrollView
+                  contentContainerStyle={styles.questionnaireContent}
+                  keyboardShouldPersistTaps="handled"
+                  scrollEnabled={!isTransitioning}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {pageIndex < 0 ? (
+                    <View style={styles.introSection}>
+                      <View style={styles.introHero}>
+                        <View style={styles.introHeroGlow} />
+                        <View style={styles.introHeroLineOne} />
+                        <View style={styles.introHeroLineTwo} />
+                        <View style={styles.introHeroLineThree} />
+                        <View style={styles.introHeroContent}>
+                          <View style={styles.introBadge}>
+                            <SideQuestHatSvg width={44} height={44} />
+                          </View>
+                          <View style={styles.introHeaderCopy}>
+                            <Text style={styles.introTitle}>{t("Side quests")}</Text>
+                            <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      <View style={styles.introContentBlock}>
+                        <Text style={styles.introBody}>
+                          {t("The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.")}
+                        </Text>
+
+                        <View style={styles.introPoints}>
+                          <View style={styles.introPoint}>
+                            <View style={styles.introPointIcon}>
+                              <Text style={styles.introPointNumber}>{t("1")}</Text>
+                            </View>
+                            <View style={styles.introPointCopy}>
+                              <Text style={styles.introPointTitle}>{t("Answer a few quick questions")}</Text>
+                              <Text style={styles.introPointText}>
+                                {t("Tell us what sounds good, what fits your life, and how much of a stretch you want.")}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.introPoint}>
+                            <View style={styles.introPointIcon}>
+                              <Text style={styles.introPointNumber}>{t("2")}</Text>
+                            </View>
+                            <View style={styles.introPointCopy}>
+                              <Text style={styles.introPointTitle}>{t("Draw one side quest each day")}</Text>
+                              <Text style={styles.introPointText}>
+                                {t("Each day, you'll get the chance to pull a new quest from the hat.")}
+                              </Text>
+                            </View>
+                          </View>
+
+                          <View style={styles.introPoint}>
+                            <View style={styles.introPointIcon}>
+                              <Text style={styles.introPointNumber}>{t("3")}</Text>
+                            </View>
+                            <View style={styles.introPointCopy}>
+                              <Text style={styles.introPointTitle}>{t("Build a little more variety")}</Text>
+                              <Text style={styles.introPointText}>
+                                {t("Over time, these quests are meant to help you break routine and try things you might not have picked on your own.")}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+
+                      <TouchableOpacity style={styles.introButton} onPress={goNext}>
+                        <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    steps[pageIndex].render({
+                      goNext: () => {
+                        if (autoAdvanceTimeoutRef.current) {
+                          clearTimeout(autoAdvanceTimeoutRef.current);
+                        }
+
+                        autoAdvanceTimeoutRef.current = setTimeout(() => {
+                          goNext();
+                          autoAdvanceTimeoutRef.current = null;
+                        }, 160);
+                      },
+                      isTransitioning,
+                    })
+                  )}
+                </ScrollView>
+              </View>
+            ))}
+          </Animated.View>
+        </View>
+
+        {!showingIntroStep && (
+          <View style={styles.questionActions}>
+            {isLastQuestion ? (
+              <TouchableOpacity
+                style={[styles.questionNextButton, (!questionnaireComplete || savingProfile || isTransitioning) && styles.disabledButton]}
+                disabled={!questionnaireComplete || savingProfile || isTransitioning}
+                onPress={onSubmit}
+              >
+                <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.questionNextButton, (!currentStep?.isComplete || isTransitioning) && styles.disabledButton]}
+                disabled={!currentStep?.isComplete || isTransitioning}
+                onPress={goNext}
+              >
+                <Text style={styles.questionNextButtonText}>{t("Next")}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
 export const SideQuestPath: React.FC = () => {
   const { t, language } = useLanguage();
   const {
@@ -140,7 +475,6 @@ export const SideQuestPath: React.FC = () => {
   } = useSideQuests();
   const [draft, setDraft] = useState<SideQuestQuestionnaireDraft>(SIDE_QUEST_EMPTY_DRAFT);
   const [editingPreferences, setEditingPreferences] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1);
   const [isDrawingQuest, setIsDrawingQuest] = useState(false);
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealedQuest, setRevealedQuest] = useState<SideQuest | null>(null);
@@ -160,14 +494,6 @@ export const SideQuestPath: React.FC = () => {
   useEffect(() => {
     setDraft(buildDraft(profile));
   }, [profile]);
-
-  useEffect(() => {
-    if (needsOnboarding || editingPreferences) {
-      setCurrentQuestionIndex(needsOnboarding ? -1 : 0);
-    }
-  }, [needsOnboarding, editingPreferences]);
-
-  const showingIntroStep = currentQuestionIndex < 0;
 
   const questionnaireComplete = useMemo(
     () =>
@@ -210,7 +536,7 @@ export const SideQuestPath: React.FC = () => {
     });
   };
 
-  const questionnaireSteps = [
+  const questionnaireSteps: QuestionnaireStep[] = [
     {
       title: "What are you craving more of right now?",
       render: () => (
@@ -239,12 +565,15 @@ export const SideQuestPath: React.FC = () => {
     },
     {
       title: "How much activation do you want from these?",
-      render: () => (
+      render: ({ goNext }) => (
         <SingleSelectSection
           title="How much activation do you want from these?"
           options={SIDE_QUEST_STRETCH_LEVEL_OPTIONS}
           selected={draft.stretch_level}
-          onSelect={(stretch_level) => setDraft((current) => ({ ...current, stretch_level }))}
+          onSelect={(stretch_level) => {
+            setDraft((current) => ({ ...current, stretch_level }));
+            goNext();
+          }}
         />
       ),
       isComplete: !!draft.stretch_level,
@@ -314,42 +643,6 @@ export const SideQuestPath: React.FC = () => {
     },
   ];
 
-  const currentStep = currentQuestionIndex >= 0 ? questionnaireSteps[currentQuestionIndex] : null;
-  const isLastQuestion = currentQuestionIndex === questionnaireSteps.length - 1;
-
-  const handleNextQuestion = () => {
-    if (showingIntroStep) {
-      if (needsOnboarding) {
-        captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_STARTED, {
-          entry_point: "onboarding",
-          question_count: questionnaireSteps.length,
-        });
-      }
-      setCurrentQuestionIndex(0);
-      return;
-    }
-
-    if (!currentStep?.isComplete) return;
-    captureEvent(SIDE_QUEST_EVENTS.QUESTION_ADVANCED, {
-      step_index: currentQuestionIndex,
-      step_title: currentStep.title,
-      entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
-    });
-
-    if (!isLastQuestion) setCurrentQuestionIndex((current) => current + 1);
-  };
-
-  const handleBackQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex((current) => current - 1);
-      return;
-    }
-
-    if (currentQuestionIndex === 0) {
-      setCurrentQuestionIndex(-1);
-    }
-  };
-
   const submitProfile = async () => {
     try {
       await saveProfile(draft);
@@ -367,7 +660,7 @@ export const SideQuestPath: React.FC = () => {
     } catch (error) {
       captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_SAVE_FAILED, {
         entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
-        step_index: currentQuestionIndex,
+        step_index: -1,
         message: (error as Error).message,
       });
       Alert.alert(t("Error"), (error as Error).message);
@@ -447,122 +740,27 @@ export const SideQuestPath: React.FC = () => {
 
   if (needsOnboarding || editingPreferences) {
     return (
-      <SafeAreaView style={styles.container} edges={["bottom"]}>
-        <View style={styles.questionnaireScreen}>
-          <View style={styles.questionnaireHeader}>
-            {!showingIntroStep && (
-              <View style={styles.stepIndicatorRow}>
-                <ProgressSegments total={questionnaireSteps.length} activeIndex={currentQuestionIndex} />
-              </View>
-            )}
-          </View>
-
-          <ScrollView
-            style={styles.questionnaireScroll}
-            contentContainerStyle={styles.questionnaireContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {showingIntroStep ? (
-              <View style={styles.introSection}>
-                <View style={styles.introHero}>
-                  <View style={styles.introHeroGlow} />
-                  <View style={styles.introHeroLineOne} />
-                  <View style={styles.introHeroLineTwo} />
-                  <View style={styles.introHeroLineThree} />
-                  <View style={styles.introHeroContent}>
-                    <View style={styles.introBadge}>
-                      <SideQuestHatSvg width={44} height={44} />
-                    </View>
-                    <View style={styles.introHeaderCopy}>
-                      <Text style={styles.introTitle}>{t("Side quests")}</Text>
-                      <Text style={styles.introEyebrow}>{t("A break from the usual")}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.introContentBlock}>
-                  <Text style={styles.introBody}>
-                    {t("The goal is to help you break out of autopilot with prompts that feel fun, fresh, and surprisingly doable in real life.")}
-                  </Text>
-
-                  <View style={styles.introPoints}>
-                    <View style={styles.introPoint}>
-                      <View style={styles.introPointIcon}>
-                        <Text style={styles.introPointNumber}>{t("1")}</Text>
-                      </View>
-                      <View style={styles.introPointCopy}>
-                        <Text style={styles.introPointTitle}>{t("Answer a few quick questions")}</Text>
-                        <Text style={styles.introPointText}>
-                          {t("Tell us what sounds good, what fits your life, and how much of a stretch you want.")}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.introPoint}>
-                      <View style={styles.introPointIcon}>
-                        <Text style={styles.introPointNumber}>{t("2")}</Text>
-                      </View>
-                      <View style={styles.introPointCopy}>
-                        <Text style={styles.introPointTitle}>{t("Draw one side quest each day")}</Text>
-                        <Text style={styles.introPointText}>
-                          {t("Each day, you'll get the chance to pull a new quest from the hat.")}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.introPoint}>
-                      <View style={styles.introPointIcon}>
-                        <Text style={styles.introPointNumber}>{t("3")}</Text>
-                      </View>
-                      <View style={styles.introPointCopy}>
-                        <Text style={styles.introPointTitle}>{t("Build a little more variety")}</Text>
-                        <Text style={styles.introPointText}>
-                          {t("Over time, these quests are meant to help you break routine and try things you might not have picked on your own.")}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-
-                <TouchableOpacity style={styles.introButton} onPress={handleNextQuestion}>
-                  <Text style={styles.introButtonText}>{t("Let's begin")}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              currentStep?.render()
-            )}
-          </ScrollView>
-
-          {!showingIntroStep && (
-            <View style={styles.questionActions}>
-              <TouchableOpacity
-                style={styles.questionBackButton}
-                onPress={handleBackQuestion}
-              >
-                <Text style={styles.questionBackButtonText}>{t("Back")}</Text>
-              </TouchableOpacity>
-
-              {isLastQuestion ? (
-                <TouchableOpacity
-                  style={[styles.questionNextButton, (!questionnaireComplete || savingProfile) && styles.disabledButton]}
-                  disabled={!questionnaireComplete || savingProfile}
-                  onPress={submitProfile}
-                >
-                  <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.questionNextButton, !currentStep?.isComplete && styles.disabledButton]}
-                  disabled={!currentStep?.isComplete}
-                  onPress={handleNextQuestion}
-                >
-                  <Text style={styles.questionNextButtonText}>{t("Next")}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </View>
-      </SafeAreaView>
+      <QuestionnaireFlow
+        onAdvanceQuestion={(stepIndex, stepTitle) => {
+          captureEvent(SIDE_QUEST_EVENTS.QUESTION_ADVANCED, {
+            step_index: stepIndex,
+            step_title: stepTitle,
+            entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
+          });
+        }}
+        onStart={() => {
+          if (!needsOnboarding) return;
+          captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_STARTED, {
+            entry_point: "onboarding",
+            question_count: questionnaireSteps.length,
+          });
+        }}
+        onSubmit={submitProfile}
+        questionnaireComplete={questionnaireComplete}
+        savingProfile={savingProfile}
+        showIntroInitially={needsOnboarding}
+        steps={questionnaireSteps}
+      />
     );
   }
 
@@ -1097,7 +1295,7 @@ const styles = StyleSheet.create({
   },
   questionnaireContent: {
     flexGrow: 1,
-    paddingBottom: 16,
+    paddingBottom: 24,
   },
   questionnaireHeader: {
     paddingBottom: 10,
@@ -1106,41 +1304,42 @@ const styles = StyleSheet.create({
   questionnaireScreen: {
     flex: 1,
     paddingHorizontal: 16,
+    position: "relative",
   },
-  questionnaireScroll: {
+  questionnaireViewport: {
     flex: 1,
+    overflow: "hidden",
+    paddingBottom: 84,
+  },
+  questionnairePages: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "nowrap",
+  },
+  questionnairePage: {
+    flexShrink: 0,
   },
   questionActions: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: 0,
+    backgroundColor: colors.light.background,
+    bottom: 0,
+    left: 16,
+    paddingBottom: 4,
     paddingTop: 14,
-  },
-  questionBackButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 32,
-    paddingHorizontal: 4,
-  },
-  questionBackButtonText: {
-    color: colors.light.lightText,
-    fontSize: 14,
-    fontWeight: "600",
+    position: "absolute",
+    right: 16,
   },
   questionNextButton: {
     alignItems: "center",
-    alignSelf: "flex-end",
     backgroundColor: colors.light.primary,
-    borderRadius: 12,
+    borderRadius: 14,
     justifyContent: "center",
-    minHeight: 42,
-    minWidth: 88,
+    minHeight: 52,
     paddingHorizontal: 18,
+    width: "100%",
   },
   questionNextButtonText: {
     color: colors.neutral.white,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
   },
   section: {
