@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { Ionicons } from "@expo/vector-icons";
 import { MenuProvider } from "react-native-popup-menu";
 import { AnimatedSendButton } from "./AnimatedSendButton";
 import CommentPreviewRow from "./CommentPreviewRow";
@@ -516,9 +517,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         <>
           <TouchableOpacity onPress={handleChallengePress}>
             <View style={challengeBoxStyle}>
-              <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-                <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
-              </Text>
+              <View style={tagRowStyle}>
+                <Ionicons name="trophy" size={14} color={colors.light.primary} />
+                <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+                  <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
+                </Text>
+              </View>
             </View>
           </TouchableOpacity>
           {post.comfort_zone_rating != null && (
@@ -558,9 +562,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       )}
       {isQuestPost && (
         <View style={questBoxStyle}>
-          <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-            <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
-          </Text>
+          <View style={tagRowStyle}>
+            <Ionicons name="footsteps" size={14} color={colors.sideQuest.text} />
+            <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+              <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
+            </Text>
+          </View>
         </View>
       )}
       {post.body && !post.media?.file_path ? (
@@ -784,27 +791,27 @@ const discomfortLabels: Record<number, string> = {
 
 const challengeBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
-  backgroundColor: colors.light.accent2,
-  borderColor: colors.light.primary,
-  borderRadius: 8,
-  borderWidth: 1.25,
+  backgroundColor: "#EEEFFC",
+  borderColor: "#B7BCE0",
+  borderRadius: 999,
+  borderWidth: 1,
   marginBottom: 4,
   marginTop: 4,
-  paddingHorizontal: 16,
-  paddingVertical: 4,
+  paddingHorizontal: 14,
+  paddingVertical: 6,
   width: "100%",
 };
 
 const questBoxStyle: ViewStyle = {
   alignSelf: "flex-start",
-  backgroundColor: colors.sideQuest.bg,
-  borderColor: colors.sideQuest.text,
-  borderRadius: 8,
-  borderWidth: 1.25,
+  backgroundColor: colors.sideQuest.highlightSoft,
+  borderColor: colors.sideQuest.bgBorder,
+  borderRadius: 999,
+  borderWidth: 1,
   marginBottom: 8,
   marginTop: 4,
-  paddingHorizontal: 16,
-  paddingVertical: 4,
+  paddingHorizontal: 14,
+  paddingVertical: 6,
   width: "100%",
 };
 
@@ -814,6 +821,12 @@ const comfortRatingStyle: ViewStyle = {
   gap: 8,
   marginBottom: 4,
   marginTop: 4,
+};
+
+const tagRowStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  gap: 6,
 };
 
 const comfortRatingLabelStyle: TextStyle = {

@@ -16,6 +16,7 @@ import { colors } from "../../constants/Colors";
 import { useAuth } from "../../contexts/AuthContext";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../lib/supabase";
+import { FeatureActionButton } from "../../components/FeatureActionButton";
 import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
@@ -51,14 +52,15 @@ export default function RegisterProfileScreen() {
         .select('username, name, instagram, bio, profile_media_id, profile_media:media!profiles_profile_media_id_fkey(file_path)')
         .eq('id', user.id)
         .single();
-      if (!profile) return;
-      if (profile.username) setUsername(profile.username);
-      if (profile.name) setDisplayName(profile.name);
-      if (profile.instagram) setInstagram(profile.instagram);
-      if (profile.bio) setBio(profile.bio);
-      if (profile.profile_media_id) {
-        setProfileMediaId(profile.profile_media_id);
-        const filePath = (profile.profile_media as any)?.file_path;
+      const existingProfile = profile as ExistingProfileRow | null;
+      if (!existingProfile) return;
+      if (existingProfile.username) setUsername(existingProfile.username);
+      if (existingProfile.name) setDisplayName(existingProfile.name);
+      if (existingProfile.instagram) setInstagram(existingProfile.instagram);
+      if (existingProfile.bio) setBio(existingProfile.bio);
+      if (existingProfile.profile_media_id) {
+        setProfileMediaId(existingProfile.profile_media_id);
+        const filePath = existingProfile.profile_media?.file_path;
         if (filePath) {
           const { data } = supabase.storage.from('challenge-uploads').getPublicUrl(filePath);
           setProfileImage(data.publicUrl);
@@ -88,7 +90,7 @@ export default function RegisterProfileScreen() {
           uri: file.uri,
           name: fileName,
           type: "image/jpeg",
-        } as any);
+        } as unknown as Blob);
 
         // Upload to storage
         const { error: uploadError } = await supabase.storage
@@ -266,44 +268,28 @@ export default function RegisterProfileScreen() {
           <Text style={styles.errorText}>{error}</Text>
         )}
 
-        <TouchableOpacity
-          style={[
-            styles.button,
-            (loading || imageUploading) && styles.buttonDisabled,
-          ]}
-          onPress={handleRegister}
+        <FeatureActionButton
           disabled={loading || imageUploading}
-        >
-          <Text style={styles.buttonText}>
-            {loading
+          onPress={handleRegister}
+          showIcon={false}
+          title={
+            loading
               ? t("Saving...")
               : isProfileCompletion
                 ? t("Complete Profile")
                 : isSocialSignUp
                   ? t("Complete Setup")
-                  : t("Complete Registration")}
-          </Text>
-        </TouchableOpacity>
+                  : t("Complete Registration")
+          }
+          tone="indigo"
+          variant="pill"
+        />
       </Pressable>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: "center",
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    padding: 15,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
   container: {
     backgroundColor: colors.light.background,
     flex: 1,
@@ -402,3 +388,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
+
+type ExistingProfileRow = {
+  username: string | null;
+  name: string | null;
+  instagram: string | null;
+  bio: string | null;
+  profile_media_id: number | null;
+  profile_media?: {
+    file_path?: string | null;
+  } | null;
+};

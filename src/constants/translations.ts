@@ -240,6 +240,7 @@ export const translations = {
   "How did it make you feel?\nWhat did you find difficult?":
     "Come ti ha fatto sentire?\nCosa hai trovato difficile?",
   "Share how you completed the challenge": "Condividi come hai completato la sfida",
+  "Add media": "Aggiungi media",
   "Add photo/video (optional)": "Aggiungi foto/video (opzionale)",
   "Video attached": "Video allegato",
   "Photo attached": "Foto allegata",

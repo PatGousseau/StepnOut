@@ -38,6 +38,11 @@ export const ChallengePreviewCard: React.FC<ChallengePreviewCardProps> = ({
       activeOpacity={0.9}
       accessibilityRole="button"
     >
+      <View pointerEvents="none" style={styles.glow} />
+      <View pointerEvents="none" style={styles.orbitLarge} />
+      <View pointerEvents="none" style={styles.orbitSmall} />
+      <View pointerEvents="none" style={styles.ribbon} />
+
       {imagePath ? (
         <Image
           source={{ uri: imageService.getChallengeImageUrlSync(imagePath, "small") }}
@@ -83,19 +88,25 @@ export const ChallengePreviewCard: React.FC<ChallengePreviewCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.light.background,
-    borderRadius: 14,
+    backgroundColor: "#EEEFFC",
+    borderColor: "#B7BCE0",
     borderWidth: 1,
-    borderColor: colors.neutral.grey1 + "70",
+    borderRadius: 16,
+    flexDirection: "row",
+    overflow: "hidden",
     padding: 10,
+    position: "relative",
+  },
+  chevron: {
+    alignSelf: "center",
+    color: colors.light.primary,
   },
   image: {
-    width: 72,
-    height: 72,
-    borderRadius: 10,
     backgroundColor: colors.neutral.grey1,
+    borderRadius: 10,
+    height: 72,
+    width: 72,
   },
   imageFallback: {
     backgroundColor: colors.neutral.grey1,
@@ -104,15 +115,22 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     marginRight: 4,
+    zIndex: 1,
+  },
+  description: {
+    color: colors.light.lightText,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
   },
   titleRow: {
-    flexDirection: "row",
     alignItems: "flex-start",
+    flexDirection: "row",
     gap: 8,
   },
   title: {
-    flex: 1,
     color: colors.light.primary,
+    flex: 1,
     fontSize: 15,
     fontWeight: "700",
     lineHeight: 19,
@@ -128,26 +146,58 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
-  description: {
-    color: colors.light.lightText,
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 4,
-  },
-  footerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginTop: 8,
-  },
   footerLabel: {
-    color: colors.light.accent,
+    color: colors.light.primary,
+    flexShrink: 1,
     fontSize: 11,
     fontWeight: "600",
-    flexShrink: 1,
   },
-  chevron: {
-    alignSelf: "center",
+  footerRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  glow: {
+    backgroundColor: "rgba(103, 109, 160, 0.12)",
+    borderRadius: 999,
+    height: 90,
+    position: "absolute",
+    right: -18,
+    top: -32,
+    width: 90,
+  },
+  orbitLarge: {
+    borderColor: "rgba(103, 109, 160, 0.14)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 54,
+    position: "absolute",
+    right: -2,
+    top: 10,
+    transform: [{ rotate: "-14deg" }],
+    width: 54,
+  },
+  orbitSmall: {
+    borderColor: "rgba(103, 109, 160, 0.10)",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 30,
+    position: "absolute",
+    right: 18,
+    top: 24,
+    transform: [{ rotate: "10deg" }],
+    width: 30,
+  },
+  ribbon: {
+    backgroundColor: "rgba(103, 109, 160, 0.11)",
+    borderRadius: 999,
+    height: 8,
+    position: "absolute",
+    right: 22,
+    top: 18,
+    transform: [{ rotate: "-18deg" }],
+    width: 38,
   },
 });

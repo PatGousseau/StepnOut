@@ -3,11 +3,11 @@ import {
   View,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   SafeAreaView,
   Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { colors } from '../../constants/Colors';
 import { EULA, EULA_IT } from '../../constants/EULA';
@@ -70,15 +70,14 @@ export default function EulaScreen() {
       </ScrollView>
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.acceptButton, submitting && styles.buttonDisabled]}
-          onPress={handleAccept}
+        <FeatureActionButton
           disabled={submitting}
-        >
-          <Text style={styles.acceptButtonText}>
-            {submitting ? t('Saving...') : t('Accept')}
-          </Text>
-        </TouchableOpacity>
+          onPress={handleAccept}
+          showIcon={false}
+          title={submitting ? t('Saving...') : t('Accept')}
+          tone="indigo"
+          variant="pill"
+        />
       </View>
     </SafeAreaView>
   );
@@ -123,20 +122,5 @@ const styles = StyleSheet.create({
     borderTopColor: '#ddd',
     alignItems: 'center',
     gap: 14,
-  },
-  acceptButton: {
-    backgroundColor: colors.light.primary,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    width: '100%',
-  },
-  acceptButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
   },
 });
