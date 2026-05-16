@@ -2,6 +2,7 @@ export const colors = {
   light: {
     background: '#F5F2ED',  // off-white background
     primary: '#4D5382',     // e.g. banner
+    primarySoft: '#676DA0',
     secondary: '#EBDACC',   // e.g. take challenge
     accent: '#4D5382',
     text: '#333',        // dark text 

@@ -266,6 +266,7 @@ export const translations = {
   "Quest:": "Quest:",
   "Quest completed!": "Quest completata!",
   "Quest completed successfully!": "Quest completata con successo!",
+  "Share your challenge moment": "Condividi il tuo momento sfida",
   "Share how you completed the quest": "Condividi come hai completato la quest",
   "Share your quest moment": "Condividi il tuo momento quest",
   "Just completed today's quest!": "Ho appena completato la quest di oggi!",

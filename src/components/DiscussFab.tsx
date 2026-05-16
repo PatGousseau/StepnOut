@@ -8,13 +8,13 @@ import {
   Platform,
   Image,
   ScrollView,
-  TextStyle,
   ViewStyle,
   ImageStyle,
 } from "react-native";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Text } from "./StyledText";
+import { FeatureActionButton } from "./FeatureActionButton";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { Loader } from "./Loader";
@@ -73,16 +73,17 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
 
   return (
     <>
-      <TouchableOpacity
-        style={[fabStyle, { bottom: bottomOffset }]}
+      <FeatureActionButton
+        fullWidth={false}
+        icon={<MaterialIcons name="chat-bubble-outline" size={18} color="white" />}
+        iconPosition="start"
         onPress={handleOpen}
-        activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel={t("Start a discussion")}
-      >
-        <MaterialIcons name="chat-bubble-outline" size={18} color="white" />
-        <Text style={fabLabelStyle}>{t("Discuss")}</Text>
-      </TouchableOpacity>
+        showIcon
+        style={[fabStyle, { bottom: bottomOffset }]}
+        title={t("Discuss")}
+        tone="indigo"
+        variant="pill"
+      />
 
       <Modal
         transparent
@@ -199,24 +200,11 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
 const fabStyle: ViewStyle = {
   position: "absolute",
   right: 16,
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 8,
-  backgroundColor: colors.light.accent,
-  borderRadius: 999,
-  paddingHorizontal: 18,
-  paddingVertical: 12,
   shadowColor: "#000",
   shadowOffset: { width: 0, height: 4 },
   shadowOpacity: 0.18,
   shadowRadius: 8,
   elevation: 6,
-};
-
-const fabLabelStyle: TextStyle = {
-  color: "white",
-  fontSize: 14,
-  fontWeight: "700",
 };
 
 const keyboardViewStyle: ViewStyle = {

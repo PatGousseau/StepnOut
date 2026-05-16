@@ -20,6 +20,7 @@ import { useMediaUpload } from "../hooks/useMediaUpload";
 import { Loader } from "./Loader";
 import { ComfortSlider } from "./ComfortSlider";
 import { MediaSelectionResult } from "../utils/handleMediaUpload";
+import { FeatureActionButton } from "./FeatureActionButton";
 
 type CompletionPostComposerVariant = "challenge" | "quest";
 
@@ -52,12 +53,12 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const submittedTextRef = useRef("");
   const showComfortSlider = variant === "challenge";
-  const isQuestVariant = variant === "quest";
 
   const config = {
     challenge: {
       completedLabelKey: "Challenge completed!",
       ctaLabelKey: "Mark as complete",
+      ctaSubtitleKey: "Share your challenge moment",
       modalSubtitleKey: "Share how you completed the challenge",
       placeholderTextKey: "Just completed this week's challenge!",
       unauthenticatedMessageKey: "You must be logged in to submit a challenge.",
@@ -65,13 +66,12 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
       sliderAccentColor: colors.light.accent,
       sliderLabelColor: colors.light.text,
       sliderValueColor: colors.light.accent,
-      completedBackgroundColor: colors.light.easyGreen,
-      completedTextColor: "#2D5016",
-      completedCheckColor: "#2D5016",
+      tone: "indigo" as const,
     },
     quest: {
       completedLabelKey: "Quest completed!",
       ctaLabelKey: "Mark as complete",
+      ctaSubtitleKey: "Share your quest moment",
       modalSubtitleKey: "Share how you completed the quest",
       placeholderTextKey: "Just completed today's quest!",
       unauthenticatedMessageKey: "You must be logged in to submit a quest.",
@@ -79,9 +79,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
       sliderAccentColor: colors.sideQuest.base,
       sliderLabelColor: colors.light.text,
       sliderValueColor: colors.sideQuest.text,
-      completedBackgroundColor: colors.light.easyGreen,
-      completedTextColor: "#2D5016",
-      completedCheckColor: "#2D5016",
+      tone: "coral" as const,
     },
   }[variant];
 
@@ -147,64 +145,14 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
 
   return (
     <>
-      <TouchableOpacity
-        style={[
-          styles.button,
-          isQuestVariant && styles.questButton,
-          completed && { backgroundColor: config.completedBackgroundColor },
-          isQuestVariant && completed && styles.questButtonCompleted,
-          checkingCompletion && styles.buttonDisabledState,
-        ]}
-        onPress={fadeIn}
+      <FeatureActionButton
+        completed={completed}
         disabled={completed || checkingCompletion}
-      >
-        {isQuestVariant ? (
-          <>
-            <View style={styles.questButtonGlow} />
-            <View style={styles.questButtonOrbit} />
-            <View style={styles.questButtonContent}>
-              <View style={styles.questButtonRow}>
-                <View style={styles.questButtonTextWrap}>
-                  <Text
-                    style={[
-                      styles.questButtonTitle,
-                      completed && { color: config.completedTextColor },
-                    ]}
-                  >
-                    {t(completed ? config.completedLabelKey : config.ctaLabelKey)}
-                  </Text>
-                  {!completed && (
-                    <Text style={styles.questButtonSubtitle}>{t("Share your quest moment")}</Text>
-                  )}
-                </View>
-                <View style={[styles.questArrowChip, completed && styles.questArrowChipCompleted]}>
-                  <MaterialCommunityIcons
-                    name={completed ? "check" : "arrow-right"}
-                    size={22}
-                    color={completed ? config.completedCheckColor : colors.neutral.white}
-                  />
-                </View>
-              </View>
-            </View>
-          </>
-        ) : (
-          <View style={styles.buttonContent}>
-            {completed && (
-              <MaterialIcons
-                name="check-circle"
-                size={20}
-                color={config.completedCheckColor}
-                style={styles.checkIcon}
-              />
-            )}
-            <Text
-              style={[styles.buttonText, completed && { color: config.completedTextColor, fontWeight: "600" }]}
-            >
-              {completed ? t(config.completedLabelKey) : t(config.ctaLabelKey)}
-            </Text>
-          </View>
-        )}
-      </TouchableOpacity>
+        onPress={fadeIn}
+        subtitle={completed ? undefined : t(config.ctaSubtitleKey)}
+        title={t(completed ? config.completedLabelKey : config.ctaLabelKey)}
+        tone={config.tone}
+      />
 
       <Modal
         transparent={true}
@@ -349,21 +297,15 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
                   </View>
                 )}
 
-                <TouchableOpacity
-                  style={[
-                    styles.modalButton,
-                    styles.submitButton,
-                    (isUploading || isSubmitting) && styles.disabledButton,
-                  ]}
-                  onPress={onSubmit}
+                <FeatureActionButton
                   disabled={isUploading || isSubmitting}
-                >
-                  <Text
-                    style={[styles.buttonText, (isUploading || isSubmitting) && styles.disabledButtonText]}
-                  >
-                    {t(isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit")}
-                  </Text>
-                </TouchableOpacity>
+                  onPress={onSubmit}
+                  showIcon={false}
+                  style={styles.submitButton}
+                  title={t(isUploading ? "Uploading..." : isSubmitting ? "Submitting..." : "Submit")}
+                  tone={config.tone}
+                  variant="pill"
+                />
               </View>
             </TouchableOpacity>
           </KeyboardAvoidingView>
@@ -395,43 +337,11 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: "center",
-    backgroundColor: colors.light.accent,
-    borderRadius: 8,
-    overflow: "hidden",
-    padding: 14,
-    position: "relative",
-    width: "100%",
-  },
-  buttonDisabledState: {
-    opacity: 0.7,
-  },
-  buttonContent: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  checkIcon: {
-    marginRight: 8,
-  },
   closeButton: {
     padding: 8,
     position: "absolute",
     right: -15,
     top: -15,
-  },
-  disabledButton: {
-    backgroundColor: colors.neutral.grey2,
-    opacity: 0.7,
-  },
-  disabledButtonText: {
-    color: colors.neutral.darkGrey,
   },
   fullScreenImage: {
     height: "100%",
@@ -493,14 +403,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     width: "100%",
   },
-  modalButton: {
-    alignItems: "center",
-    backgroundColor: colors.light.secondary,
-    borderRadius: 48,
-    marginVertical: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-  },
   modalContainer: {
     alignItems: "center",
     flex: 1,
@@ -545,75 +447,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     height: "100%",
   },
-  questArrowChip: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 4,
-  },
-  questArrowChipCompleted: {
-    opacity: 0.9,
-  },
-  questButton: {
-    backgroundColor: colors.sideQuest.base,
-    borderColor: colors.sideQuest.text,
-    borderRadius: 18,
-    borderWidth: 1,
-    minHeight: 72,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    shadowColor: colors.sideQuest.textStrong,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.14,
-    shadowRadius: 12,
-  },
-  questButtonCompleted: {
-    borderColor: "rgba(45, 80, 22, 0.18)",
-  },
-  questButtonContent: {
-    width: "100%",
-    zIndex: 1,
-  },
-  questButtonGlow: {
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 999,
-    height: 82,
-    position: "absolute",
-    right: -8,
-    top: -22,
-    width: 82,
-  },
-  questButtonOrbit: {
-    borderColor: "rgba(255,255,255,0.2)",
-    borderRadius: 999,
-    borderWidth: 1,
-    height: 54,
-    position: "absolute",
-    right: 10,
-    top: 10,
-    transform: [{ rotate: "-14deg" }],
-    width: 54,
-  },
-  questButtonTextWrap: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  questButtonTitle: {
-    color: colors.neutral.white,
-    fontSize: 17,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  questButtonSubtitle: {
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 2,
-  },
-  questButtonRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
   removeButtonInline: {
     alignItems: "center",
     backgroundColor: colors.neutral.grey2,
@@ -639,7 +472,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   submitButton: {
-    backgroundColor: colors.light.accent,
     marginTop: 16,
   },
   textInput: {
