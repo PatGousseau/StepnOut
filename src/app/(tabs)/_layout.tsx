@@ -42,7 +42,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: colors.light.primary,
+        tabBarActiveTintColor: colors.light.primarySoft,
         tabBarStyle: {
           paddingTop: 10,
           paddingBottom: Platform.OS === 'ios' ? 0 : 48,
@@ -141,11 +141,11 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: colors.light.accent,
+    backgroundColor: colors.light.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.light.primary,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,

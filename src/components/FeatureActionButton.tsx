@@ -82,6 +82,7 @@ export function FeatureActionButton({
 }: FeatureActionButtonProps) {
   const palette = toneStyles[tone];
   const isPill = variant === "pill";
+  const hasSubtitle = !!subtitle && !completed;
   const resolvedIcon = icon ?? (
     <MaterialCommunityIcons
       name={completed ? "check" : "arrow-right"}
@@ -96,6 +97,7 @@ export function FeatureActionButton({
       style={[
         styles.button,
         isPill && styles.pillButton,
+        !isPill && !hasSubtitle && styles.compactCardButton,
         fullWidth ? styles.fullWidthButton : styles.autoWidthButton,
         {
           backgroundColor: completed ? completedState.backgroundColor : palette.backgroundColor,
@@ -111,6 +113,7 @@ export function FeatureActionButton({
         style={[
           styles.glow,
           isPill && styles.pillGlow,
+          !isPill && !hasSubtitle && styles.compactCardGlow,
           { backgroundColor: completed ? "rgba(255,255,255,0.14)" : palette.glowColor },
         ]}
       />
@@ -118,6 +121,7 @@ export function FeatureActionButton({
         style={[
           styles.orbit,
           isPill && styles.pillOrbit,
+          !isPill && !hasSubtitle && styles.compactCardOrbit,
           { borderColor: completed ? "rgba(255,255,255,0.16)" : palette.orbitColor },
         ]}
       />
@@ -126,6 +130,7 @@ export function FeatureActionButton({
         style={[
           styles.content,
           isPill && styles.pillContent,
+          !isPill && !hasSubtitle && styles.compactCardContent,
           fullWidth ? styles.fullWidthContent : styles.autoWidthContent,
         ]}
       >
@@ -139,6 +144,7 @@ export function FeatureActionButton({
           style={[
             styles.textWrap,
             isPill && styles.pillTextWrap,
+            !hasSubtitle && styles.textWrapNoSubtitle,
             !fullWidth && styles.autoWidthTextWrap,
             !showIcon && styles.textWrapNoIcon,
           ]}
@@ -147,13 +153,14 @@ export function FeatureActionButton({
             style={[
               styles.title,
               isPill && styles.pillTitle,
+              !isPill && !hasSubtitle && styles.compactCardTitle,
               !showIcon && styles.centerText,
               { color: completed ? completedState.textColor : palette.textColor },
             ]}
           >
             {title}
           </Text>
-          {!!subtitle && !completed && (
+          {hasSubtitle && (
             <Text
               style={[
                 styles.subtitle,
@@ -197,6 +204,22 @@ const styles = StyleSheet.create({
   autoWidthButton: {
     alignSelf: "flex-start",
     width: "auto",
+  },
+  compactCardButton: {
+    minHeight: 58,
+    paddingVertical: 10,
+  },
+  compactCardContent: {
+    minHeight: 36,
+  },
+  compactCardGlow: {
+    top: -28,
+  },
+  compactCardOrbit: {
+    top: 6,
+  },
+  compactCardTitle: {
+    lineHeight: 18,
   },
   centerText: {
     textAlign: "center",
@@ -296,6 +319,9 @@ const styles = StyleSheet.create({
   textWrap: {
     flex: 1,
     paddingRight: 12,
+  },
+  textWrapNoSubtitle: {
+    justifyContent: "center",
   },
   textWrapNoIcon: {
     paddingRight: 0,
