@@ -66,6 +66,24 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const { user, isAdmin, username: currentUserUsername } = useAuth();
   const cleanupAfterDelete = usePostDeleteCleanup();
   const [showComments, setShowComments] = useState(false);
+  const [containerHeight, setContainerHeight] = useState<number | null>(null);
+  const deleteProgress = useRef(new Animated.Value(1)).current;
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const animateDeletion = useCallback(() => {
+    setIsDeleting(true);
+    Animated.timing(deleteProgress, {
+      toValue: 0,
+      duration: 280,
+      useNativeDriver: false,
+    }).start(() => {
+      cleanupAfterDelete(post);
+      onPostDeleted?.(post);
+      if (isPostPage) {
+        router.back();
+      }
+    });
+  }, [cleanupAfterDelete, deleteProgress, isPostPage, onPostDeleted, post]);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
@@ -428,7 +446,38 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     );
   }
 
+  const deleteAnimatedStyle = isDeleting
+    ? {
+        opacity: deleteProgress,
+        transform: [
+          {
+            scale: deleteProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0.94, 1],
+            }),
+          },
+        ],
+        height:
+          containerHeight != null
+            ? deleteProgress.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, containerHeight],
+              })
+            : undefined,
+        overflow: "hidden" as const,
+      }
+    : null;
+
   return (
+    <Animated.View
+      onLayout={(e) => {
+        if (containerHeight == null) {
+          setContainerHeight(e.nativeEvent.layout.height);
+        }
+      }}
+      style={deleteAnimatedStyle}
+      pointerEvents={isDeleting ? "none" : "auto"}
+    >
     <Pressable
       // onPress={handlePostPress}
       style={[
@@ -458,13 +507,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           type="post"
           contentId={post.id}
           contentUserId={post.user_id}
-          onDelete={() => {
-            cleanupAfterDelete(post);
-            onPostDeleted?.(post);
-            if (isPostPage) {
-              router.back();
-            }
-          }}
+          onDelete={animateDeletion}
         >
           <MaterialCommunityIcons name="dots-horizontal" size={20} color={colors.neutral.grey1} />
         </ActionsMenu>
@@ -727,6 +770,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         </Modal>
       </View>
     </Pressable>
+    </Animated.View>
   );
 };
 
