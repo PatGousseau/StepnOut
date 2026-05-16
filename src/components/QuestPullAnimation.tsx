@@ -126,11 +126,6 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
       outputRange: [1, 1.1, 1],
       extrapolate: "clamp",
     });
-    const stageTranslateY = wobble.interpolate({
-      inputRange: [0, 0.2, 1],
-      outputRange: [0, 0, 0],
-      extrapolate: "clamp",
-    });
     const hatTranslateY = wobble.interpolate({
       inputRange: [0, 0.2, 1],
       outputRange: [0, 42, 84],
@@ -173,7 +168,7 @@ export const QuestPullAnimation: React.FC<Props> = ({ quest, onComplete, onAbort
 
     return (
       <Animated.View
-        style={[styles.scene, { opacity: stageOpacity, transform: [{ translateY: stageTranslateY }] }]}
+        style={[styles.scene, { opacity: stageOpacity }]}
         pointerEvents="none"
       >
 

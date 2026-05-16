@@ -377,12 +377,12 @@ export function SideQuestQuestionnaire({
           const shouldGoBack =
             canSwipeBack && (
               gestureState.dx > QUESTION_SWIPE_DISTANCE_THRESHOLD ||
-              gestureState.vx > QUESTION_SWIPE_VELOCITY_THRESHOLD / 1000
+              gestureState.vx > QUESTION_SWIPE_VELOCITY_THRESHOLD
             );
           const shouldGoForward =
             canSwipeForward && (
               gestureState.dx < -QUESTION_SWIPE_DISTANCE_THRESHOLD ||
-              gestureState.vx < -QUESTION_SWIPE_VELOCITY_THRESHOLD / 1000
+              gestureState.vx < -QUESTION_SWIPE_VELOCITY_THRESHOLD
             );
 
           if (shouldGoForward && !isLastQuestion) {

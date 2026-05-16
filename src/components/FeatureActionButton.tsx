@@ -1,5 +1,12 @@
 import React, { ReactNode } from "react";
-import { StyleProp, StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  AccessibilityState,
+  StyleProp,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { colors } from "../constants/Colors";
 import { Text } from "./StyledText";
@@ -13,6 +20,8 @@ type FeatureActionButtonProps = {
   fullWidth?: boolean;
   icon?: ReactNode;
   iconPosition?: "start" | "end";
+  accessibilityLabel?: string;
+  accessibilityState?: AccessibilityState;
   onPress: () => void;
   showIcon?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -72,6 +81,8 @@ export function FeatureActionButton({
   fullWidth = true,
   icon,
   iconPosition = "end",
+  accessibilityLabel,
+  accessibilityState,
   onPress,
   showIcon = true,
   style,
@@ -106,6 +117,9 @@ export function FeatureActionButton({
         style,
         disabled && styles.disabledButton,
       ]}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
+      accessibilityState={{ disabled, ...accessibilityState }}
       onPress={onPress}
       disabled={disabled}
     >
