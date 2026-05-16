@@ -16,6 +16,7 @@ import { AppAlert } from './AppAlert';
 import UserProgress from "./UserProgress";
 import CommentPreviewRow from "./CommentPreviewRow";
 import Post from "./Post";
+import { Post as PostType } from "../types";
 import useUserProgress from "../hooks/useUserProgress";
 import { useProfileActivity } from "../hooks/useProfileActivity";
 import { router } from "expo-router";
@@ -59,6 +60,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     hasMore: hasMoreActivity,
     fetchNextPage,
     refresh: refreshActivity,
+    removePost,
   } = useProfileActivity(targetUserId);
   const [activityFilter, setActivityFilter] = useState<"all" | "post" | "comment">("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -197,6 +199,40 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
     if (activityLoading || !hasMoreActivity) return;
     fetchNextPage();
   };
+
+  const handlePostDeleted = useCallback(
+    (post: PostType) => {
+      removePost(post.id);
+
+      type FeedPage = { posts: PostType[]; hasMore: boolean };
+      type FeedData = { pages: FeedPage[]; pageParams: number[] };
+      const stripPost = (oldData: FeedData | undefined) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            posts: page.posts.filter((p) => p.id !== post.id),
+          })),
+        };
+      };
+      queryClient.setQueriesData<FeedData>({ queryKey: ["home-posts"] }, stripPost);
+      if (post.challenge_id) {
+        queryClient.setQueriesData<FeedData>(
+          { queryKey: ["challenge-posts", post.challenge_id] },
+          stripPost
+        );
+      }
+
+      if (post.challenge_id) {
+        queryClient.invalidateQueries({ queryKey: ["challenge-completion", post.challenge_id] });
+      }
+      if (post.quest_id) {
+        queryClient.invalidateQueries({ queryKey: ["quest-completion", post.quest_id] });
+      }
+    },
+    [removePost, queryClient]
+  );
 
   const handleSignOut = async () => {
     try {
@@ -520,7 +556,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
                 post={item.post}
                 postUser={userProfile}
                 setPostCounts={() => { }}
-                onPostDeleted={() => {}}
+                onPostDeleted={handlePostDeleted}
               />
             );
           }
