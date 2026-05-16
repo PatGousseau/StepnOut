@@ -14,6 +14,7 @@ import {
 import { useLanguage } from "../../contexts/LanguageContext";
 import { ProgressSegments } from "../ProgressSegments";
 import { SideQuestHatSvg } from "../QuestPullAnimation";
+import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
 import {
   SideQuestAvoidType,
@@ -543,21 +544,19 @@ export function SideQuestQuestionnaire({
         {!showingIntroStep && (
           <View style={styles.questionActions}>
             {isLastQuestion ? (
-              <TouchableOpacity
-                style={[styles.questionNextButton, (!questionnaireComplete || savingProfile || isTransitioning) && styles.disabledButton]}
+              <FeatureActionButton
                 disabled={!questionnaireComplete || savingProfile || isTransitioning}
                 onPress={onSubmit}
-              >
-                <Text style={styles.questionNextButtonText}>{savingProfile ? t("Saving...") : t("Done")}</Text>
-              </TouchableOpacity>
+                title={savingProfile ? t("Saving...") : t("Done")}
+                tone="indigo"
+              />
             ) : (
-              <TouchableOpacity
-                style={[styles.questionNextButton, (!currentStep?.isComplete || isTransitioning) && styles.disabledButton]}
+              <FeatureActionButton
                 disabled={!currentStep?.isComplete || isTransitioning}
                 onPress={goNext}
-              >
-                <Text style={styles.questionNextButtonText}>{t("Next")}</Text>
-              </TouchableOpacity>
+                title={t("Next")}
+                tone="indigo"
+              />
             )}
           </View>
         )}
@@ -570,9 +569,6 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.light.background,
     flex: 1,
-  },
-  disabledButton: {
-    opacity: 0.5,
   },
   helperText: {
     color: colors.light.lightText,
@@ -740,8 +736,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   optionChipActive: {
-    backgroundColor: colors.light.primary,
-    borderColor: colors.light.primary,
+    backgroundColor: colors.light.primarySoft,
+    borderColor: colors.light.primarySoft,
   },
   optionText: {
     color: colors.light.text,
@@ -790,20 +786,6 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     position: "absolute",
     right: 16,
-  },
-  questionNextButton: {
-    alignItems: "center",
-    backgroundColor: colors.light.primary,
-    borderRadius: 14,
-    justifyContent: "center",
-    minHeight: 52,
-    paddingHorizontal: 18,
-    width: "100%",
-  },
-  questionNextButtonText: {
-    color: colors.neutral.white,
-    fontSize: 15,
-    fontWeight: "700",
   },
   section: {
     paddingTop: 10,
