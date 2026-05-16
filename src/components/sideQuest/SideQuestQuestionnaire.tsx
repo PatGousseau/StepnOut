@@ -425,7 +425,10 @@ export function SideQuestQuestionnaire({
         </View>
 
         <View
-          style={styles.questionnaireViewport}
+          style={[
+            styles.questionnaireViewport,
+            showingIntroStep ? styles.questionnaireViewportIntro : null,
+          ]}
           {...panResponder.panHandlers}
           onLayout={(event) => {
             const nextWidth = event.nativeEvent.layout.width;
@@ -518,8 +521,9 @@ export function SideQuestQuestionnaire({
 
                       <FeatureActionButton
                         onPress={goNext}
+                        style={styles.introButton}
                         title={t("Let's begin")}
-                        tone="indigo"
+                        tone="coral"
                       />
                     </View>
                   ) : (
@@ -585,6 +589,9 @@ const styles = StyleSheet.create({
     height: 64,
     justifyContent: "center",
     width: 64,
+  },
+  introButton: {
+    marginTop: 24,
   },
   introBody: {
     color: colors.light.text,
@@ -765,6 +772,9 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: "hidden",
     paddingBottom: 84,
+  },
+  questionnaireViewportIntro: {
+    paddingBottom: 0,
   },
   questionActions: {
     backgroundColor: colors.light.background,
