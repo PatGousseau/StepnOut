@@ -1,8 +1,9 @@
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { colors } from "../../constants/Colors";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { SideQuest } from "../../types/sideQuests";
+import { FeatureActionButton } from "../FeatureActionButton";
 import { QuestHatIdle, QuestPullAnimation } from "../QuestPullAnimation";
 import { Text } from "../StyledText";
 
@@ -71,13 +72,12 @@ export function SideQuestDailyDraw({
 
         {(showDraw || isRevealing) && (
           <View style={styles.ctaWrap}>
-            <TouchableOpacity
-              style={[styles.drawButton, (isDrawingQuest || isRevealing) && styles.disabledButton]}
+            <FeatureActionButton
               disabled={isDrawingQuest || isRevealing}
               onPress={onDrawQuest}
-            >
-              <Text style={styles.drawButtonText}>{t("Pick a quest")}</Text>
-            </TouchableOpacity>
+              title={t("Pick a quest")}
+              tone="coral"
+            />
           </View>
         )}
       </View>
@@ -90,25 +90,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: 4,
     width: "80%",
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  drawButton: {
-    alignItems: "center",
-    backgroundColor: colors.light.primary,
-    borderRadius: 14,
-    justifyContent: "center",
-    minHeight: 52,
-    shadowColor: colors.light.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-  },
-  drawButtonText: {
-    color: colors.neutral.white,
-    fontSize: 16,
-    fontWeight: "700",
   },
   eyebrow: {
     color: colors.sideQuest.text,

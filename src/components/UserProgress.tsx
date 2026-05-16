@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
 import { SideQuestProgress } from '../types';
+import { FeatureActionButton } from './FeatureActionButton';
 
 interface UserProgressProps {
   challengeData: {
@@ -104,13 +105,11 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData, si
           </Text>
         )}
 
-        <TouchableOpacity
-          style={styles.emptyCtaButton}
+        <FeatureActionButton
           onPress={() => router.push('/(tabs)/challenge')}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.emptyCtaText}>{t('Take this challenge')}</Text>
-        </TouchableOpacity>
+          title={t('Take this challenge')}
+          tone="indigo"
+        />
       </View>
     );
   }
@@ -234,17 +233,6 @@ const styles = StyleSheet.create({
   },
   thisWeekName: {
     fontWeight: '600',
-  },
-  emptyCtaButton: {
-    alignItems: 'center',
-    backgroundColor: colors.light.primary,
-    borderRadius: 8,
-    paddingVertical: 12,
-  },
-  emptyCtaText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
   },
   streakRow: {
     marginTop: 0,
