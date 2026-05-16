@@ -1,5 +1,6 @@
 import React from "react";
-import { Alert, ViewStyle, TextStyle, View } from "react-native";
+import { ViewStyle, TextStyle, View } from "react-native";
+import { AppAlert } from './AppAlert';
 import { Menu, MenuTrigger, MenuOptions, MenuOption } from "react-native-popup-menu";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
@@ -45,7 +46,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   const { user } = useAuth();
 
   const handleDelete = () => {
-    Alert.alert(t(`Delete ${type}`), t(`Are you sure you want to delete this ${type}?`), [
+    AppAlert.show(t(`Delete ${type}`), t(`Are you sure you want to delete this ${type}?`), [
       {
         text: t("Cancel"),
         style: "cancel",
@@ -70,7 +71,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   const handleReport = () => {
     if (!user?.id) return;
 
-    Alert.alert(t(`Report ${type}`), t(`Are you sure you want to report this ${type}?`), [
+    AppAlert.show(t(`Report ${type}`), t(`Are you sure you want to report this ${type}?`), [
       {
         text: t("Cancel"),
         style: "cancel",
@@ -85,7 +86,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
               : await postService.reportComment(contentId, user.id, contentUserId);
 
           if (success) {
-            Alert.alert(t("Report Submitted"), t("Thank you for your report."));
+            AppAlert.show(t("Report Submitted"), t("Thank you for your report."));
           }
         },
       },
@@ -95,7 +96,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
   const handleBlock = () => {
     if (!user?.id) return;
 
-    Alert.alert(t("Block user"), t("Are you sure you want to block this user?"), [
+    AppAlert.show(t("Block user"), t("Are you sure you want to block this user?"), [
       {
         text: t("Cancel"),
         style: "cancel",

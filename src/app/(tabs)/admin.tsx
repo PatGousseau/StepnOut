@@ -4,12 +4,12 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  Alert,
   TouchableOpacity,
   Image,
   ScrollView,
   RefreshControl,
 } from "react-native";
+import { AppAlert } from '../../components/AppAlert';
 import DropDownPicker from "react-native-dropdown-picker";
 import { supabase } from "../../lib/supabase";
 import { colors } from "../../constants/Colors";
@@ -151,7 +151,7 @@ const ChallengeCreation: React.FC = () => {
       setChallenges(data || []);
     } catch (error) {
       console.error("Error fetching challenges:", error);
-      Alert.alert("Error", "Failed to load challenges");
+      AppAlert.show("Error", "Failed to load challenges");
     }
   };
 
@@ -378,7 +378,7 @@ const ChallengeCreation: React.FC = () => {
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      Alert.alert("Error", "Failed to upload image");
+      AppAlert.show("Error", "Failed to upload image");
     }
   };
 
@@ -400,9 +400,9 @@ const ChallengeCreation: React.FC = () => {
 
       if (error) {
         console.error("Error inserting data:", error);
-        Alert.alert("Error", error.message);
+        AppAlert.show("Error", error.message);
       } else {
-        Alert.alert("Success", "Challenge created successfully!");
+        AppAlert.show("Success", "Challenge created successfully!");
         setTitle("");
         setDescription("");
         setDifficulty("easy");
@@ -412,13 +412,13 @@ const ChallengeCreation: React.FC = () => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-      Alert.alert("Error", errorMessage);
+      AppAlert.show("Error", errorMessage);
     }
   };
 
   const handleCreateChallenge = () => {
     if (!title || !description || !difficulty) {
-      Alert.alert("Error", "All fields must be filled out.");
+      AppAlert.show("Error", "All fields must be filled out.");
       return;
     }
     createChallengeInDatabase();
@@ -450,20 +450,20 @@ const ChallengeCreation: React.FC = () => {
 
       // Refresh the challenges list
       await fetchChallenges();
-      Alert.alert("Success", "Challenge activated!");
+      AppAlert.show("Success", "Challenge activated!");
     } catch (error) {
       console.error("Error activating challenge:", error);
-      Alert.alert("Error", "Failed to activate challenge");
+      AppAlert.show("Error", "Failed to activate challenge");
     }
   };
 
   const handleSendNotifications = async (challengeId: number, challengeTitle: string) => {
     try {
       await sendNewChallengeNotificationToAll(challengeId.toString(), challengeTitle);
-      Alert.alert("Success", "Notifications sent to all users!");
+      AppAlert.show("Success", "Notifications sent to all users!");
     } catch (error) {
       console.error("Error sending notifications:", error);
-      Alert.alert("Error", "Failed to send notifications");
+      AppAlert.show("Error", "Failed to send notifications");
     }
   };
 
@@ -476,7 +476,7 @@ const ChallengeCreation: React.FC = () => {
   const handleGenerateTwoDayNotification = async () => {
     const activeChallenge = challenges.find((c) => c.is_active);
     if (!activeChallenge) {
-      Alert.alert("Error", "No active challenge found");
+      AppAlert.show("Error", "No active challenge found");
       return;
     }
 
@@ -498,7 +498,7 @@ const ChallengeCreation: React.FC = () => {
       setTwoDayNotifEnglishPreview(data?.englishBody || "");
     } catch (error) {
       console.error("Error generating 2-day notification:", error);
-      Alert.alert("Error", "Failed to generate notification");
+      AppAlert.show("Error", "Failed to generate notification");
     } finally {
       setGeneratingTwoDayNotif(false);
     }
@@ -506,7 +506,7 @@ const ChallengeCreation: React.FC = () => {
 
   const handleSendCustomNotification = async () => {
     if (!notifTitle.trim() || !notifBody.trim()) {
-      Alert.alert("Error", "Title and body are required");
+      AppAlert.show("Error", "Title and body are required");
       return;
     }
 
@@ -515,14 +515,14 @@ const ChallengeCreation: React.FC = () => {
       : selectedUserIds;
 
     if (targetUserIds.length === 0) {
-      Alert.alert("Error", "No users selected");
+      AppAlert.show("Error", "No users selected");
       return;
     }
 
     setSendingNotification(true);
     try {
       const result = await sendCustomNotification(notifTitle.trim(), notifBody.trim(), targetUserIds);
-      Alert.alert(
+      AppAlert.show(
         "Done",
         `Sent: ${result.sent}\nFailed: ${result.failed}\nNo push token: ${result.noToken}`
       );
@@ -532,7 +532,7 @@ const ChallengeCreation: React.FC = () => {
       setSelectedUserIds([]);
     } catch (error) {
       console.error("Error sending custom notification:", error);
-      Alert.alert("Error", "Failed to send notifications");
+      AppAlert.show("Error", "Failed to send notifications");
     } finally {
       setSendingNotification(false);
     }
