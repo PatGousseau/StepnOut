@@ -267,6 +267,7 @@ export const translations = {
   "Quest completed!": "Quest completata!",
   "Quest completed successfully!": "Quest completata con successo!",
   "Share how you completed the quest": "Condividi come hai completato la quest",
+  "Share your quest moment": "Condividi il tuo momento quest",
   "Just completed today's quest!": "Ho appena completato la quest di oggi!",
   "You must be logged in to submit a quest.": "Devi essere loggato per inviare una quest.",
   "Your quest of the day": "La tua quest del giorno",

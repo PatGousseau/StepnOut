@@ -163,13 +163,6 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
             <View style={styles.questButtonGlow} />
             <View style={styles.questButtonOrbit} />
             <View style={styles.questButtonContent}>
-              <View style={[styles.questArrowChip, completed && styles.questArrowChipCompleted]}>
-                <MaterialCommunityIcons
-                  name={completed ? "check" : "arrow-top-right"}
-                  size={18}
-                  color={completed ? config.completedCheckColor : colors.neutral.white}
-                />
-              </View>
               <View style={styles.questButtonRow}>
                 <View style={styles.questButtonTextWrap}>
                   <Text
@@ -180,6 +173,16 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
                   >
                     {t(completed ? config.completedLabelKey : config.ctaLabelKey)}
                   </Text>
+                  {!completed && (
+                    <Text style={styles.questButtonSubtitle}>{t("Share your quest moment")}</Text>
+                  )}
+                </View>
+                <View style={[styles.questArrowChip, completed && styles.questArrowChipCompleted]}>
+                  <MaterialCommunityIcons
+                    name={completed ? "check" : "arrow-right"}
+                    size={22}
+                    color={completed ? config.completedCheckColor : colors.neutral.white}
+                  />
                 </View>
               </View>
             </View>
@@ -544,38 +547,29 @@ const styles = StyleSheet.create({
   },
   questArrowChip: {
     alignItems: "center",
-    backgroundColor: "rgba(115, 54, 38, 0.92)",
-    borderRadius: 999,
-    height: 28,
     justifyContent: "center",
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: 28,
+    marginRight: 4,
   },
   questArrowChipCompleted: {
-    backgroundColor: "rgba(45, 80, 22, 0.14)",
+    opacity: 0.9,
   },
   questButton: {
     backgroundColor: colors.sideQuest.base,
     borderColor: colors.sideQuest.text,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    justifyContent: "center",
-    minHeight: 58,
+    minHeight: 72,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 14,
     shadowColor: colors.sideQuest.textStrong,
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
   },
   questButtonCompleted: {
     borderColor: "rgba(45, 80, 22, 0.18)",
   },
   questButtonContent: {
-    justifyContent: "center",
-    position: "relative",
     width: "100%",
     zIndex: 1,
   },
@@ -601,19 +595,24 @@ const styles = StyleSheet.create({
   },
   questButtonTextWrap: {
     flex: 1,
-    justifyContent: "center",
-    paddingRight: 36,
+    paddingRight: 12,
   },
   questButtonTitle: {
     color: colors.neutral.white,
     fontSize: 17,
     fontWeight: "800",
-    lineHeight: 17,
-    textAlign: "left",
+    lineHeight: 20,
+  },
+  questButtonSubtitle: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 2,
   },
   questButtonRow: {
-    justifyContent: "center",
-    minHeight: 38,
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   removeButtonInline: {
     alignItems: "center",
