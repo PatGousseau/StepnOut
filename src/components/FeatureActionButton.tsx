@@ -152,6 +152,7 @@ export function FeatureActionButton({
           <Text
             style={[
               styles.title,
+              !isPill && styles.cardTitle,
               isPill && styles.pillTitle,
               !isPill && !hasSubtitle && styles.compactCardTitle,
               !showIcon && styles.centerText,
@@ -164,6 +165,7 @@ export function FeatureActionButton({
             <Text
               style={[
                 styles.subtitle,
+                !isPill && styles.cardSubtitle,
                 isPill && styles.pillSubtitle,
                 !showIcon && styles.centerText,
                 { color: palette.subtitleColor },
@@ -205,12 +207,19 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     width: "auto",
   },
+  cardSubtitle: {
+    textAlign: "center",
+  },
+  cardTitle: {
+    textAlign: "center",
+  },
   compactCardButton: {
-    minHeight: 58,
-    paddingVertical: 10,
+    justifyContent: "center",
+    minHeight: 54,
+    paddingVertical: 8,
   },
   compactCardContent: {
-    minHeight: 36,
+    minHeight: 28,
   },
   compactCardGlow: {
     top: -28,
@@ -219,7 +228,9 @@ const styles = StyleSheet.create({
     top: 6,
   },
   compactCardTitle: {
+    includeFontPadding: false,
     lineHeight: 18,
+    paddingTop: 2,
   },
   centerText: {
     textAlign: "center",
@@ -322,6 +333,7 @@ const styles = StyleSheet.create({
   },
   textWrapNoSubtitle: {
     justifyContent: "center",
+    minHeight: 22,
   },
   textWrapNoIcon: {
     paddingRight: 0,

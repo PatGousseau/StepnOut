@@ -147,6 +147,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
         completed={completed}
         disabled={completed || checkingCompletion}
         onPress={fadeIn}
+        showIcon={false}
         title={t(completed ? config.completedLabelKey : config.ctaLabelKey)}
         tone={config.tone}
       />
