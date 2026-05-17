@@ -22,6 +22,9 @@ import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent, setUserProperties } from "../lib/posthog";
 import { CHALLENGE_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { RecordingWaveform } from "./RecordingWaveform";
 
 interface ChallengeCardProps {
   challenge: Challenge;
@@ -202,6 +205,7 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
 
   const {
     selectedMedia,
+    setSelectedMedia,
     postText,
     setPostText,
     isUploading,
@@ -238,6 +242,10 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
       }, 100);
     },
     successMessage: t("Challenge completed successfully!"),
+  });
+
+  const { recording, isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => setSelectedMedia(memo),
   });
 
   const onSubmit = async () => {
@@ -347,68 +355,85 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
-                  {selectedMedia ? (
-                    <View style={shareStyles.mediaSelectedRow}>
-                      <TouchableOpacity
-                        style={shareStyles.thumbnailWrapper}
-                        onPress={() => setFullScreenPreview(true)}
-                        disabled={isUploading}
-                      >
-                        <Image
-                          source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
-                          style={shareStyles.thumbnail}
-                          resizeMode="cover"
-                        />
-                        {selectedMedia.isVideo && (
-                          <View style={shareStyles.thumbnailPlayOverlay}>
-                            <MaterialIcons name="play-circle-filled" size={26} color="white" />
+                {isRecording && recording ? (
+                  <View style={shareStyles.mediaUploadButton}>
+                    <RecordingWaveform recording={recording} isRecording={isRecording} onStop={handleVoiceMemoPress} />
+                  </View>
+                ) : (
+                  <TouchableOpacity style={shareStyles.mediaUploadButton} onPress={handleMediaUpload}>
+                    {selectedMedia ? (
+                      <View style={shareStyles.mediaSelectedRow}>
+                        {selectedMedia.pendingUpload.mediaType === 'audio' ? (
+                          <View style={{ flex: 1 }}>
+                            <VoiceMemoPlayer uri={selectedMedia.previewUrl} compact />
                           </View>
-                        )}
-                        {isUploading && (
-                          <View style={shareStyles.uploadingOverlay}>
-                            <Loader />
-                          </View>
-                        )}
-                      </TouchableOpacity>
+                        ) : (
+                          <>
+                            <TouchableOpacity
+                              style={shareStyles.thumbnailWrapper}
+                              onPress={() => setFullScreenPreview(true)}
+                              disabled={isUploading}
+                            >
+                              <Image
+                                source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
+                                style={shareStyles.thumbnail}
+                                resizeMode="cover"
+                              />
+                              {selectedMedia.isVideo && (
+                                <View style={shareStyles.thumbnailPlayOverlay}>
+                                  <MaterialIcons name="play-circle-filled" size={26} color="white" />
+                                </View>
+                              )}
+                              {isUploading && (
+                                <View style={shareStyles.uploadingOverlay}>
+                                  <Loader />
+                                </View>
+                              )}
+                            </TouchableOpacity>
 
-                      <View style={shareStyles.mediaSelectedTextContainer}>
-                        <Text style={shareStyles.mediaSelectedTitle}>
-                          {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
-                        </Text>
-                        <Text style={shareStyles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
+                            <View style={shareStyles.mediaSelectedTextContainer}>
+                              <Text style={shareStyles.mediaSelectedTitle}>
+                                {t(selectedMedia.isVideo ? "Video attached" : "Photo attached")}
+                              </Text>
+                              <Text style={shareStyles.mediaSelectedSubtitle}>{t("Tap to change")}</Text>
+                            </View>
+                          </>
+                        )}
+
+                        <TouchableOpacity
+                          style={shareStyles.removeButtonInline}
+                          onPress={handleRemoveMedia}
+                          disabled={isUploading}
+                        >
+                          <MaterialIcons name="close" size={18} color={colors.neutral.darkGrey} />
+                        </TouchableOpacity>
                       </View>
-
-                      <TouchableOpacity
-                        style={shareStyles.removeButtonInline}
-                        onPress={handleRemoveMedia}
-                        disabled={isUploading}
-                      >
-                        <MaterialIcons name="close" size={18} color={colors.neutral.darkGrey} />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View style={shareStyles.mediaEmptyRow}>
-                      {isUploading ? (
-                        <Loader />
-                      ) : (
-                        <View style={shareStyles.uploadMediaContainer}>
-                          <View style={shareStyles.mediaIconsContainer}>
-                            <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
-                            <MaterialCommunityIcons
-                              name="video"
-                              size={18}
-                              color={colors.neutral.darkGrey}
-                            />
+                    ) : (
+                      <View style={shareStyles.mediaEmptyRow}>
+                        {isUploading ? (
+                          <Loader />
+                        ) : (
+                          <View style={shareStyles.uploadMediaContainer}>
+                            <View style={shareStyles.mediaIconsContainer}>
+                              <MaterialIcons name="image" size={18} color={colors.neutral.darkGrey} />
+                              <MaterialCommunityIcons
+                                name="video"
+                                size={18}
+                                color={colors.neutral.darkGrey}
+                              />
+                              <TouchableOpacity onPress={handleVoiceMemoPress}>
+                                <MaterialIcons name="keyboard-voice" size={18} color={colors.neutral.darkGrey} />
+                              </TouchableOpacity>
+                            </View>
+                            <Text style={shareStyles.uploadButtonText}>
+                              {t("Add photo/video (optional)")}
+                            </Text>
                           </View>
-                          <Text style={shareStyles.uploadButtonText}>
-                            {t("Add photo/video (optional)")}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )}
 
                 {uploadProgress !== null && (
                   <View style={shareStyles.uploadProgressContainer}>

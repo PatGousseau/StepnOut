@@ -181,6 +181,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   return {
     selectedMedia,
+    setSelectedMedia,
     postText,
     setPostText,
     isUploading,

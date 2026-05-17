@@ -17,6 +17,11 @@ export const commentService = {
           body,
           created_at,
           parent_comment_id,
+          media_id,
+          media (
+            file_path,
+            upload_status
+          ),
           likes:likes(count)
         `
         )
@@ -33,6 +38,8 @@ export const commentService = {
           userId: comment.user_id,
           post_id: postId,
           parent_comment_id: comment.parent_comment_id,
+          media_id: comment.media_id,
+          media: comment.media?.file_path ? { file_path: comment.media.file_path } : undefined,
           created_at: comment.created_at,
           likes_count: comment.likes?.count || 0,
           liked: false, // This will be updated by initializeCommentLikes

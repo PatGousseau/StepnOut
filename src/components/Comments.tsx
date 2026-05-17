@@ -37,6 +37,12 @@ import { MenuProvider } from "react-native-popup-menu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
+import { VoiceMemoPlayer } from "./VoiceMemoPlayer";
+import { backgroundUploadService } from "../services/backgroundUploadService";
+import { useVoiceMemoRecorder } from "../hooks/useVoiceMemoRecorder";
+import { MediaSelectionResult } from "../utils/handleMediaUpload";
+import { toPublicMediaUrl, isAudioUrl } from "../utils/mediaUrl";
+import { RecordingWaveform } from "./RecordingWaveform";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -45,7 +51,7 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (userId: string, body: string, parentCommentId?: number | null, media?: MediaSelectionResult | null) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -57,7 +63,7 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (userId: string, body: string, parentCommentId?: number | null, media?: MediaSelectionResult | null) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -146,6 +152,12 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
 
+  const [voiceMemo, setVoiceMemo] = useState<MediaSelectionResult | null>(null);
+
+  const { recording, isRecording, toggle: handleVoiceMemoPress } = useVoiceMemoRecorder({
+    onCreated: (memo) => setVoiceMemo(memo),
+  });
+
   useEffect(() => {
     setComments(initialComments);
     // Initialize likes for the comments
@@ -156,16 +168,22 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   }, [initialComments]);
 
   const handleAddComment = async () => {
-    if (newComment.trim() && user) {
-      const commentText = newComment.trim();
+    if ((newComment.trim() || voiceMemo) && user) {
+      let commentText = newComment.trim();
 
       try {
         const parentCommentId = replyTo?.commentId ?? null;
-        const newCommentData = await addComment(user.id, commentText, parentCommentId);
+        const memo = voiceMemo;
+        const newCommentData = await addComment(user.id, commentText, parentCommentId, memo);
 
         if (newCommentData) {
           setNewComment("");
           setReplyTo(null);
+          setVoiceMemo(null);
+
+          if (memo) {
+            backgroundUploadService.addToQueue(memo.mediaId, memo.pendingUpload);
+          }
 
           setComments((prevComments) => [...prevComments, newCommentData]);
 
@@ -192,6 +210,8 @@ export const CommentsList: React.FC<CommentsListProps> = ({
 
             recipients.delete(user.id);
 
+            const notificationText = commentText || t("sent a voice memo");
+
             await Promise.all(
               Array.from(recipients).map((recipientId) =>
                 sendCommentNotification(
@@ -199,7 +219,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                   senderUsername,
                   recipientId,
                   postId.toString(),
-                  commentText,
+                  notificationText,
                   newCommentData.id.toString(),
                   {
                     title: t("(username) commented"),
@@ -261,6 +281,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               text={item.text}
               created_at={item.created_at}
               post_id={item.post_id}
+              media={item.media}
               indentLevel={item.indentLevel}
               isLastReply={item.isLastReply}
               replyToUserId={item.replyToUserId}
@@ -298,6 +319,37 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                 textAlignVertical="top"
               />
             </View>
+
+            {voiceMemo ? (
+              <View style={{ width: "100%", paddingTop: 8, paddingRight: 52 }}>
+                <VoiceMemoPlayer uri={voiceMemo.previewUrl} compact />
+                <TouchableOpacity
+                  onPress={() => setVoiceMemo(null)}
+                  style={{ position: "absolute", right: 0, top: 8, padding: 8 }}
+                >
+                  <Icon name="times" size={14} color={colors.neutral.grey1} />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            {isRecording && recording ? (
+              <View style={{ paddingHorizontal: 4, paddingVertical: 2 }}>
+                <RecordingWaveform recording={recording} isRecording={isRecording} onStop={handleVoiceMemoPress} compact />
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={handleVoiceMemoPress}
+                style={{ paddingHorizontal: 8, paddingVertical: 6 }}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons
+                  name="microphone"
+                  size={22}
+                  color={colors.neutral.grey1}
+                />
+              </TouchableOpacity>
+            )}
+
             <Pressable
               onPress={handleAddComment}
               style={({ pressed }) => [
@@ -408,6 +460,7 @@ interface CommentProps {
   text: string;
   created_at: string;
   post_id: number;
+  media?: { file_path: string };
   indentLevel?: number;
   isLastReply?: boolean;
   replyToUserId?: string;
@@ -421,6 +474,7 @@ const Comment: React.FC<CommentProps> = ({
   text,
   created_at,
   post_id,
+  media,
   indentLevel = 0,
   isLastReply = false,
   replyToUserId,
@@ -555,6 +609,11 @@ const Comment: React.FC<CommentProps> = ({
             ) : null}
             {text}
           </Text>
+          {media?.file_path && isAudioUrl(media.file_path) ? (
+            <View style={{ marginTop: 6 }}>
+              <VoiceMemoPlayer uri={toPublicMediaUrl(media.file_path) || media.file_path} compact />
+            </View>
+          ) : null}
           {translatedText && (
             <View style={translationContainerStyle}>
               <Text style={translationLabelStyle}>Translation:</Text>
