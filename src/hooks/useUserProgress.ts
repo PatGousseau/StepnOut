@@ -185,8 +185,8 @@ const useUserProgress = (targetUserId: string) => {
           }
         }
 
-        // Create week data array from challenges
-        const weekData: WeekData[] = challenges.slice(1).map((challenge, index) => ({
+        // Create week data array from all challenges, including the current active one
+        const weekData: WeekData[] = challenges.map((challenge, index) => ({
           week: index + 1,
           hasStreak: completedChallengeIds.includes(challenge.id),
           challengeId: challenge.id,
