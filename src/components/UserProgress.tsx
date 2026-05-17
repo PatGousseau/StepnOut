@@ -6,7 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
 import { SideQuestProgress } from '../types';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
-import { FeatureActionButton } from './FeatureActionButton';
+import { ChallengePreviewCard } from './ChallengePreviewCard';
 
 interface UserProgressProps {
   challengeData: {
@@ -89,27 +89,33 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData, si
   const total = breakdown.reduce((sum, level) => sum + level.count, 0);
   const isEmpty = total === 0;
   const { activeChallenge } = useActiveChallenge();
+  const daysRemaining = activeChallenge?.created_at
+    ? 7 - Math.floor((Date.now() - new Date(activeChallenge.created_at as unknown as string).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
 
   if (isEmpty) {
     return (
       <View style={styles.container}>
-        <Text style={styles.emptyTitle}>{t('Your Challenge History')}</Text>
-        <Text style={styles.emptyExplainer}>
-          {t("Once you complete a challenge, it'll appear here.")}
-        </Text>
-
-        {activeChallenge?.title && (
-          <Text style={styles.thisWeekLine}>
-            {t('This week:')}{' '}
-            <Text style={styles.thisWeekName}>{activeChallenge.title}</Text>
+        <View style={styles.body}>
+          <Text style={styles.emptyTitle}>{t('Your Challenge History')}</Text>
+          <Text style={styles.emptyExplainer}>
+            {t("Once you complete a challenge, it'll appear here.")}
           </Text>
-        )}
 
-        <FeatureActionButton
-          onPress={() => router.push('/(tabs)/challenge')}
-          title={t('Take this challenge')}
-          tone="indigo"
-        />
+          {activeChallenge && daysRemaining !== null && daysRemaining > 0 && (
+            <View style={styles.emptyChallengeCardWrap}>
+              <Text style={styles.emptyChallengeEyebrow}>{t("This week's challenge")}</Text>
+              <ChallengePreviewCard
+                title={activeChallenge.title}
+                description={activeChallenge.description}
+                difficulty={activeChallenge.difficulty}
+                imagePath={activeChallenge.media?.file_path || activeChallenge.media_file_path}
+                daysRemaining={daysRemaining}
+                onPress={() => router.push('/(tabs)/challenge')}
+              />
+            </View>
+          )}
+        </View>
       </View>
     );
   }
@@ -225,14 +231,16 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 18,
   },
-  thisWeekLine: {
-    color: '#0D1B1E',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
+  emptyChallengeCardWrap: {
+    marginTop: 4,
   },
-  thisWeekName: {
-    fontWeight: '600',
+  emptyChallengeEyebrow: {
+    color: colors.light.primary,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   streakRow: {
     marginTop: 0,
