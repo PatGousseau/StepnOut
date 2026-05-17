@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChallengeProgress, UserProgress, WeekData, Post } from '../types';
+import { ChallengeProgress, SideQuestProgress, UserProgress, WeekData, Post } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 const useUserProgress = (targetUserId: string) => {
@@ -185,8 +185,8 @@ const useUserProgress = (targetUserId: string) => {
           }
         }
 
-        // Create week data array from challenges
-        const weekData: WeekData[] = challenges.slice(1).map((challenge, index) => ({
+        // Create week data array from all challenges, including the current active one
+        const weekData: WeekData[] = challenges.map((challenge, index) => ({
           week: index + 1,
           hasStreak: completedChallengeIds.includes(challenge.id),
           challengeId: challenge.id,
@@ -217,13 +217,26 @@ const useUserProgress = (targetUserId: string) => {
           hard: submissionsWithDifficulty.filter(s => s.challenges.difficulty === 'hard').length,
         };
 
-        setData({ challengeData, weekData });
+        const { count: completedSideQuestCount, error: questError } = await supabase
+          .from('post')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .not('quest_id', 'is', null);
+
+        if (questError) throw questError;
+
+        const sideQuestData: SideQuestProgress = {
+          total: completedSideQuestCount ?? 0,
+        };
+
+        setData({ challengeData, weekData, sideQuestData });
       } catch (err) {
         console.error('Error fetching progress data:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch progress data');
         setData({
           challengeData: { easy: 0, medium: 0, hard: 0 },
-          weekData: []
+          weekData: [],
+          sideQuestData: { total: 0 },
         });
       } finally {
         setLoading(false);

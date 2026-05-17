@@ -501,7 +501,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
 
         {isOwnProfile && data && (
           <>
-            <UserProgress challengeData={data.challengeData} weekData={data.weekData} />
+            <UserProgress
+              challengeData={data.challengeData}
+              weekData={data.weekData}
+              sideQuestData={data.sideQuestData}
+            />
           </>
         )}
 

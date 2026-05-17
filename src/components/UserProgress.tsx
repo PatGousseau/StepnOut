@@ -4,8 +4,9 @@ import { Text } from './StyledText';
 import { colors } from '../constants/Colors';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
+import { SideQuestProgress } from '../types';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
-import { FeatureActionButton } from './FeatureActionButton';
+import { ChallengePreviewCard } from './ChallengePreviewCard';
 
 interface UserProgressProps {
   challengeData: {
@@ -14,6 +15,7 @@ interface UserProgressProps {
     hard: number;
   };
   weekData: WeekData[];
+  sideQuestData: SideQuestProgress;
 }
 
 interface WeekData {
@@ -76,7 +78,7 @@ const StreakCalendar: React.FC<{ weekData: WeekData[] }> = ({ weekData }) => {
   );
 };
 
-const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) => {
+const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData, sideQuestData }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const breakdown = [
@@ -87,64 +89,85 @@ const UserProgress: React.FC<UserProgressProps> = ({ challengeData, weekData }) 
   const total = breakdown.reduce((sum, level) => sum + level.count, 0);
   const isEmpty = total === 0;
   const { activeChallenge } = useActiveChallenge();
+  const daysRemaining = activeChallenge?.created_at
+    ? 7 - Math.floor((Date.now() - new Date(activeChallenge.created_at as unknown as string).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
 
   if (isEmpty) {
     return (
       <View style={styles.container}>
-        <Text style={styles.emptyTitle}>{t('Your Challenge History')}</Text>
-        <Text style={styles.emptyExplainer}>
-          {t("Once you complete a challenge, it'll appear here.")}
-        </Text>
-
-        {activeChallenge?.title && (
-          <Text style={styles.thisWeekLine}>
-            {t('This week:')}{' '}
-            <Text style={styles.thisWeekName}>{activeChallenge.title}</Text>
+        <View style={styles.body}>
+          <Text style={styles.emptyTitle}>{t('Your Challenge History')}</Text>
+          <Text style={styles.emptyExplainer}>
+            {t("Once you complete a challenge, it'll appear here.")}
           </Text>
-        )}
 
-        <FeatureActionButton
-          onPress={() => router.push('/(tabs)/challenge')}
-          title={t('Take this challenge')}
-          tone="indigo"
-        />
+          {activeChallenge && daysRemaining !== null && daysRemaining > 0 && (
+            <View style={styles.emptyChallengeCardWrap}>
+              <Text style={styles.emptyChallengeEyebrow}>{t("This week's challenge")}</Text>
+              <ChallengePreviewCard
+                title={activeChallenge.title}
+                description={activeChallenge.description}
+                difficulty={activeChallenge.difficulty}
+                imagePath={activeChallenge.media?.file_path || activeChallenge.media_file_path}
+                daysRemaining={daysRemaining}
+                onPress={() => router.push('/(tabs)/challenge')}
+              />
+            </View>
+          )}
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.yourProgressText}>{t('Your Challenge History')}</Text>
-      <View style={styles.streakRow}>
-        <StreakCalendar weekData={weekData} />
-      </View>
+      <View style={styles.body}>
+        <Text style={styles.yourProgressText}>{t('Your Challenge History')}</Text>
+        <View style={styles.streakRow}>
+          <StreakCalendar weekData={weekData} />
+        </View>
 
-      <View style={styles.progressBarTrack}>
-        {breakdown
-          .filter((level) => level.count > 0)
-          .map((level) => (
-            <View
-              key={level.key}
-              style={[
-                styles.progressBarSegment,
-                {
-                  backgroundColor: level.color,
-                  flex: level.count,
-                },
-              ]}
-            />
+        <View style={styles.progressBarTrack}>
+          {total === 0 ? (
+            <View style={styles.emptyProgressFill} />
+          ) : (
+            breakdown
+              .filter((level) => level.count > 0)
+              .map((level) => (
+                <View
+                  key={level.key}
+                  style={[
+                    styles.progressBarSegment,
+                    {
+                      backgroundColor: level.color,
+                      flex: level.count,
+                    },
+                  ]}
+                />
+              ))
+          )}
+        </View>
+
+        <View style={styles.breakdownContainer}>
+          {breakdown.map((level) => (
+            <View key={level.key} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: level.color }]} />
+              <Text style={styles.challengeLabel}>{level.label}</Text>
+              <Text style={styles.challengeCount}>{level.count}</Text>
+            </View>
           ))}
+        </View>
       </View>
 
-      <View style={styles.breakdownContainer}>
-        {breakdown.map((level) => (
-          <View key={level.key} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: level.color }]} />
-            <Text style={styles.challengeLabel}>{level.label}</Text>
-            <Text style={styles.challengeCount}>{level.count}</Text>
-          </View>
-        ))}
-      </View>
+      {sideQuestData.total > 0 && (
+        <View style={styles.footerStrap}>
+          <Text style={styles.footerStrapText}>
+            {t('Side quests completed')}:{' '}
+            <Text style={styles.footerStrapCount}>{sideQuestData.total}</Text>
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -157,7 +180,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 4,
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  body: {
     padding: 16,
+  },
+  footerStrap: {
+    backgroundColor: '#EEF1F6',
+    borderTopColor: '#D7DDE8',
+    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  footerStrapText: {
+    color: '#0D1B1E',
+    fontSize: 14,
+  },
+  footerStrapCount: {
+    color: '#0D1B1E',
+    fontSize: 14,
+    fontWeight: '700',
   },
   yourProgressText: {
     color: '#0D1B1E',
@@ -189,14 +231,16 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 18,
   },
-  thisWeekLine: {
-    color: '#0D1B1E',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 16,
+  emptyChallengeCardWrap: {
+    marginTop: 4,
   },
-  thisWeekName: {
-    fontWeight: '600',
+  emptyChallengeEyebrow: {
+    color: colors.light.primary,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   streakRow: {
     marginTop: 0,
@@ -257,6 +301,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 14,
   },
+
 });
 
 export default UserProgress;
