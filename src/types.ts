@@ -100,9 +100,6 @@ export interface Challenge {
 
   export interface SideQuestProgress {
     total: number;
-    easy_win: number;
-    moderate_push: number;
-    bold_nudge: number;
   }
 
   export interface WeekData {
