@@ -217,25 +217,16 @@ const useUserProgress = (targetUserId: string) => {
           hard: submissionsWithDifficulty.filter(s => s.challenges.difficulty === 'hard').length,
         };
 
-        // Side quest submissions by stretch level
-        const { data: questSubmissions, error: questError } = await supabase
+        const { count: completedSideQuestCount, error: questError } = await supabase
           .from('post')
-          .select(`
-            quest_id,
-            side_quests!inner (
-              stretch_level
-            )
-          `)
+          .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .not('quest_id', 'is', null);
 
         if (questError) throw questError;
 
         const sideQuestData: SideQuestProgress = {
-          total: questSubmissions?.length ?? 0,
-          easy_win: questSubmissions?.filter(s => s.side_quests.stretch_level === 'easy_win').length ?? 0,
-          moderate_push: questSubmissions?.filter(s => s.side_quests.stretch_level === 'moderate_push').length ?? 0,
-          bold_nudge: questSubmissions?.filter(s => s.side_quests.stretch_level === 'bold_nudge').length ?? 0,
+          total: completedSideQuestCount ?? 0,
         };
 
         setData({ challengeData, weekData, sideQuestData });
@@ -245,7 +236,7 @@ const useUserProgress = (targetUserId: string) => {
         setData({
           challengeData: { easy: 0, medium: 0, hard: 0 },
           weekData: [],
-          sideQuestData: { total: 0, easy_win: 0, moderate_push: 0, bold_nudge: 0 },
+          sideQuestData: { total: 0 },
         });
       } finally {
         setLoading(false);
