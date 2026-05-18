@@ -1,9 +1,30 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
-import { DailySideQuestStatus, SideQuestQuestionnaireDraft } from "../types/sideQuests";
+import { DailySideQuestStatus, SideQuestProfile, SideQuestQuestionnaireDraft } from "../types/sideQuests";
 import { sideQuestService } from "../services/sideQuestService";
 import { rankSideQuests } from "../utils/sideQuestMatching";
+
+function sameSet(a: string[], b: string[]) {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a);
+  for (const item of b) {
+    if (!setA.has(item)) return false;
+  }
+  return true;
+}
+
+function hasQuestionnaireChanged(profile: SideQuestProfile, draft: SideQuestQuestionnaireDraft) {
+  return !(
+    sameSet(profile.goal ?? [], draft.goal) &&
+    sameSet(profile.hard_situation ?? [], draft.hard_situation) &&
+    (profile.stretch_level ?? null) === draft.stretch_level &&
+    sameSet(profile.preferred_context ?? [], draft.preferred_context) &&
+    sameSet(profile.meaningful_type ?? [], draft.meaningful_type) &&
+    sameSet(profile.avoid_types ?? [], draft.avoid_types) &&
+    sameSet(profile.progress_definition ?? [], draft.progress_definition)
+  );
+}
 
 function getLocalDayString() {
   const now = new Date();
@@ -34,14 +55,25 @@ export function useSideQuests() {
   });
 
   const saveProfileMutation = useMutation({
-    mutationFn: (draft: SideQuestQuestionnaireDraft) =>
-      sideQuestService.saveProfile(user!.id, draft),
-    onSuccess: async (profile) => {
+    mutationFn: (draft: SideQuestQuestionnaireDraft) => sideQuestService.saveProfile(user!.id, draft),
+    onMutate: async (draft) => {
+      const previous = profileQuery.data;
+      const changed = !!previous && hasQuestionnaireChanged(previous, draft);
+      return { changed };
+    },
+    onSuccess: async (profile, draft, context) => {
       if (!userId) return;
+
       queryClient.setQueryData(["side-quest-profile", userId], profile);
+
+      if (context?.changed) {
+        await sideQuestService.deleteDailyDraw(userId, localDay);
+      }
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["side-quest-profile", userId] }),
         queryClient.invalidateQueries({ queryKey: ["side-quests"] }),
+        queryClient.invalidateQueries({ queryKey: ["side-quest-draw", userId, localDay] }),
       ]);
     },
   });
