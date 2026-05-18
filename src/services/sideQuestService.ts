@@ -256,6 +256,16 @@ export const sideQuestService = {
     return normalizeProfile(data as ProfileRow);
   },
 
+  async deleteDailyDraw(userId: string, localDay: string): Promise<void> {
+    const { error } = await supabase
+      .from("side_quest_draws")
+      .delete()
+      .eq("user_id", userId)
+      .eq("local_day", localDay);
+
+    if (error) throw error;
+  },
+
   async fetchSideQuests(): Promise<SideQuest[]> {
     const { data, error } = await supabase
       .from("side_quests")
