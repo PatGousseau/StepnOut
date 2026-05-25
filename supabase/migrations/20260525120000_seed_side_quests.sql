@@ -73,44 +73,6 @@ WITH payload AS (
       ]
     },
     {
-      "title": "Gioca una mano in una bocciofila",
-      "summary": "Prova a entrare per davvero in una bocciofila o in un circolo dove si gioca. Presentati al banco, dì che non sai giocare e chiedi a qualcuno di farti fare un tiro di prova seguendo le sue istruzioni.",
-      "goal_tags": [
-        "novelty",
-        "connection",
-        "better_stories"
-      ],
-      "barrier_tags": [
-        "not_knowing",
-        "social_hesitation"
-      ],
-      "context_tags": [
-        "out_in_the_city",
-        "with_other_people",
-        "solo"
-      ],
-      "type_tags": [
-        "exploratory",
-        "social",
-        "growth_edge"
-      ],
-      "outcome_tags": [
-        "did_something_unusual",
-        "more_stories",
-        "explored_more"
-      ],
-      "stretch_level": "bold_nudge",
-      "cost_level": 1,
-      "planning_level": 1,
-      "social_level": 3,
-      "physical_level": 1,
-      "distance_level": 2,
-      "night_level": 0,
-      "avoid_flags": [
-        "talking_to_strangers"
-      ]
-    },
-    {
       "title": "Fatti consigliare un giornale dall'edicolante",
       "summary": "Affidati all’edicolante per leggere qualcosa che non avresti mai comprato da solo. Chiedi una rivista o un giornale lontano dai tuoi gusti, leggi subito un articolo al bar più vicino e torna a dire all’edicolante una cosa precisa che hai scoperto.",
       "goal_tags": [
@@ -1883,43 +1845,6 @@ WITH payload AS (
       ]
     },
     {
-      "title": "Fatti spiegare da un campanaro come nasce un rintocco",
-      "summary": "Chiedi a un campanaro o a un sacrestano di mostrarti come nasce un rintocco vero. Vai in parrocchia fuori dall’orario della messa, domandi con rispetto se è possibile assistere, ascolti la spiegazione dei comandi e, solo se ti autorizzano, tiri una corda una volta.",
-      "goal_tags": [
-        "novelty",
-        "better_stories",
-        "connection"
-      ],
-      "barrier_tags": [
-        "not_knowing"
-      ],
-      "context_tags": [
-        "out_in_the_city",
-        "with_other_people",
-        "solo"
-      ],
-      "type_tags": [
-        "exploratory",
-        "social",
-        "growth_edge"
-      ],
-      "outcome_tags": [
-        "did_something_unusual",
-        "more_stories",
-        "explored_more"
-      ],
-      "stretch_level": "bold_nudge",
-      "cost_level": 0,
-      "planning_level": 2,
-      "social_level": 2,
-      "physical_level": 1,
-      "distance_level": 1,
-      "night_level": 0,
-      "avoid_flags": [
-        "talking_to_strangers"
-      ]
-    },
-    {
       "title": "Fai da voltapagina a una prova musicale",
       "summary": "Diventi voltapagina per un musicista durante una prova in conservatorio, scuola civica o sala parrocchiale. Scrivi o chiedi all’ingresso se serve una mano, ti siedi accanto allo spartito, segui le indicazioni e giri le pagine nei punti segnati.",
       "goal_tags": [
@@ -2334,79 +2259,6 @@ WITH payload AS (
         "talking_to_strangers",
         "group_social_situations",
         "nighttime"
-      ]
-    },
-    {
-      "title": "Stampa una frase con caratteri mobili in tipografia",
-      "summary": "Stampi una frase tua con caratteri mobili in una tipografia artigianale, museo della stampa o laboratorio aperto. Scegli una frase di massimo otto parole, componi i caratteri con l’aiuto del tipografo, inchiostri il rullo e porti via il foglio ancora fresco.",
-      "goal_tags": [
-        "novelty",
-        "creativity",
-        "better_stories"
-      ],
-      "barrier_tags": [
-        "not_knowing",
-        "overthinking"
-      ],
-      "context_tags": [
-        "out_in_the_city",
-        "solo"
-      ],
-      "type_tags": [
-        "creative",
-        "exploratory"
-      ],
-      "outcome_tags": [
-        "did_something_unusual",
-        "more_stories",
-        "felt_more_alive"
-      ],
-      "stretch_level": "moderate_push",
-      "cost_level": 2,
-      "planning_level": 2,
-      "social_level": 1,
-      "physical_level": 1,
-      "distance_level": 2,
-      "night_level": 0,
-      "avoid_flags": [
-        "spending_money"
-      ]
-    },
-    {
-      "title": "Metti le mani in una dimostrazione di caseificazione",
-      "summary": "Metti le mani in una dimostrazione di caseificazione in un caseificio, agriturismo o mercato contadino. Chiedi se puoi assistere alla lavorazione, lavi le mani, provi un passaggio consentito come filare o salare e assaggi il risultato mentre il casaro spiega l’errore più comune.",
-      "goal_tags": [
-        "novelty",
-        "fun",
-        "better_stories"
-      ],
-      "barrier_tags": [
-        "not_knowing"
-      ],
-      "context_tags": [
-        "out_in_the_city",
-        "with_other_people",
-        "solo"
-      ],
-      "type_tags": [
-        "exploratory",
-        "social",
-        "growth_edge"
-      ],
-      "outcome_tags": [
-        "did_something_unusual",
-        "more_stories",
-        "felt_more_alive"
-      ],
-      "stretch_level": "moderate_push",
-      "cost_level": 1,
-      "planning_level": 2,
-      "social_level": 2,
-      "physical_level": 1,
-      "distance_level": 2,
-      "night_level": 0,
-      "avoid_flags": [
-        "talking_to_strangers"
       ]
     },
     {
@@ -5414,45 +5266,6 @@ WITH payload AS (
       ]
     },
     {
-      "title": "Parla col tecnico di luci di un piccolo cinema",
-      "summary": "Visiti una cabina tecnica di un piccolo cinema o teatro e parli con chi fa partire luci, audio o proiezione. Compra un biglietto per uno spettacolo locale, arriva in anticipo, chiedi al personale se il tecnico può mostrarti una cosa prima dell’inizio e fatti indicare il comando che userà per il primo segnale.",
-      "goal_tags": [
-        "novelty",
-        "better_stories",
-        "connection"
-      ],
-      "barrier_tags": [
-        "not_knowing"
-      ],
-      "context_tags": [
-        "out_in_the_city",
-        "with_other_people",
-        "solo"
-      ],
-      "type_tags": [
-        "exploratory",
-        "social",
-        "growth_edge"
-      ],
-      "outcome_tags": [
-        "did_something_unusual",
-        "more_stories",
-        "explored_more"
-      ],
-      "stretch_level": "bold_nudge",
-      "cost_level": 2,
-      "planning_level": 2,
-      "social_level": 2,
-      "physical_level": 1,
-      "distance_level": 2,
-      "night_level": 1,
-      "avoid_flags": [
-        "spending_money",
-        "talking_to_strangers",
-        "nighttime"
-      ]
-    },
-    {
       "title": "Aiuta qualcuno a formulare una domanda in farmacia",
       "summary": "Aiuti una persona a formulare una domanda sanitaria semplice senza sostituirti al farmacista. Se vedi qualcuno in difficoltà con lingua, udito o imbarazzo, offriti di ripetere la richiesta ad alta voce, lascia che il farmacista risponda direttamente a lei e verifica che abbia capito le istruzioni essenziali.",
       "goal_tags": [
@@ -6569,44 +6382,6 @@ WITH payload AS (
         "spending_money",
         "talking_to_strangers",
         "nighttime"
-      ]
-    },
-    {
-      "title": "Usa un forno condiviso per cuocere qualcosa",
-      "summary": "Usa un forno condiviso disponibile nella tua zona, come quello di un laboratorio, una casa di quartiere, una parrocchia o un circolo, per cuocere qualcosa di semplice. Prenota o chiedi il permesso, porta l’impasto già pronto, condividi almeno una porzione con chi è presente e chiedi come si lascia pulito lo spazio.",
-      "goal_tags": [
-        "novelty",
-        "connection",
-        "better_stories"
-      ],
-      "barrier_tags": [
-        "not_knowing"
-      ],
-      "context_tags": [
-        "near_home",
-        "out_in_the_city",
-        "with_other_people"
-      ],
-      "type_tags": [
-        "exploratory",
-        "social",
-        "growth_edge"
-      ],
-      "outcome_tags": [
-        "did_something_unusual",
-        "more_stories",
-        "shared_more_with_people"
-      ],
-      "stretch_level": "bold_nudge",
-      "cost_level": 1,
-      "planning_level": 2,
-      "social_level": 2,
-      "physical_level": 1,
-      "distance_level": 2,
-      "night_level": 0,
-      "avoid_flags": [
-        "talking_to_strangers",
-        "group_social_situations"
       ]
     },
     {
