@@ -559,6 +559,10 @@ export default function Layout() {
               debug: __DEV__,
               // Enable session recordings (free tier: 5,000/month)
               enableSessionReplay: true,
+              sessionReplayConfig: {
+                // Explicitly disable text masking in replay inputs
+                maskAllTextInputs: false,
+              },
               // Capture app lifecycle events
               captureAppLifecycleEvents: true,
               // Flush settings
