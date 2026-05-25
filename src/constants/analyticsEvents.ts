@@ -87,6 +87,10 @@ export const SIDE_QUEST_EVENTS = {
   DAILY_DRAW_COMPLETED: 'side_quest_daily_draw_completed',
   DAILY_DRAW_EXHAUSTED: 'side_quest_daily_draw_exhausted',
   DAILY_QUEST_COMPLETED: 'side_quest_daily_quest_completed',
+  SHARE_MODAL_OPENED: 'side_quest_share_modal_opened',
+  SHARED: 'side_quest_shared',
+  SHARE_SKIPPED: 'side_quest_share_skipped',
+  SHARED_TO_INSTAGRAM: 'side_quest_shared_to_instagram',
 } as const;
 
 // ============================================

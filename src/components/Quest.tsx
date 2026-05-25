@@ -12,6 +12,7 @@ import { SIDE_QUEST_EVENTS, USER_PROPERTIES } from "../constants/analyticsEvents
 import { setUserProperties } from "../lib/posthog";
 import { supabase } from "../lib/supabase";
 import { CompletionPostComposer } from "./CompletionPostComposer";
+import CompletionCelebrationModal from "./CompletionCelebrationModal";
 
 interface QuestCardProps {
   quest: SideQuest;
@@ -71,8 +72,12 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
 };
 
 export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ quest }) => {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [showCelebrationModal, setShowCelebrationModal] = React.useState(false);
+  const submittedTextRef = React.useRef("");
+  const [submittedMediaPreview, setSubmittedMediaPreview] = React.useState<string | null>(null);
 
   const questCompletionQuery = useQuery({
     queryKey: ["quest-completion", quest.id, user?.id],
@@ -95,28 +100,45 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
   const checking = questCompletionQuery.isLoading;
 
   return (
-    <CompletionPostComposer
-      variant="quest"
-      completed={completed}
-      checkingCompletion={checking}
-      buildSubmitData={({ userId }) => ({
-        user_id: userId,
-        quest_id: quest.id,
-      })}
-      onCompleted={({ selectedMedia }) => {
-        queryClient.setQueryData(["quest-completion", quest.id, user?.id], true);
-        queryClient.invalidateQueries({ queryKey: ["home-posts"] });
-        captureEvent(SIDE_QUEST_EVENTS.DAILY_QUEST_COMPLETED, {
+    <>
+      <CompletionPostComposer
+        variant="quest"
+        completed={completed}
+        checkingCompletion={checking}
+        buildSubmitData={({ userId }) => ({
+          user_id: userId,
           quest_id: quest.id,
-          quest_title: quest.title,
-          has_media: !!selectedMedia,
-          is_video: selectedMedia?.isVideo || false,
-        });
-        setUserProperties({
-          [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),
-        });
-      }}
-    />
+        })}
+        onCompleted={({ selectedMedia, submittedText }) => {
+          submittedTextRef.current = submittedText;
+          setSubmittedMediaPreview(selectedMedia?.previewUrl || null);
+          queryClient.setQueryData(["quest-completion", quest.id, user?.id], true);
+          queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+          captureEvent(SIDE_QUEST_EVENTS.DAILY_QUEST_COMPLETED, {
+            quest_id: quest.id,
+            quest_title: quest.title,
+            has_media: !!selectedMedia,
+            is_video: selectedMedia?.isVideo || false,
+          });
+          setUserProperties({
+            [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),
+          });
+          setTimeout(() => {
+            setShowCelebrationModal(true);
+          }, 100);
+        }}
+      />
+
+      <CompletionCelebrationModal
+        isVisible={showCelebrationModal}
+        onClose={() => setShowCelebrationModal(false)}
+        title={quest.title}
+        variant="quest"
+        variantId={quest.id}
+        mediaPreview={submittedMediaPreview}
+        postText={submittedTextRef.current || t("Just completed today's quest!")}
+      />
+    </>
   );
 };
 
