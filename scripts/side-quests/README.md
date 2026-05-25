@@ -54,6 +54,18 @@ End-to-end pipeline (steps 1–3, produces a raw.json for annotation):
 ./scripts/side-quests/run.sh run
 ```
 
+### Resuming after a crash
+
+Every step writes its output to disk as it goes: brainstorm writes after each batch, top-up writes after each successful fill, and annotation writes after each quest. If the pipeline dies partway through, you can resume by passing the same stamp the original run printed:
+
+```bash
+STAMP=2026-05-25T18-41-55-111Z ./scripts/side-quests/run.sh run
+```
+
+The orchestrator checks for each intermediate file (`<stamp>.seeds.json`, `<stamp>.critique.json`, `<stamp>.coverage.json`, `<stamp>.topup.json`) and skips any step whose output already exists. Brainstorm can also resume from a partial `seeds.json` if the previous run only finished some batches.
+
+To force a step to re-run, delete its output file before resuming. The annotation step has its own built-in resume (re-running `annotate <raw.json>` picks up where it left off).
+
 Run only the brainstorm step (writes `<stamp>.seeds.json`):
 
 ```bash
