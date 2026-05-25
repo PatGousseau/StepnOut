@@ -634,33 +634,34 @@ async function generateSeedBatch({ batchIndex, batchSize, allPreviousTitles, bia
   return payload.quests;
 }
 
-async function generateAllSeeds({ targetCount, onProgress }) {
+async function generateAllSeeds({ targetCount, onProgress, initialSeeds = [] }) {
   const totalSeeds = Math.ceil(targetCount * BRAINSTORM_OVERAGE);
-  const numBatches = Math.ceil(totalSeeds / BRAINSTORM_BATCH_SIZE);
-  const allSeeds = [];
+  const totalBatches = Math.ceil(totalSeeds / BRAINSTORM_BATCH_SIZE);
+  const allSeeds = [...initialSeeds];
 
-  for (let i = 0; i < numBatches; i++) {
+  while (allSeeds.length < totalSeeds) {
     const remaining = totalSeeds - allSeeds.length;
-    if (remaining <= 0) break;
     const batchSize = Math.min(BRAINSTORM_BATCH_SIZE, remaining);
+    if (batchSize <= 0) break;
+    const batchIndex = Math.floor(allSeeds.length / BRAINSTORM_BATCH_SIZE);
 
     const titles = allSeeds.map((s) => s.title);
     const biasNote =
-      i > 0
+      allSeeds.length > 0
         ? "Bias this batch toward archetypes and tones that feel underrepresented above. " +
           "If the earlier batches lean near-home, solo, or observational, push hard toward social, with-other-people, " +
           "evening, bold, creating, performing, and connecting quests."
         : "";
 
     const batch = await generateSeedBatch({
-      batchIndex: i,
+      batchIndex,
       batchSize,
       allPreviousTitles: titles,
       biasNote,
     });
     allSeeds.push(...batch);
 
-    if (onProgress) await onProgress(allSeeds, i + 1, numBatches);
+    if (onProgress) await onProgress(allSeeds, batchIndex + 1, totalBatches);
   }
 
   return allSeeds;
@@ -914,47 +915,78 @@ async function generateTargetedFill({ gap, existingTitles }) {
 
 async function runPipeline() {
   await ensureOutputDir();
-  const stamp = timestamp();
+  const resumeStamp = process.env.STAMP;
+  const stamp = resumeStamp || timestamp();
 
   console.log(`\n=== Side Quest Pipeline ===`);
   console.log(`Target: ${SIDE_QUEST_TARGET} | Overage: ${BRAINSTORM_OVERAGE}x | Model: ${MODEL}`);
-  console.log(`Stamp: ${stamp}\n`);
+  console.log(`Stamp: ${stamp}${resumeStamp ? " (resuming from existing files)" : ""}\n`);
 
-  // Step 1: Brainstorm seeds in batches
-  console.log(`Step 1/4: Brainstorming seeds (${BRAINSTORM_BATCH_SIZE}/batch)...`);
+  // ----- Step 1: Brainstorm seeds in batches -----
   const seedsPath = path.join(OUTPUT_DIR, `${stamp}.seeds.json`);
-  const seeds = await generateAllSeeds({
-    targetCount: SIDE_QUEST_TARGET,
-    onProgress: async (allSeeds, batch, totalBatches) => {
-      await writeJson(seedsPath, { seeds: allSeeds });
-      console.log(`  Batch ${batch}/${totalBatches}: ${allSeeds.length} seeds total`);
-    },
-  });
-  console.log(`  -> Wrote ${seeds.length} seeds to ${seedsPath}\n`);
+  const targetSeeds = Math.ceil(SIDE_QUEST_TARGET * BRAINSTORM_OVERAGE);
+  const existingSeeds = (await readJsonIfExists(seedsPath))?.seeds ?? [];
 
-  // Step 2: Critique
-  console.log(`Step 2/4: Critiquing seeds...`);
-  const critique = await critiqueSeeds(seeds);
-  const survivors = critique.kept_indices.map((i) => seeds[i]).filter(Boolean);
+  let seeds;
+  if (existingSeeds.length >= targetSeeds) {
+    seeds = existingSeeds;
+    console.log(`Step 1/4: Loaded ${seeds.length} seeds from ${seedsPath} (skipping brainstorm)\n`);
+  } else {
+    if (existingSeeds.length > 0) {
+      console.log(`Step 1/4: Resuming brainstorm from ${existingSeeds.length}/${targetSeeds} existing seeds...`);
+    } else {
+      console.log(`Step 1/4: Brainstorming seeds (${BRAINSTORM_BATCH_SIZE}/batch)...`);
+    }
+    seeds = await generateAllSeeds({
+      targetCount: SIDE_QUEST_TARGET,
+      initialSeeds: existingSeeds,
+      onProgress: async (allSeeds, batch, totalBatches) => {
+        await writeJson(seedsPath, { seeds: allSeeds });
+        console.log(`  Batch ${batch}/${totalBatches}: ${allSeeds.length} seeds total`);
+      },
+    });
+    console.log(`  -> Wrote ${seeds.length} seeds to ${seedsPath}\n`);
+  }
+
+  // ----- Step 2: Critique -----
   const critiquePath = path.join(OUTPUT_DIR, `${stamp}.critique.json`);
-  await writeJson(critiquePath, { critique, survivors });
-  console.log(
-    `  Kept ${survivors.length} of ${seeds.length} (${critique.rejection_notes?.length || 0} rejections)`
-  );
-  console.log(`  -> Wrote critique to ${critiquePath}\n`);
+  const existingCritique = await readJsonIfExists(critiquePath);
+
+  let survivors;
+  if (existingCritique?.survivors) {
+    survivors = existingCritique.survivors;
+    console.log(`Step 2/4: Loaded ${survivors.length} survivors from ${critiquePath} (skipping critique)\n`);
+  } else {
+    console.log(`Step 2/4: Critiquing seeds...`);
+    const critique = await critiqueSeeds(seeds);
+    survivors = critique.kept_indices.map((i) => seeds[i]).filter(Boolean);
+    await writeJson(critiquePath, { critique, survivors });
+    console.log(
+      `  Kept ${survivors.length} of ${seeds.length} (${critique.rejection_notes?.length || 0} rejections)`
+    );
+    console.log(`  -> Wrote critique to ${critiquePath}\n`);
+  }
 
   if (survivors.length === 0) {
     throw new Error("Critique kept 0 seeds. Pipeline aborted.");
   }
 
-  // Step 3: Coverage tagging
-  console.log(`Step 3/4: Tagging survivors for coverage analysis (with top-ups)...`);
-  const coverageTags = await tagSurvivorsForCoverage(survivors);
+  // ----- Step 3: Coverage tagging -----
   const coveragePath = path.join(OUTPUT_DIR, `${stamp}.coverage.json`);
-  await writeJson(coveragePath, { tags: coverageTags });
-  console.log(`  Tagged ${coverageTags.length} survivors`);
+  const existingCoverage = await readJsonIfExists(coveragePath);
 
-  // Step 4: Gap analysis
+  let coverageTags;
+  if (existingCoverage?.tags) {
+    coverageTags = existingCoverage.tags;
+    console.log(`Step 3/4: Loaded coverage tags from ${coveragePath} (skipping tagging)`);
+  } else {
+    console.log(`Step 3/4: Tagging survivors for coverage analysis (with top-ups)...`);
+    coverageTags = await tagSurvivorsForCoverage(survivors);
+    await writeJson(coveragePath, { tags: coverageTags });
+    console.log(`  Tagged ${coverageTags.length} survivors`);
+  }
+
+  // Gap analysis (pure JS, always re-runs)
   const { counts, gaps, total, threshold } = identifyCoverageGaps(coverageTags);
   console.log(`\n  Coverage report (threshold: ${threshold} per cell, total survivors: ${total}):`);
   console.log(`    context:`, counts.context);
@@ -971,30 +1003,40 @@ async function runPipeline() {
   }
   console.log("");
 
-  // Step 4: Top-up for gaps (if any), then write final raw.json
-  const allSurvivors = [...survivors];
-  if (ENABLE_TOPUP && gaps.length > 0) {
-    const numTopups = Math.min(gaps.length, MAX_TOPUP_CALLS);
-    console.log(`Step 4/4: Generating ${numTopups} targeted top-ups for gaps, then finalizing...`);
-    for (let i = 0; i < numTopups; i++) {
-      const gap = gaps[i];
-      console.log(`  Top-up ${i + 1}/${numTopups}: ${gap.dimension}/${gap.value}`);
-      try {
-        const fill = await generateTargetedFill({
-          gap,
-          existingTitles: allSurvivors.map((s) => s.title),
-        });
-        allSurvivors.push(...fill);
-        console.log(`    Added ${fill.length} concepts`);
-      } catch (error) {
-        console.warn(`    Top-up failed: ${error.message}`);
-      }
-    }
-    const topupPath = path.join(OUTPUT_DIR, `${stamp}.topup.json`);
-    await writeJson(topupPath, { survivors: allSurvivors });
-    console.log(`  Total after top-ups: ${allSurvivors.length}`);
+  // ----- Step 4: Top-up + finalize -----
+  const topupPath = path.join(OUTPUT_DIR, `${stamp}.topup.json`);
+  const existingTopup = await readJsonIfExists(topupPath);
+
+  let allSurvivors;
+  if (existingTopup?.survivors) {
+    allSurvivors = existingTopup.survivors;
+    console.log(`Step 4/4: Loaded ${allSurvivors.length} from ${topupPath} (skipping top-up)`);
+    console.log(`  (To force top-up re-run, delete that file and re-run with the same STAMP.)`);
   } else {
-    console.log(`Step 4/4: Skipping top-up (${ENABLE_TOPUP ? "no gaps" : "disabled"}); finalizing...`);
+    allSurvivors = [...survivors];
+    if (ENABLE_TOPUP && gaps.length > 0) {
+      const numTopups = Math.min(gaps.length, MAX_TOPUP_CALLS);
+      console.log(`Step 4/4: Generating ${numTopups} targeted top-ups for gaps, then finalizing...`);
+      for (let i = 0; i < numTopups; i++) {
+        const gap = gaps[i];
+        console.log(`  Top-up ${i + 1}/${numTopups}: ${gap.dimension}/${gap.value}`);
+        try {
+          const fill = await generateTargetedFill({
+            gap,
+            existingTitles: allSurvivors.map((s) => s.title),
+          });
+          allSurvivors.push(...fill);
+          // Write after every successful fill so a mid-loop crash doesn't lose progress.
+          await writeJson(topupPath, { survivors: allSurvivors });
+          console.log(`    Added ${fill.length} concepts`);
+        } catch (error) {
+          console.warn(`    Top-up failed: ${error.message}`);
+        }
+      }
+      console.log(`  Total after top-ups: ${allSurvivors.length}`);
+    } else {
+      console.log(`Step 4/4: Skipping top-up (${ENABLE_TOPUP ? "no gaps" : "disabled"}); finalizing...`);
+    }
   }
 
   // The survivors (with title + summary) are already the final quest content.
