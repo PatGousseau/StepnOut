@@ -16,6 +16,8 @@ const TRAIL_DOT_COUNT = 110;
 const TRAIL_DOT_MIN = 4;
 const TRAIL_DOT_MAX = 56;
 
+type CompletionBurstVariant = 'challenge' | 'quest';
+
 type TrailDot = {
   x: number;
   y: number;
@@ -77,9 +79,53 @@ const buildSwirlPath = (): SwirlPath => {
 
 interface CompletionBurstProps {
   title: string;
+  variant?: CompletionBurstVariant;
 }
 
-const Rays: React.FC = () => {
+type BurstTheme = {
+  rayPrimary: string;
+  raySecondary: string;
+  glowInner: string;
+  glowMid: string;
+  glowOuter: string;
+  ring: string;
+  trail: string;
+  sparklePrimary: string;
+  sparkleSecondary: string;
+  heroShadow: string;
+  titleColor: string;
+};
+
+const BURST_THEMES: Record<CompletionBurstVariant, BurstTheme> = {
+  challenge: {
+    rayPrimary: '#FFE27A',
+    raySecondary: '#FF9A4D',
+    glowInner: '#FFE27A',
+    glowMid: '#FFB347',
+    glowOuter: '#FF6B3D',
+    ring: '#FFE27A',
+    trail: '#FFE27A',
+    sparklePrimary: '#FFFFFF',
+    sparkleSecondary: '#FFE27A',
+    heroShadow: '#FF9A4D',
+    titleColor: colors.light.text,
+  },
+  quest: {
+    rayPrimary: '#FFD7C8',
+    raySecondary: colors.sideQuest.highlightAlt,
+    glowInner: '#FFF1EC',
+    glowMid: '#F6B099',
+    glowOuter: colors.sideQuest.base,
+    ring: '#F09A81',
+    trail: '#FFC1AD',
+    sparklePrimary: '#FFF8F5',
+    sparkleSecondary: '#F09A81',
+    heroShadow: colors.sideQuest.base,
+    titleColor: colors.sideQuest.textStrong,
+  },
+};
+
+const Rays: React.FC<{ theme: BurstTheme }> = ({ theme }) => {
   const paths = useMemo(() => {
     const items: { d: string; fill: string }[] = [];
     const cx = BURST_SIZE / 2;
@@ -107,12 +153,12 @@ const Rays: React.FC = () => {
     <Svg width={BURST_SIZE} height={BURST_SIZE} viewBox={`0 0 ${BURST_SIZE} ${BURST_SIZE}`}>
       <Defs>
         <LinearGradient id="rayGold" x1="0.5" y1="0" x2="0.5" y2="1">
-          <Stop offset="0" stopColor="#FFE27A" stopOpacity="1" />
-          <Stop offset="1" stopColor="#FFB347" stopOpacity="0" />
+          <Stop offset="0" stopColor={theme.rayPrimary} stopOpacity="1" />
+          <Stop offset="1" stopColor={theme.rayPrimary} stopOpacity="0" />
         </LinearGradient>
         <LinearGradient id="rayAmber" x1="0.5" y1="0" x2="0.5" y2="1">
-          <Stop offset="0" stopColor="#FF9A4D" stopOpacity="0.95" />
-          <Stop offset="1" stopColor="#FF6B3D" stopOpacity="0" />
+          <Stop offset="0" stopColor={theme.raySecondary} stopOpacity="0.95" />
+          <Stop offset="1" stopColor={theme.raySecondary} stopOpacity="0" />
         </LinearGradient>
       </Defs>
       {paths.map((p, i) => (
@@ -122,33 +168,37 @@ const Rays: React.FC = () => {
   );
 };
 
-const Glow: React.FC = () => (
+const Glow: React.FC<{ theme: BurstTheme }> = ({ theme }) => (
   <Svg width={BURST_SIZE} height={BURST_SIZE} viewBox={`0 0 ${BURST_SIZE} ${BURST_SIZE}`}>
     <Defs>
       <RadialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-        <Stop offset="0" stopColor="#FFE27A" stopOpacity="0.85" />
-        <Stop offset="0.45" stopColor="#FFB347" stopOpacity="0.28" />
-        <Stop offset="1" stopColor="#FF6B3D" stopOpacity="0" />
+        <Stop offset="0" stopColor={theme.glowInner} stopOpacity="0.85" />
+        <Stop offset="0.45" stopColor={theme.glowMid} stopOpacity="0.28" />
+        <Stop offset="1" stopColor={theme.glowOuter} stopOpacity="0" />
       </RadialGradient>
     </Defs>
     <Rect x="0" y="0" width={BURST_SIZE} height={BURST_SIZE} fill="url(#glow)" />
   </Svg>
 );
 
-const ShockRing: React.FC = () => (
+const ShockRing: React.FC<{ theme: BurstTheme }> = ({ theme }) => (
   <Svg width={BURST_SIZE} height={BURST_SIZE} viewBox={`0 0 ${BURST_SIZE} ${BURST_SIZE}`}>
     <Circle
       cx={BURST_SIZE / 2}
       cy={BURST_SIZE / 2}
       r={56}
       fill="none"
-      stroke="#FFE27A"
+      stroke={theme.ring}
       strokeWidth={3}
     />
   </Svg>
 );
 
-const Sparkle: React.FC<{ index: number; trigger: number }> = ({ index, trigger }) => {
+const Sparkle: React.FC<{ index: number; theme: BurstTheme; trigger: number }> = ({
+  index,
+  theme,
+  trigger,
+}) => {
   const progress = useRef(new Animated.Value(0)).current;
   const angle = (index / SPARKLE_COUNT) * Math.PI * 2;
   const distance = 95 + (index % 4) * 18;
@@ -202,7 +252,7 @@ const Sparkle: React.FC<{ index: number; trigger: number }> = ({ index, trigger 
       <MaterialCommunityIcons
         name={index % 2 === 0 ? 'star-four-points' : 'star'}
         size={16}
-        color={index % 3 === 0 ? '#FFFFFF' : '#FFE27A'}
+        color={index % 3 === 0 ? theme.sparklePrimary : theme.sparkleSecondary}
       />
     </Animated.View>
   );
@@ -210,9 +260,10 @@ const Sparkle: React.FC<{ index: number; trigger: number }> = ({ index, trigger 
 
 const TrailDot: React.FC<{
   dot: TrailDot;
+  theme: BurstTheme;
   trophyProgress: Animated.Value;
   tailOpacity: Animated.Value;
-}> = ({ dot, trophyProgress, tailOpacity }) => {
+}> = ({ dot, theme, trophyProgress, tailOpacity }) => {
   const ramp = 0.03;
   const fade = 0.22;
   const peakIn = dot.threshold;
@@ -253,7 +304,7 @@ const TrailDot: React.FC<{
         width: dot.size,
         height: dot.size,
         borderRadius: half,
-        backgroundColor: '#FFE27A',
+        backgroundColor: theme.trail,
         opacity,
       }}
     />
@@ -351,7 +402,40 @@ const Trophy: React.FC<{ size: number }> = ({ size }) => (
   </Svg>
 );
 
-const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
+const QuestBadge: React.FC<{ size: number }> = ({ size }) => (
+  <View
+    style={{
+      alignItems: 'center',
+      backgroundColor: colors.sideQuest.highlightSoft,
+      borderColor: colors.sideQuest.bgBorder,
+      borderRadius: size / 2,
+      borderWidth: 3,
+      height: size,
+      justifyContent: 'center',
+      width: size,
+    }}
+  >
+    <View
+      style={{
+        alignItems: 'center',
+        backgroundColor: colors.sideQuest.bgAlt,
+        borderRadius: (size - 16) / 2,
+        height: size - 16,
+        justifyContent: 'center',
+        width: size - 16,
+      }}
+    >
+      <MaterialCommunityIcons
+        name="compass-rose"
+        size={size * 0.42}
+        color={colors.sideQuest.text}
+      />
+    </View>
+  </View>
+);
+
+const CompletionBurst: React.FC<CompletionBurstProps> = ({ title, variant = 'challenge' }) => {
+  const theme = BURST_THEMES[variant];
   const swirlPath = useMemo(buildSwirlPath, []);
   const trophyProgress = useRef(new Animated.Value(0)).current;
   const trophyScale = useRef(new Animated.Value(0.2)).current;
@@ -549,7 +633,7 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
             { opacity: raysOpacity, transform: [{ rotate: rotateInterp }, { scale: raysScale }] },
           ]}
         >
-          <Rays />
+          <Rays theme={theme} />
         </Animated.View>
 
         <Animated.View
@@ -558,7 +642,7 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
             { opacity: glowFinal, transform: [{ scale: glowScale }] },
           ]}
         >
-          <Glow />
+          <Glow theme={theme} />
         </Animated.View>
 
         <Animated.View
@@ -567,7 +651,7 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
             { opacity: ringOpacity, transform: [{ scale: ringScale }] },
           ]}
         >
-          <ShockRing />
+          <ShockRing theme={theme} />
         </Animated.View>
         <Animated.View
           style={[
@@ -575,13 +659,14 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
             { opacity: ringOpacity2, transform: [{ scale: ringScale2 }] },
           ]}
         >
-          <ShockRing />
+          <ShockRing theme={theme} />
         </Animated.View>
 
         {swirlPath.dots.map((dot, i) => (
           <TrailDot
             key={`trail-${i}`}
             dot={dot}
+            theme={theme}
             trophyProgress={trophyProgress}
             tailOpacity={tailOpacity}
           />
@@ -590,6 +675,7 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
         <Animated.View
           style={[
             styles.hero,
+            { shadowColor: theme.heroShadow },
             {
               transform: [
                 { translateX: tx },
@@ -601,12 +687,12 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
           ]}
         >
           <View style={styles.heroInner}>
-            <Trophy size={88} />
+            {variant === 'challenge' ? <Trophy size={88} /> : <QuestBadge size={88} />}
           </View>
         </Animated.View>
 
         {Array.from({ length: SPARKLE_COUNT }).map((_, i) => (
-          <Sparkle key={`sparkle-${burstKey}-${i}`} index={i} trigger={burstKey} />
+          <Sparkle key={`sparkle-${burstKey}-${i}`} index={i} theme={theme} trigger={burstKey} />
         ))}
       </View>
 
@@ -616,7 +702,7 @@ const CompletionBurst: React.FC<CompletionBurstProps> = ({ title }) => {
           transform: [{ translateY: titleTranslate }, { scale: titleProgress }],
         }}
       >
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: theme.titleColor }]}>{title}</Text>
       </Animated.View>
     </View>
   );
@@ -637,7 +723,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
-    shadowColor: '#FF9A4D',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
     shadowRadius: 18,
@@ -655,7 +740,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   title: {
-    color: colors.light.text,
     fontSize: 26,
     fontWeight: 'bold',
     marginTop: 8,

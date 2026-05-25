@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
 import { Challenge } from "../types";
-import ShareChallenge from "../components/ShareChallenge";
+import CompletionCelebrationModal from "../components/CompletionCelebrationModal";
 import { View, StyleSheet } from "react-native";
 import { PATRIZIO_ID } from "../constants/Patrizio";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -224,13 +224,13 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
         }}
       />
 
-      <ShareChallenge
+      <CompletionCelebrationModal
         isVisible={showShareModal}
         onClose={() => setShowShareModal(false)}
         title={challenge.title}
-        challengeId={challenge.id}
+        variant="challenge"
+        variantId={challenge.id}
         mediaPreview={submittedMediaPreview}
-        streakCount={1}
         postText={submittedTextRef.current || t("Just completed this week's challenge!")}
       />
     </>

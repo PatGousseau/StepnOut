@@ -13,18 +13,17 @@ const S = (v: number) => v * SCALE;
 interface InstagramStoryCardProps {
   username: string;
   challengeTitle?: string;
-  mediaUrl?: string;
   postText?: string;
   profileImageUrl?: string;
   completionCount?: number;
-  variant?: "challenge" | "post";
-  onImageLoad?: () => void;
+  variant?: "challenge" | "post" | "quest";
 }
 
 const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
-  ({ username, challengeTitle, mediaUrl, postText, profileImageUrl, completionCount = 0, variant = "challenge", onImageLoad }, ref) => {
+  ({ username, challengeTitle, postText, profileImageUrl, completionCount = 0, variant = "challenge" }, ref) => {
     const { t } = useLanguage();
     const isChallenge = !!challengeTitle;
+    const isQuest = variant === "quest";
 
     if (variant === "post") {
       return (
@@ -88,14 +87,16 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
 
           {isChallenge && (
             <>
-              <Text style={challengeLabelStyle}>{t("THIS WEEK'S CHALLENGE")}</Text>
-              <Text style={challengeNameStyle} numberOfLines={2}>
+              <Text style={[challengeLabelStyle, isQuest && questLabelStyle]}>
+                {isQuest ? t("TODAY'S SIDE QUEST") : t("THIS WEEK'S CHALLENGE")}
+              </Text>
+              <Text style={[challengeNameStyle, isQuest && questNameStyle]} numberOfLines={2}>
                 {challengeTitle}
               </Text>
             </>
           )}
 
-          <View style={dividerStyle} />
+          <View style={[dividerStyle, isQuest && questDividerStyle]} />
         </View>
 
         {/* Middle section - Post card UI */}
@@ -113,9 +114,9 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
 
             {/* Challenge box */}
             {isChallenge && (
-              <View style={postChallengeBoxStyle}>
-                <Text style={postChallengeTitleStyle} numberOfLines={1}>
-                  <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {challengeTitle}
+              <View style={[postChallengeBoxStyle, isQuest && postQuestBoxStyle]}>
+                <Text style={[postChallengeTitleStyle, isQuest && postQuestTitleStyle]} numberOfLines={1}>
+                  <Text style={{ fontWeight: "bold" }}>{isQuest ? t("Side quest:") : t("Challenge:")}</Text> {challengeTitle}
                 </Text>
               </View>
             )}
@@ -131,14 +132,14 @@ const InstagramStoryCard = forwardRef<View, InstagramStoryCardProps>(
 
         {/* Bottom section - CTA */}
         <View style={bottomSectionStyle}>
-          <View style={dividerStyle} />
+          <View style={[dividerStyle, isQuest && questDividerStyle]} />
           {isChallenge && completionCount > 1 ? (
             <Text style={ctaStyle}>
               {t("Join me and")} {completionCount - 1} {t("others who completed this week's challenge on StepnOut")}
             </Text>
           ) : (
-            <Text style={ctaStyle}>
-              {t("Join me on StepnOut")}
+            <Text style={[ctaStyle, isQuest && questCtaStyle]}>
+              {isQuest ? t("Come pull a side quest with me on StepnOut") : t("Join me on StepnOut")}
             </Text>
           )}
         </View>
@@ -179,6 +180,10 @@ const challengeLabelStyle: TextStyle = {
   marginBottom: S(12),
 };
 
+const questLabelStyle: TextStyle = {
+  color: colors.sideQuest.text,
+};
+
 const challengeNameStyle: TextStyle = {
   fontSize: S(54),
   fontWeight: "700",
@@ -187,11 +192,19 @@ const challengeNameStyle: TextStyle = {
   marginBottom: S(32),
 };
 
+const questNameStyle: TextStyle = {
+  color: colors.sideQuest.textStrong,
+};
+
 const dividerStyle: ViewStyle = {
   width: S(120),
   height: S(4),
   backgroundColor: colors.light.primary,
   borderRadius: S(2),
+};
+
+const questDividerStyle: ViewStyle = {
+  backgroundColor: colors.sideQuest.base,
 };
 
 const middleSectionStyle: ViewStyle = {
@@ -239,9 +252,18 @@ const postChallengeBoxStyle: ViewStyle = {
   paddingVertical: S(12),
 };
 
+const postQuestBoxStyle: ViewStyle = {
+  backgroundColor: colors.sideQuest.highlightSoft,
+  borderColor: colors.sideQuest.bgBorder,
+};
+
 const postChallengeTitleStyle: TextStyle = {
   color: colors.light.primary,
   fontSize: S(32),
+};
+
+const postQuestTitleStyle: TextStyle = {
+  color: colors.sideQuest.text,
 };
 
 const postBodyStyle: TextStyle = {
@@ -271,10 +293,8 @@ const ctaStyle: TextStyle = {
   marginBottom: S(16),
 };
 
-const downloadStyle: TextStyle = {
-  fontSize: S(42),
-  fontWeight: "600",
-  color: colors.neutral.darkGrey,
+const questCtaStyle: TextStyle = {
+  color: colors.sideQuest.textStrong,
 };
 
 export default InstagramStoryCard;
