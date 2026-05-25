@@ -16,7 +16,7 @@ fi
 COMMAND="${1:-run}"
 
 case "${COMMAND}" in
-  run|generate|annotate)
+  run|brainstorm|critique|annotate)
     node scripts/side-quests/generate-side-quests.mjs "$@"
     ;;
   build-migration)
@@ -26,7 +26,8 @@ case "${COMMAND}" in
   *)
     echo "Usage:"
     echo "  ./scripts/side-quests/run.sh run"
-    echo "  ./scripts/side-quests/run.sh generate"
+    echo "  ./scripts/side-quests/run.sh brainstorm"
+    echo "  ./scripts/side-quests/run.sh critique <seeds.json>"
     echo "  ./scripts/side-quests/run.sh annotate <raw-json-file>"
     echo "  ./scripts/side-quests/run.sh build-migration <annotated-json-file> <migration-file-name.sql>"
     exit 1
