@@ -554,7 +554,7 @@ const SEED_SYSTEM_PROMPT = [
   "You generate side quests for a consumer app that helps users step outside their comfort zone.",
   "A side quest is a one-day activity that breaks routine.",
   "Each quest has just two text fields, both in natural contemporary Italian:",
-  "- title: short and vivid",
+  "- title: a short imperative-action phrase that says WHAT THE USER WILL DO, readable at a glance. Use the imperative second-person form (tu): 'Impara X', 'Porta X', 'Cucina X', 'Chiedi X', 'Vai a X', 'Fatti Y'. 4-9 words. NOT a noun phrase or 'book-title' style: avoid 'Il messaggero del complimento tecnico', 'La voce del mercato coperto', 'Cartolina sonora' — those read as headings, not actions. Instead: 'Ringrazia chi resta invisibile', 'Raccogli al mercato una storia su un ingrediente', 'Registra una cartolina audio e mandala'.",
   "- summary: around two sentences. Sentence 1 says WHAT the quest is. Sentence 2 says HOW the user does it — the key concrete actions, in order. Together they should give the user everything they need to decide on the quest AND actually do it.",
   "",
   "The summary is the only text the user will see. Treat it as both pitch and instructions.",
