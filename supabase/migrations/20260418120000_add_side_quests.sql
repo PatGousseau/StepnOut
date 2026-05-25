@@ -28,8 +28,6 @@ CREATE TABLE public.side_quests (
   id bigserial PRIMARY KEY,
   title text NOT NULL,
   summary text NOT NULL,
-  why_it_hits text NOT NULL,
-  instructions text NOT NULL,
   goal_tags text[] NOT NULL DEFAULT '{}'::text[]
     CHECK (goal_tags <@ ARRAY['novelty', 'fun', 'connection', 'momentum', 'creativity', 'better_stories']::text[])
     CHECK (cardinality(goal_tags) BETWEEN 1 AND 3),

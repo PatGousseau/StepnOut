@@ -44,8 +44,6 @@ async function main() {
 INSERT INTO public.side_quests (
   title,
   summary,
-  why_it_hits,
-  instructions,
   goal_tags,
   barrier_tags,
   context_tags,
@@ -64,8 +62,6 @@ INSERT INTO public.side_quests (
 SELECT
   title,
   summary,
-  why_it_hits,
-  instructions,
   goal_tags,
   barrier_tags,
   context_tags,
@@ -84,8 +80,6 @@ FROM payload,
 jsonb_to_recordset(payload.data -> 'quests') AS q(
   title text,
   summary text,
-  why_it_hits text,
-  instructions text,
   goal_tags text[],
   barrier_tags text[],
   context_tags text[],
