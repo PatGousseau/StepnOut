@@ -25,6 +25,13 @@ export const QuestPage: React.FC = () => {
   const questId = params.id ? parseInt(String(params.id), 10) : undefined;
   const localDay = useMemo(() => getLocalDayString(), []);
 
+  const questQuery = useQuery({
+    queryKey: ["side-quest", questId],
+    queryFn: () => sideQuestService.fetchQuestById(questId!),
+    enabled: !!questId,
+    staleTime: 30000,
+  });
+
   const drawHistoryQuery = useQuery({
     queryKey: ["side-quest-draw-history", user?.id],
     queryFn: () => sideQuestService.fetchDrawHistory(user!.id),
@@ -36,6 +43,8 @@ export const QuestPage: React.FC = () => {
     () => drawHistoryQuery.data?.find(({ quest }) => quest.id === questId) ?? null,
     [drawHistoryQuery.data, questId]
   );
+
+  const canCompleteQuest = !!historyEntry;
 
   const drawDateLabel = useMemo(() => {
     if (!historyEntry) return null;
@@ -50,20 +59,20 @@ export const QuestPage: React.FC = () => {
     }).format(date);
   }, [historyEntry, language]);
 
-  if (drawHistoryQuery.isLoading) {
+  if (questQuery.isLoading || drawHistoryQuery.isLoading) {
     return <Loader />;
   }
 
-  if (drawHistoryQuery.error) {
+  if (questQuery.error || drawHistoryQuery.error) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Text style={styles.title}>{t("Error")}</Text>
-        <Text style={styles.subtitle}>{(drawHistoryQuery.error as Error).message}</Text>
+        <Text style={styles.subtitle}>{((questQuery.error || drawHistoryQuery.error) as Error).message}</Text>
       </View>
     );
   }
 
-  if (!historyEntry || !questId) {
+  if (!questQuery.data || !questId) {
     return (
       <View style={[styles.container, styles.centered]}>
         <Text style={styles.title}>{t("Quest not found")}</Text>
@@ -71,7 +80,12 @@ export const QuestPage: React.FC = () => {
     );
   }
 
-  const isToday = historyEntry.draw.local_day === localDay;
+  const isToday = historyEntry?.draw.local_day === localDay;
+  const eyebrowText = canCompleteQuest
+    ? isToday
+      ? t("Today's quest")
+      : t("Past quest")
+    : t("Side quest");
 
   return (
     <ScrollView
@@ -82,15 +96,17 @@ export const QuestPage: React.FC = () => {
     >
       <View style={styles.heroSection}>
         <View style={styles.eyebrowWrap}>
-          <Text style={styles.eyebrow}>{isToday ? t("Today's quest") : t("Past quest")}</Text>
+          <Text style={styles.eyebrow}>{eyebrowText}</Text>
           {!!drawDateLabel && <Text style={styles.eyebrowSub}>{drawDateLabel}</Text>}
         </View>
 
-        <QuestCard quest={historyEntry.quest} eyebrowText={isToday ? t("Today's quest") : t("Past quest")} />
+        <QuestCard quest={questQuery.data} eyebrowText={eyebrowText} />
 
-        <View style={styles.ctaWrap}>
-          <ShareQuestExperience quest={historyEntry.quest} />
-        </View>
+        {canCompleteQuest && (
+          <View style={styles.ctaWrap}>
+            <ShareQuestExperience quest={questQuery.data} />
+          </View>
+        )}
       </View>
     </ScrollView>
   );

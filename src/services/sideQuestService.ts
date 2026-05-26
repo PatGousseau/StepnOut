@@ -278,6 +278,17 @@ export const sideQuestService = {
     return (data || []).map((row) => normalizeSideQuest(row as SideQuestRow));
   },
 
+  async fetchQuestById(questId: number): Promise<SideQuest | null> {
+    const { data, error } = await supabase
+      .from("side_quests")
+      .select("*")
+      .eq("id", questId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data ? normalizeSideQuest(data as SideQuestRow) : null;
+  },
+
   async fetchDailyDraw(userId: string, localDay: string): Promise<{ draw: SideQuestDraw; quest: SideQuest } | null> {
     const { data, error } = await supabase
       .from("side_quest_draws")

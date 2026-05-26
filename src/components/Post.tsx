@@ -333,6 +333,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     }
   };
 
+  const handleQuestPress = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    if (post.quest_id) {
+      router.push(`/quest/${post.quest_id}`);
+    }
+  };
+
   const isChallengePost = !!post.challenge_id;
   const isQuestPost = !!post.quest_id;
 
@@ -561,14 +568,16 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         </>
       )}
       {isQuestPost && (
-        <View style={questBoxStyle}>
-          <View style={tagRowStyle}>
-            <Ionicons name="footsteps" size={14} color={colors.sideQuest.text} />
-            <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-              <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
-            </Text>
+        <TouchableOpacity onPress={handleQuestPress}>
+          <View style={questBoxStyle}>
+            <View style={tagRowStyle}>
+              <Ionicons name="footsteps" size={14} color={colors.sideQuest.text} />
+              <Text style={questTitleStyle} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={{ fontWeight: "bold" }}>{t("Quest:")}</Text> {post.quest_title}
+              </Text>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
       )}
       {post.body && !post.media?.file_path ? (
         <Pressable onPress={handleDoubleTap}>
