@@ -31,14 +31,13 @@ interface DiscussFabProps {
   bottomOffset?: number;
 }
 
-const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
+const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const [modalVisible, setModalVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const resolvedBottomOffset = Math.max(bottomOffset, insets.bottom + 12);
   const keyboardVerticalOffset = Platform.OS === "ios" ? Math.max(insets.top - 12, 0) : 0;
   const modalMaxHeight = Math.round(screenHeight * 0.5);
 
@@ -113,7 +112,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
         iconPosition="start"
         onPress={handleOpen}
         showIcon
-        style={[fabStyle, { bottom: resolvedBottomOffset }]}
+        style={[fabStyle, { bottom: bottomOffset }]}
         title={t("Discuss")}
         tone="indigo"
         variant="pill"
