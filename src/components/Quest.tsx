@@ -37,7 +37,6 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
           <View style={styles.heroContent}>
             <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
             <Text style={styles.heroTitle}>{quest.title}</Text>
-            {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
 
             {tags && tags.length > 0 && (
               <View style={styles.heroPills}>
@@ -50,6 +49,15 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
             )}
           </View>
         </View>
+
+        {!!quest.summary && (
+          <>
+            <View style={styles.heroDivider} />
+            <View style={styles.heroSummarySection}>
+              <Text style={styles.heroSummary}>{quest.summary}</Text>
+            </View>
+          </>
+        )}
       </View>
     </View>
   );
@@ -127,6 +135,10 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
 };
 
 const styles = StyleSheet.create({
+  heroDivider: {
+    backgroundColor: colors.sideQuest.border,
+    height: 1,
+  },
   heroCard: {
     backgroundColor: colors.sideQuest.bgAlt,
     borderColor: colors.sideQuest.bgBorder,
@@ -215,7 +227,12 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     fontSize: 15,
     lineHeight: 22,
-    marginTop: 12,
+  },
+  heroSummarySection: {
+    backgroundColor: colors.sideQuest.bg,
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 22,
   },
   heroTitle: {
     color: colors.light.text,
