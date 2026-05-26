@@ -322,22 +322,6 @@ export const SideQuestPath: React.FC = () => {
         todaysQuest={todaysQuest}
       />
 
-      {!isRevealing && pastDrawnQuests.length > 0 && (
-        <View style={styles.pastSection}>
-          <Text style={styles.sectionTitle}>{t("Past side quests")}</Text>
-          {pastDrawnQuests.map(({ draw, quest }) => (
-            <View key={draw.id} style={styles.pastQuestCard}>
-              <QuestPreviewCard
-                title={quest.title}
-                description={quest.summary}
-                footerLabel={formatQuestDateLabel(draw.local_day)}
-                onPress={() => router.push(`/quest/${quest.id}`)}
-              />
-            </View>
-          ))}
-        </View>
-      )}
-
       {!isRevealing && (
         <View style={styles.editPrefsWrap}>
           <Text style={styles.editPrefsPrompt}>{t("Want a different mix of side quests?")}</Text>
@@ -353,6 +337,22 @@ export const SideQuestPath: React.FC = () => {
           >
             <Text style={styles.editPrefsText}>{t("Edit preferences")}</Text>
           </TouchableOpacity>
+        </View>
+      )}
+
+      {!isRevealing && pastDrawnQuests.length > 0 && (
+        <View style={styles.pastSection}>
+          <Text style={styles.sectionTitle}>{t("Past side quests")}</Text>
+          {pastDrawnQuests.map(({ draw, quest }) => (
+            <View key={draw.id} style={styles.pastQuestCard}>
+              <QuestPreviewCard
+                title={quest.title}
+                description={quest.summary}
+                footerLabel={formatQuestDateLabel(draw.local_day)}
+                onPress={() => router.push(`/quest/${quest.id}`)}
+              />
+            </View>
+          ))}
         </View>
       )}
     </ScrollView>
