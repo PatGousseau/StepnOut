@@ -76,6 +76,7 @@ function RootLayoutNav() {
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
     pathname.includes('/challenge/') ||
+    pathname.includes('/quest/') ||
     pathname.includes('/esplora/piece/') ||
     pathname.includes('/esplora/category/') ||
     pathname === '/esplora/saved' ||

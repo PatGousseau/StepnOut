@@ -54,10 +54,8 @@ as $$
           'body', p.body,
           'media_id', p.media_id,
           'challenge_id', p.challenge_id,
-          'quest_id', p.quest_id,
           'is_welcome', p.is_welcome,
           'challenge_title', ch.title,
-          'quest_title', sq.title,
           'media', case
             when m.file_path is null then null
             else jsonb_build_object('file_path', m.file_path)
@@ -94,7 +92,6 @@ as $$
         from public.post p
         left join public.media m on m.id = p.media_id
         left join public.challenges ch on ch.id = p.challenge_id
-        left join public.side_quests sq on sq.id = p.quest_id
         where p.id = a.item_id
       )
       else null
@@ -120,13 +117,10 @@ as $$
               'id', p.id,
               'body', p.body,
               'created_at', p.created_at,
-              'challenge_title', ch.title,
-              'quest_id', p.quest_id,
-              'quest_title', sq.title
+              'challenge_title', ch.title
             )
             from public.post p
             left join public.challenges ch on ch.id = p.challenge_id
-            left join public.side_quests sq on sq.id = p.quest_id
             where p.id = c.post_id
           )
         )

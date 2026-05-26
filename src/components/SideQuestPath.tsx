@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { AppAlert } from './AppAlert';
+import { router } from "expo-router";
+import { AppAlert } from "./AppAlert";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
@@ -25,6 +26,7 @@ import {
 import { SideQuestDailyDraw } from "./sideQuest/SideQuestDailyDraw";
 import { SideQuestQuestionnaire } from "./sideQuest/SideQuestQuestionnaire";
 import { SideQuestResults } from "./sideQuest/SideQuestResults";
+import { QuestPreviewCard } from "./ChallengePreviewCard";
 
 function buildDraft(profile: ReturnType<typeof useSideQuests>["profile"]): SideQuestQuestionnaireDraft {
   if (!profile) return SIDE_QUEST_EMPTY_DRAFT;
@@ -48,6 +50,9 @@ export const SideQuestPath: React.FC = () => {
     rankedSideQuests,
     sideQuestsLoading,
     sideQuestsError,
+    drawHistory,
+    drawHistoryLoading,
+    drawHistoryError,
     todaysQuest,
     todaysQuestState,
     todaysQuestLoading,
@@ -64,16 +69,27 @@ export const SideQuestPath: React.FC = () => {
   const revealOpacity = useRef(new Animated.Value(1)).current;
   const needsOnboarding = !profile;
   const questionCount = 7;
-  const todaysDateLabel = useMemo(() => {
-    const [year, month, day] = localDay.split("-").map(Number);
-    const date = new Date(year, month - 1, day, 12);
+  const formatQuestDateLabel = useMemo(
+    () => (dayValue: string) => {
+      const [year, month, day] = dayValue.split("-").map(Number);
+      const date = new Date(year, month - 1, day, 12);
 
-    return new Intl.DateTimeFormat(language === "it" ? "it-IT" : "en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    }).format(date);
-  }, [language, localDay]);
+      return new Intl.DateTimeFormat(language === "it" ? "it-IT" : "en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      }).format(date);
+    },
+    [language]
+  );
+
+  const todaysDateLabel = useMemo(() => formatQuestDateLabel(localDay), [formatQuestDateLabel, localDay]);
+
+  const pastDrawnQuests = useMemo(
+    () =>
+      drawHistory.filter(({ draw }) => draw.local_day !== localDay),
+    [drawHistory, localDay]
+  );
 
   useEffect(() => {
     setDraft(buildDraft(profile));
@@ -254,7 +270,7 @@ export const SideQuestPath: React.FC = () => {
     );
   }
 
-  if (!isRevealing && (sideQuestsLoading || (todaysQuestLoading && !todaysQuest))) {
+  if (!isRevealing && (sideQuestsLoading || drawHistoryLoading || (todaysQuestLoading && !todaysQuest))) {
     return <Loader />;
   }
 
@@ -263,6 +279,15 @@ export const SideQuestPath: React.FC = () => {
       <View style={styles.centeredState}>
         <Text style={styles.pageTitle}>{t("Error")}</Text>
         <Text style={styles.subtitle}>{(sideQuestsError as Error).message}</Text>
+      </View>
+    );
+  }
+
+  if (drawHistoryError) {
+    return (
+      <View style={styles.centeredState}>
+        <Text style={styles.pageTitle}>{t("Error")}</Text>
+        <Text style={styles.subtitle}>{(drawHistoryError as Error).message}</Text>
       </View>
     );
   }
@@ -316,6 +341,22 @@ export const SideQuestPath: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
+
+      {!isRevealing && pastDrawnQuests.length > 0 && (
+        <View style={styles.pastSection}>
+          <Text style={styles.sectionTitle}>{t("Past side quests")}</Text>
+          {pastDrawnQuests.map(({ draw, quest }) => (
+            <View key={draw.id} style={styles.pastQuestCard}>
+              <QuestPreviewCard
+                title={quest.title}
+                description={quest.summary}
+                footerLabel={formatQuestDateLabel(draw.local_day)}
+                onPress={() => router.push(`/quest/${quest.id}`)}
+              />
+            </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -336,6 +377,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 16,
     paddingBottom: 32,
+  },
+  pastQuestCard: {
+    marginBottom: 12,
+  },
+  pastSection: {
+    paddingTop: 28,
   },
   editPrefs: {
     alignSelf: "center",
@@ -365,6 +412,12 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 34,
     marginBottom: 6,
+  },
+  sectionTitle: {
+    color: colors.sideQuest.text,
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
   },
   subtitle: {
     color: colors.light.lightText,

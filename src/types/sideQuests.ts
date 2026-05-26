@@ -69,8 +69,6 @@ export interface SideQuest {
   id: number;
   title: string;
   summary: string;
-  why_it_hits: string;
-  instructions: string;
   goal_tags: SideQuestGoal[];
   barrier_tags: SideQuestHardSituation[];
   context_tags: SideQuestPreferredContext[];
@@ -95,6 +93,11 @@ export interface SideQuestDraw {
   quest_id: number;
   local_day: string;
   created_at: string;
+}
+
+export interface DrawnSideQuest {
+  draw: SideQuestDraw;
+  quest: SideQuest;
 }
 
 export interface RankedSideQuest extends SideQuest {

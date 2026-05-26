@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -16,6 +15,7 @@ import CompletionCelebrationModal from "./CompletionCelebrationModal";
 
 interface QuestCardProps {
   quest: SideQuest;
+  eyebrowText?: string;
   tags?: string[];
 }
 
@@ -23,7 +23,7 @@ interface ShareQuestExperienceProps {
   quest: SideQuest;
 }
 
-export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
+export const QuestCard: React.FC<QuestCardProps> = ({ quest, eyebrowText, tags }) => {
   const { t } = useLanguage();
 
   return (
@@ -36,9 +36,8 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
 
         <View style={styles.heroHeaderContent}>
           <View style={styles.heroContent}>
-            <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
+            <Text style={styles.heroEyebrow}>{eyebrowText || t("Today's quest")}</Text>
             <Text style={styles.heroTitle}>{quest.title}</Text>
-            {!!quest.summary && <Text style={styles.heroSummary}>{quest.summary}</Text>}
 
             {tags && tags.length > 0 && (
               <View style={styles.heroPills}>
@@ -52,17 +51,11 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
           </View>
         </View>
 
-        {!!quest.instructions && (
+        {!!quest.summary && (
           <>
             <View style={styles.heroDivider} />
-            <View style={styles.heroDetailSection}>
-              <View style={styles.heroDetailHeader}>
-                <View style={styles.heroDetailIcon}>
-                  <MaterialCommunityIcons name="compass-outline" size={16} color={colors.sideQuest.text} />
-                </View>
-                <Text style={styles.heroDetailLabel}>{t("Try this")}</Text>
-              </View>
-              <Text style={styles.heroDetailText}>{quest.instructions}</Text>
+            <View style={styles.heroSummarySection}>
+              <Text style={styles.heroSummary}>{quest.summary}</Text>
             </View>
           </>
         )}
@@ -136,41 +129,13 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
         variant="quest"
         variantId={quest.id}
         mediaPreview={submittedMediaPreview}
-        postText={submittedTextRef.current || t("Just completed today's quest!")}
+        postText={submittedTextRef.current || t("Just completed this quest!")}
       />
     </>
   );
 };
 
 const styles = StyleSheet.create({
-  heroDetailHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 10,
-  },
-  heroDetailIcon: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroDetailLabel: {
-    color: colors.sideQuest.text,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  heroDetailSection: {
-    backgroundColor: colors.sideQuest.bg,
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 22,
-  },
-  heroDetailText: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 23,
-  },
   heroDivider: {
     backgroundColor: colors.sideQuest.border,
     height: 1,
@@ -263,7 +228,12 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     fontSize: 15,
     lineHeight: 22,
-    marginTop: 12,
+  },
+  heroSummarySection: {
+    backgroundColor: colors.sideQuest.bg,
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 22,
   },
   heroTitle: {
     color: colors.light.text,

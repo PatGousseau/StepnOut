@@ -63,10 +63,10 @@ VALUES
 SELECT setval('public.media_id_seq', (SELECT MAX(id) FROM public.media));
 
 -- Update profiles with full data (trigger created basic profiles)
-UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '11111111-1111-1111-1111-111111111111';
-UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '22222222-2222-2222-2222-222222222222';
-UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '33333333-3333-3333-3333-333333333333';
-UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '44444444-4444-4444-4444-444444444444';
+UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10, created_at = now() - interval '30 days' WHERE id = '11111111-1111-1111-1111-111111111111';
+UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11, created_at = now() - interval '30 days' WHERE id = '22222222-2222-2222-2222-222222222222';
+UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12, created_at = now() - interval '30 days' WHERE id = '33333333-3333-3333-3333-333333333333';
+UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13, created_at = now() - interval '30 days' WHERE id = '44444444-4444-4444-4444-444444444444';
 
 -- =============================================================================
 -- CHALLENGES
@@ -561,7 +561,19 @@ VALUES
   (30, '11111111-1111-1111-1111-111111111111', 'I tried the one-block safari quest after dinner and ended up noticing a tiny ceramics studio I''ve walked past for years without seeing.', null, 2, null, false, false, now() - interval '5 days'),
   (31, '33333333-3333-3333-3333-333333333333', 'Today''s quest was to find the best bench within walking distance. I tested three and fully support turning ordinary errands into field research.', null, 7, 18, false, false, now() - interval '2 days'),
   (32, '22222222-2222-2222-2222-222222222222', 'Picked a quest out of the hat and wound up borrowing a random cookbook from the library. Weirdly energizing.', null, 6, null, false, false, now() - interval '20 hours'),
-  (33, '44444444-4444-4444-4444-444444444444', 'Did the market color hunt quest and came home with an aggressively orange snack lineup. Zero regrets.', null, 8, 19, false, true, now() - interval '9 hours');
+  (33, '44444444-4444-4444-4444-444444444444', 'Did the market color hunt quest and came home with an aggressively orange snack lineup. Zero regrets.', null, 8, 19, false, true, now() - interval '9 hours'),
+  (34, '44444444-4444-4444-4444-444444444444', 'Took the tiny adventure prompt seriously and walked a route home I''d never tried. Found a mural and a bakery I somehow always missed.', null, 3, null, false, false, now() - interval '4 days'),
+  (35, '44444444-4444-4444-4444-444444444444', 'Used the quest as an excuse to linger in a bookstore and ask the staff for a weird recommendation. Ended up leaving with a poetry collection.', null, 5, null, false, false, now() - interval '2 days');
+
+-- Seed side quest draw history so quest-tagged seed posts also appear in side quest history
+INSERT INTO public.side_quest_draws (id, user_id, quest_id, local_day, created_at)
+VALUES
+  (1, '11111111-1111-1111-1111-111111111111', 2, current_date - 5, now() - interval '5 days'),
+  (2, '33333333-3333-3333-3333-333333333333', 7, current_date - 2, now() - interval '2 days'),
+  (3, '22222222-2222-2222-2222-222222222222', 6, current_date - 1, now() - interval '20 hours'),
+  (4, '44444444-4444-4444-4444-444444444444', 3, current_date - 4, now() - interval '4 days'),
+  (5, '44444444-4444-4444-4444-444444444444', 5, current_date - 2, now() - interval '2 days'),
+  (6, '44444444-4444-4444-4444-444444444444', 8, current_date, now() - interval '9 hours');
 
 -- Challenge submissions with default body (no custom text)
 INSERT INTO public.post (id, user_id, body, challenge_id, media_id, is_welcome, featured, created_at)
@@ -582,6 +594,7 @@ VALUES
   (29, '11111111-1111-1111-1111-111111111111', '', null, null, true, false, now() - interval '1 day');
 
 SELECT setval('public.post_id_seq', (SELECT MAX(id) FROM public.post));
+SELECT setval('public.side_quest_draws_id_seq', (SELECT MAX(id) FROM public.side_quest_draws));
 
 -- =============================================================================
 -- COMMENTS

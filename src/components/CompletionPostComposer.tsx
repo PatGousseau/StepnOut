@@ -78,7 +78,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
       completedLabelKey: "Quest completed!",
       ctaLabelKey: "Mark as complete",
       modalSubtitleKey: "Share how you completed the quest",
-      placeholderTextKey: "Just completed today's quest!",
+      placeholderTextKey: "Just completed this quest!",
       unauthenticatedMessageKey: "You must be logged in to submit a quest.",
       successMessageKey: "Quest completed successfully!",
       sliderAccentColor: colors.sideQuest.base,

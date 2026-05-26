@@ -80,7 +80,11 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
-export const DecorativeCardBackground: React.FC<Props> = ({ category, variant, seed = 0 }) => {
+export const DecorativeCardBackground: React.FC<Props> = ({
+  category,
+  variant,
+  seed = 0,
+}) => {
   const [background, accent] = CATEGORY_GRADIENTS[category];
   const motifs = CATEGORY_MOTIF_FAMILIES[category];
   const motif = motifs[Math.abs(seed) % motifs.length];

@@ -29,6 +29,8 @@ import {
 
 const QUESTION_SWIPE_DISTANCE_THRESHOLD = 90;
 const QUESTION_SWIPE_VELOCITY_THRESHOLD = 700;
+const INTRO_TOP_OFFSET = 16;
+const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 type SingleSelectSectionProps<T extends string> = {
   title: string;
@@ -156,6 +158,7 @@ export function SideQuestQuestionnaire({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [pageWidth, setPageWidth] = useState(0);
   const translateX = useRef(new Animated.Value(0)).current;
+  const introScrollY = useRef(new Animated.Value(0)).current;
   const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -416,13 +419,13 @@ export function SideQuestQuestionnaire({
   return (
     <SafeAreaView style={styles.container} edges={["bottom"]}>
       <View style={styles.questionnaireScreen}>
-        <View style={styles.questionnaireHeader}>
-          {!showingIntroStep && (
+        {!showingIntroStep && (
+          <View style={styles.questionnaireHeader}>
             <View style={styles.stepIndicatorRow}>
               <ProgressSegments total={questionnaireSteps.length} activeIndex={currentQuestionIndex} />
             </View>
-          )}
-        </View>
+          </View>
+        )}
 
         <View
           style={[
@@ -451,14 +454,36 @@ export function SideQuestQuestionnaire({
                 key={pageIndex < 0 ? "intro" : `question-${pageIndex}`}
                 style={[styles.questionnairePage, { width: Math.max(pageWidth, 1) }]}
               >
-                <ScrollView
+                <AnimatedScrollView
                   contentContainerStyle={styles.questionnaireContent}
                   keyboardShouldPersistTaps="handled"
+                  onScroll={
+                    pageIndex < 0
+                      ? Animated.event(
+                          [{ nativeEvent: { contentOffset: { y: introScrollY } } }],
+                          { useNativeDriver: true }
+                        )
+                      : undefined
+                  }
+                  scrollEventThrottle={16}
                   scrollEnabled={!isTransitioning}
                   showsVerticalScrollIndicator={false}
                 >
                   {pageIndex < 0 ? (
-                    <View style={styles.introSection}>
+                    <Animated.View
+                      style={[
+                        styles.introSection,
+                        {
+                          transform: [{
+                            translateY: introScrollY.interpolate({
+                              inputRange: [0, INTRO_TOP_OFFSET],
+                              outputRange: [INTRO_TOP_OFFSET, 0],
+                              extrapolate: "clamp",
+                            }),
+                          }],
+                        },
+                      ]}
+                    >
                       <View style={styles.introHero}>
                         <View style={styles.introHeroGlow} />
                         <View style={styles.introHeroLineOne} />
@@ -525,7 +550,7 @@ export function SideQuestQuestionnaire({
                         title={t("Let's begin")}
                         tone="coral"
                       />
-                    </View>
+                    </Animated.View>
                   ) : (
                     questionnaireSteps[pageIndex].render({
                       goNext: () => {
@@ -541,7 +566,7 @@ export function SideQuestQuestionnaire({
                       isTransitioning,
                     })
                   )}
-                </ScrollView>
+                </AnimatedScrollView>
               </View>
             ))}
           </Animated.View>
@@ -714,7 +739,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-start",
     paddingBottom: 24,
-    paddingTop: 10,
   },
   introTitle: {
     color: colors.light.text,
