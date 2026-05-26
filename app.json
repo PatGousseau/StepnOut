@@ -2,7 +2,7 @@
   "expo": {
     "name": "StepnOut",
     "slug": "stepnout",
-    "version": "2.0.0",
+    "version": "2.3.0",
     "orientation": "portrait",
     "scheme": "com.patrickgousseau.stepnout",
     "userInterfaceStyle": "automatic",
