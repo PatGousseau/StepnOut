@@ -20,6 +20,8 @@ import { useMediaUpload } from "../hooks/useMediaUpload";
 import { ComfortSlider } from "./ComfortSlider";
 import { MediaSelectionResult } from "../utils/handleMediaUpload";
 import { FeatureActionButton } from "./FeatureActionButton";
+import { captureEvent } from "../lib/posthog";
+import { CHALLENGE_EVENTS } from "../constants/analyticsEvents";
 
 type CompletionPostComposerVariant = "challenge" | "quest";
 
@@ -118,6 +120,9 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
   });
 
   const fadeIn = () => {
+    if (variant === "challenge") {
+      captureEvent(CHALLENGE_EVENTS.SUBMISSION_STARTED);
+    }
     setModalVisible(true);
     Animated.timing(fadeAnim, {
       toValue: 1,

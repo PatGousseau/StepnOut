@@ -8,6 +8,8 @@ import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { captureEvent } from '../../lib/posthog';
+import { AUTH_EVENTS } from '../../constants/analyticsEvents';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -30,6 +32,7 @@ export default function ForgotPasswordScreen() {
 
       if (error) throw error;
 
+      captureEvent(AUTH_EVENTS.PASSWORD_RESET_REQUESTED);
       AppAlert.show(t('Success'), t('Password reset email sent'), [
         {
           text: t('OK'),
@@ -37,6 +40,7 @@ export default function ForgotPasswordScreen() {
         },
       ]);
     } catch (error) {
+      captureEvent(AUTH_EVENTS.PASSWORD_RESET_REQUEST_FAILED, { message: (error as Error).message });
       AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);

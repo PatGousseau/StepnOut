@@ -7,6 +7,8 @@ import { selectMediaForPreview, MediaSelectionResult } from '../utils/handleMedi
 import { backgroundUploadService } from '../services/backgroundUploadService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
+import { captureEvent } from '../lib/posthog';
+import { POST_EVENTS } from '../constants/analyticsEvents';
 
 interface UseMediaUploadOptions {
   onUploadComplete?: () => void;
@@ -56,6 +58,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
       
       // Check if it's a permissions error
       if (error?.message?.includes('permissions not granted')) {
+        captureEvent(POST_EVENTS.MEDIA_PERMISSION_DENIED);
         AppAlert.show(
           t('Photo Access Required'),
           t('Please enable photo library access in Settings to share photos and videos.'),
@@ -74,6 +77,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
           ]
         );
       } else {
+        captureEvent(POST_EVENTS.MEDIA_PICK_FAILED, { message: error?.message });
         setUploadMessage(t('Error selecting media'));
       }
     } finally {
@@ -103,6 +107,10 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     }
 
     setIsSubmitting(true);
+    captureEvent(POST_EVENTS.SUBMIT_ATTEMPTED, {
+      has_media: !!selectedMedia,
+      has_text: !!finalText.trim(),
+    });
 
     try {
       // Create post with media preview
@@ -139,6 +147,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
             setLocalUploadProgress(0);
             if (!success) {
               console.error('Background upload failed:', postData.id);
+              captureEvent(POST_EVENTS.MEDIA_UPLOAD_FAILED, { post_id: postData.id });
               setUploadMessage(t('Upload failed'));
               setTimeout(() => {
                 setUploadMessage(null);
@@ -174,6 +183,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
       }
     } catch (error) {
       console.error('Error submitting:', error);
+      captureEvent(POST_EVENTS.CREATE_FAILED, { message: (error as Error).message });
       setUploadMessage(t('Error submitting'));
     } finally {
       setIsSubmitting(false);

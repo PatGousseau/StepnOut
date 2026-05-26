@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { captureEvent } from '../../lib/posthog';
+import { AUTH_EVENTS } from '../../constants/analyticsEvents';
 import {
   View,
   TextInput,
@@ -25,6 +27,10 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
+
+  useEffect(() => {
+    captureEvent(AUTH_EVENTS.REGISTER_SCREEN_VIEWED);
+  }, []);
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,6 +62,7 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
+      captureEvent(AUTH_EVENTS.REGISTER_SUBMITTED);
 
       // Attempt to create auth user to check if email already exists
       const { data: { user }, error: signUpError } = await supabase.auth.signUp({
@@ -65,6 +72,7 @@ export default function RegisterScreen() {
 
       if (signUpError) {
         console.log("Supabase signup error:", signUpError.message);
+        captureEvent(AUTH_EVENTS.REGISTER_FAILED, { reason: signUpError.message });
         // Check for duplicate email error
         if (signUpError.message?.toLowerCase().includes("already registered") ||
             signUpError.message?.toLowerCase().includes("already been registered")) {
@@ -76,6 +84,7 @@ export default function RegisterScreen() {
       }
 
       if (!user) {
+        captureEvent(AUTH_EVENTS.REGISTER_FAILED, { reason: 'no_user_returned' });
         setError(t("Registration failed. Please try again."));
         return;
       }
@@ -83,6 +92,7 @@ export default function RegisterScreen() {
       // Navigate to next step
       router.push('/(auth)/register-profile');
     } catch (err) {
+      captureEvent(AUTH_EVENTS.REGISTER_FAILED, { reason: (err as Error).message });
       setError(t((err as Error).message));
     } finally {
       setLoading(false);

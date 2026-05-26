@@ -21,6 +21,8 @@ import { Text } from "../../components/StyledText";
 import { useLanguage } from "@/src/contexts/LanguageContext";
 import { Loader } from "@/src/components/Loader";
 import { isInstagramUsernameValidProfile } from "../../utils/validation";
+import { captureEvent } from "../../lib/posthog";
+import { AUTH_EVENTS } from "../../constants/analyticsEvents";
 
 export default function RegisterProfileScreen() {
   const { isSocialUser, isIncompleteProfile } = useLocalSearchParams<{
@@ -41,6 +43,13 @@ export default function RegisterProfileScreen() {
 
   const isSocialSignUp = isSocialUser === 'true';
   const isProfileCompletion = isIncompleteProfile === 'true';
+
+  useEffect(() => {
+    captureEvent(AUTH_EVENTS.REGISTER_PROFILE_SCREEN_VIEWED, {
+      is_social_user: isSocialSignUp,
+      is_profile_completion: isProfileCompletion,
+    });
+  }, [isSocialSignUp, isProfileCompletion]);
 
   useEffect(() => {
     if (!isProfileCompletion) return;

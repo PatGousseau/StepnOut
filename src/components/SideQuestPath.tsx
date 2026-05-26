@@ -63,6 +63,7 @@ export const SideQuestPath: React.FC = () => {
   } = useSideQuests();
   const [draft, setDraft] = useState<SideQuestQuestionnaireDraft>(SIDE_QUEST_EMPTY_DRAFT);
   const [editingPreferences, setEditingPreferences] = useState(false);
+  const questionnaireCompletedRef = useRef(false);
   const [isDrawingQuest, setIsDrawingQuest] = useState(false);
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealedQuest, setRevealedQuest] = useState<SideQuest | null>(null);
@@ -139,6 +140,7 @@ export const SideQuestPath: React.FC = () => {
   const submitProfile = async () => {
     try {
       await saveProfile(draft);
+      questionnaireCompletedRef.current = true;
       captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_COMPLETED, {
         entry_point: needsOnboarding ? "onboarding" : "edit_preferences",
         question_count: questionCount,
@@ -233,6 +235,10 @@ export const SideQuestPath: React.FC = () => {
 
   if (needsOnboarding || editingPreferences) {
     return (
+      <QuestionnaireCancellationTracker
+        entryPoint={needsOnboarding ? "onboarding" : "edit_preferences"}
+        completedRef={questionnaireCompletedRef}
+      >
       <SideQuestQuestionnaire
         onAdvanceQuestion={(stepIndex, stepTitle) => {
           captureEvent(SIDE_QUEST_EVENTS.QUESTION_ADVANCED, {
@@ -267,6 +273,7 @@ export const SideQuestPath: React.FC = () => {
         questionnaireComplete={questionnaireComplete}
         savingProfile={savingProfile}
       />
+      </QuestionnaireCancellationTracker>
     );
   }
 
@@ -425,3 +432,23 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 });
+
+function QuestionnaireCancellationTracker({
+  entryPoint,
+  completedRef,
+  children,
+}: {
+  entryPoint: "onboarding" | "edit_preferences";
+  completedRef: React.MutableRefObject<boolean>;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    completedRef.current = false;
+    return () => {
+      if (!completedRef.current) {
+        captureEvent(SIDE_QUEST_EVENTS.QUESTIONNAIRE_CANCELLED, { entry_point: entryPoint });
+      }
+    };
+  }, [entryPoint, completedRef]);
+  return <>{children}</>;
+}

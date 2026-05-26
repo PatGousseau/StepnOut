@@ -1,6 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { supabase } from './supabase';
+import { captureEvent } from './posthog';
+import { UI_EVENTS } from '../constants/analyticsEvents';
 
 const PROJECT_ID = '6ac120ac-1dca-4d86-9088-4dbe426901fc';
 
@@ -15,6 +17,12 @@ export async function requestNotificationPermission(): Promise<Notifications.Per
             allowBadge: true,
         },
     });
+    captureEvent(
+        status === 'granted'
+            ? UI_EVENTS.NOTIFICATIONS_PERMISSION_GRANTED
+            : UI_EVENTS.NOTIFICATIONS_PERMISSION_DENIED,
+        { status },
+    );
     return status;
 }
 

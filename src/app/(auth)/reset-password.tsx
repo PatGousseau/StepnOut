@@ -7,6 +7,8 @@ import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { Text } from '../../components/StyledText';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getRecoveryTokens, clearRecoveryTokens } from '../../contexts/AuthContext';
+import { captureEvent } from '../../lib/posthog';
+import { AUTH_EVENTS } from '../../constants/analyticsEvents';
 
 export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
@@ -51,6 +53,7 @@ export default function ResetPasswordScreen() {
       }
 
       clearRecoveryTokens();
+      captureEvent(AUTH_EVENTS.PASSWORD_RESET_COMPLETED);
 
       AppAlert.show(t('Success'), t('Password updated'), [
         {
@@ -59,6 +62,7 @@ export default function ResetPasswordScreen() {
         },
       ]);
     } catch (error) {
+      captureEvent(AUTH_EVENTS.PASSWORD_RESET_FAILED, { message: (error as Error).message });
       AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);

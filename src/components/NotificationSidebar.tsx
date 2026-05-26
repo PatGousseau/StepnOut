@@ -18,6 +18,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Notification } from '../types';
 import { router } from 'expo-router';
 import { useLanguage } from '../contexts/LanguageContext';
+import { captureEvent } from '../lib/posthog';
+import { UI_EVENTS } from '../constants/analyticsEvents';
 
 interface NotificationSidebarProps {
   visible: boolean;
@@ -34,6 +36,7 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
 
   useEffect(() => {
     if (visible) {
+      captureEvent(UI_EVENTS.NOTIFICATIONS_OPENED, { notification_count: notifications.length });
       translateX.setValue(SIDEBAR_WIDTH);
       opacity.setValue(0);
       Animated.parallel([

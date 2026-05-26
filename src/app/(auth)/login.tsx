@@ -21,6 +21,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { captureEvent } from '../../lib/posthog';
+import { AUTH_EVENTS } from '../../constants/analyticsEvents';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -35,6 +37,10 @@ export default function LoginScreen() {
   const [appleLoading, setAppleLoading] = useState(false);
   const { signIn } = useAuth();
   const { t } = useLanguage();
+
+  useEffect(() => {
+    captureEvent(AUTH_EVENTS.LOGIN_SCREEN_VIEWED);
+  }, []);
 
   // Google Auth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -101,6 +107,7 @@ export default function LoginScreen() {
       setGoogleLoading(true);
       await handleSocialSignIn('google', idToken);
     } catch (error) {
+      captureEvent(AUTH_EVENTS.OAUTH_FAILED, { provider: 'google', message: (error as Error).message });
       AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setGoogleLoading(false);
@@ -110,6 +117,7 @@ export default function LoginScreen() {
   const handleAppleSignIn = async () => {
     try {
       setAppleLoading(true);
+      captureEvent(AUTH_EVENTS.OAUTH_STARTED, { provider: 'apple' });
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -128,6 +136,7 @@ export default function LoginScreen() {
       if ((error as { code?: string })?.code === 'ERR_REQUEST_CANCELED') {
         return;
       }
+      captureEvent(AUTH_EVENTS.OAUTH_FAILED, { provider: 'apple', message: (error as Error).message });
       AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setAppleLoading(false);
@@ -238,7 +247,10 @@ export default function LoginScreen() {
         {Platform.OS !== 'android' && (
           <TouchableOpacity
             style={[styles.googleButton, googleLoading && styles.buttonDisabled]}
-            onPress={() => promptAsync()}
+            onPress={() => {
+              captureEvent(AUTH_EVENTS.OAUTH_STARTED, { provider: 'google' });
+              promptAsync();
+            }}
             disabled={!request || googleLoading}
           >
             <Image

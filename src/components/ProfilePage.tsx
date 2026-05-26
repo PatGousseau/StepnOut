@@ -131,6 +131,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
           [USER_PROPERTIES.HAS_PROFILE_PICTURE]: true,
         });
       } else if (result.error) {
+        captureEvent(PROFILE_EVENTS.PICTURE_UPDATE_FAILED, { message: result.error });
         AppAlert.show("Error", result.error);
       }
     } finally {

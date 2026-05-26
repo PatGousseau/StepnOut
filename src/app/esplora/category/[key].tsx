@@ -21,6 +21,8 @@ import { useBookmarks } from '../../../contexts/BookmarksContext';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { LargePieceCard } from '../../../components/esplora/LargePieceCard';
 import { ContentCategory } from '../../../types';
+import { captureEvent } from '../../../lib/posthog';
+import { ESPLORA_EVENTS } from '../../../constants/analyticsEvents';
 
 const VALID_CATEGORIES = Object.keys(CATEGORY_LABEL_KEYS) as ContentCategory[];
 
@@ -32,6 +34,10 @@ export default function CategoryScreen() {
   const category = (
     VALID_CATEGORIES.includes(key as ContentCategory) ? key : 'fear'
   ) as ContentCategory;
+
+  useEffect(() => {
+    captureEvent(ESPLORA_EVENTS.CATEGORY_OPENED, { category });
+  }, [category]);
 
   const query = usePiecesByCategory(category);
   const pieces = useMemo(() => query.data?.pages.flat() ?? [], [query.data]);
