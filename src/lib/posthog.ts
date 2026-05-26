@@ -10,6 +10,9 @@ if (!IS_DISABLED && POSTHOG_API_KEY) {
   posthogInstance = new PostHog(POSTHOG_API_KEY, {
     host: POSTHOG_HOST,
     enableSessionReplay: true,
+    sessionReplayConfig: {
+      maskAllTextInputs: false,
+    },
     captureAppLifecycleEvents: true,
     flushAt: 20,
     flushInterval: 10000,

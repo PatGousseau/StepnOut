@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { postService } from "../services/postService";
 import { Post, Comment, LikeableItem } from "../types";
 import { useAuth } from "../contexts/AuthContext";
@@ -34,7 +34,7 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [pendingLikes, setPendingLikes] = useState<{ [id: number]: boolean }>({});
   const { user } = useAuth();
 
-  const initializeLikes = async (
+  const initializeLikes = useCallback(async (
     items: (Post | Comment)[],
     type: "post" | "comment",
     seedLikedMap?: { [id: number]: boolean }
@@ -86,9 +86,9 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...prev,
       ...countsMap,
     }));
-  };
+  }, [user?.id]);
 
-  const toggleLike = async (item: LikeableItem, userId: string, targetUserId: string) => {
+  const toggleLike = useCallback(async (item: LikeableItem, userId: string, targetUserId: string) => {
     const { id, type, parentId } = item;
     const isPost = type === "post";
 
@@ -156,26 +156,53 @@ export const LikesProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Clear pending state
       setPendingLikes((prev) => ({ ...prev, [id]: false }));
     }
-  };
+  }, [likedComments, likedPosts, pendingLikes]);
+
+  const initializePostLikes = useCallback(
+    (posts: Post[], seedLikedMap?: { [postId: number]: boolean }) =>
+      initializeLikes(posts, "post", seedLikedMap),
+    [initializeLikes]
+  );
+  const initializeCommentLikes = useCallback(
+    (comments: Comment[]) => initializeLikes(comments, "comment"),
+    [initializeLikes]
+  );
+  const togglePostLike = useCallback(
+    (postId: number, userId: string, postUserId: string) =>
+      toggleLike({ id: postId, type: "post" }, userId, postUserId),
+    [toggleLike]
+  );
+  const toggleCommentLike = useCallback(
+    (commentId: number, postId: number, userId: string, commentUserId: string) =>
+      toggleLike({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId),
+    [toggleLike]
+  );
+
+  const value = useMemo(
+    () => ({
+      likedPosts,
+      likedComments,
+      likeCounts: postLikeCounts,
+      commentLikeCounts,
+      togglePostLike,
+      toggleCommentLike,
+      initializePostLikes,
+      initializeCommentLikes,
+    }),
+    [
+      commentLikeCounts,
+      initializeCommentLikes,
+      initializePostLikes,
+      likedComments,
+      likedPosts,
+      postLikeCounts,
+      toggleCommentLike,
+      togglePostLike,
+    ]
+  );
 
   return (
-    <LikesContext.Provider
-      value={{
-        likedPosts,
-        likedComments,
-        likeCounts: postLikeCounts,
-        commentLikeCounts,
-        togglePostLike: (postId, userId, postUserId) =>
-          toggleLike({ id: postId, type: "post" }, userId, postUserId),
-        toggleCommentLike: (commentId, postId, userId, commentUserId) =>
-          toggleLike({ id: commentId, type: "comment", parentId: postId }, userId, commentUserId),
-        initializePostLikes: (posts, seedLikedMap) =>
-          initializeLikes(posts, "post", seedLikedMap),
-        initializeCommentLikes: (comments) => initializeLikes(comments, "comment"),
-      }}
-    >
-      {children}
-    </LikesContext.Provider>
+    <LikesContext.Provider value={value}>{children}</LikesContext.Provider>
   );
 };
 

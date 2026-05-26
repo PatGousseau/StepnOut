@@ -4,7 +4,7 @@ import { supabase, supabaseStorageUrl } from "../lib/supabase";
 import { Comment, Post } from "../types";
 
 type CommentWithPost = Comment & {
-  post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title">;
+  post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title" | "quest_id" | "quest_title">;
   liked: boolean;
   likes_count: number;
 };
@@ -128,11 +128,18 @@ export const useProfileActivity = (targetUserId: string) => {
     fetchNextPage(true);
   }, [targetUserId]);
 
+  const removePost = useCallback((postId: number) => {
+    setItems((prev) =>
+      prev.filter((item) => !(item.type === "post" && item.post.id === postId))
+    );
+  }, []);
+
   return {
     activityItems: items,
     loading,
     hasMore,
     fetchNextPage,
     refresh: () => fetchNextPage(true),
+    removePost,
   };
 };

@@ -9,6 +9,7 @@ import { registerPushTokenIfGranted } from '../lib/notifications';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Header from '../components/Header';
 import { MenuProvider } from 'react-native-popup-menu';
 import { LanguageProvider, useLanguage } from '../contexts/LanguageContext';
@@ -16,11 +17,13 @@ import * as SplashScreen from 'expo-splash-screen';
 import NotificationSidebar from '../components/NotificationSidebar';
 import MenuSidebar from '../components/MenuSidebar';
 import FeedbackModal from '../components/FeedbackModal';
+import { AppAlertHost } from '../components/AppAlert';
 import { useNotifications } from '../hooks/useNotifications';
 import { usePathname } from 'expo-router';
 import { LikesProvider } from '../contexts/LikesContext';
 import { ReactionsProvider } from '../contexts/ReactionsContext';
 import { UploadProgressProvider } from '../contexts/UploadProgressContext';
+import { BookmarksProvider } from '../contexts/BookmarksContext';
 import RecentlyActiveBanner from '../components/RecentlyActiveBanner';
 import UpdateAvailableModal from '../components/UpdateAvailableModal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -73,8 +76,20 @@ function RootLayoutNav() {
   const isDetailPage = pathname.includes('/post/') ||
     pathname.includes('/profile/') ||
     pathname.includes('/challenge/') ||
+    pathname.includes('/quest/') ||
+    pathname.includes('/esplora/piece/') ||
+    pathname.includes('/esplora/category/') ||
+    pathname === '/esplora/saved' ||
     pathname === '/badges' ||
     pathname === '/search-users';
+
+  // Esplora detail screens render their own immersive chrome (close button,
+  // category label, bookmark), so hide the global Header to avoid duplicate
+  // back affordances.
+  const isEsploraDetail =
+    pathname.includes('/esplora/piece/') ||
+    pathname.includes('/esplora/category/') ||
+    pathname === '/esplora/saved';
 
   // hide logo on auth screens
   const hideLogo =
@@ -369,14 +384,16 @@ function RootLayoutNav() {
       onLayout={onLayoutRootView}
     >
       <StatusBar backgroundColor={colors.light.background} style="dark" />
-      <Header
-        onNotificationPress={handleNotificationPress}
-        onMenuPress={handleMenuPress}
-        onFeedbackPress={() => setShowFeedback(true)}
-        unreadCount={unreadCount}
-        isDetailPage={isDetailPage}
-        hideLogo={hideLogo}
-      />
+      {!isEsploraDetail && (
+        <Header
+          onNotificationPress={handleNotificationPress}
+          onMenuPress={handleMenuPress}
+          onFeedbackPress={() => setShowFeedback(true)}
+          unreadCount={unreadCount}
+          isDetailPage={isDetailPage}
+          hideLogo={hideLogo}
+        />
+      )}
       {showNotificationsBanner && !hideLogo && (
         <View style={styles.notificationsBanner}>
           <View style={styles.notificationsBannerLeft}>
@@ -434,6 +451,15 @@ function RootLayoutNav() {
             gestureResponseDistance: 24,
           }}
         />
+        <Stack.Screen
+          name="esplora"
+          options={{
+            headerShown: false,
+            // edge-only swipe so it doesn't steal horizontal gestures from PagerView
+            fullScreenGestureEnabled: false,
+            gestureResponseDistance: 24,
+          }}
+        />
       </Stack>
 
       <NotificationSidebar
@@ -451,6 +477,7 @@ function RootLayoutNav() {
         onClose={() => setShowFeedback(false)}
       />
       {!hideLogo && <UpdateAvailableModal />}
+      <AppAlertHost />
     </SafeAreaView>
   );
 }
@@ -521,9 +548,10 @@ export default function Layout() {
   const isPostHogDisabled = process.env.EXPO_PUBLIC_POSTHOG_DISABLED === 'true' || !posthogApiKey;
 
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <QueryClientProvider client={queryClient}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <LanguageProvider>
+          <QueryClientProvider client={queryClient}>
           <PostHogProvider
             apiKey={posthogApiKey || 'placeholder'}
             options={{
@@ -532,6 +560,10 @@ export default function Layout() {
               debug: __DEV__,
               // Enable session recordings (free tier: 5,000/month)
               enableSessionReplay: true,
+              sessionReplayConfig: {
+                // Explicitly disable text masking in replay inputs
+                maskAllTextInputs: false,
+              },
               // Capture app lifecycle events
               captureAppLifecycleEvents: true,
               // Flush settings
@@ -547,9 +579,11 @@ export default function Layout() {
             <MenuProvider>
               <LikesProvider>
                 <ReactionsProvider>
-                  <UploadProgressProvider>
-                    <RootLayoutNav />
-                  </UploadProgressProvider>
+                  <BookmarksProvider>
+                    <UploadProgressProvider>
+                      <RootLayoutNav />
+                    </UploadProgressProvider>
+                  </BookmarksProvider>
                 </ReactionsProvider>
               </LikesProvider>
             </MenuProvider>
@@ -557,5 +591,6 @@ export default function Layout() {
         </QueryClientProvider>
       </LanguageProvider>
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -20,7 +20,7 @@ const PostPage = () => {
   const params = useLocalSearchParams();
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const postId = idParam ? parseInt(idParam) : null;
-  
+
   const { posts, userMap, loading, fetchPost } = useFetchHomeData();
   const { initializePostReactions } = useReactions();
   const { initializePostLikes, likeCounts } = useLikes();

@@ -74,6 +74,26 @@ export const PROFILE_EVENTS = {
 } as const;
 
 // ============================================
+// SIDE QUEST EVENTS
+// ============================================
+export const SIDE_QUEST_EVENTS = {
+  QUESTIONNAIRE_STARTED: 'side_quest_questionnaire_started',
+  PREFERENCES_EDIT_STARTED: 'side_quest_preferences_edit_started',
+  QUESTION_ADVANCED: 'side_quest_question_advanced',
+  QUESTIONNAIRE_COMPLETED: 'side_quest_questionnaire_completed',
+  QUESTIONNAIRE_CANCELLED: 'side_quest_questionnaire_cancelled',
+  QUESTIONNAIRE_SAVE_FAILED: 'side_quest_questionnaire_save_failed',
+  DAILY_DRAW_STARTED: 'side_quest_daily_draw_started',
+  DAILY_DRAW_COMPLETED: 'side_quest_daily_draw_completed',
+  DAILY_DRAW_EXHAUSTED: 'side_quest_daily_draw_exhausted',
+  DAILY_QUEST_COMPLETED: 'side_quest_daily_quest_completed',
+  SHARE_MODAL_OPENED: 'side_quest_share_modal_opened',
+  SHARED: 'side_quest_shared',
+  SHARE_SKIPPED: 'side_quest_share_skipped',
+  SHARED_TO_INSTAGRAM: 'side_quest_shared_to_instagram',
+} as const;
+
+// ============================================
 // FEED EVENTS
 // ============================================
 export const FEED_EVENTS = {
@@ -106,6 +126,21 @@ export const SCREEN_EVENTS = {
 } as const;
 
 // ============================================
+// ESPLORA EVENTS
+// ============================================
+export const ESPLORA_EVENTS = {
+  OPENED: 'esplora_opened',
+  PIECE_OPENED: 'esplora_piece_opened',
+  CARD_VIEWED: 'esplora_card_viewed',
+  PIECE_FINISHED: 'esplora_piece_finished',
+  BOOKMARK_TOGGLED: 'esplora_bookmark_toggled',
+  EXTERNAL_LINK_TAPPED: 'esplora_external_link_tapped',
+  CTA_TAPPED: 'esplora_cta_tapped',
+  CATEGORY_OPENED: 'esplora_category_opened',
+  SAVED_OPENED: 'esplora_saved_opened',
+} as const;
+
+// ============================================
 // USER PROPERTY KEYS (for setUserProperties)
 // ============================================
 export const USER_PROPERTIES = {
@@ -128,7 +163,9 @@ export const ANALYTICS_EVENTS = {
   COMMENT: COMMENT_EVENTS,
   CHALLENGE: CHALLENGE_EVENTS,
   PROFILE: PROFILE_EVENTS,
+  SIDE_QUEST: SIDE_QUEST_EVENTS,
   FEED: FEED_EVENTS,
   UI: UI_EVENTS,
   SCREEN: SCREEN_EVENTS,
+  ESPLORA: ESPLORA_EVENTS,
 } as const;

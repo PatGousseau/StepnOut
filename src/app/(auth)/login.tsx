@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   TextInput,
@@ -6,13 +6,14 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Image,
   Keyboard,
   Pressable,
 } from 'react-native';
+import { AppAlert } from '../../components/AppAlert';
 import { router } from 'expo-router';
 import { colors } from '../../constants/Colors';
+import { FeatureActionButton } from '../../components/FeatureActionButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { Text } from '../../components/StyledText';
 import { supabase } from '../../lib/supabase';
@@ -46,9 +47,9 @@ export default function LoginScreen() {
     if (response?.type === 'success') {
       handleGoogleSignIn(response.authentication?.idToken);
     }
-  }, [response]);
+  }, [handleGoogleSignIn, response]);
 
-  const handleSocialSignIn = async (provider: 'google' | 'apple', token: string) => {
+  const handleSocialSignIn = useCallback(async (provider: 'google' | 'apple', token: string) => {
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider,
       token,
@@ -88,11 +89,11 @@ export default function LoginScreen() {
     } else {
       router.replace('/(tabs)');
     }
-  };
+  }, [t]);
 
-  const handleGoogleSignIn = async (idToken: string | undefined) => {
+  const handleGoogleSignIn = useCallback(async (idToken: string | undefined) => {
     if (!idToken) {
-      Alert.alert(t('Error'), t('Failed to get Google credentials'));
+      AppAlert.show(t('Error'), t('Failed to get Google credentials'));
       return;
     }
 
@@ -100,11 +101,11 @@ export default function LoginScreen() {
       setGoogleLoading(true);
       await handleSocialSignIn('google', idToken);
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setGoogleLoading(false);
     }
-  };
+  }, [handleSocialSignIn, t]);
 
   const handleAppleSignIn = async () => {
     try {
@@ -127,7 +128,7 @@ export default function LoginScreen() {
       if ((error as { code?: string })?.code === 'ERR_REQUEST_CANCELED') {
         return;
       }
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setAppleLoading(false);
     }
@@ -135,7 +136,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert(t('Error'), t('Please fill in all fields'));
+      AppAlert.show(t('Error'), t('Please fill in all fields'));
       return;
     }
     try {
@@ -176,7 +177,7 @@ export default function LoginScreen() {
         router.replace('/(tabs)');
       }
     } catch (error) {
-      Alert.alert(t('Error'), (error as Error).message);
+      AppAlert.show(t('Error'), (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -217,15 +218,14 @@ export default function LoginScreen() {
           <Text style={styles.forgotPasswordText}>{t('Forgot password?')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
+        <FeatureActionButton
           disabled={loading}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? t('Logging in...') : t('Log In')}
-          </Text>
-        </TouchableOpacity>
+          onPress={handleLogin}
+          showIcon={false}
+          title={loading ? t('Logging in...') : t('Log In')}
+          tone="indigo"
+          variant="pill"
+        />
 
         {Platform.OS !== 'android' && (
           <View style={styles.dividerContainer}>
@@ -256,7 +256,7 @@ export default function LoginScreen() {
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
             cornerRadius={5}
-            style={styles.appleButton}
+            style={[styles.appleButton, appleLoading && styles.buttonDisabled]}
             onPress={handleAppleSignIn}
           />
         )}
@@ -273,19 +273,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  button: {
-    alignItems: 'center',
-    backgroundColor: colors.light.primary,
-    borderRadius: 5,
-    padding: 15,
-  },
   buttonDisabled: {
     opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   container: {
     backgroundColor: colors.light.background,

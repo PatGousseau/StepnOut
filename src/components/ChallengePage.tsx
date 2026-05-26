@@ -3,13 +3,15 @@ import { View, ScrollView, StyleSheet, RefreshControl, FlatList } from "react-na
 import { router, useLocalSearchParams } from "expo-router";
 import { Text } from "./StyledText";
 import { colors } from "../constants/Colors";
-import { ChallengeCard, PatrizioExample, ShareExperience } from "./Challenge";
+import { ChallengeCard, ShareExperience } from "./Challenge";
 import { useLanguage } from "../contexts/LanguageContext";
 import { ChallengeSkeleton } from "./Skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { challengeService } from "../services/challengeService";
 import { usePastChallenges } from "../hooks/usePastChallenges";
-import { PastChallengeCard } from "./PastChallengeCard";
+import { useFeaturedPiece } from "../hooks/useEsploraHome";
+import { ChallengePreviewCard } from "./ChallengePreviewCard";
+import { RelatedPieceCard } from "./esplora/RelatedPieceCard";
 import { useFetchChallengePosts } from "../hooks/useFetchChallengePosts";
 import Post from "./Post";
 import { User } from "../models/User";
@@ -21,13 +23,11 @@ interface ChallengePageProps {
 export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   const { t, language } = useLanguage();
   const params = useLocalSearchParams();
-  
-  // Get challenge ID from prop or URL params
+
   const challengeId = id ?? (params.id ? parseInt(String(params.id)) : undefined);
-  
+
   const [refreshing, setRefreshing] = useState(false);
 
-  // Use React Query to fetch challenge data
   const {
     data: challenge,
     isLoading,
@@ -52,8 +52,10 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   }, [refetch]);
 
   const showPastChallengePosts = !!challenge && challenge.daysRemaining <= 0;
+  const isActive = !!challenge && challenge.daysRemaining > 0;
 
   const { pastChallenges } = usePastChallenges(challengeId, !showPastChallengePosts);
+  const featuredPieceQuery = useFeaturedPiece();
 
   const {
     posts: pastChallengePosts,
@@ -74,42 +76,62 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
       description: language === "it" ? challenge.description_it : challenge.description,
     };
 
+    const endsInLabel =
+      challenge.daysRemaining > 0
+        ? t(
+            challenge.daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days",
+            { days: challenge.daysRemaining }
+          )
+        : null;
+
     return (
       <View>
-        <View style={[styles.content, showPastChallengePosts && styles.contentInList]}>
-          <Text style={styles.title}>{t("Challenge")}</Text>
-          <Text style={styles.endsIn}>
-            {challenge.daysRemaining > 0
-              ? t(challenge.daysRemaining === 1 ? "Ends in 1 day" : "Ends in (days) days", {
-                  days: challenge.daysRemaining,
-                })
-              : t("Past challenge")}
-          </Text>
+        <View style={styles.heroSection}>
+          <View style={styles.eyebrowWrap}>
+            <Text style={styles.eyebrow}>
+              {isActive ? t("This week's challenge") : t("Past challenge")}
+            </Text>
+            {endsInLabel && <Text style={styles.eyebrowSub}>{endsInLabel}</Text>}
+          </View>
           <ChallengeCard challenge={localizedChallenge} />
-          <PatrizioExample challenge={localizedChallenge} />
-
-          {challenge.daysRemaining > 0 && <ShareExperience challenge={challenge} />}
+          {isActive && (
+            <View style={styles.ctaWrap}>
+              <ShareExperience challenge={challenge} />
+            </View>
+          )}
         </View>
 
-        {challenge.daysRemaining > 0 && pastChallenges.length > 0 && (
-          <View style={styles.pastChallengesOuter}>
-            <Text style={styles.sectionTitle}>{t("Past challenges")}</Text>
-            {pastChallenges.map((c) => (
-              <PastChallengeCard
-                key={c.id}
-                challenge={{
-                  ...c,
-                  title: language === "it" ? c.title_it : c.title,
-                  description: language === "it" ? c.description_it : c.description,
-                }}
-                onPress={() => router.push(`/challenge/${c.id}`)}
-              />
-            ))}
-          </View>
+        {featuredPieceQuery.data && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.relatedSection}>
+              <RelatedPieceCard piece={featuredPieceQuery.data} source="challenge" />
+            </View>
+          </>
+        )}
+
+        {isActive && pastChallenges.length > 0 && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.pastSection}>
+              <Text style={styles.sectionTitle}>{t("Past challenges")}</Text>
+              {pastChallenges.map((c) => (
+                <View key={c.id} style={styles.pastChallengeCard}>
+                  <ChallengePreviewCard
+                    title={language === "it" ? c.title_it : c.title}
+                    description={language === "it" ? c.description_it : c.description}
+                    difficulty={c.difficulty}
+                    imagePath={c.media?.file_path}
+                    onPress={() => router.push(`/challenge/${c.id}`)}
+                  />
+                </View>
+              ))}
+            </View>
+          </>
         )}
       </View>
     );
-  }, [challenge, language, pastChallenges, showPastChallengePosts, t]);
+  }, [challenge, featuredPieceQuery.data, isActive, language, pastChallenges, t]);
 
   const onRefreshAll = useCallback(async () => {
     setRefreshing(true);
@@ -117,12 +139,10 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     setRefreshing(false);
   }, [refetch, refetchPastChallengePosts]);
 
-  // Loading state
   if (isLoading) {
     return <ChallengeSkeleton />;
   }
 
-  // Error state
   if (error) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -131,7 +151,6 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
     );
   }
 
-  // Challenge not found
   if (!challenge) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -153,7 +172,11 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={header}
         onEndReached={() => {
-          if (!pastChallengePostsLoading && !isFetchingMorePastChallengePosts && hasMorePastChallengePosts) {
+          if (
+            !pastChallengePostsLoading &&
+            !isFetchingMorePastChallengePosts &&
+            hasMorePastChallengePosts
+          ) {
             loadMorePastChallengePosts();
           }
         }}
@@ -169,6 +192,7 @@ export const ChallengePage: React.FC<ChallengePageProps> = ({ id }) => {
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={styles.scrollContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
@@ -187,42 +211,62 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.background,
     flex: 1,
   },
-  content: {
-    backgroundColor: colors.light.cardBg,
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 24,
-    padding: 20,
+  scrollContent: {
+    paddingBottom: 48,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
-  contentInList: {
-    marginHorizontal: 0,
-    marginVertical: 0,
+  heroSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 24,
   },
-  pastChallengesOuter: {
-    marginHorizontal: 16,
+  eyebrowWrap: {
+    marginBottom: 20,
+    width: "80%",
+    alignSelf: "center",
+  },
+  eyebrow: {
+    color: colors.light.primary,
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  eyebrowSub: {
+    color: colors.light.lightText,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  ctaWrap: {
     marginTop: 16,
+    width: "80%",
+    alignSelf: "center",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.neutral.grey1 + "90",
+    marginHorizontal: 16,
     marginBottom: 24,
+  },
+  relatedSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  pastSection: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24,
   },
   sectionTitle: {
     color: colors.light.primary,
     fontSize: 18,
     fontWeight: "700",
-    marginTop: 18,
+    marginBottom: 12,
   },
-  endsIn: {
-    color: colors.light.lightText,
-    fontSize: 14,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  title: {
-    color: colors.light.primary,
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
+  pastChallengeCard: {
+    marginBottom: 12,
   },
 });
