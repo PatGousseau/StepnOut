@@ -8,10 +8,14 @@ import {
   Platform,
   Image,
   ScrollView,
+  Keyboard,
+  KeyboardEvent,
+  useWindowDimensions,
   ViewStyle,
   ImageStyle,
   TextStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Text } from "./StyledText";
@@ -30,7 +34,37 @@ interface DiscussFabProps {
 const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const [modalVisible, setModalVisible] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const resolvedBottomOffset = Math.max(bottomOffset, insets.bottom + 12);
+  const keyboardVerticalOffset = Platform.OS === "ios" ? Math.max(insets.top - 12, 0) : 0;
+  const modalMaxHeight = Math.round(screenHeight * 0.5);
+
+  React.useEffect(() => {
+    const syncKeyboardVisibility = (visible: boolean, event?: KeyboardEvent) => {
+      if (event && Platform.OS === "ios") {
+        Keyboard.scheduleLayoutAnimation(event);
+      }
+
+      setKeyboardVisible(visible);
+    };
+
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillChangeFrame" : "keyboardDidShow",
+      (event) => syncKeyboardVisibility(true, event)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => syncKeyboardVisibility(false, event)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const {
     selectedMedia,
@@ -79,7 +113,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
         iconPosition="start"
         onPress={handleOpen}
         showIcon
-        style={[fabStyle, { bottom: bottomOffset }]}
+        style={[fabStyle, { bottom: resolvedBottomOffset }]}
         title={t("Discuss")}
         tone="indigo"
         variant="pill"
@@ -91,20 +125,33 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
         onRequestClose={() => setModalVisible(false)}
         statusBarTranslucent
       >
+        <View style={backdropStyle} />
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={keyboardViewStyle}
-          keyboardVerticalOffset={Platform.OS === "ios" ? -64 : 0}
+          keyboardVerticalOffset={keyboardVerticalOffset}
         >
-          <View style={modalContainerStyle}>
+          <View
+            style={[
+              modalContainerStyle,
+              {
+                paddingTop: insets.top + 12,
+                paddingBottom: keyboardVisible ? 0 : insets.bottom + 12,
+                paddingHorizontal: "5%",
+              },
+            ]}
+          >
             <ScrollView
               style={modalScrollStyle}
-              contentContainerStyle={scrollContentStyle}
+              contentContainerStyle={[
+                scrollContentStyle,
+                { justifyContent: keyboardVisible ? "flex-start" : "center" },
+              ]}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
             >
-              <View style={modalContentStyle}>
+              <View style={[modalContentStyle, { maxHeight: modalMaxHeight }]}>
                 <View style={modalHeaderStyle}>
                   <View style={headerGlowStyle} />
                   <View style={headerRingStyle} />
@@ -154,13 +201,13 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 24 }: DiscussFabProps) => {
                     scrollEnabled
                     textAlignVertical="top"
                     autoFocus
-                  placeholder={t(
-                    "Share your thoughts, start a discussion, or share an achievement..."
-                  )}
-                  placeholderTextColor="#999"
-                  maxLength={1000}
-                  onChangeText={setPostText}
-                />
+                    placeholder={t(
+                      "Share your thoughts, start a discussion, or share an achievement..."
+                    )}
+                    placeholderTextColor="#999"
+                    maxLength={1000}
+                    onChangeText={setPostText}
+                  />
 
                   <View style={mediaUploadContainerStyle}>
                     <TouchableOpacity
@@ -234,22 +281,27 @@ const keyboardViewStyle: ViewStyle = {
   flex: 1,
 };
 
+const backdropStyle: ViewStyle = {
+  backgroundColor: "rgba(0,0,0,0.5)",
+  bottom: 0,
+  left: 0,
+  position: "absolute",
+  right: 0,
+  top: 0,
+};
+
 const modalContainerStyle: ViewStyle = {
   alignItems: "center",
-  backgroundColor: "rgba(0,0,0,0.5)",
   flex: 1,
-  justifyContent: "center",
 };
 
 const modalScrollStyle: ViewStyle = {
-  maxHeight: "100%",
+  flex: 1,
   width: "100%",
 };
 
 const scrollContentStyle: ViewStyle = {
   flexGrow: 1,
-  justifyContent: "center",
-  paddingHorizontal: "5%",
 };
 
 const modalContentStyle: ViewStyle = {
@@ -257,7 +309,7 @@ const modalContentStyle: ViewStyle = {
   borderColor: colors.light.accent2,
   borderRadius: 26,
   borderWidth: 1,
-  marginVertical: 20,
+  flex: 1,
   overflow: "hidden",
   padding: 0,
   shadowColor: "#000",
@@ -381,8 +433,9 @@ const textInputStyle: TextStyle = {
   borderColor: colors.light.accent2,
   borderRadius: 18,
   borderWidth: 1,
-  height: 130,
+  flex: 1,
   marginBottom: 6,
+  minHeight: 120,
   paddingHorizontal: 14,
   paddingVertical: 14,
   textAlignVertical: "top",
@@ -461,6 +514,7 @@ const progressBarFillStyle: ViewStyle = {
 };
 
 const modalBodyStyle: ViewStyle = {
+  flex: 1,
   padding: 20,
 };
 
