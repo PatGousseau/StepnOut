@@ -8,6 +8,8 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
 import { postService } from "../services/postService";
 import { MaterialIcons } from "@expo/vector-icons";
+import { captureEvent } from "../lib/posthog";
+import { PROFILE_EVENTS } from "../constants/analyticsEvents";
 
 const { Popover } = renderers;
 
@@ -86,6 +88,10 @@ export const ActionsMenu: React.FC<MenuProps> = ({
               : await postService.reportComment(contentId, user.id, contentUserId);
 
           if (success) {
+            captureEvent(
+              type === "post" ? PROFILE_EVENTS.POST_REPORTED : PROFILE_EVENTS.USER_REPORTED,
+              { content_type: type, content_id: contentId, reported_user_id: contentUserId },
+            );
             AppAlert.show(t("Report Submitted"), t("Thank you for your report."));
           }
         },
@@ -106,6 +112,7 @@ export const ActionsMenu: React.FC<MenuProps> = ({
         style: "destructive",
         onPress: async () => {
           await postService.blockUser(user.id, contentUserId);
+          captureEvent(PROFILE_EVENTS.USER_BLOCKED, { blocked_user_id: contentUserId });
         },
       },
     ]);

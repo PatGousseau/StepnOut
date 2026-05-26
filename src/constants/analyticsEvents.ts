@@ -17,6 +17,17 @@ export const AUTH_EVENTS = {
   SIGNED_IN: 'auth_user_signed_in',
   SIGN_IN_FAILED: 'auth_user_sign_in_failed',
   SIGNED_OUT: 'auth_user_signed_out',
+  LOGIN_SCREEN_VIEWED: 'auth_login_screen_viewed',
+  REGISTER_SCREEN_VIEWED: 'auth_register_screen_viewed',
+  REGISTER_PROFILE_SCREEN_VIEWED: 'auth_register_profile_screen_viewed',
+  REGISTER_SUBMITTED: 'auth_register_submitted',
+  REGISTER_FAILED: 'auth_register_failed',
+  OAUTH_STARTED: 'auth_oauth_started',
+  OAUTH_FAILED: 'auth_oauth_failed',
+  PASSWORD_RESET_REQUESTED: 'auth_password_reset_requested',
+  PASSWORD_RESET_REQUEST_FAILED: 'auth_password_reset_request_failed',
+  PASSWORD_RESET_COMPLETED: 'auth_password_reset_completed',
+  PASSWORD_RESET_FAILED: 'auth_password_reset_failed',
 } as const;
 
 // ============================================
@@ -29,6 +40,11 @@ export const POST_EVENTS = {
   SHARED: 'post_shared',
   SHARED_TO_INSTAGRAM: 'post_shared_to_instagram',
   DELETED: 'post_deleted',
+  SUBMIT_ATTEMPTED: 'post_submit_attempted',
+  CREATE_FAILED: 'post_create_failed',
+  MEDIA_PERMISSION_DENIED: 'post_media_permission_denied',
+  MEDIA_PICK_FAILED: 'post_media_pick_failed',
+  MEDIA_UPLOAD_FAILED: 'post_media_upload_failed',
   MEDIA_VIEWED: 'post_media_viewed',
   VIDEO_PLAYED: 'post_video_played',
   COMMENTS_OPENED: 'post_comments_opened',
@@ -46,6 +62,7 @@ export const COMMENT_EVENTS = {
   LIKED: 'comment_liked',
   UNLIKED: 'comment_unliked',
   DELETED: 'comment_deleted',
+  CREATE_FAILED: 'comment_create_failed',
   PROFILE_CLICKED: 'comment_profile_clicked',
 } as const;
 
@@ -55,6 +72,7 @@ export const COMMENT_EVENTS = {
 export const CHALLENGE_EVENTS = {
   VIEWED: 'challenge_viewed',
   COMPLETED: 'challenge_completed',
+  SUBMISSION_STARTED: 'challenge_submission_started',
   SHARE_MODAL_OPENED: 'challenge_share_modal_opened',
   SHARED: 'challenge_shared',
   SHARE_SKIPPED: 'challenge_share_skipped',
@@ -69,8 +87,12 @@ export const PROFILE_EVENTS = {
   VIEWED: 'profile_viewed',
   EDITED: 'profile_edited',
   PICTURE_UPDATED: 'profile_picture_updated',
+  PICTURE_UPDATE_FAILED: 'profile_picture_update_failed',
   INSTAGRAM_CLICKED: 'profile_instagram_clicked',
   ACCOUNT_DELETED: 'profile_account_deleted',
+  USER_BLOCKED: 'profile_user_blocked',
+  USER_REPORTED: 'profile_user_reported',
+  POST_REPORTED: 'post_reported',
 } as const;
 
 // ============================================
@@ -106,6 +128,8 @@ export const FEED_EVENTS = {
 export const UI_EVENTS = {
   PUSH_NOTIFICATION_CLICKED: 'ui_push_notification_clicked',
   NOTIFICATIONS_OPENED: 'ui_notifications_opened',
+  NOTIFICATIONS_PERMISSION_GRANTED: 'ui_notifications_permission_granted',
+  NOTIFICATIONS_PERMISSION_DENIED: 'ui_notifications_permission_denied',
   MENU_OPENED: 'ui_menu_opened',
   FEEDBACK_MODAL_OPENED: 'ui_feedback_modal_opened',
   FEEDBACK_SUBMITTED: 'ui_feedback_submitted',

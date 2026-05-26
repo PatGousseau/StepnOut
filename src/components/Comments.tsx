@@ -219,6 +219,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
         }
       } catch (error) {
         console.error("Error adding comment:", error);
+        captureEvent(COMMENT_EVENTS.CREATE_FAILED, {
+          post_id: postId,
+          message: (error as Error).message,
+        });
       }
     }
   };
