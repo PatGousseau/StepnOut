@@ -1,6 +1,5 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -51,21 +50,6 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
             )}
           </View>
         </View>
-
-        {!!quest.instructions && (
-          <>
-            <View style={styles.heroDivider} />
-            <View style={styles.heroDetailSection}>
-              <View style={styles.heroDetailHeader}>
-                <View style={styles.heroDetailIcon}>
-                  <MaterialCommunityIcons name="compass-outline" size={16} color={colors.sideQuest.text} />
-                </View>
-                <Text style={styles.heroDetailLabel}>{t("Try this")}</Text>
-              </View>
-              <Text style={styles.heroDetailText}>{quest.instructions}</Text>
-            </View>
-          </>
-        )}
       </View>
     </View>
   );
@@ -143,38 +127,6 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
 };
 
 const styles = StyleSheet.create({
-  heroDetailHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 10,
-  },
-  heroDetailIcon: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroDetailLabel: {
-    color: colors.sideQuest.text,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  heroDetailSection: {
-    backgroundColor: colors.sideQuest.bg,
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 22,
-  },
-  heroDetailText: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 23,
-  },
-  heroDivider: {
-    backgroundColor: colors.sideQuest.border,
-    height: 1,
-  },
   heroCard: {
     backgroundColor: colors.sideQuest.bgAlt,
     borderColor: colors.sideQuest.bgBorder,

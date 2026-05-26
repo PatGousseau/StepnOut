@@ -69,8 +69,6 @@ export interface SideQuest {
   id: number;
   title: string;
   summary: string;
-  why_it_hits: string;
-  instructions: string;
   goal_tags: SideQuestGoal[];
   barrier_tags: SideQuestHardSituation[];
   context_tags: SideQuestPreferredContext[];

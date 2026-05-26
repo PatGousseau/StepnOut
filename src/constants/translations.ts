@@ -451,7 +451,6 @@ export const translations = {
   "Why this works": "Perché funziona",
   "Try it like this": "Provala così",
   "What to do": "Cosa fare",
-  "Try this": "Prova questo",
   "Want a different mix of side quests?": "Vuoi un mix diverso di side quest?",
   "Edit preferences": "Modifica preferenze",
   "Back": "Indietro"

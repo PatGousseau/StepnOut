@@ -63,10 +63,10 @@ VALUES
 SELECT setval('public.media_id_seq', (SELECT MAX(id) FROM public.media));
 
 -- Update profiles with full data (trigger created basic profiles)
-UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '11111111-1111-1111-1111-111111111111';
-UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '22222222-2222-2222-2222-222222222222';
-UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '33333333-3333-3333-3333-333333333333';
-UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13, created_at = now() - interval '30 days', updated_at = now() - interval '30 days' WHERE id = '44444444-4444-4444-4444-444444444444';
+UPDATE public.profiles SET username = 'alice', name = 'Alice Johnson', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 10, created_at = now() - interval '30 days' WHERE id = '11111111-1111-1111-1111-111111111111';
+UPDATE public.profiles SET username = 'bob', name = 'Bob Smith', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 11, created_at = now() - interval '30 days' WHERE id = '22222222-2222-2222-2222-222222222222';
+UPDATE public.profiles SET username = 'charlie', name = 'Charlie Brown', is_admin = false, first_login = false, eula_accepted = true, profile_media_id = 12, created_at = now() - interval '30 days' WHERE id = '33333333-3333-3333-3333-333333333333';
+UPDATE public.profiles SET username = 'admin', name = 'Admin User', is_admin = true, first_login = false, eula_accepted = true, profile_media_id = 13, created_at = now() - interval '30 days' WHERE id = '44444444-4444-4444-4444-444444444444';
 
 -- =============================================================================
 -- CHALLENGES
