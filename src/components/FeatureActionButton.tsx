@@ -123,19 +123,17 @@ export function FeatureActionButton({
       onPress={onPress}
       disabled={disabled}
     >
-      {!isPill && (
+      {!isPill && hasSubtitle && (
         <>
           <View
             style={[
               styles.glow,
-              !hasSubtitle && styles.compactCardGlow,
               { backgroundColor: completed ? "rgba(255,255,255,0.14)" : palette.glowColor },
             ]}
           />
           <View
             style={[
               styles.orbit,
-              !hasSubtitle && styles.compactCardOrbit,
               { borderColor: completed ? "rgba(255,255,255,0.16)" : palette.orbitColor },
             ]}
           />
@@ -236,12 +234,6 @@ const styles = StyleSheet.create({
   },
   compactCardContent: {
     minHeight: 28,
-  },
-  compactCardGlow: {
-    top: -28,
-  },
-  compactCardOrbit: {
-    top: 6,
   },
   compactCardTitle: {
     includeFontPadding: false,

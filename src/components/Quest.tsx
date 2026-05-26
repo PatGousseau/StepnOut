@@ -15,6 +15,7 @@ import CompletionCelebrationModal from "./CompletionCelebrationModal";
 
 interface QuestCardProps {
   quest: SideQuest;
+  eyebrowText?: string;
   tags?: string[];
 }
 
@@ -22,7 +23,7 @@ interface ShareQuestExperienceProps {
   quest: SideQuest;
 }
 
-export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
+export const QuestCard: React.FC<QuestCardProps> = ({ quest, eyebrowText, tags }) => {
   const { t } = useLanguage();
 
   return (
@@ -35,7 +36,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest, tags }) => {
 
         <View style={styles.heroHeaderContent}>
           <View style={styles.heroContent}>
-            <Text style={styles.heroEyebrow}>{t("Today's quest")}</Text>
+            <Text style={styles.heroEyebrow}>{eyebrowText || t("Today's quest")}</Text>
             <Text style={styles.heroTitle}>{quest.title}</Text>
 
             {tags && tags.length > 0 && (
@@ -128,7 +129,7 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
         variant="quest"
         variantId={quest.id}
         mediaPreview={submittedMediaPreview}
-        postText={submittedTextRef.current || t("Just completed today's quest!")}
+        postText={submittedTextRef.current || t("Just completed this quest!")}
       />
     </>
   );

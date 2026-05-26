@@ -266,6 +266,7 @@ export const translations = {
   "Quest completed successfully!": "Quest completata con successo!",
   "Share how you completed the quest": "Condividi come hai completato la quest",
   "Just completed today's quest!": "Ho appena completato la quest di oggi!",
+  "Just completed this quest!": "Ho appena completato questa quest!",
   "You must be logged in to submit a quest.": "Devi essere loggato per inviare una quest.",
   "Your quest of the day": "La tua quest del giorno",
   "Pick a quest": "Pesca una quest",
@@ -288,7 +289,14 @@ export const translations = {
   "Something went wrong. Tap to retry.":
     "Qualcosa è andato storto. Tocca per riprovare.",
   "Past challenges": "Sfide passate",
+  "Past quest": "Quest passata",
+  "Past side quests": "Quest passate",
+  "This side quest": "Questa side quest",
   "Just completed this week's challenge!": "Ho appena completato la sfida settimanale!",
+  "completed. Share it now.": "completata. Condividila ora.",
+  "Pull a friend into this adventure.": "Coinvolgi un amico in questa avventura.",
+  "I just completed a side quest on Stepn Out. Come try one too.\n\n(link)":
+    "Ho appena completato una side quest su Stepn Out. Provane una anche tu.\n\n(link)",
   "Share your thoughts...": "Condividi i tuoi pensieri...",
   "You must be logged in to submit a post.": "Devi essere loggato per pubblicare un post.",
   "Photo Access Required": "Accesso Foto Richiesto",
@@ -448,10 +456,12 @@ export const translations = {
   "Ranked to fit the kind of break from routine you want right now.": "Ordinate per adattarsi al tipo di deviazione dalla routine che vuoi in questo momento.",
   "No side quests yet.": "Nessuna side quest ancora.",
   "Once side quests are added, they will show up here ranked for your preferences.": "Quando aggiungeremo le side quest, appariranno qui ordinate in base alle tue preferenze.",
+  "Side quest": "Side quest",
   "Why this works": "Perché funziona",
   "Try it like this": "Provala così",
   "What to do": "Cosa fare",
   "Want a different mix of side quests?": "Vuoi un mix diverso di side quest?",
   "Edit preferences": "Modifica preferenze",
-  "Back": "Indietro"
+  "Back": "Indietro",
+  "Quest not found": "Quest non trovata"
 };

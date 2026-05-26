@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import {
+  DrawnSideQuest,
   RankedSideQuest,
   SideQuest,
   SideQuestAvoidType,
@@ -298,6 +299,34 @@ export const sideQuestService = {
       } as SideQuestDrawRow),
       quest: normalizeSideQuest(data.side_quests as unknown as SideQuestRow),
     };
+  },
+
+  async fetchDrawHistory(userId: string): Promise<DrawnSideQuest[]> {
+    const { data, error } = await supabase
+      .from("side_quest_draws")
+      .select("id, user_id, quest_id, local_day, created_at, side_quests (*)")
+      .eq("user_id", userId)
+      .order("local_day", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).reduce<DrawnSideQuest[]>((acc, row) => {
+      if (!row.side_quests) return acc;
+
+      acc.push({
+        draw: normalizeDraw({
+          id: row.id,
+          user_id: row.user_id,
+          quest_id: row.quest_id,
+          local_day: row.local_day,
+          created_at: row.created_at,
+        } as SideQuestDrawRow),
+        quest: normalizeSideQuest(row.side_quests as unknown as SideQuestRow),
+      });
+
+      return acc;
+    }, []);
   },
 
   async claimDailyQuest(userId: string, rankedQuests: RankedSideQuest[], localDay: string): Promise<{

@@ -101,17 +101,17 @@ const CompletionCelebrationModal: React.FC<CompletionCelebrationModalProps> = ({
       eventIdKey: 'quest_id',
       eventTitleKey: 'quest_title',
       events: SIDE_QUEST_EVENTS,
-      helperCopy: t('completed for today. Share it now before tomorrow brings a new one.'),
-      inspireCopy: t('Pull a friend into today’s adventure.'),
+      helperCopy: t('completed. Share it now.'),
+      inspireCopy: t('Pull a friend into this adventure.'),
       messageBuilder: async () => {
         const shareLink = await appConfigService.getShareLink();
-        return t("I just completed today's side quest on Stepn Out. Come try one too.\n\n(link)", {
+        return t("I just completed a side quest on Stepn Out. Come try one too.\n\n(link)", {
           link: shareLink,
         });
       },
       modalOpenedEvent: SIDE_QUEST_EVENTS.SHARE_MODAL_OPENED,
       storyVariant: 'quest' as const,
-      subtitle: t("Today's side quest"),
+      subtitle: t("This side quest"),
     },
   }[variant];
 

@@ -54,6 +54,13 @@ export function useSideQuests() {
     staleTime: 30000,
   });
 
+  const drawHistoryQuery = useQuery({
+    queryKey: ["side-quest-draw-history", userId],
+    queryFn: () => sideQuestService.fetchDrawHistory(user!.id),
+    enabled: !!userId,
+    staleTime: 30000,
+  });
+
   const saveProfileMutation = useMutation({
     mutationFn: (draft: SideQuestQuestionnaireDraft) => sideQuestService.saveProfile(user!.id, draft),
     onMutate: async (draft) => {
@@ -74,6 +81,7 @@ export function useSideQuests() {
         queryClient.invalidateQueries({ queryKey: ["side-quest-profile", userId] }),
         queryClient.invalidateQueries({ queryKey: ["side-quests"] }),
         queryClient.invalidateQueries({ queryKey: ["side-quest-draw", userId, localDay] }),
+        queryClient.invalidateQueries({ queryKey: ["side-quest-draw-history", userId] }),
       ]);
     },
   });
@@ -94,7 +102,10 @@ export function useSideQuests() {
     mutationFn: () => sideQuestService.claimDailyQuest(user!.id, rankedSideQuests, localDay),
     onSuccess: async () => {
       if (!userId) return;
-      await queryClient.invalidateQueries({ queryKey: ["side-quest-draw", userId, localDay] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["side-quest-draw", userId, localDay] }),
+        queryClient.invalidateQueries({ queryKey: ["side-quest-draw-history", userId] }),
+      ]);
     },
   });
 
@@ -114,6 +125,9 @@ export function useSideQuests() {
     rankedSideQuests,
     sideQuestsLoading: sideQuestsQuery.isLoading,
     sideQuestsError: sideQuestsQuery.error,
+    drawHistory: drawHistoryQuery.data || [],
+    drawHistoryLoading: drawHistoryQuery.isLoading,
+    drawHistoryError: drawHistoryQuery.error,
     todaysQuest: dailyDrawQuery.data?.quest || drawDailyQuestMutation.data?.quest || null,
     todaysQuestDraw: dailyDrawQuery.data?.draw || drawDailyQuestMutation.data?.draw || null,
     todaysQuestState,

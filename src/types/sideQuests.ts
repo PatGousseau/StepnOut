@@ -95,6 +95,11 @@ export interface SideQuestDraw {
   created_at: string;
 }
 
+export interface DrawnSideQuest {
+  draw: SideQuestDraw;
+  quest: SideQuest;
+}
+
 export interface RankedSideQuest extends SideQuest {
   match_score: number;
   matched_goal_tags: SideQuestGoal[];
