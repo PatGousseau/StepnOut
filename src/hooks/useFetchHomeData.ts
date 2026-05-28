@@ -5,7 +5,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLikes } from "../contexts/LikesContext";
 import { useReactions } from "../contexts/ReactionsContext";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { formatFeedPosts, formatSinglePost, postService } from "../services/postService";
+import {
+  formatFeedPosts,
+  formatSinglePost,
+  hydrateSinglePostMedia,
+  postService,
+} from "../services/postService";
 import { captureEvent } from "../lib/posthog";
 import { FEED_EVENTS } from "../constants/analyticsEvents";
 
@@ -272,21 +277,7 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
 
       if (error) throw error;
 
-      let post = data as PostRecord;
-      const { data: postMediaData, error: postMediaError } = await supabase
-        .from("post_media")
-        .select("media_id, position, media (file_path, upload_status)")
-        .eq("post_id", postId);
-
-      if (!postMediaError && postMediaData) {
-        post = {
-          ...post,
-          post_media: postMediaData as unknown as PostRecord["post_media"],
-        };
-      } else if (postMediaError) {
-        console.warn("Post media hydration skipped:", postMediaError);
-      }
-
+      const post = await hydrateSinglePostMedia(data as PostRecord);
       return formatSinglePost(post, likedPosts);
     } catch (error) {
       console.error("Error fetching post:", error);

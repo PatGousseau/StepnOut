@@ -31,7 +31,7 @@ interface CompletionPostComposerProps {
   checkingCompletion: boolean;
   buildSubmitData: (args: { userId: string; comfortRating: number | null }) => Record<string, unknown>;
   onCompleted: (args: {
-    selectedMedia: MediaSelectionResult | null;
+    selectedMediaItems: MediaSelectionResult[];
     submittedText: string;
     comfortRating: number | null;
   }) => void;
@@ -99,7 +99,6 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
   }[variant];
 
   const {
-    selectedMedia,
     selectedMediaItems,
     postText,
     setPostText,
@@ -112,7 +111,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
     onUploadComplete: () => {
       setModalVisible(false);
       onCompleted({
-        selectedMedia,
+        selectedMediaItems,
         submittedText: submittedTextRef.current || t(config.placeholderTextKey),
         comfortRating: showComfortSlider ? comfortRating : null,
       });

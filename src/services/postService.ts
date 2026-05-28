@@ -67,7 +67,17 @@ function getCommentPreviews(post: PostRecord) {
   return previews.length > 0 ? previews : undefined;
 }
 
-function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+export type PostMediaRow = {
+  post_id: number;
+  media_id: number;
+  position: number;
+  media: {
+    file_path: string | null;
+    upload_status?: string | null;
+  } | null;
+};
+
+function normalizeMediaItems(post: PostRecord): Post["media_items"] {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
   const mediaItems = (post.post_media || [])
     .filter(
@@ -82,7 +92,8 @@ function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {
       file_path: resolveMediaUrl(item.media?.file_path) || item.media?.file_path || null,
       position: item.position,
     }));
-  const normalizedMediaItems = mediaItems.length > 0
+
+  return mediaItems.length > 0
     ? mediaItems
     : mediaUrl || post.media?.file_path
       ? [
@@ -93,6 +104,21 @@ function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {
           },
         ]
       : undefined;
+}
+
+function hasRenderableBody(post: PostRecord): boolean {
+  return typeof post.body === "string" && post.body.trim().length > 0;
+}
+
+function isRenderablePost(post: PostRecord): boolean {
+  return post.is_welcome === true ||
+    hasRenderableBody(post) ||
+    (normalizeMediaItems(post)?.length ?? 0) > 0;
+}
+
+function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+  const mediaUrl = resolveMediaUrl(post.media?.file_path);
+  const normalizedMediaItems = normalizeMediaItems(post);
   const { comments, likes, challenges, side_quests } = post;
 
   return {
@@ -154,7 +180,7 @@ function applyBlockedFilter<T extends { not: (column: string, operator: string, 
   return query.not("user_id", "in", quotedList);
 }
 
-async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[]> {
+export async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[]> {
   const postIds = posts.map((post) => post.id);
   if (postIds.length === 0) return posts;
 
@@ -165,16 +191,6 @@ async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[]> {
       .in("post_id", postIds);
 
     if (error) throw error;
-
-    type PostMediaRow = {
-      post_id: number;
-      media_id: number;
-      position: number;
-      media: {
-        file_path: string | null;
-        upload_status?: string | null;
-      } | null;
-    };
 
     const mediaByPostId = new Map<number, PostRecord["post_media"]>();
     for (const row of (data || []) as unknown as PostMediaRow[]) {
@@ -197,6 +213,11 @@ async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[]> {
   }
 }
 
+export async function hydrateSinglePostMedia(post: PostRecord): Promise<PostRecord> {
+  const [hydratedPost] = await hydratePostMedia([post]);
+  return hydratedPost || post;
+}
+
 export const postService = {
   async fetchPostsForChallenge(
     challengeId: number,
@@ -210,8 +231,6 @@ export const postService = {
       .from("post")
       .select(select)
       .eq("challenge_id", challengeId)
-      .not("body", "is", null)
-      .not("media.upload_status", "in", '("failed","pending")')
       .order("created_at", { ascending: false });
 
     query = applyBlockedFilter(query, blockedUserIds);
@@ -222,7 +241,7 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = await hydratePostMedia((data ?? []) as PostRecord[]);
+    const rows = (await hydratePostMedia((data ?? []) as PostRecord[])).filter(isRenderablePost);
     return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
@@ -681,7 +700,6 @@ export const postService = {
     let query = supabase
       .from("post")
       .select(select)
-      .not("media.upload_status", "in", '("failed","pending")')
       .order("created_at", { ascending: false });
 
     if (feedType === "challenge") {
@@ -698,7 +716,7 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = await hydratePostMedia((data ?? []) as PostRecord[]);
+    const rows = (await hydratePostMedia((data ?? []) as PostRecord[])).filter(isRenderablePost);
 
     if (feedType === "discussion" && rows.length > 0) {
       const newest = rows[0].created_at;
@@ -709,7 +727,6 @@ export const postService = {
         .select(select)
         .is("challenge_id", null)
         .eq("is_welcome", true)
-        .not("media.upload_status", "in", '("failed","pending")')
         .gte("created_at", oldest);
 
       if (pageParam === 1) {
@@ -722,7 +739,9 @@ export const postService = {
       const { data: welcomeData, error: welcomeError } = await welcomeQuery;
       if (welcomeError) throw welcomeError;
 
-      const welcomeRows = await hydratePostMedia((welcomeData ?? []) as PostRecord[]);
+      const welcomeRows = (await hydratePostMedia((welcomeData ?? []) as PostRecord[])).filter(
+        isRenderablePost
+      );
       const merged = [...rows, ...welcomeRows]
         .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
         .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
@@ -763,7 +782,7 @@ export const postService = {
 
     if (error) throw error;
 
-    const rows = await hydratePostMedia((data ?? []) as PostRecord[]);
+    const rows = (await hydratePostMedia((data ?? []) as PostRecord[])).filter(isRenderablePost);
     const postMap = new Map(rows.map((p) => [p.id, p]));
     const posts = orderedIds
       .map((id) => postMap.get(id))

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChallengeProgress, SideQuestProgress, UserProgress, WeekData, Post } from '../types';
+import { ChallengeProgress, SideQuestProgress, UserProgress, WeekData, Post, PostRecord } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { formatFeedPosts, hydratePostMedia } from '../services/postService';
 
 const useUserProgress = (targetUserId: string) => {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ const useUserProgress = (targetUserId: string) => {
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const POSTS_PER_PAGE = 10;
 
-  const fetchUserPosts = async (page = 1, isLoadMore = false) => {
+  const fetchUserPosts = useCallback(async (page = 1, isLoadMore = false) => {
     setPostsLoading(true);
     try {
       // First fetch all posts
@@ -37,21 +38,21 @@ const useUserProgress = (targetUserId: string) => {
           comments (id, body, created_at, parent_comment_id, profiles:user_id (username))
         `)
         .eq('user_id', targetUserId)
-        .neq("media.upload_status", "failed")
-        .neq("media.upload_status", "pending")
         .order('created_at', { ascending: false })
         .range((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE - 1);
 
       if (error) throw error;
 
+      const hydratedPosts = await hydratePostMedia((posts || []) as PostRecord[]);
+
       // Drop welcome posts from profile feeds
-      const transformedPosts = posts.map(post => ({
+      const transformedPosts = hydratedPosts.map(post => ({
         ...post,
         challenge_title: post.challenges?.title
       })).filter(post => !post.is_welcome);
 
       // Then fetch like status separately
-      const likedPostIds = new Set<string>();
+      const likedPostIds = new Set<number>();
 
       if (transformedPosts.length > 0) {
         const { data: likedPosts } = await supabase
@@ -60,58 +61,23 @@ const useUserProgress = (targetUserId: string) => {
           .eq('user_id', user?.id)
           .in('post_id', transformedPosts.map(post => post.id));
 
-        likedPosts?.forEach(like => likedPostIds.add(like.post_id));
+        likedPosts?.forEach(like => {
+          if (like.post_id != null) likedPostIds.add(like.post_id);
+        });
       }
-
-      // Helper to extract up to 3 comment previews (oldest first)
-      const getCommentPreviews = (post: any) => {
-        if (post.comments && post.comments.length > 0) {
-          // Sort by created_at ascending to get oldest first
-          const sortedComments = [...post.comments].sort(
-            (a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          );
-          // Create a map of comment id to username for reply lookups
-          const commentUserMap = new Map<number, string>();
-          for (const c of post.comments) {
-            if (c?.id && c?.profiles?.username) {
-              commentUserMap.set(c.id, c.profiles.username);
-            }
-          }
-          const previews = sortedComments
-            .slice(0, 3)
-            .filter((c: any) => c?.body && c?.profiles?.username)
-            .map((c: any) => ({
-              username: c.profiles.username,
-              text: c.body,
-              replyToUsername: c.parent_comment_id ? commentUserMap.get(c.parent_comment_id) : undefined,
-            }));
-          return previews.length > 0 ? previews : undefined;
-        }
-        return undefined;
-      };
-
-      const formattedPosts: Post[] = transformedPosts.map(post => ({
-        ...post,
-        media: {
-          file_path: post.media?.file_path
-            ? `${supabase.storageUrl}/object/public/challenge-uploads/${post.media.file_path}`
-            : null,
-        },
-        likes_count: post.likes?.[0]?.count ?? 0,
-        comments_count: post.comments?.length ?? 0,
-        comment_previews: getCommentPreviews(post),
-        challenge_title: post.challenge_title,
-        liked: likedPostIds.has(post.id)
-      }));
+      const likedPostsMap = Object.fromEntries(
+        Array.from(likedPostIds).map((postId) => [postId, true])
+      );
+      const { posts: formattedPosts } = formatFeedPosts(transformedPosts, likedPostsMap);
 
       setUserPosts(prev => isLoadMore ? [...prev, ...formattedPosts] : formattedPosts);
-      setHasMorePosts(posts.length === POSTS_PER_PAGE);
+      setHasMorePosts((posts || []).length === POSTS_PER_PAGE);
     } catch (err) {
       console.error('Error fetching user posts:', err);
     } finally {
       setPostsLoading(false);
     }
-  };
+  }, [targetUserId, user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -154,7 +120,7 @@ const useUserProgress = (targetUserId: string) => {
         // Fetch submissions for the user
         const { data: submissionData, error: submissionError } = await supabase
           .from('post')
-          .select(`
+        .select(`
             id,
             challenge_id,
             created_at,
@@ -164,9 +130,7 @@ const useUserProgress = (targetUserId: string) => {
             )
           `)
           .eq('user_id', user.id)
-          .not('challenge_id', 'is', null)
-          .neq("media.upload_status", "failed")
-          .neq("media.upload_status", "pending");
+          .not('challenge_id', 'is', null);
 
         if (submissionError) throw submissionError;
 
@@ -250,7 +214,7 @@ const useUserProgress = (targetUserId: string) => {
     if (user?.id) {
       fetchUserPosts(1);
     }
-  }, [user?.id]);
+  }, [fetchUserPosts, user?.id]);
 
   return {
     data,

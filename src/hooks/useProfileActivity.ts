@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
-import { Comment, Post } from "../types";
+import { Comment, Post, PostRecord } from "../types";
+import { hydratePostMedia } from "../services/postService";
 
 type CommentWithPost = Comment & {
   post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title" | "quest_id" | "quest_title">;
@@ -39,6 +40,7 @@ export const useProfileActivity = (targetUserId: string) => {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const fetchNextPageRef = useRef<(reset?: boolean) => Promise<void>>(async () => {});
 
   const lastCursor = useMemo(() => {
     if (items.length === 0) return null;
@@ -77,48 +79,14 @@ export const useProfileActivity = (targetUserId: string) => {
           return;
         }
 
-        const postIds = hydrated
-          .filter((r) => r.item_type === "post" && r.post?.id)
-          .map((r) => r.post!.id);
-        const mediaItemsByPost = new Map<number, Post["media_items"]>();
-
-        if (postIds.length > 0) {
-          const { data: postMediaRows, error: postMediaError } = await supabase
-            .from("post_media")
-            .select("post_id, media_id, position, media (file_path, upload_status)")
-            .in("post_id", postIds);
-
-          if (postMediaError) {
-            console.warn("Profile post media hydration skipped:", postMediaError);
-          } else {
-            type PostMediaRow = {
-              post_id: number;
-              media_id: number;
-              position: number;
-              media: { file_path: string | null; upload_status?: string | null } | null;
-            };
-
-            for (const row of (postMediaRows || []) as unknown as PostMediaRow[]) {
-              if (
-                !row.media?.file_path ||
-                row.media.upload_status === "failed" ||
-                row.media.upload_status === "pending"
-              ) {
-                continue;
-              }
-              const items = mediaItemsByPost.get(row.post_id) || [];
-              items.push({
-                media_id: row.media_id,
-                position: row.position,
-                file_path: `${supabaseStorageUrl}/${row.media.file_path}`,
-              });
-              mediaItemsByPost.set(
-                row.post_id,
-                items.sort((a, b) => a.position - b.position)
-              );
-            }
-          }
-        }
+        const hydratedPosts = await hydratePostMedia(
+          hydrated
+            .filter((r): r is HydratedRow & { item_type: "post"; post: NonNullable<HydratedRow["post"]> } =>
+              r.item_type === "post" && !!r.post
+            )
+            .map((r) => r.post as PostRecord)
+        );
+        const hydratedPostMap = new Map(hydratedPosts.map((post) => [post.id, post]));
 
         const nextItems: ActivityItem[] = hydrated
           .map((r) => {
@@ -126,7 +94,8 @@ export const useProfileActivity = (targetUserId: string) => {
               const post = r.post;
               if (!post) return null;
 
-              const mediaPath = post.media?.file_path;
+              const hydratedPost = hydratedPostMap.get(post.id) || post;
+              const mediaPath = hydratedPost.media?.file_path;
               const media = {
                 file_path: mediaPath ? `${supabaseStorageUrl}/${mediaPath}` : null,
               };
@@ -135,12 +104,24 @@ export const useProfileActivity = (targetUserId: string) => {
                 type: "post" as const,
                 createdAt: r.created_at,
                 post: {
-                  ...post,
+                  ...hydratedPost,
                   media,
-                  media_items: mediaItemsByPost.get(post.id),
+                  media_items: hydratedPost.post_media
+                    ?.filter(
+                      (item) =>
+                        item.media?.file_path &&
+                        item.media.upload_status !== "failed" &&
+                        item.media.upload_status !== "pending"
+                    )
+                    .sort((a, b) => a.position - b.position)
+                    .map((item) => ({
+                      media_id: item.media_id,
+                      position: item.position,
+                      file_path: `${supabaseStorageUrl}/${item.media?.file_path}`,
+                    })),
                   comment_previews:
-                    Array.isArray(post.comment_previews) && post.comment_previews.length > 0
-                      ? post.comment_previews
+                    Array.isArray(hydratedPost.comment_previews) && hydratedPost.comment_previews.length > 0
+                      ? hydratedPost.comment_previews
                       : undefined,
                 },
               };
@@ -169,9 +150,13 @@ export const useProfileActivity = (targetUserId: string) => {
   );
 
   useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+
+  useEffect(() => {
     setItems([]);
     setHasMore(true);
-    fetchNextPage(true);
+    fetchNextPageRef.current(true);
   }, [targetUserId]);
 
   const removePost = useCallback((postId: number) => {

@@ -147,8 +147,6 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
 
       if (postError) throw postError;
 
-      let uploadItems = mediaItems;
-
       if (mediaItems.length > 0) {
         const { error: postMediaError } = await supabase
           .from('post_media')
@@ -160,14 +158,11 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
             }))
           );
 
-        if (postMediaError) {
-          console.warn("Post media relation insert skipped:", postMediaError);
-          uploadItems = mediaItems.slice(0, 1);
-        }
+        if (postMediaError) throw postMediaError;
       }
 
       // If there's media, start background upload
-      if (uploadItems.length > 0) {
+      if (mediaItems.length > 0) {
         setIsBackgroundUploading(true);
         progressManagerRef.current.startUpload();
 
@@ -175,17 +170,17 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
         let completedUploads = 0;
         let failedUploads = 0;
 
-        uploadItems.forEach((item) => {
+        mediaItems.forEach((item) => {
           backgroundUploadService.addToQueue(
             item.mediaId,
             item.pendingUpload,
             postData.id,
             (progress) => {
               uploadProgressByMediaId.set(item.mediaId, progress);
-              const totalProgress = uploadItems.reduce(
+              const totalProgress = mediaItems.reduce(
                 (sum, mediaItem) => sum + (uploadProgressByMediaId.get(mediaItem.mediaId) || 0),
                 0
-              ) / uploadItems.length;
+              ) / mediaItems.length;
               setLocalUploadProgress(totalProgress);
               progressManagerRef.current.updateProgress(totalProgress);
             },
@@ -193,7 +188,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
               completedUploads += 1;
               if (!success) failedUploads += 1;
 
-              if (completedUploads < uploadItems.length) return;
+              if (completedUploads < mediaItems.length) return;
 
               setIsBackgroundUploading(false);
               setLocalUploadProgress(0);

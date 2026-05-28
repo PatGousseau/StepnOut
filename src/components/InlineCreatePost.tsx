@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   TextInput,
@@ -38,20 +38,23 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
   const { user } = useAuth();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState("");
-  
-  // Pick a random prompt when refreshKey changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const placeholderKey = useMemo(() => {
+
+  const [placeholderKey, setPlaceholderKey] = useState(() => {
     const randomIndex = Math.floor(Math.random() * POST_PROMPT_KEYS.length);
     return POST_PROMPT_KEYS[randomIndex];
+  });
+
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * POST_PROMPT_KEYS.length);
+    setPlaceholderKey(POST_PROMPT_KEYS[randomIndex]);
   }, [refreshKey]);
-  
+
   const placeholder = t(placeholderKey);
   const [isFocused, setIsFocused] = useState(false);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
 
   const {
-    selectedMedia,
     selectedMediaItems,
     isUploading,
     handleMediaUpload,
@@ -99,7 +102,10 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
             isVideo: item.isVideo,
             useImageForVideo: true,
           }))}
-          onPress={() => setShowFullScreenImage(true)}
+          onPress={(index) => {
+            setSelectedPreviewIndex(index);
+            setShowFullScreenImage(true);
+          }}
           onRemove={handleRemoveMedia}
           height={160}
           style={mediaPreviewContainerStyle}
@@ -150,7 +156,8 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
             <MaterialIcons name="close" size={28} color="white" />
           </TouchableOpacity>
           <ImageViewer
-            imageUrls={[{ url: selectedMedia?.previewUrl || "" }]}
+            imageUrls={selectedMediaItems.map((item) => ({ url: item.thumbnailUri || item.previewUrl }))}
+            index={selectedPreviewIndex}
             enableSwipeDown
             onSwipeDown={() => setShowFullScreenImage(false)}
             renderIndicator={() => <></>}
