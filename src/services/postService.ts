@@ -116,7 +116,7 @@ function isRenderablePost(post: PostRecord): boolean {
     (normalizeMediaItems(post)?.length ?? 0) > 0;
 }
 
-function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+export function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
   const normalizedMediaItems = normalizeMediaItems(post);
   const { comments, likes, challenges, side_quests } = post;
@@ -141,6 +141,13 @@ function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {
     quest_title: side_quests?.title,
     comment_previews: getCommentPreviews(post),
   };
+}
+
+export function formatPosts(
+  posts: PostRecord[],
+  likedPosts: Record<number, boolean> = {}
+): Post[] {
+  return posts.map((post) => normalizePost(post, likedPosts));
 }
 
 export function formatFeedPosts(

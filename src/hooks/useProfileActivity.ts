@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase, supabaseStorageUrl } from "../lib/supabase";
+import { supabase } from "../lib/supabase";
 import { Comment, Post, PostRecord } from "../types";
-import { hydratePostMedia } from "../services/postService";
+import { formatPosts, hydratePostMedia } from "../services/postService";
 
 type CommentWithPost = Comment & {
   post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title" | "quest_id" | "quest_title">;
@@ -86,7 +86,8 @@ export const useProfileActivity = (targetUserId: string) => {
             )
             .map((r) => r.post as PostRecord)
         );
-        const hydratedPostMap = new Map(hydratedPosts.map((post) => [post.id, post]));
+        const formattedPosts = formatPosts(hydratedPosts);
+        const formattedPostMap = new Map(formattedPosts.map((post) => [post.id, post]));
 
         const nextItems: ActivityItem[] = hydrated
           .map((r) => {
@@ -94,36 +95,13 @@ export const useProfileActivity = (targetUserId: string) => {
               const post = r.post;
               if (!post) return null;
 
-              const hydratedPost = hydratedPostMap.get(post.id) || post;
-              const mediaPath = hydratedPost.media?.file_path;
-              const media = {
-                file_path: mediaPath ? `${supabaseStorageUrl}/${mediaPath}` : null,
-              };
+              const formattedPost = formattedPostMap.get(post.id);
+              if (!formattedPost) return null;
 
               return {
                 type: "post" as const,
                 createdAt: r.created_at,
-                post: {
-                  ...hydratedPost,
-                  media,
-                  media_items: hydratedPost.post_media
-                    ?.filter(
-                      (item) =>
-                        item.media?.file_path &&
-                        item.media.upload_status !== "failed" &&
-                        item.media.upload_status !== "pending"
-                    )
-                    .sort((a, b) => a.position - b.position)
-                    .map((item) => ({
-                      media_id: item.media_id,
-                      position: item.position,
-                      file_path: `${supabaseStorageUrl}/${item.media?.file_path}`,
-                    })),
-                  comment_previews:
-                    Array.isArray(hydratedPost.comment_previews) && hydratedPost.comment_previews.length > 0
-                      ? hydratedPost.comment_previews
-                      : undefined,
-                },
+                post: formattedPost,
               };
             }
 
