@@ -14,17 +14,9 @@ const BASE_SELECT = `
       file_path
     )
   ),
-  media (
+  media:media!post_media_id_fkey (
     file_path,
     upload_status
-  ),
-  post_media (
-    position,
-    media_id,
-    media (
-      file_path,
-      upload_status
-    )
   ),
   likes:likes(count),
   comments (
@@ -78,7 +70,12 @@ function getCommentPreviews(post: PostRecord) {
 function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
   const mediaItems = (post.post_media || [])
-    .filter((item) => item.media?.file_path)
+    .filter(
+      (item) =>
+        item.media?.file_path &&
+        item.media.upload_status !== "failed" &&
+        item.media.upload_status !== "pending"
+    )
     .sort((a, b) => a.position - b.position)
     .map((item) => ({
       media_id: item.media_id,
@@ -157,6 +154,49 @@ function applyBlockedFilter<T extends { not: (column: string, operator: string, 
   return query.not("user_id", "in", quotedList);
 }
 
+async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[]> {
+  const postIds = posts.map((post) => post.id);
+  if (postIds.length === 0) return posts;
+
+  try {
+    const { data, error } = await supabase
+      .from("post_media")
+      .select("post_id, media_id, position, media (file_path, upload_status)")
+      .in("post_id", postIds);
+
+    if (error) throw error;
+
+    type PostMediaRow = {
+      post_id: number;
+      media_id: number;
+      position: number;
+      media: {
+        file_path: string | null;
+        upload_status?: string | null;
+      } | null;
+    };
+
+    const mediaByPostId = new Map<number, PostRecord["post_media"]>();
+    for (const row of (data || []) as unknown as PostMediaRow[]) {
+      const items = mediaByPostId.get(row.post_id) || [];
+      items.push({
+        media_id: row.media_id,
+        position: row.position,
+        media: row.media,
+      });
+      mediaByPostId.set(row.post_id, items);
+    }
+
+    return posts.map((post) => ({
+      ...post,
+      post_media: mediaByPostId.get(post.id)?.sort((a, b) => a.position - b.position),
+    }));
+  } catch (error) {
+    console.warn("Post media hydration skipped:", error);
+    return posts;
+  }
+}
+
 export const postService = {
   async fetchPostsForChallenge(
     challengeId: number,
@@ -182,7 +222,7 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as PostRecord[];
+    const rows = await hydratePostMedia((data ?? []) as PostRecord[]);
     return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
@@ -658,7 +698,7 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as PostRecord[];
+    const rows = await hydratePostMedia((data ?? []) as PostRecord[]);
 
     if (feedType === "discussion" && rows.length > 0) {
       const newest = rows[0].created_at;
@@ -682,7 +722,8 @@ export const postService = {
       const { data: welcomeData, error: welcomeError } = await welcomeQuery;
       if (welcomeError) throw welcomeError;
 
-      const merged = [...rows, ...((welcomeData ?? []) as PostRecord[])]
+      const welcomeRows = await hydratePostMedia((welcomeData ?? []) as PostRecord[]);
+      const merged = [...rows, ...welcomeRows]
         .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
         .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
 
@@ -722,7 +763,7 @@ export const postService = {
 
     if (error) throw error;
 
-    const rows = (data ?? []) as PostRecord[];
+    const rows = await hydratePostMedia((data ?? []) as PostRecord[]);
     const postMap = new Map(rows.map((p) => [p.id, p]));
     const posts = orderedIds
       .map((id) => postMap.get(id))

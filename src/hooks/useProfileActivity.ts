@@ -88,27 +88,35 @@ export const useProfileActivity = (targetUserId: string) => {
             .select("post_id, media_id, position, media (file_path, upload_status)")
             .in("post_id", postIds);
 
-          if (postMediaError) throw postMediaError;
+          if (postMediaError) {
+            console.warn("Profile post media hydration skipped:", postMediaError);
+          } else {
+            type PostMediaRow = {
+              post_id: number;
+              media_id: number;
+              position: number;
+              media: { file_path: string | null; upload_status?: string | null } | null;
+            };
 
-          type PostMediaRow = {
-            post_id: number;
-            media_id: number;
-            position: number;
-            media: { file_path: string | null; upload_status?: string | null } | null;
-          };
-
-          for (const row of (postMediaRows || []) as unknown as PostMediaRow[]) {
-            if (!row.media?.file_path) continue;
-            const items = mediaItemsByPost.get(row.post_id) || [];
-            items.push({
-              media_id: row.media_id,
-              position: row.position,
-              file_path: `${supabaseStorageUrl}/${row.media.file_path}`,
-            });
-            mediaItemsByPost.set(
-              row.post_id,
-              items.sort((a, b) => a.position - b.position)
-            );
+            for (const row of (postMediaRows || []) as unknown as PostMediaRow[]) {
+              if (
+                !row.media?.file_path ||
+                row.media.upload_status === "failed" ||
+                row.media.upload_status === "pending"
+              ) {
+                continue;
+              }
+              const items = mediaItemsByPost.get(row.post_id) || [];
+              items.push({
+                media_id: row.media_id,
+                position: row.position,
+                file_path: `${supabaseStorageUrl}/${row.media.file_path}`,
+              });
+              mediaItemsByPost.set(
+                row.post_id,
+                items.sort((a, b) => a.position - b.position)
+              );
+            }
           }
         }
 

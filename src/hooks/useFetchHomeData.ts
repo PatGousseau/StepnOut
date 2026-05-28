@@ -263,15 +263,7 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
           *,
           challenges:challenge_id (title),
           side_quests:quest_id (title),
-          media (file_path),
-          post_media (
-            position,
-            media_id,
-            media (
-              file_path,
-              upload_status
-            )
-          ),
+          media:media!post_media_id_fkey (file_path),
           likes:likes(count),
           comments (id, body, created_at, user_id, parent_comment_id, profiles:user_id (username))
         `)
@@ -280,7 +272,22 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
 
       if (error) throw error;
 
-      return formatSinglePost(data as PostRecord, likedPosts);
+      let post = data as PostRecord;
+      const { data: postMediaData, error: postMediaError } = await supabase
+        .from("post_media")
+        .select("media_id, position, media (file_path, upload_status)")
+        .eq("post_id", postId);
+
+      if (!postMediaError && postMediaData) {
+        post = {
+          ...post,
+          post_media: postMediaData as unknown as PostRecord["post_media"],
+        };
+      } else if (postMediaError) {
+        console.warn("Post media hydration skipped:", postMediaError);
+      }
+
+      return formatSinglePost(post, likedPosts);
     } catch (error) {
       console.error("Error fetching post:", error);
       return null;

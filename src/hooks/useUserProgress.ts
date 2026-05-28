@@ -29,7 +29,7 @@ const useUserProgress = (targetUserId: string) => {
           challenge_id,
           is_welcome,
           challenges (title),
-          media (
+          media:media!post_media_id_fkey (
             file_path,
             upload_status
           ),
@@ -158,7 +158,7 @@ const useUserProgress = (targetUserId: string) => {
             id,
             challenge_id,
             created_at,
-            media (
+            media:media!post_media_id_fkey (
               file_path,
               upload_status
             )

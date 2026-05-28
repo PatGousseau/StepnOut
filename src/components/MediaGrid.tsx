@@ -1,9 +1,11 @@
-import React from "react";
-import { Pressable, StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
+import React, { useState } from "react";
+import { Pressable, StyleProp, StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { Image } from "expo-image";
+import { Image, ImageLoadEventData } from "expo-image";
 import { ResizeMode, Video } from "expo-av";
 import { colors } from "../constants/Colors";
+
+const TILE_GAP = 3;
 
 export interface MediaGridItem {
   uri: string;
@@ -16,7 +18,7 @@ interface MediaGridProps {
   onPress?: (index: number) => void;
   onRemove?: (index: number) => void;
   height?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const MediaGrid: React.FC<MediaGridProps> = ({
@@ -27,9 +29,34 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   style,
 }) => {
   const visibleItems = items.slice(0, 4);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [singleImageRatio, setSingleImageRatio] = useState<number | null>(null);
   if (visibleItems.length === 0) return null;
 
-  const renderTile = (item: MediaGridItem, index: number, tileStyle: ViewStyle) => (
+  const singleItem = visibleItems.length === 1 ? visibleItems[0] : null;
+  const singleImageHeight =
+    singleItem && !singleItem.isVideo && singleImageRatio && containerWidth > 0
+      ? Math.min(height, containerWidth / singleImageRatio)
+      : height;
+  const sizeStyle: ViewStyle = {
+    aspectRatio: undefined,
+    height: singleImageHeight,
+    width: "100%",
+  };
+  const fixedGridSizeStyle: ViewStyle = {
+    aspectRatio: undefined,
+    height,
+    width: "100%",
+  };
+
+  const handleSingleImageLoad = (event: ImageLoadEventData) => {
+    const { width, height: imageHeight } = event.source;
+    if (width > 0 && imageHeight > 0) {
+      setSingleImageRatio(width / imageHeight);
+    }
+  };
+
+  const renderTile = (item: MediaGridItem, index: number, tileStyle: StyleProp<ViewStyle>) => (
     <Pressable
       key={`${item.uri}-${index}`}
       onPress={() => onPress?.(index)}
@@ -45,7 +72,13 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
           useNativeControls={false}
         />
       ) : (
-        <Image source={{ uri: item.uri }} style={styles.image} contentFit="cover" cachePolicy="memory-disk" />
+        <Image
+          source={{ uri: item.uri }}
+          style={styles.image}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          onLoad={visibleItems.length === 1 && !item.isVideo ? handleSingleImageLoad : undefined}
+        />
       )}
       {item.isVideo && (
         <View style={styles.videoOverlay}>
@@ -62,7 +95,10 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 
   if (visibleItems.length === 1) {
     return (
-      <View style={[styles.container, { height }, style]}>
+      <View
+        onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
+        style={[styles.container, style, sizeStyle]}
+      >
         {renderTile(visibleItems[0], 0, styles.fullTile)}
       </View>
     );
@@ -70,19 +106,24 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 
   if (visibleItems.length === 2) {
     return (
-      <View style={[styles.container, styles.row, { height }, style]}>
-        {visibleItems.map((item, index) => renderTile(item, index, styles.halfTile))}
+      <View style={[styles.container, style, styles.row, fixedGridSizeStyle]}>
+        {visibleItems.map((item, index) =>
+          renderTile(item, index, [styles.halfTile, index === 0 ? styles.rightGap : null])
+        )}
       </View>
     );
   }
 
   if (visibleItems.length === 3) {
     return (
-      <View style={[styles.container, styles.row, { height }, style]}>
-        {renderTile(visibleItems[0], 0, styles.halfTile)}
+      <View style={[styles.container, style, styles.row, fixedGridSizeStyle]}>
+        {renderTile(visibleItems[0], 0, [styles.halfTile, styles.rightGap])}
         <View style={styles.column}>
           {visibleItems.slice(1).map((item, offset) =>
-            renderTile(item, offset + 1, styles.stackedTile)
+            renderTile(item, offset + 1, [
+              styles.stackedTile,
+              offset === 0 ? styles.bottomGap : null,
+            ])
           )}
         </View>
       </View>
@@ -90,13 +131,15 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
   }
 
   return (
-    <View style={[styles.container, { height }, style]}>
-      <View style={styles.gridRow}>
-        {visibleItems.slice(0, 2).map((item, index) => renderTile(item, index, styles.gridTile))}
+    <View style={[styles.container, style, fixedGridSizeStyle]}>
+      <View style={[styles.gridRow, styles.bottomGap]}>
+        {visibleItems.slice(0, 2).map((item, index) =>
+          renderTile(item, index, [styles.gridTile, index === 0 ? styles.rightGap : null])
+        )}
       </View>
       <View style={styles.gridRow}>
         {visibleItems.slice(2, 4).map((item, index) =>
-          renderTile(item, index + 2, styles.gridTile)
+          renderTile(item, index + 2, [styles.gridTile, index === 0 ? styles.rightGap : null])
         )}
       </View>
     </View>
@@ -106,13 +149,13 @@ export const MediaGrid: React.FC<MediaGridProps> = ({
 const styles = StyleSheet.create({
   column: {
     flex: 1,
-    gap: 2,
   },
   container: {
     borderRadius: 8,
-    gap: 2,
-    overflow: "hidden",
     width: "100%",
+  },
+  bottomGap: {
+    marginBottom: TILE_GAP,
   },
   fullTile: {
     flex: 1,
@@ -120,7 +163,6 @@ const styles = StyleSheet.create({
   gridRow: {
     flex: 1,
     flexDirection: "row",
-    gap: 2,
   },
   gridTile: {
     flex: 1,
@@ -143,6 +185,9 @@ const styles = StyleSheet.create({
     top: 6,
     width: 22,
   },
+  rightGap: {
+    marginRight: TILE_GAP,
+  },
   row: {
     flexDirection: "row",
   },
@@ -151,6 +196,9 @@ const styles = StyleSheet.create({
   },
   tile: {
     backgroundColor: colors.neutral.grey2,
+    borderColor: colors.neutral.grey2,
+    borderRadius: 8,
+    borderWidth: 1,
     overflow: "hidden",
     position: "relative",
   },
