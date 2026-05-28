@@ -4,10 +4,16 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase, supabaseStorageUrl } from "../lib/supabase";
 
 // react-native-compressor requires a dev build, won't work in Expo Go
-let Video: { compress: (uri: string, options: any, onProgress?: (progress: number) => void) => Promise<string> } | null = null;
+let Video: {
+  compress: (
+    uri: string,
+    options: Record<string, unknown>,
+    onProgress?: (progress: number) => void
+  ) => Promise<string>;
+} | null = null;
 try {
   Video = require('react-native-compressor').Video;
-} catch (e) {
+} catch {
   console.warn('react-native-compressor not available (likely running in Expo Go)');
 }
 
@@ -30,6 +36,108 @@ export interface MediaSelectionResult {
   };
 }
 
+const createMediaSelection = async (
+  file: ImagePicker.ImagePickerAsset,
+  timestamp: number,
+  index = 0
+): Promise<MediaSelectionResult> => {
+  const isVideoFile = file.type === "video";
+  let thumbnailUri = null;
+  const mediaType = file.type || "image";
+  const fileExtension = mediaType === "video" ? ".mp4" : ".jpg";
+  const baseFileName = `${mediaType}/${timestamp}_${index}`;
+  const fileName = `${baseFileName}${fileExtension}`;
+  let thumbnailFileName = null;
+  let previewUrl = file.uri;
+
+  if (isVideoFile) {
+    try {
+      thumbnailFileName = `thumbnails/${baseFileName}.jpg`;
+
+      const { uri } = await VideoThumbnails.getThumbnailAsync(file.uri, {
+        time: 0,
+        quality: 0.5,
+      });
+      thumbnailUri = uri;
+
+      if (thumbnailUri) {
+        previewUrl = thumbnailUri;
+      }
+    } catch (e) {
+      console.warn("❌ [VIDEO THUMBNAIL] Couldn't generate or upload thumbnail", e);
+    }
+  }
+
+  const { data: mediaData, error: dbError } = await supabase
+    .from("media")
+    .insert([
+      {
+        file_path: null,
+        thumbnail_path: thumbnailFileName,
+        upload_status: "pending",
+      },
+    ])
+    .select("id")
+    .single();
+
+  if (dbError) throw dbError;
+
+  return {
+    mediaId: mediaData.id,
+    previewUrl,
+    thumbnailUri,
+    isVideo: isVideoFile,
+    pendingUpload: {
+      originalUri: file.uri,
+      fileName,
+      mediaType,
+      thumbnailFileName,
+    },
+  };
+};
+
+export const selectMediaItemsForPreview = async (
+  options: {
+    allowVideo?: boolean;
+    allowsEditing?: boolean;
+    selectionLimit?: number;
+  } = {}
+): Promise<MediaSelectionResult[]> => {
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (status !== "granted") {
+    throw new Error("Media library permissions not granted");
+  }
+
+  try {
+    const selectionLimit = Math.min(Math.max(options.selectionLimit ?? 1, 1), 4);
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: options.allowVideo ? ["images", "videos"] : ["images"],
+      allowsEditing: selectionLimit === 1 ? options.allowsEditing ?? false : false,
+      allowsMultipleSelection: selectionLimit > 1,
+      orderedSelection: selectionLimit > 1,
+      quality: 1.0,
+      videoMaxDuration: 120,
+      selectionLimit,
+      exif: false,
+    });
+
+    if (result.canceled) {
+      return [];
+    }
+
+    const timestamp = Date.now();
+    return Promise.all(
+      result.assets.slice(0, selectionLimit).map((file, index) =>
+        createMediaSelection(file, timestamp, index)
+      )
+    );
+  } catch (error) {
+    console.error("❌ [MEDIA SELECT] Error selecting media:", error);
+    throw error;
+  }
+};
+
 /**
  * Selects media from media library to get the preview url and thumbnail uri
  * @param options - The options for the media selection
@@ -41,96 +149,8 @@ export const selectMediaForPreview = async (
     allowsEditing?: boolean;
   } = {}
 ): Promise<MediaSelectionResult | null> => {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-  if (status !== "granted") {
-    throw new Error("Media library permissions not granted");
-  }
-
-  try {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
-      allowsEditing: options.allowsEditing ?? false,
-      quality: 1.0,
-      videoMaxDuration: 120,
-      selectionLimit: 1, // change if we want to allow multiple images
-      exif: false, // no exif -- might make it faster for just selecting media
-    });
-
-    if (result.canceled) {
-      return null;
-    }
-
-    const file = result.assets[0];
-    const isVideoFile = file.type === "video";
-    let thumbnailUri = null;
-
-    const timestamp = Date.now();
-    const mediaType = file.type || "image";
-    const fileExtension = mediaType === "video" ? ".mp4" : ".jpg";
-    const baseFileName = `${mediaType}/${timestamp}`;
-    const fileName = `${baseFileName}${fileExtension}`;
-    let thumbnailFileName = null;
-    let previewUrl = file.uri;
-
-    // Store original URI for background compression
-    const originalUri = file.uri;
-
-    // For videos, generate and upload thumbnail immediately
-    if (isVideoFile) {
-      try {
-        thumbnailFileName = `thumbnails/${baseFileName}.jpg`;
-
-        const { uri } = await VideoThumbnails.getThumbnailAsync(file.uri, {
-          time: 0,
-          quality: 0.5,
-        });
-        thumbnailUri = uri;
-
-        if (thumbnailUri) {
-          // Use local thumbnail immediately, upload later in background
-          previewUrl = thumbnailUri;
-        }
-      } catch (e) {
-        console.warn("❌ [VIDEO THUMBNAIL] Couldn't generate or upload thumbnail", e);
-      }
-    } else {
-      // For images, use original file as preview initially
-      // Final compressed version will be uploaded in background
-      previewUrl = file.uri;
-    }
-
-    // Create media record with upload_status = 'pending'
-    const { data: mediaData, error: dbError } = await supabase
-      .from("media")
-      .insert([
-        {
-          file_path: null, // Will be updated when upload completes
-          thumbnail_path: thumbnailFileName,
-          upload_status: 'pending',
-        },
-      ])
-      .select("id")
-      .single();
-
-    if (dbError) throw dbError;
-
-    return {
-      mediaId: mediaData.id,
-      previewUrl,
-      thumbnailUri,
-      isVideo: isVideoFile,
-      pendingUpload: {
-        originalUri,
-        fileName,
-        mediaType,
-        thumbnailFileName,
-      },
-    };
-  } catch (error) {
-    console.error("❌ [MEDIA SELECT] Error selecting media:", error);
-    throw error;
-  }
+  const items = await selectMediaItemsForPreview({ ...options, selectionLimit: 1 });
+  return items[0] || null;
 };
 
 /**
@@ -172,7 +192,7 @@ export const uploadMediaInBackground = async (
             uri: compressedThumbnail.uri,
             name: pendingUpload.thumbnailFileName,
             type: "image/jpeg",
-          } as any);
+          } as unknown as Blob);
 
           await supabase.storage
             .from("challenge-uploads")
@@ -234,7 +254,7 @@ export const uploadMediaInBackground = async (
       uri: compressedUri,
       name: pendingUpload.fileName,
       type: pendingUpload.mediaType === "video" ? "video/mp4" : "image/jpeg",
-    } as any);
+    } as unknown as Blob);
 
     if (onProgress) onProgress(80);
 
@@ -339,7 +359,7 @@ export const uploadMedia = async (
             uri: compressedThumbnail.uri,
             name: thumbnailFileName,
             type: "image/jpeg",
-          } as any);
+          } as unknown as Blob);
 
           const { error: thumbnailError } = await supabase.storage
             .from("challenge-uploads")
@@ -392,7 +412,7 @@ export const uploadMedia = async (
       uri: fileUri,
       name: fileName,
       type: mediaType === "video" ? "video/mp4" : "image/jpeg",
-    } as any);
+    } as unknown as Blob);
 
     // upload to supabase storage
     const { error: uploadError } = await supabase.storage

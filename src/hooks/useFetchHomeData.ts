@@ -264,6 +264,14 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
           challenges:challenge_id (title),
           side_quests:quest_id (title),
           media (file_path),
+          post_media (
+            position,
+            media_id,
+            media (
+              file_path,
+              upload_status
+            )
+          ),
           likes:likes(count),
           comments (id, body, created_at, user_id, parent_comment_id, profiles:user_id (username))
         `)

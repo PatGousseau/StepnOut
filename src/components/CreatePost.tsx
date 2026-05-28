@@ -6,11 +6,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Image,
   ScrollView,
   TextStyle,
   ViewStyle,
-  ImageStyle,
 } from "react-native";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -22,6 +20,7 @@ import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
 import { FeatureActionButton } from "./FeatureActionButton";
+import { MediaGrid } from "./MediaGrid";
 
 interface CreatePostProps {
   onPostCreated?: () => void;
@@ -35,6 +34,7 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
 
   const {
     selectedMedia,
+    selectedMediaItems,
     setPostText,
     isUploading,
     uploadProgress,
@@ -111,26 +111,17 @@ const CreatePost = ({ onPostCreated }: CreatePostProps) => {
                   <View style={mediaPreviewContainerStyle}>
                     <Loader />
                   </View>
-                ) : selectedMedia ? (
-                  <View style={mediaPreviewContainerStyle}>
-                    <Image
-                      source={{ 
-                        uri: selectedMedia.isVideo 
-                          ? selectedMedia.thumbnailUri || selectedMedia.previewUrl 
-                          : selectedMedia.previewUrl 
-                      }}
-                      style={mediaPreviewStyle}
-                      resizeMode="contain"
-                    />
-                    <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
-                      <MaterialIcons name="close" size={12} color="white" />
-                    </TouchableOpacity>
-                    {selectedMedia.isVideo && (
-                      <View style={videoIndicatorStyle}>
-                        <MaterialIcons name="play-circle-filled" size={24} color="white" />
-                      </View>
-                    )}
-                  </View>
+                ) : selectedMediaItems.length > 0 ? (
+                  <MediaGrid
+                    items={selectedMediaItems.map((item) => ({
+                      uri: item.thumbnailUri || item.previewUrl,
+                      isVideo: item.isVideo,
+                      useImageForVideo: true,
+                    }))}
+                    onRemove={handleRemoveMedia}
+                    height={240}
+                    style={mediaPreviewContainerStyle}
+                  />
                 ) : null}
 
                 <TextInput
@@ -203,19 +194,8 @@ const keyboardViewStyle: ViewStyle = {
 };
 
 const mediaPreviewContainerStyle: ViewStyle = {
-  position: "relative",
   width: "100%",
-  aspectRatio: 1.5,
-  borderRadius: 8,
   marginVertical: 10,
-  overflow: "hidden",
-};
-
-const mediaPreviewStyle: ImageStyle = {
-  width: "100%",
-  height: "100%",
-  borderRadius: 8,
-  backgroundColor: "#f0f0f0",
 };
 
 const mediaUploadIconStyle: ViewStyle = {
@@ -255,18 +235,6 @@ const modalScrollStyle: ViewStyle = {
   width: "100%",
 };
 
-const removeMediaButtonStyle: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 12,
-  height: 18,
-  justifyContent: "center",
-  position: "absolute",
-  right: 8,
-  top: 8,
-  width: 18,
-};
-
 const scrollContentStyle: ViewStyle = {
   flexGrow: 1,
   justifyContent: "center",
@@ -295,16 +263,6 @@ const uploadButtonStyle: ViewStyle = {
   height: 56,
   justifyContent: "center",
   width: 56,
-};
-
-const videoIndicatorStyle: ViewStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: [{ translateX: -12 }, { translateY: -12 }],
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 12,
-  padding: 4,
 };
 
 const uploadProgressContainerStyle: ViewStyle = {

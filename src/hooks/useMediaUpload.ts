@@ -3,7 +3,7 @@ import { Linking, Platform } from 'react-native';
 import { AppAlert } from '../components/AppAlert';
 import { useUploadProgress } from '../contexts/UploadProgressContext';
 import { createProgressManager } from '../utils/progressManager';
-import { selectMediaForPreview, MediaSelectionResult } from '../utils/handleMediaUpload';
+import { selectMediaItemsForPreview, MediaSelectionResult } from '../utils/handleMediaUpload';
 import { backgroundUploadService } from '../services/backgroundUploadService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
@@ -17,20 +17,24 @@ interface UseMediaUploadOptions {
 
 interface UseMediaUploadResult {
   selectedMedia: MediaSelectionResult | null;
+  selectedMediaItems: MediaSelectionResult[];
   postText: string;
   isUploading: boolean;
   isSubmitting: boolean;
-  isBackgroundUploading: boolean;
-  localUploadProgress: number;
+  uploadProgress: number | null;
   handleMediaUpload: () => Promise<void>;
-  handleRemoveMedia: () => void;
+  handleRemoveMedia: (index?: number) => void;
   setPostText: (text: string) => void;
-  handleSubmit: (additionalData?: Record<string, any>, text?: string) => Promise<void>;
+  handleSubmit: (additionalData?: Record<string, unknown>, text?: string) => Promise<void>;
 }
 
-export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
+const getErrorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : undefined;
+
+export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUploadResult => {
   const { t } = useLanguage();
-  const [selectedMedia, setSelectedMedia] = useState<MediaSelectionResult | null>(null);
+  const [selectedMediaItems, setSelectedMediaItems] = useState<MediaSelectionResult[]>([]);
+  const selectedMedia = selectedMediaItems[0] || null;
   const [postText, setPostText] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,23 +45,30 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   // Cleanup on unmount
   useEffect(() => {
+    const progressManager = progressManagerRef.current;
     return () => {
-      progressManagerRef.current.cleanup();
+      progressManager.cleanup();
     };
   }, []);
 
   const handleMediaUpload = async () => {
     try {
       setIsUploading(true);
-      const result = await selectMediaForPreview({ allowVideo: true });
-      if (result) {
-        setSelectedMedia(result);
+      const remainingSlots = Math.max(4 - selectedMediaItems.length, 0);
+      if (remainingSlots === 0) return;
+      const result = await selectMediaItemsForPreview({
+        allowVideo: true,
+        selectionLimit: remainingSlots,
+      });
+      if (result.length > 0) {
+        setSelectedMediaItems((prev) => [...prev, ...result].slice(0, 4));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error selecting media:', error);
+      const message = getErrorMessage(error);
       
       // Check if it's a permissions error
-      if (error?.message?.includes('permissions not granted')) {
+      if (message?.includes('permissions not granted')) {
         captureEvent(POST_EVENTS.MEDIA_PERMISSION_DENIED);
         AppAlert.show(
           t('Photo Access Required'),
@@ -77,7 +88,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
           ]
         );
       } else {
-        captureEvent(POST_EVENTS.MEDIA_PICK_FAILED, { message: error?.message });
+        captureEvent(POST_EVENTS.MEDIA_PICK_FAILED, { message });
         setUploadMessage(t('Error selecting media'));
       }
     } finally {
@@ -85,14 +96,20 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     }
   };
 
-  const handleRemoveMedia = () => {
-    setSelectedMedia(null);
+  const handleRemoveMedia = (index?: number) => {
+    if (index == null) {
+      setSelectedMediaItems([]);
+      return;
+    }
+    setSelectedMediaItems((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
   };
 
-  const handleSubmit = async (additionalData: Record<string, any> = {}, text?: string) => {
+  const handleSubmit = async (additionalData: Record<string, unknown> = {}, text?: string) => {
     const finalText = text !== undefined ? text : postText;
 
-    if (!finalText.trim() && !selectedMedia) {
+    const mediaItems = selectedMediaItems;
+
+    if (!finalText.trim() && mediaItems.length === 0) {
       setUploadMessage(t('Please add either a description or media'));
       return;
     }
@@ -109,6 +126,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
     setIsSubmitting(true);
     captureEvent(POST_EVENTS.SUBMIT_ATTEMPTED, {
       has_media: !!selectedMedia,
+      media_count: mediaItems.length,
       has_text: !!finalText.trim(),
     });
 
@@ -118,7 +136,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
         .from('post')
         .insert([
           {
-            media_id: selectedMedia?.mediaId || null,
+            media_id: mediaItems[0]?.mediaId || null,
             body: finalText,
             featured: false,
             ...additionalData,
@@ -129,45 +147,75 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
       if (postError) throw postError;
 
+      if (mediaItems.length > 0) {
+        const { error: postMediaError } = await supabase
+          .from('post_media')
+          .insert(
+            mediaItems.map((item, index) => ({
+              post_id: postData.id,
+              media_id: item.mediaId,
+              position: index,
+            }))
+          );
+
+        if (postMediaError) throw postMediaError;
+      }
+
       // If there's media, start background upload
-      if (selectedMedia) {
+      if (mediaItems.length > 0) {
         setIsBackgroundUploading(true);
         progressManagerRef.current.startUpload();
-        
-        backgroundUploadService.addToQueue(
-          selectedMedia.mediaId,
-          selectedMedia.pendingUpload,
-          postData.id,
-          (progress) => {
-            setLocalUploadProgress(progress);
-            progressManagerRef.current.updateProgress(progress);
-          },
-          (success, mediaUrl) => {
-            setIsBackgroundUploading(false);
-            setLocalUploadProgress(0);
-            if (!success) {
-              console.error('Background upload failed:', postData.id);
-              captureEvent(POST_EVENTS.MEDIA_UPLOAD_FAILED, { post_id: postData.id });
-              setUploadMessage(t('Upload failed'));
-              setTimeout(() => {
-                setUploadMessage(null);
-                setUploadProgress(null);
-              }, 3000);
-            } else {
-              progressManagerRef.current.complete();
-              setUploadMessage(options.successMessage || t('Upload completed successfully!'));
-              setTimeout(() => {
-                setUploadMessage(null);
-                setUploadProgress(null);
-              }, 3000);
-              
-              // Call completion callback for successful background upload
-              if (options.onUploadComplete) {
-                options.onUploadComplete();
+
+        const uploadProgressByMediaId = new Map<number, number>();
+        let completedUploads = 0;
+        let failedUploads = 0;
+
+        mediaItems.forEach((item) => {
+          backgroundUploadService.addToQueue(
+            item.mediaId,
+            item.pendingUpload,
+            postData.id,
+            (progress) => {
+              uploadProgressByMediaId.set(item.mediaId, progress);
+              const totalProgress = mediaItems.reduce(
+                (sum, mediaItem) => sum + (uploadProgressByMediaId.get(mediaItem.mediaId) || 0),
+                0
+              ) / mediaItems.length;
+              setLocalUploadProgress(totalProgress);
+              progressManagerRef.current.updateProgress(totalProgress);
+            },
+            (success) => {
+              completedUploads += 1;
+              if (!success) failedUploads += 1;
+
+              if (completedUploads < mediaItems.length) return;
+
+              setIsBackgroundUploading(false);
+              setLocalUploadProgress(0);
+              if (failedUploads > 0) {
+                console.error('Background upload failed:', postData.id);
+                captureEvent(POST_EVENTS.MEDIA_UPLOAD_FAILED, { post_id: postData.id });
+                setUploadMessage(t('Upload failed'));
+                setTimeout(() => {
+                  setUploadMessage(null);
+                  setUploadProgress(null);
+                }, 3000);
+              } else {
+                progressManagerRef.current.complete();
+                setUploadMessage(options.successMessage || t('Upload completed successfully!'));
+                setTimeout(() => {
+                  setUploadMessage(null);
+                  setUploadProgress(null);
+                }, 3000);
+
+                // Call completion callback for successful background upload
+                if (options.onUploadComplete) {
+                  options.onUploadComplete();
+                }
               }
             }
-          }
-        );
+          );
+        });
       } else {
         setUploadMessage(options.successMessage || t('Post sent successfully!'));
         setTimeout(() => setUploadMessage(null), 3000);
@@ -175,7 +223,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
       // Reset form
       setPostText('');
-      setSelectedMedia(null);
+      setSelectedMediaItems([]);
 
       // Call completion callback if provided
       if (options.onUploadComplete) {
@@ -192,6 +240,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}) => {
 
   return {
     selectedMedia,
+    selectedMediaItems,
     postText,
     setPostText,
     isUploading,

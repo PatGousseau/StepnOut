@@ -18,6 +18,14 @@ const BASE_SELECT = `
     file_path,
     upload_status
   ),
+  post_media (
+    position,
+    media_id,
+    media (
+      file_path,
+      upload_status
+    )
+  ),
   likes:likes(count),
   comments (
     id,
@@ -69,6 +77,25 @@ function getCommentPreviews(post: PostRecord) {
 
 function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
+  const mediaItems = (post.post_media || [])
+    .filter((item) => item.media?.file_path)
+    .sort((a, b) => a.position - b.position)
+    .map((item) => ({
+      media_id: item.media_id,
+      file_path: resolveMediaUrl(item.media?.file_path) || item.media?.file_path || null,
+      position: item.position,
+    }));
+  const normalizedMediaItems = mediaItems.length > 0
+    ? mediaItems
+    : mediaUrl || post.media?.file_path
+      ? [
+          {
+            media_id: post.media_id || 0,
+            file_path: mediaUrl || post.media?.file_path || null,
+            position: 0,
+          },
+        ]
+      : undefined;
   const { comments, likes, challenges, side_quests } = post;
 
   return {
@@ -77,6 +104,7 @@ function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {
     body: post.body,
     media_id: post.media_id ?? undefined,
     media: mediaUrl ? { file_path: mediaUrl } : post.media ? { file_path: post.media.file_path } : undefined,
+    media_items: normalizedMediaItems,
     created_at: post.created_at,
     featured: post.featured,
     challenge_id: post.challenge_id ?? null,

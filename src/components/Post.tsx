@@ -49,6 +49,7 @@ import { translationService } from "../services/translationService";
 import { useInstagramShare } from "../hooks/useInstagramShare";
 import { usePostDeleteCleanup } from "../hooks/usePostDeleteCleanup";
 import InstagramStoryCard from "./InstagramStoryCard";
+import { MediaGrid } from "./MediaGrid";
 
 interface PostProps {
   post: PostType;
@@ -89,6 +90,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const [isTranslating, setIsTranslating] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [selectedImageViewerIndex, setSelectedImageViewerIndex] = useState(0);
   const {
     comments: commentList,
     loading: commentsLoading,
@@ -104,11 +107,11 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
-  const { storyCardRef, isSharing, onImageLoad, completionCount, shareToInstagram } = useInstagramShare({
+  const { storyCardRef, isSharing, completionCount, shareToInstagram } = useInstagramShare({
     postId: post.id,
     isChallengePost: !!post.challenge_id,
-    challengeId: post.challenge_id,
-    mediaUrl: post.media?.file_path,
+    challengeId: post.challenge_id ?? undefined,
+    mediaUrl: post.media?.file_path ?? undefined,
   });
 
   useEffect(() => {
@@ -180,6 +183,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     return source.match(/\.(mp4|mov|avi|wmv)$/i);
   };
 
+  const mediaItems = (post.media_items && post.media_items.length > 0)
+    ? post.media_items
+    : post.media?.file_path
+      ? [{ media_id: post.media_id || 0, file_path: post.media.file_path, position: 0 }]
+      : [];
+  const imageViewerItems = mediaItems.filter((item) => item.file_path && !isVideo(item.file_path));
+
   const showHeartAnimation = () => {
     // Reset animation values
     heartScale.setValue(0);
@@ -221,7 +231,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     ]).start();
   };
 
-  const handleDoubleTap = () => {
+  const handleDoubleTap = (mediaIndex = 0) => {
     const now = Date.now();
     const DOUBLE_PRESS_DELAY = 300;
 
@@ -239,14 +249,21 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       lastTapTime.current = now;
       singleTapTimer.current = setTimeout(() => {
         // Single tap - open fullscreen/modal only if there's media
-        if (post.media?.file_path) {
-          if (isVideo(post.media.file_path)) {
+        const mediaItem = mediaItems[mediaIndex];
+        if (mediaItem?.file_path) {
+          setSelectedMediaIndex(mediaIndex);
+          if (isVideo(mediaItem.file_path)) {
             setShowVideoModal(true);
             captureEvent(POST_EVENTS.VIDEO_PLAYED, {
               post_id: post.id,
               is_challenge_post: !!post.challenge_id,
             });
           } else {
+            const imageIndex = mediaItems
+              .slice(0, mediaIndex)
+              .filter((item) => item.file_path && !isVideo(item.file_path))
+              .length;
+            setSelectedImageViewerIndex(imageIndex);
             setShowFullScreenImage(true);
             captureEvent(POST_EVENTS.MEDIA_VIEWED, {
               post_id: post.id,
@@ -345,7 +362,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleImageLongPress = async () => {
     try {
-      const urls = await imageService.getPostImageUrl(post.media?.file_path || "", "original");
+      const selectedImage = imageViewerItems[selectedImageViewerIndex];
+      const urls = await imageService.getPostImageUrl(selectedImage?.file_path || "", "original");
 
       // Download the image first
       const response = await fetch(urls.fullUrl);
@@ -379,26 +397,26 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   };
 
   const renderMedia = () => {
-    if (!post.media?.file_path) return null;
+    if (mediaItems.length === 0) return null;
 
     const heartAnimationStyle = {
       transform: [{ scale: heartScale }],
       opacity: heartOpacity,
     };
 
-    if (isVideo(post.media?.file_path)) {
+    if (mediaItems.length === 1 && mediaItems[0].file_path && isVideo(mediaItems[0].file_path)) {
       return (
         <>
-          <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
+          <Pressable onPress={() => handleDoubleTap(0)} style={{ position: "relative" }}>
             <Video
-              source={{ uri: post.media?.file_path }}
+              source={{ uri: mediaItems[0].file_path }}
               style={contentStyle}
               resizeMode={ResizeMode.COVER}
               shouldPlay={false}
               isMuted={true}
               isLooping={false}
               useNativeControls={false}
-              posterSource={{ uri: post.media?.file_path }}
+              posterSource={{ uri: mediaItems[0].file_path }}
               posterStyle={mediaContentStyle}
             />
             <View style={videoOverlayStyle}>
@@ -409,7 +427,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </Animated.View>
           </Pressable>
           <VideoPlayer
-            videoUri={post.media?.file_path}
+            videoUri={mediaItems[selectedMediaIndex]?.file_path || ""}
             visible={showVideoModal}
             onClose={() => setShowVideoModal(false)}
           />
@@ -417,18 +435,29 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       );
     }
     return (
-      <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
-        <Image
-          source={{ uri: post.media?.file_path }}
-          style={mediaContentStyle}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-          transition={200}
+      <>
+        <View style={{ position: "relative" }}>
+          <MediaGrid
+            items={mediaItems
+              .filter((item) => item.file_path)
+              .map((item) => ({
+                uri: item.file_path || "",
+                isVideo: !!item.file_path && !!isVideo(item.file_path),
+              }))}
+            onPress={handleDoubleTap}
+            height={260}
+            style={mediaContentStyle}
+          />
+          <Animated.View style={[heartOverlayStyle, heartAnimationStyle]} pointerEvents="none">
+            <Icon name="heart" size={64} color="#eb656b" />
+          </Animated.View>
+        </View>
+        <VideoPlayer
+          videoUri={mediaItems[selectedMediaIndex]?.file_path || ""}
+          visible={showVideoModal}
+          onClose={() => setShowVideoModal(false)}
         />
-        <Animated.View style={[heartOverlayStyle, heartAnimationStyle]} pointerEvents="none">
-          <Icon name="heart" size={64} color="#eb656b" />
-        </Animated.View>
-      </Pressable>
+      </>
     );
   };
 
@@ -579,8 +608,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </View>
         </TouchableOpacity>
       )}
-      {post.body && !post.media?.file_path ? (
-        <Pressable onPress={handleDoubleTap}>
+      {post.body && mediaItems.length === 0 ? (
+        <Pressable onPress={() => handleDoubleTap()}>
           <Text style={textStyle}>{post.body}</Text>
           {translatedText && (
             <View style={translationContainerStyle}>
@@ -601,7 +630,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           {renderMedia()}
         </>
       )}
-      {!post.media?.file_path && (
+      {mediaItems.length === 0 && (
         <Animated.View
           style={[
             heartOverlayStyle,
@@ -662,12 +691,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           ref={storyCardRef}
           username={postUser?.username || "unknown"}
           challengeTitle={post.challenge_title}
-          mediaUrl={post.media?.file_path}
-          postText={post.body}
+          postText={post.body ?? undefined}
           profileImageUrl={profileImageUrl || undefined}
           completionCount={completionCount}
           variant="post"
-          onImageLoad={onImageLoad}
         />
 
         {localPreviews.length > 0 && (
@@ -770,7 +797,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               </TouchableOpacity>
             </View>
             <ImageViewer
-              imageUrls={[{ url: post.media?.file_path || "" }]}
+              imageUrls={imageViewerItems.map((item) => ({ url: item.file_path || "" }))}
+              index={selectedImageViewerIndex}
               enableSwipeDown
               onSwipeDown={() => setShowFullScreenImage(false)}
               renderIndicator={() => <></>}

@@ -25,8 +25,10 @@ type HydratedRow = {
   item_type: "post" | "comment";
   item_id: number;
   created_at: string;
-  post: any;
-  comment: any;
+  post: (Post & {
+    media?: { file_path?: string | null } | null;
+  }) | null;
+  comment: CommentWithPost | null;
 };
 
 const PAGE_SIZE = 20;
@@ -75,6 +77,41 @@ export const useProfileActivity = (targetUserId: string) => {
           return;
         }
 
+        const postIds = hydrated
+          .filter((r) => r.item_type === "post" && r.post?.id)
+          .map((r) => r.post!.id);
+        const mediaItemsByPost = new Map<number, Post["media_items"]>();
+
+        if (postIds.length > 0) {
+          const { data: postMediaRows, error: postMediaError } = await supabase
+            .from("post_media")
+            .select("post_id, media_id, position, media (file_path, upload_status)")
+            .in("post_id", postIds);
+
+          if (postMediaError) throw postMediaError;
+
+          type PostMediaRow = {
+            post_id: number;
+            media_id: number;
+            position: number;
+            media: { file_path: string | null; upload_status?: string | null } | null;
+          };
+
+          for (const row of (postMediaRows || []) as unknown as PostMediaRow[]) {
+            if (!row.media?.file_path) continue;
+            const items = mediaItemsByPost.get(row.post_id) || [];
+            items.push({
+              media_id: row.media_id,
+              position: row.position,
+              file_path: `${supabaseStorageUrl}/${row.media.file_path}`,
+            });
+            mediaItemsByPost.set(
+              row.post_id,
+              items.sort((a, b) => a.position - b.position)
+            );
+          }
+        }
+
         const nextItems: ActivityItem[] = hydrated
           .map((r) => {
             if (r.item_type === "post") {
@@ -92,6 +129,7 @@ export const useProfileActivity = (targetUserId: string) => {
                 post: {
                   ...post,
                   media,
+                  media_items: mediaItemsByPost.get(post.id),
                   comment_previews:
                     Array.isArray(post.comment_previews) && post.comment_previews.length > 0
                       ? post.comment_previews

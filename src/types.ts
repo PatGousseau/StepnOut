@@ -33,6 +33,14 @@ export interface PostRecord {
     file_path: string | null;
     upload_status?: string | null;
   } | null;
+  post_media?: {
+    position: number;
+    media_id: number;
+    media: {
+      file_path: string | null;
+      upload_status?: string | null;
+    } | null;
+  }[];
   created_at: string;
   featured: boolean;
   challenge_id?: number | null;
@@ -75,6 +83,11 @@ export interface Challenge {
     media?: {
       file_path: string | null;
     };
+    media_items?: {
+      media_id: number;
+      file_path: string | null;
+      position: number;
+    }[];
     created_at: string;
     featured: boolean;
     challenge_id?: number | null;

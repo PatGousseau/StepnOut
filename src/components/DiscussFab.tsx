@@ -6,13 +6,11 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Image,
   ScrollView,
   Keyboard,
   KeyboardEvent,
   useWindowDimensions,
   ViewStyle,
-  ImageStyle,
   TextStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,6 +23,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { MediaGrid } from "./MediaGrid";
 
 interface DiscussFabProps {
   onPostCreated?: () => void;
@@ -67,6 +66,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
 
   const {
     selectedMedia,
+    selectedMediaItems,
     setPostText,
     isSubmitting,
     uploadProgress,
@@ -169,29 +169,17 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
                   </TouchableOpacity>
                 </View>
                 <View style={modalBodyStyle}>
-                  {selectedMedia ? (
-                    <View style={mediaPreviewContainerStyle}>
-                      <Image
-                        source={{
-                          uri: selectedMedia.isVideo
-                            ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
-                            : selectedMedia.previewUrl,
-                        }}
-                        style={mediaPreviewStyle}
-                        resizeMode="contain"
-                      />
-                      <TouchableOpacity
-                        style={removeMediaButtonStyle}
-                        onPress={handleRemoveMedia}
-                      >
-                        <MaterialIcons name="close" size={12} color="white" />
-                      </TouchableOpacity>
-                      {selectedMedia.isVideo && (
-                        <View style={videoIndicatorStyle}>
-                          <MaterialIcons name="play-circle-filled" size={24} color="white" />
-                        </View>
-                      )}
-                    </View>
+                  {selectedMediaItems.length > 0 ? (
+                    <MediaGrid
+                      items={selectedMediaItems.map((item) => ({
+                        uri: item.thumbnailUri || item.previewUrl,
+                        isVideo: item.isVideo,
+                        useImageForVideo: true,
+                      }))}
+                      onRemove={handleRemoveMedia}
+                      height={210}
+                      style={mediaPreviewContainerStyle}
+                    />
                   ) : null}
 
                   <TextInput
@@ -212,20 +200,20 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
                     <TouchableOpacity
                       style={[
                         mediaUploadButtonStyle,
-                        selectedMedia ? mediaUploadButtonDisabledStyle : null,
+                        selectedMediaItems.length >= 4 ? mediaUploadButtonDisabledStyle : null,
                       ]}
                       onPress={handleMediaUpload}
-                      disabled={!!selectedMedia}
+                      disabled={selectedMediaItems.length >= 4}
                     >
                       <MaterialIcons
                         name="add-photo-alternate"
                         size={20}
-                        color={selectedMedia ? colors.neutral.darkGrey : colors.light.primary}
+                        color={selectedMediaItems.length >= 4 ? colors.neutral.darkGrey : colors.light.primary}
                       />
                       <Text
                         style={[
                           mediaUploadTextStyle,
-                          selectedMedia ? mediaUploadTextDisabledStyle : null,
+                          selectedMediaItems.length >= 4 ? mediaUploadTextDisabledStyle : null,
                         ]}
                       >
                         {t("Add media")}
@@ -390,41 +378,8 @@ const closeIconStyle: TextStyle = {
 };
 
 const mediaPreviewContainerStyle: ViewStyle = {
-  position: "relative",
   width: "100%",
-  aspectRatio: 1.5,
-  borderRadius: 18,
   marginBottom: 14,
-  overflow: "hidden",
-};
-
-const mediaPreviewStyle: ImageStyle = {
-  width: "100%",
-  height: "100%",
-  borderRadius: 18,
-  backgroundColor: colors.light.accent3,
-};
-
-const removeMediaButtonStyle: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 12,
-  height: 18,
-  justifyContent: "center",
-  position: "absolute",
-  right: 8,
-  top: 8,
-  width: 18,
-};
-
-const videoIndicatorStyle: ViewStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: [{ translateX: -12 }, { translateY: -12 }],
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 12,
-  padding: 4,
 };
 
 const textInputStyle: TextStyle = {
