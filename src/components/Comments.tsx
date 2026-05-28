@@ -8,6 +8,7 @@ import {
   Animated,
   PanResponder,
   TouchableOpacity,
+  Modal,
   ViewStyle,
   TextStyle,
   ImageStyle,
@@ -35,6 +36,11 @@ import { ActionsMenu } from "./ActionsMenu";
 import { captureEvent } from "../lib/posthog";
 import { COMMENT_EVENTS } from "../constants/analyticsEvents";
 import { translationService } from "../services/translationService";
+import { MediaSelectionResult } from "../utils/handleMediaUpload";
+import { MediaGrid } from "./MediaGrid";
+import { useMediaSelection } from "../hooks/useMediaSelection";
+import ImageViewer from "react-native-image-zoom-viewer";
+import VideoPlayer from "./VideoPlayer";
 
 interface CommentsProps {
   initialComments: CommentType[];
@@ -43,7 +49,12 @@ interface CommentsProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    mediaItems?: MediaSelectionResult[]
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -55,7 +66,12 @@ interface CommentsListProps {
   postId: number;
   postUserId: string;
   onCommentAdded?: (newCount: number) => void;
-  addComment: (userId: string, body: string, parentCommentId?: number | null) => Promise<CommentType | null>;
+  addComment: (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    mediaItems?: MediaSelectionResult[]
+  ) => Promise<CommentType | null>;
   isAddingComment?: boolean;
 }
 
@@ -66,6 +82,8 @@ type DisplayComment = CommentType & {
   isLastReply?: boolean;
   replyToUserId?: string;
 };
+
+type CommentMediaItem = NonNullable<CommentType["media_items"]>[number];
 
 const getRootCommentId = (commentsById: Map<number, CommentType>, comment: CommentType) => {
   const visited = new Set<number>();
@@ -143,6 +161,13 @@ export const CommentsList: React.FC<CommentsListProps> = ({
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<{ commentId: number; userId: string; username: string } | null>(null);
   const [comments, setComments] = useState(initialComments);
+  const {
+    selectedMediaItems,
+    isUploading,
+    handleMediaUpload,
+    handleRemoveMedia,
+    clearMedia,
+  } = useMediaSelection();
 
   useEffect(() => {
     setComments(initialComments);
@@ -151,19 +176,25 @@ export const CommentsList: React.FC<CommentsListProps> = ({
       initializeCommentLikes(initialComments);
       initializeCommentReactions(initialComments);
     }
-  }, [initialComments]);
+  }, [initialComments, initializeCommentLikes, initializeCommentReactions]);
 
   const handleAddComment = async () => {
-    if (newComment.trim() && user) {
+    if ((newComment.trim() || selectedMediaItems.length > 0) && user) {
       const commentText = newComment.trim();
 
       try {
         const parentCommentId = replyTo?.commentId ?? null;
-        const newCommentData = await addComment(user.id, commentText, parentCommentId);
+        const newCommentData = await addComment(
+          user.id,
+          commentText,
+          parentCommentId,
+          selectedMediaItems
+        );
 
         if (newCommentData) {
           setNewComment("");
           setReplyTo(null);
+          clearMedia();
 
           setComments((prevComments) => [...prevComments, newCommentData]);
 
@@ -197,7 +228,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                   senderUsername,
                   recipientId,
                   postId.toString(),
-                  commentText,
+                  commentText || t("Shared media"),
                   newCommentData.id.toString(),
                   {
                     title: t("(username) commented"),
@@ -215,6 +246,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             comment_id: newCommentData.id,
             comment_length: commentText.length,
             is_reply: !!parentCommentId,
+            media_count: selectedMediaItems.length,
           });
         }
       } catch (error) {
@@ -263,6 +295,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               text={item.text}
               created_at={item.created_at}
               post_id={item.post_id}
+              mediaItems={item.media_items}
               indentLevel={item.indentLevel}
               isLastReply={item.isLastReply}
               replyToUserId={item.replyToUserId}
@@ -280,6 +313,18 @@ export const CommentsList: React.FC<CommentsListProps> = ({
         />
 
         <View style={inputWrapperStyle}>
+          {selectedMediaItems.length > 0 ? (
+            <MediaGrid
+              items={selectedMediaItems.map((item) => ({
+                uri: item.thumbnailUri || item.previewUrl,
+                isVideo: item.isVideo,
+                useImageForVideo: true,
+              }))}
+              onRemove={handleRemoveMedia}
+              height={132}
+              style={commentMediaPreviewStyle}
+            />
+          ) : null}
           {replyTo ? (
             <View style={replyToContainerStyle}>
               <Text style={replyToTextStyle}>{t("Replying to")} @{replyTo.username}</Text>
@@ -289,6 +334,24 @@ export const CommentsList: React.FC<CommentsListProps> = ({
             </View>
           ) : null}
           <View style={inputContainerStyle}>
+            <TouchableOpacity
+              style={[
+                commentMediaButtonStyle,
+                selectedMediaItems.length >= 4 ? commentMediaButtonDisabledStyle : null,
+              ]}
+              onPress={handleMediaUpload}
+              disabled={selectedMediaItems.length >= 4 || isUploading || isAddingComment}
+            >
+              {isUploading ? (
+                <ActivityIndicator size={18} color={colors.light.primary} />
+              ) : (
+                <MaterialCommunityIcons
+                  name="image-multiple-outline"
+                  size={20}
+                  color={colors.light.primary}
+                />
+              )}
+            </TouchableOpacity>
             <View style={inputInnerContainerStyle}>
               <TextInput
                 value={newComment}
@@ -304,10 +367,10 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               onPress={handleAddComment}
               style={({ pressed }) => [
                 postButtonStyle,
-                (!user || isAddingComment) && postButtonDisabledStyle,
+                (!user || isAddingComment || isUploading) && postButtonDisabledStyle,
                 pressed && postButtonPressedStyle,
               ]}
-              disabled={!user || isAddingComment}
+              disabled={!user || isAddingComment || isUploading}
             >
               <Text style={postButtonTextStyle}>
                 {isAddingComment ? t("Posting...") : t("Post")}
@@ -408,6 +471,7 @@ interface CommentProps {
   text: string;
   created_at: string;
   post_id: number;
+  mediaItems?: CommentType["media_items"];
   indentLevel?: number;
   isLastReply?: boolean;
   replyToUserId?: string;
@@ -421,6 +485,7 @@ const Comment: React.FC<CommentProps> = ({
   text,
   created_at,
   post_id,
+  mediaItems,
   indentLevel = 0,
   isLastReply = false,
   replyToUserId,
@@ -436,6 +501,10 @@ const Comment: React.FC<CommentProps> = ({
   const [replyToUser, setReplyToUser] = useState<User | null>(null);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [selectedImageViewerIndex, setSelectedImageViewerIndex] = useState(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -485,6 +554,33 @@ const Comment: React.FC<CommentProps> = ({
     } else if (result.error) {
       console.error('Translation error:', result.error);
     }
+  };
+
+  const isVideo = (source?: string | null, mediaItem?: CommentMediaItem) => {
+    if (mediaItem?.is_video != null) return mediaItem.is_video;
+    return !!source?.match(/\.(mp4|mov|avi|wmv)$/i);
+  };
+
+  const imageViewerItems = (mediaItems || []).filter(
+    (item) => item.file_path && !isVideo(item.file_path, item)
+  );
+
+  const handleMediaPress = (mediaIndex: number) => {
+    const item = mediaItems?.[mediaIndex];
+    if (!item?.file_path) return;
+
+    setSelectedMediaIndex(mediaIndex);
+    if (isVideo(item.file_path, item)) {
+      setShowVideoModal(true);
+      return;
+    }
+
+    const imageIndex = (mediaItems || [])
+      .slice(0, mediaIndex)
+      .filter((mediaItem) => mediaItem.file_path && !isVideo(mediaItem.file_path, mediaItem))
+      .length;
+    setSelectedImageViewerIndex(imageIndex);
+    setShowFullScreenImage(true);
   };
 
   return (
@@ -548,12 +644,59 @@ const Comment: React.FC<CommentProps> = ({
           </View>
         </View>
         <View style={commentTextContainerStyle}>
-          <Text style={commentTextStyle}>
-            {indentLevel && replyToUser?.username ? (
-              <Text style={replyToUsernameStyle}>@{replyToUser.username} </Text>
-            ) : null}
-            {text}
-          </Text>
+          {text ? (
+            <Text style={commentTextStyle}>
+              {indentLevel && replyToUser?.username ? (
+                <Text style={replyToUsernameStyle}>@{replyToUser.username} </Text>
+              ) : null}
+              {text}
+            </Text>
+          ) : null}
+          {mediaItems && mediaItems.length > 0 ? (
+            <>
+              <MediaGrid
+                items={mediaItems
+                  .filter((item) => item.file_path)
+                  .map((item) => ({
+                    uri: item.preview_path || item.file_path || "",
+                    isVideo: isVideo(item.file_path, item),
+                    useImageForVideo: isVideo(item.file_path, item) && !!item.preview_path,
+                  }))}
+                onPress={handleMediaPress}
+                height={170}
+                style={commentMediaGridStyle}
+              />
+              <VideoPlayer
+                videoUri={mediaItems[selectedMediaIndex]?.file_path || ""}
+                visible={showVideoModal}
+                onClose={() => setShowVideoModal(false)}
+              />
+              <Modal
+                animationType="fade"
+                transparent
+                visible={showFullScreenImage}
+                onRequestClose={() => setShowFullScreenImage(false)}
+              >
+                <View style={fullScreenContainerStyle}>
+                  <TouchableOpacity
+                    style={closeFullScreenButtonStyle}
+                    onPress={() => setShowFullScreenImage(false)}
+                  >
+                    <MaterialCommunityIcons name="close" size={28} color="white" />
+                  </TouchableOpacity>
+                  <ImageViewer
+                    imageUrls={imageViewerItems.map((item) => ({ url: item.file_path || "" }))}
+                    index={selectedImageViewerIndex}
+                    enableSwipeDown
+                    onSwipeDown={() => setShowFullScreenImage(false)}
+                    renderIndicator={() => <></>}
+                    backgroundColor="rgba(0, 0, 0, 0.95)"
+                    onClick={() => setShowFullScreenImage(false)}
+                  />
+                </View>
+              </Modal>
+            </>
+          ) : null}
           {translatedText && (
             <View style={translationContainerStyle}>
               <Text style={translationLabelStyle}>Translation:</Text>
@@ -641,6 +784,11 @@ const commentTextStyle: TextStyle = {
   fontSize: 14,
 };
 
+const commentMediaGridStyle: ViewStyle = {
+  marginTop: 8,
+  width: "100%",
+};
+
 const replyToUsernameStyle: TextStyle = {
   color: colors.neutral.grey1,
   fontWeight: "600",
@@ -719,7 +867,23 @@ const inputContainerStyle: ViewStyle = {
 
 const inputInnerContainerStyle: ViewStyle = {
   flex: 1,
-  marginRight: 10,
+};
+
+const commentMediaButtonStyle: ViewStyle = {
+  alignItems: "center",
+  justifyContent: "center",
+  marginRight: 8,
+  paddingHorizontal: 4,
+  paddingVertical: 10,
+};
+
+const commentMediaButtonDisabledStyle: ViewStyle = {
+  opacity: 0.45,
+};
+
+const commentMediaPreviewStyle: ViewStyle = {
+  marginBottom: 8,
+  width: "100%",
 };
 
 const replyToContainerStyle: ViewStyle = {
@@ -781,6 +945,19 @@ const postButtonPressedStyle: ViewStyle = {
   opacity: 0.7,
 };
 
+const fullScreenContainerStyle: ViewStyle = {
+  backgroundColor: "rgba(0, 0, 0, 0.95)",
+  flex: 1,
+};
+
+const closeFullScreenButtonStyle: ViewStyle = {
+  padding: 8,
+  position: "absolute",
+  right: 16,
+  top: 50,
+  zIndex: 10,
+};
+
 const commentHeaderStyle: ViewStyle = {
   flexDirection: "row",
   justifyContent: "space-between",
@@ -801,12 +978,6 @@ const iconContainerStyle: ViewStyle = {
   flexDirection: "row",
   alignItems: "center",
   marginRight: 16,
-};
-
-const iconTextStyle: TextStyle = {
-  fontSize: 12,
-  color: colors.neutral.grey1,
-  marginLeft: 4,
 };
 
 const translationContainerStyle: ViewStyle = {

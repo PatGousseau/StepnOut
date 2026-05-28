@@ -288,14 +288,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
       initializePostLikes(postsInFeed);
       initializePostReactions(postsInFeed);
     }
-  }, [postsInFeed]);
+  }, [initializePostLikes, initializePostReactions, postsInFeed]);
 
   useEffect(() => {
     if (commentsInFeed.length > 0) {
       initializeCommentLikes(commentsInFeed);
       initializeCommentReactions(commentsInFeed);
     }
-  }, [commentsInFeed]);
+  }, [commentsInFeed, initializeCommentLikes, initializeCommentReactions]);
 
   if (progressLoading || profileLoading || !userProfile) {
     return <ProfileSkeleton />;
@@ -558,7 +558,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               </Text>
               <CommentPreviewRow
                 username={userProfile.username}
-                text={item.comment.text}
+                text={item.comment.text || t("Shared media")}
                 bodyColor={colors.light.text}
               />
             </TouchableOpacity>

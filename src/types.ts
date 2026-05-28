@@ -24,6 +24,31 @@ export interface PostCommentRecord {
   profiles: { username: string } | null;
 }
 
+export interface CommentRecord {
+  id: number;
+  user_id: string;
+  body: string | null;
+  created_at: string;
+  post_id: number;
+  parent_comment_id?: number | null;
+  media_id?: number | null;
+  media?: {
+    file_path: string | null;
+    upload_status?: string | null;
+  } | null;
+  comment_media?: {
+    position: number;
+    media_id: number;
+    media: {
+      file_path: string | null;
+      upload_status?: string | null;
+    } | null;
+  }[];
+  likes?: {
+    count: number;
+  }[];
+}
+
 export interface PostRecord {
   id: number;
   user_id: string;
@@ -164,7 +189,19 @@ export interface Challenge {
     created_at: string;
     post_id: number;
     parent_comment_id?: number | null;
+    media_id?: number;
+    media?: {
+      file_path: string | null;
+    };
+    media_items?: {
+      media_id: number;
+      file_path: string | null;
+      preview_path?: string | null;
+      position: number;
+      is_video?: boolean;
+    }[];
     liked: boolean;
+    likes_count?: number;
     likes?: {
       count: number;
     };
