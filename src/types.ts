@@ -4,6 +4,7 @@ export interface PostCommentPreview {
   username: string;
   text: string;
   replyToUsername?: string;
+  has_media?: boolean;
 }
 
 export interface PostProfileRecord {

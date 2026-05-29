@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Text } from "./StyledText";
@@ -342,15 +342,11 @@ export const CommentsList: React.FC<CommentsListProps> = ({
               onPress={handleMediaUpload}
               disabled={selectedMediaItems.length >= 4 || isUploading || isAddingComment}
             >
-              {isUploading ? (
-                <ActivityIndicator size={18} color={colors.light.primary} />
-              ) : (
-                <MaterialCommunityIcons
-                  name="image-multiple-outline"
-                  size={20}
-                  color={colors.light.primary}
-                />
-              )}
+              <MaterialIcons
+                name="add-photo-alternate"
+                size={20}
+                color={colors.light.primary}
+              />
             </TouchableOpacity>
             <View style={inputInnerContainerStyle}>
               <TextInput

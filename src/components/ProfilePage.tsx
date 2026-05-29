@@ -558,7 +558,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ userId }) => {
               </Text>
               <CommentPreviewRow
                 username={userProfile.username}
-                text={item.comment.text || t("Shared media")}
+                text={item.comment.text}
+                hasMedia={!!item.comment.media_items?.length}
                 bodyColor={colors.light.text}
               />
             </TouchableOpacity>

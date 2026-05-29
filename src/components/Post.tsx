@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { Ionicons } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { MenuProvider } from "react-native-popup-menu";
 import { AnimatedSendButton } from "./AnimatedSendButton";
 import CommentPreviewRow from "./CommentPreviewRow";
@@ -314,7 +315,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         setCommentCount(prev => prev + 1);
         setLocalPreviews(prev => [...prev, {
           username: currentUserUsername || "unknown",
-          text: commentText || t("Shared media"),
+          text: commentText,
+          has_media: inlineCommentMediaItems.length > 0,
         }]);
 
         if (user.id !== post.user_id) {
@@ -722,6 +724,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                   username={preview.username}
                   text={preview.text}
                   replyToUsername={preview.replyToUsername}
+                  hasMedia={preview.has_media}
                   isLast={isLast}
                 />
               );
@@ -758,11 +761,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                 (inlineCommentMediaItems.length >= 4 || isInlineCommentMediaUploading) ? inlineCommentMediaButtonDisabledStyle : null,
               ]}
             >
-              {isInlineCommentMediaUploading ? (
-                <ActivityIndicator size="small" color={colors.light.primary} />
-              ) : (
-                <Ionicons name="image-outline" size={18} color={colors.light.primary} />
-              )}
+              <MaterialIcons name="add-photo-alternate" size={18} color={colors.light.primary} />
             </TouchableOpacity>
           <TextInput
             style={inlineCommentInput}
@@ -1033,7 +1032,7 @@ const inlineCommentContainer: ViewStyle = {
 
 const inlineCommentRowStyle: ViewStyle = {
   flexDirection: "row",
-  alignItems: "flex-end",
+  alignItems: "center",
   gap: 4,
 };
 
@@ -1045,7 +1044,6 @@ const inlineCommentMediaPreviewStyle: ViewStyle = {
 const inlineCommentMediaButtonStyle: ViewStyle = {
   alignItems: "center",
   justifyContent: "center",
-  paddingBottom: 4,
   paddingHorizontal: 2,
 };
 
