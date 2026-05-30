@@ -57,17 +57,20 @@ function normalizeMediaItems(comment: CommentRecord): Comment["media_items"] {
 
 function formatComment(comment: CommentRecord): Comment {
   const mediaUrl = resolveMediaUrl(comment.media?.file_path);
+  const mediaItems = normalizeMediaItems(comment);
+  const rawText = comment.body || "";
+  const text = rawText === "🖼️" && (mediaItems?.length ?? 0) > 0 ? "" : rawText;
 
   return {
     id: comment.id,
-    text: comment.body || "",
+    text,
     userId: comment.user_id,
     post_id: comment.post_id,
     parent_comment_id: comment.parent_comment_id,
     created_at: comment.created_at,
     media_id: comment.media_id ?? undefined,
     media: mediaUrl ? { file_path: mediaUrl } : comment.media ? { file_path: comment.media.file_path } : undefined,
-    media_items: normalizeMediaItems(comment),
+    media_items: mediaItems,
     likes_count: comment.likes?.[0]?.count ?? 0,
     liked: false,
   };
@@ -78,28 +81,33 @@ export const commentService = {
     const commentIds = comments.map((comment) => comment.id);
     if (commentIds.length === 0) return comments;
 
-    const { data, error } = await supabase
-      .from("comment_media")
-      .select("comment_id, media_id, position, media (file_path, upload_status)")
-      .in("comment_id", commentIds);
+    try {
+      const { data, error } = await supabase
+        .from("comment_media")
+        .select("comment_id, media_id, position, media (file_path, upload_status)")
+        .in("comment_id", commentIds);
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const mediaByCommentId = new Map<number, CommentRecord["comment_media"]>();
-    for (const row of (data || []) as unknown as CommentMediaRow[]) {
-      const items = mediaByCommentId.get(row.comment_id) || [];
-      items.push({
-        media_id: row.media_id,
-        position: row.position,
-        media: row.media,
-      });
-      mediaByCommentId.set(row.comment_id, items);
+      const mediaByCommentId = new Map<number, CommentRecord["comment_media"]>();
+      for (const row of (data || []) as unknown as CommentMediaRow[]) {
+        const items = mediaByCommentId.get(row.comment_id) || [];
+        items.push({
+          media_id: row.media_id,
+          position: row.position,
+          media: row.media,
+        });
+        mediaByCommentId.set(row.comment_id, items);
+      }
+
+      return comments.map((comment) => ({
+        ...comment,
+        comment_media: mediaByCommentId.get(comment.id)?.sort((a, b) => a.position - b.position),
+      }));
+    } catch (error) {
+      console.warn("Comment media hydration skipped:", error);
+      return comments;
     }
-
-    return comments.map((comment) => ({
-      ...comment,
-      comment_media: mediaByCommentId.get(comment.id)?.sort((a, b) => a.position - b.position),
-    }));
   },
 
   async fetchComments(postId: number): Promise<Comment[]> {
@@ -147,7 +155,8 @@ export const commentService = {
     mediaItems?: MediaSelectionResult[];
   }): Promise<Comment> {
     const { postId, userId, body, parentCommentId, mediaItems = [] } = args;
-    const normalizedBody = body.trim();
+    const trimmed = body.trim();
+    const normalizedBody = trimmed || (mediaItems.length > 0 ? "🖼️" : trimmed);
 
     const { data, error } = await supabase
       .from("comments")

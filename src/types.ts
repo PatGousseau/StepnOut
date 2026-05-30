@@ -22,6 +22,7 @@ export interface PostCommentRecord {
   created_at: string;
   user_id: string;
   parent_comment_id: number | null;
+  media_id: number | null;
   profiles: { username: string } | null;
 }
 
