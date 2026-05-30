@@ -120,7 +120,7 @@ const useUserProgress = (targetUserId: string) => {
         // Fetch submissions for the user
         const { data: submissionData, error: submissionError } = await supabase
           .from('post')
-        .select(`
+          .select(`
             id,
             challenge_id,
             created_at,
@@ -130,7 +130,9 @@ const useUserProgress = (targetUserId: string) => {
             )
           `)
           .eq('user_id', user.id)
-          .not('challenge_id', 'is', null);
+          .not('challenge_id', 'is', null)
+          .neq('media.upload_status', 'failed')
+          .neq('media.upload_status', 'pending');
 
         if (submissionError) throw submissionError;
 

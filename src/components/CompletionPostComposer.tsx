@@ -351,6 +351,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
               }))}
               height={420}
               style={styles.fullScreenImage}
+              onPress={() => setFullScreenPreview(false)}
             />
           </View>
         </TouchableOpacity>

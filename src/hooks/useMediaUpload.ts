@@ -158,7 +158,10 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
             }))
           );
 
-        if (postMediaError) throw postMediaError;
+        if (postMediaError) {
+          await supabase.from('post').delete().eq('id', postData.id);
+          throw postMediaError;
+        }
       }
 
       // If there's media, start background upload
