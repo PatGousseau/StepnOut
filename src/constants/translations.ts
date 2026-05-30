@@ -76,6 +76,7 @@ export const translations = {
   Posts: "Post",
   All: "Tutti",
   Comments: "Commenti",
+  "Shared media": "Ha condiviso un contenuto",
   "Unknown User": "Utente Sconosciuto",
   "liked your post": "ha messo mi piace al tuo post",
   "liked your comment": "ha messo mi piace al tuo commento",

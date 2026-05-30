@@ -121,8 +121,9 @@ const NotificationSidebar: React.FC<NotificationSidebarProps> = ({ visible, onCl
     } else if (item.action_type === 'like') {
       notificationText = item.comment_id ? t('liked your comment') : t('liked your post');
     } else if (item.action_type === 'comment') {
-      const commentText = item.comment?.body || '';
-      notificationText = t('commented: "(comment)"', { comment: commentText });
+      const commentText = item.comment?.body?.trim() || '';
+      const previewText = commentText || (item.comment?.media_id ? '🖼️' : '');
+      notificationText = t('commented: "(comment)"', { comment: previewText });
     }
 
     const handlePress = () => {

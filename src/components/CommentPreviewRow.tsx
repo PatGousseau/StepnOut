@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, ViewStyle, TextStyle } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { colors } from "../constants/Colors";
 
 type CommentPreviewRowProps = {
@@ -8,6 +9,7 @@ type CommentPreviewRowProps = {
   replyToUsername?: string;
   isLast?: boolean;
   bodyColor?: string;
+  hasMedia?: boolean;
 };
 
 const CommentPreviewRow: React.FC<CommentPreviewRowProps> = ({
@@ -16,6 +18,7 @@ const CommentPreviewRow: React.FC<CommentPreviewRowProps> = ({
   replyToUsername,
   isLast = true,
   bodyColor = colors.neutral.darkGrey,
+  hasMedia = false,
 }) => {
   return (
     <View style={rowStyle}>
@@ -24,10 +27,18 @@ const CommentPreviewRow: React.FC<CommentPreviewRowProps> = ({
       <Text style={[textStyle, { flex: 1 }]} numberOfLines={2}>
         <Text style={usernameStyle}>@{username}:</Text>
         {"  "}
-        {replyToUsername && (
+        {replyToUsername ? (
           <Text style={{ color: bodyColor }}>@{replyToUsername} </Text>
+        ) : null}
+        {hasMedia ? (
+          <>
+            <MaterialIcons name="image" size={13} color={bodyColor} />
+            {" "}
+          </>
+        ) : null}
+        {!text && hasMedia ? null : (
+          <Text style={{ color: bodyColor }}>{text}</Text>
         )}
-        <Text style={{ color: bodyColor }}>{text}</Text>
       </Text>
     </View>
   );

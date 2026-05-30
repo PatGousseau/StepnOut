@@ -25,6 +25,7 @@ const BASE_SELECT = `
     created_at,
     user_id,
     parent_comment_id,
+    media_id,
     profiles!comments_user_id_profiles_fkey (
       username
     )
@@ -63,6 +64,7 @@ function getCommentPreviews(post: PostRecord) {
       username: c.profiles.username,
       text: c.body,
       replyToUsername: c.parent_comment_id ? commentUserMap.get(c.parent_comment_id) : undefined,
+      has_media: !!c.media_id,
     }));
   return previews.length > 0 ? previews : undefined;
 }

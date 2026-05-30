@@ -24,7 +24,8 @@ export const useNotifications = () => {
             name
           ),
           comment:comments (
-            body
+            body,
+            media_id
           ),
           challenge:challenges (
             title,
@@ -126,7 +127,8 @@ export const useNotifications = () => {
                   name
                 ),
                 comment:comments (
-                  body
+                  body,
+                  media_id
                 ),
                 challenge:challenges (
                   title,
@@ -183,4 +185,3 @@ export const useNotifications = () => {
     fetchNotifications,
   };
 }; 
-

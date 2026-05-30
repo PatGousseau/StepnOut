@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { Ionicons } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { MenuProvider } from "react-native-popup-menu";
 import { AnimatedSendButton } from "./AnimatedSendButton";
 import CommentPreviewRow from "./CommentPreviewRow";
@@ -50,6 +51,7 @@ import { useInstagramShare } from "../hooks/useInstagramShare";
 import { usePostDeleteCleanup } from "../hooks/usePostDeleteCleanup";
 import InstagramStoryCard from "./InstagramStoryCard";
 import { MediaGrid } from "./MediaGrid";
+import { useMediaSelection } from "../hooks/useMediaSelection";
 
 interface PostProps {
   post: PostType;
@@ -103,6 +105,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [inlineComment, setInlineComment] = useState("");
   const [localPreviews, setLocalPreviews] = useState(post.comment_previews || []);
+  const {
+    selectedMediaItems: inlineCommentMediaItems,
+    isUploading: isInlineCommentMediaUploading,
+    handleMediaUpload: handleInlineCommentMediaUpload,
+    handleRemoveMedia: handleRemoveInlineCommentMedia,
+    clearMedia: clearInlineCommentMedia,
+  } = useMediaSelection();
   const lastTapTime = useRef<number>(0);
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
@@ -289,18 +298,25 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   };
 
   const handleInlineComment = async () => {
-    if (!inlineComment.trim() || !user) return;
+    if ((!inlineComment.trim() && inlineCommentMediaItems.length === 0) || !user) return;
 
     const commentText = inlineComment.trim();
     setInlineComment("");
 
     try {
-      const newComment = await addCommentMutation(user.id, commentText);
+      const newComment = await addCommentMutation(
+        user.id,
+        commentText,
+        null,
+        inlineCommentMediaItems
+      );
       if (newComment) {
+        clearInlineCommentMedia();
         setCommentCount(prev => prev + 1);
         setLocalPreviews(prev => [...prev, {
           username: currentUserUsername || "unknown",
           text: commentText,
+          has_media: inlineCommentMediaItems.length > 0,
         }]);
 
         if (user.id !== post.user_id) {
@@ -309,7 +325,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             user.user_metadata?.username,
             post.user_id,
             post.id.toString(),
-            commentText,
+            commentText || "🖼️",
             newComment.id.toString(),
             {
               title: t("(username) commented"),
@@ -323,6 +339,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           comment_id: newComment.id,
           comment_length: commentText.length,
           source: "inline",
+          media_count: inlineCommentMediaItems.length,
         });
       }
     } catch (error) {
@@ -707,6 +724,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                   username={preview.username}
                   text={preview.text}
                   replyToUsername={preview.replyToUsername}
+                  hasMedia={preview.has_media}
                   isLast={isLast}
                 />
               );
@@ -722,6 +740,29 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         )}
 
         <View style={inlineCommentContainer}>
+          {inlineCommentMediaItems.length > 0 ? (
+            <MediaGrid
+              items={inlineCommentMediaItems.map((item) => ({
+                uri: item.thumbnailUri || item.previewUrl,
+                isVideo: item.isVideo,
+                useImageForVideo: true,
+              }))}
+              onRemove={handleRemoveInlineCommentMedia}
+              height={120}
+              style={inlineCommentMediaPreviewStyle}
+            />
+          ) : null}
+          <View style={inlineCommentRowStyle}>
+            <TouchableOpacity
+              onPress={handleInlineCommentMediaUpload}
+              disabled={inlineCommentMediaItems.length >= 4 || isInlineCommentMediaUploading || isAddingComment}
+              style={[
+                inlineCommentMediaButtonStyle,
+                (inlineCommentMediaItems.length >= 4 || isInlineCommentMediaUploading) ? inlineCommentMediaButtonDisabledStyle : null,
+              ]}
+            >
+              <MaterialIcons name="add-photo-alternate" size={18} color={colors.light.primary} />
+            </TouchableOpacity>
           <TextInput
             style={inlineCommentInput}
             placeholder={t("Add a comment...")}
@@ -734,11 +775,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             textAlignVertical="top"
           />
           <AnimatedSendButton
-            hasContent={inlineComment.trim().length > 0}
+            hasContent={inlineComment.trim().length > 0 || inlineCommentMediaItems.length > 0}
             onPress={handleInlineComment}
-            disabled={isAddingComment}
+            disabled={isAddingComment || isInlineCommentMediaUploading}
             size="small"
           />
+          </View>
         </View>
 
         <Modal
@@ -979,16 +1021,34 @@ const viewAllCommentsStyle: TextStyle = {
 };
 
 const inlineCommentContainer: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "flex-end",
   marginTop: 6,
   paddingHorizontal: 8,
-  gap: 4,
   paddingVertical: 6,
   backgroundColor: colors.neutral.white,
   borderRadius: 8,
   borderWidth: 1,
   borderColor: colors.neutral.grey2,
+};
+
+const inlineCommentRowStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 4,
+};
+
+const inlineCommentMediaPreviewStyle: ViewStyle = {
+  marginBottom: 8,
+  width: "100%",
+};
+
+const inlineCommentMediaButtonStyle: ViewStyle = {
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: 2,
+};
+
+const inlineCommentMediaButtonDisabledStyle: ViewStyle = {
+  opacity: 0.45,
 };
 
 const inlineCommentInput: TextStyle = {
