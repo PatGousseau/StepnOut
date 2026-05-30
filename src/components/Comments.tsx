@@ -228,7 +228,7 @@ export const CommentsList: React.FC<CommentsListProps> = ({
                   senderUsername,
                   recipientId,
                   postId.toString(),
-                  commentText || t("Shared media"),
+                  commentText || "🖼️",
                   newCommentData.id.toString(),
                   {
                     title: t("(username) commented"),

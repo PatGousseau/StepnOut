@@ -325,7 +325,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             user.user_metadata?.username,
             post.user_id,
             post.id.toString(),
-            commentText || t("Shared media"),
+            commentText || "🖼️",
             newComment.id.toString(),
             {
               title: t("(username) commented"),

@@ -179,7 +179,8 @@ export interface Challenge {
     } | null;
     body?: string;
     comment?: {
-      body: string;
+      body: string | null;
+      media_id?: number | null;
     };
   }
 
