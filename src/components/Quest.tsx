@@ -102,16 +102,18 @@ export const ShareQuestExperience: React.FC<ShareQuestExperienceProps> = ({ ques
           user_id: userId,
           quest_id: quest.id,
         })}
-        onCompleted={({ selectedMedia, submittedText }) => {
+        onCompleted={({ selectedMediaItems, submittedText }) => {
+          const firstSelectedMedia = selectedMediaItems[0] || null;
           submittedTextRef.current = submittedText;
-          setSubmittedMediaPreview(selectedMedia?.previewUrl || null);
+          setSubmittedMediaPreview(firstSelectedMedia?.previewUrl || null);
           queryClient.setQueryData(["quest-completion", quest.id, user?.id], true);
           queryClient.invalidateQueries({ queryKey: ["home-posts"] });
           captureEvent(SIDE_QUEST_EVENTS.DAILY_QUEST_COMPLETED, {
             quest_id: quest.id,
             quest_title: quest.title,
-            has_media: !!selectedMedia,
-            is_video: selectedMedia?.isVideo || false,
+            has_media: selectedMediaItems.length > 0,
+            is_video: firstSelectedMedia?.isVideo || false,
+            media_count: selectedMediaItems.length,
           });
           setUserProperties({
             [USER_PROPERTIES.LAST_ACTIVE]: new Date().toISOString(),

@@ -4,6 +4,7 @@ export interface PostCommentPreview {
   username: string;
   text: string;
   replyToUsername?: string;
+  has_media?: boolean;
 }
 
 export interface PostProfileRecord {
@@ -21,7 +22,33 @@ export interface PostCommentRecord {
   created_at: string;
   user_id: string;
   parent_comment_id: number | null;
+  media_id: number | null;
   profiles: { username: string } | null;
+}
+
+export interface CommentRecord {
+  id: number;
+  user_id: string;
+  body: string | null;
+  created_at: string;
+  post_id: number;
+  parent_comment_id?: number | null;
+  media_id?: number | null;
+  media?: {
+    file_path: string | null;
+    upload_status?: string | null;
+  } | null;
+  comment_media?: {
+    position: number;
+    media_id: number;
+    media: {
+      file_path: string | null;
+      upload_status?: string | null;
+    } | null;
+  }[];
+  likes?: {
+    count: number;
+  }[];
 }
 
 export interface PostRecord {
@@ -33,6 +60,14 @@ export interface PostRecord {
     file_path: string | null;
     upload_status?: string | null;
   } | null;
+  post_media?: {
+    position: number;
+    media_id: number;
+    media: {
+      file_path: string | null;
+      upload_status?: string | null;
+    } | null;
+  }[];
   created_at: string;
   featured: boolean;
   challenge_id?: number | null;
@@ -75,6 +110,11 @@ export interface Challenge {
     media?: {
       file_path: string | null;
     };
+    media_items?: {
+      media_id: number;
+      file_path: string | null;
+      position: number;
+    }[];
     created_at: string;
     featured: boolean;
     challenge_id?: number | null;
@@ -140,7 +180,8 @@ export interface Challenge {
     } | null;
     body?: string;
     comment?: {
-      body: string;
+      body: string | null;
+      media_id?: number | null;
     };
   }
 
@@ -151,7 +192,19 @@ export interface Challenge {
     created_at: string;
     post_id: number;
     parent_comment_id?: number | null;
+    media_id?: number;
+    media?: {
+      file_path: string | null;
+    };
+    media_items?: {
+      media_id: number;
+      file_path: string | null;
+      preview_path?: string | null;
+      position: number;
+      is_video?: boolean;
+    }[];
     liked: boolean;
+    likes_count?: number;
     likes?: {
       count: number;
     };

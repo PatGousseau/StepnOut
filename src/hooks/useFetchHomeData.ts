@@ -5,7 +5,12 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLikes } from "../contexts/LikesContext";
 import { useReactions } from "../contexts/ReactionsContext";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { formatFeedPosts, formatSinglePost, postService } from "../services/postService";
+import {
+  formatFeedPosts,
+  formatSinglePost,
+  hydrateSinglePostMedia,
+  postService,
+} from "../services/postService";
 import { captureEvent } from "../lib/posthog";
 import { FEED_EVENTS } from "../constants/analyticsEvents";
 
@@ -263,7 +268,7 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
           *,
           challenges:challenge_id (title),
           side_quests:quest_id (title),
-          media (file_path),
+          media:media!post_media_id_fkey (file_path),
           likes:likes(count),
           comments (id, body, created_at, user_id, parent_comment_id, profiles:user_id (username))
         `)
@@ -272,7 +277,8 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
 
       if (error) throw error;
 
-      return formatSinglePost(data as PostRecord, likedPosts);
+      const post = await hydrateSinglePostMedia(data as PostRecord);
+      return formatSinglePost(post, likedPosts);
     } catch (error) {
       console.error("Error fetching post:", error);
       return null;

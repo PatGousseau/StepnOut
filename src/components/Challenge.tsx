@@ -199,17 +199,19 @@ export const ShareExperience: React.FC<ShareExperienceProps> = ({ challenge }) =
           challenge_id: challenge.id,
           comfort_zone_rating: comfortRating,
         })}
-        onCompleted={({ selectedMedia, submittedText, comfortRating }) => {
+        onCompleted={({ selectedMediaItems, submittedText, comfortRating }) => {
+          const firstSelectedMedia = selectedMediaItems[0] || null;
           submittedTextRef.current = submittedText;
-          setSubmittedMediaPreview(selectedMedia?.previewUrl || null);
+          setSubmittedMediaPreview(firstSelectedMedia?.previewUrl || null);
           queryClient.setQueryData(["challenge-completion", challenge.id, user?.id], true);
           queryClient.invalidateQueries({ queryKey: ["home-posts"] });
           captureEvent(CHALLENGE_EVENTS.COMPLETED, {
             challenge_id: challenge.id,
             challenge_title: challenge.title,
             challenge_difficulty: challenge.difficulty,
-            has_media: !!selectedMedia,
-            is_video: selectedMedia?.isVideo || false,
+            has_media: selectedMediaItems.length > 0,
+            is_video: firstSelectedMedia?.isVideo || false,
+            media_count: selectedMediaItems.length,
             comfort_zone_rating: comfortRating,
           });
           setUserProperties({

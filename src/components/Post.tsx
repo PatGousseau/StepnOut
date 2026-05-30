@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { Ionicons } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { MenuProvider } from "react-native-popup-menu";
 import { AnimatedSendButton } from "./AnimatedSendButton";
 import CommentPreviewRow from "./CommentPreviewRow";
@@ -49,6 +50,8 @@ import { translationService } from "../services/translationService";
 import { useInstagramShare } from "../hooks/useInstagramShare";
 import { usePostDeleteCleanup } from "../hooks/usePostDeleteCleanup";
 import InstagramStoryCard from "./InstagramStoryCard";
+import { MediaGrid } from "./MediaGrid";
+import { useMediaSelection } from "../hooks/useMediaSelection";
 
 interface PostProps {
   post: PostType;
@@ -89,6 +92,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const [isTranslating, setIsTranslating] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comments_count || 0);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [selectedImageViewerIndex, setSelectedImageViewerIndex] = useState(0);
   const {
     comments: commentList,
     loading: commentsLoading,
@@ -100,15 +105,22 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [inlineComment, setInlineComment] = useState("");
   const [localPreviews, setLocalPreviews] = useState(post.comment_previews || []);
+  const {
+    selectedMediaItems: inlineCommentMediaItems,
+    isUploading: isInlineCommentMediaUploading,
+    handleMediaUpload: handleInlineCommentMediaUpload,
+    handleRemoveMedia: handleRemoveInlineCommentMedia,
+    clearMedia: clearInlineCommentMedia,
+  } = useMediaSelection();
   const lastTapTime = useRef<number>(0);
   const singleTapTimer = useRef<number | null>(null);
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
-  const { storyCardRef, isSharing, onImageLoad, completionCount, shareToInstagram } = useInstagramShare({
+  const { storyCardRef, isSharing, completionCount, shareToInstagram } = useInstagramShare({
     postId: post.id,
     isChallengePost: !!post.challenge_id,
-    challengeId: post.challenge_id,
-    mediaUrl: post.media?.file_path,
+    challengeId: post.challenge_id ?? undefined,
+    mediaUrl: post.media?.file_path ?? undefined,
   });
 
   useEffect(() => {
@@ -180,6 +192,13 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     return source.match(/\.(mp4|mov|avi|wmv)$/i);
   };
 
+  const mediaItems = (post.media_items && post.media_items.length > 0)
+    ? post.media_items
+    : post.media?.file_path
+      ? [{ media_id: post.media_id || 0, file_path: post.media.file_path, position: 0 }]
+      : [];
+  const imageViewerItems = mediaItems.filter((item) => item.file_path && !isVideo(item.file_path));
+
   const showHeartAnimation = () => {
     // Reset animation values
     heartScale.setValue(0);
@@ -221,7 +240,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
     ]).start();
   };
 
-  const handleDoubleTap = () => {
+  const handleDoubleTap = (mediaIndex = 0) => {
     const now = Date.now();
     const DOUBLE_PRESS_DELAY = 300;
 
@@ -239,14 +258,21 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       lastTapTime.current = now;
       singleTapTimer.current = setTimeout(() => {
         // Single tap - open fullscreen/modal only if there's media
-        if (post.media?.file_path) {
-          if (isVideo(post.media.file_path)) {
+        const mediaItem = mediaItems[mediaIndex];
+        if (mediaItem?.file_path) {
+          setSelectedMediaIndex(mediaIndex);
+          if (isVideo(mediaItem.file_path)) {
             setShowVideoModal(true);
             captureEvent(POST_EVENTS.VIDEO_PLAYED, {
               post_id: post.id,
               is_challenge_post: !!post.challenge_id,
             });
           } else {
+            const imageIndex = mediaItems
+              .slice(0, mediaIndex)
+              .filter((item) => item.file_path && !isVideo(item.file_path))
+              .length;
+            setSelectedImageViewerIndex(imageIndex);
             setShowFullScreenImage(true);
             captureEvent(POST_EVENTS.MEDIA_VIEWED, {
               post_id: post.id,
@@ -272,18 +298,25 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   };
 
   const handleInlineComment = async () => {
-    if (!inlineComment.trim() || !user) return;
+    if ((!inlineComment.trim() && inlineCommentMediaItems.length === 0) || !user) return;
 
     const commentText = inlineComment.trim();
     setInlineComment("");
 
     try {
-      const newComment = await addCommentMutation(user.id, commentText);
+      const newComment = await addCommentMutation(
+        user.id,
+        commentText,
+        null,
+        inlineCommentMediaItems
+      );
       if (newComment) {
+        clearInlineCommentMedia();
         setCommentCount(prev => prev + 1);
         setLocalPreviews(prev => [...prev, {
           username: currentUserUsername || "unknown",
           text: commentText,
+          has_media: inlineCommentMediaItems.length > 0,
         }]);
 
         if (user.id !== post.user_id) {
@@ -292,7 +325,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             user.user_metadata?.username,
             post.user_id,
             post.id.toString(),
-            commentText,
+            commentText || "🖼️",
             newComment.id.toString(),
             {
               title: t("(username) commented"),
@@ -306,6 +339,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           comment_id: newComment.id,
           comment_length: commentText.length,
           source: "inline",
+          media_count: inlineCommentMediaItems.length,
         });
       }
     } catch (error) {
@@ -345,7 +379,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const handleImageLongPress = async () => {
     try {
-      const urls = await imageService.getPostImageUrl(post.media?.file_path || "", "original");
+      const selectedImage = imageViewerItems[selectedImageViewerIndex];
+      const urls = await imageService.getPostImageUrl(selectedImage?.file_path || "", "original");
 
       // Download the image first
       const response = await fetch(urls.fullUrl);
@@ -379,26 +414,26 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
   };
 
   const renderMedia = () => {
-    if (!post.media?.file_path) return null;
+    if (mediaItems.length === 0) return null;
 
     const heartAnimationStyle = {
       transform: [{ scale: heartScale }],
       opacity: heartOpacity,
     };
 
-    if (isVideo(post.media?.file_path)) {
+    if (mediaItems.length === 1 && mediaItems[0].file_path && isVideo(mediaItems[0].file_path)) {
       return (
         <>
-          <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
+          <Pressable onPress={() => handleDoubleTap(0)} style={{ position: "relative" }}>
             <Video
-              source={{ uri: post.media?.file_path }}
+              source={{ uri: mediaItems[0].file_path }}
               style={contentStyle}
               resizeMode={ResizeMode.COVER}
               shouldPlay={false}
               isMuted={true}
               isLooping={false}
               useNativeControls={false}
-              posterSource={{ uri: post.media?.file_path }}
+              posterSource={{ uri: mediaItems[0].file_path }}
               posterStyle={mediaContentStyle}
             />
             <View style={videoOverlayStyle}>
@@ -409,7 +444,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             </Animated.View>
           </Pressable>
           <VideoPlayer
-            videoUri={post.media?.file_path}
+            videoUri={mediaItems[selectedMediaIndex]?.file_path || ""}
             visible={showVideoModal}
             onClose={() => setShowVideoModal(false)}
           />
@@ -417,18 +452,29 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
       );
     }
     return (
-      <Pressable onPress={handleDoubleTap} style={{ position: "relative" }}>
-        <Image
-          source={{ uri: post.media?.file_path }}
-          style={mediaContentStyle}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-          transition={200}
+      <>
+        <View style={{ position: "relative" }}>
+          <MediaGrid
+            items={mediaItems
+              .filter((item) => item.file_path)
+              .map((item) => ({
+                uri: item.file_path || "",
+                isVideo: !!item.file_path && !!isVideo(item.file_path),
+              }))}
+            onPress={handleDoubleTap}
+            height={260}
+            style={mediaContentStyle}
+          />
+          <Animated.View style={[heartOverlayStyle, heartAnimationStyle]} pointerEvents="none">
+            <Icon name="heart" size={64} color="#eb656b" />
+          </Animated.View>
+        </View>
+        <VideoPlayer
+          videoUri={mediaItems[selectedMediaIndex]?.file_path || ""}
+          visible={showVideoModal}
+          onClose={() => setShowVideoModal(false)}
         />
-        <Animated.View style={[heartOverlayStyle, heartAnimationStyle]} pointerEvents="none">
-          <Icon name="heart" size={64} color="#eb656b" />
-        </Animated.View>
-      </Pressable>
+      </>
     );
   };
 
@@ -579,8 +625,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           </View>
         </TouchableOpacity>
       )}
-      {post.body && !post.media?.file_path ? (
-        <Pressable onPress={handleDoubleTap}>
+      {post.body && mediaItems.length === 0 ? (
+        <Pressable onPress={() => handleDoubleTap()}>
           <Text style={textStyle}>{post.body}</Text>
           {translatedText && (
             <View style={translationContainerStyle}>
@@ -601,7 +647,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           {renderMedia()}
         </>
       )}
-      {!post.media?.file_path && (
+      {mediaItems.length === 0 && (
         <Animated.View
           style={[
             heartOverlayStyle,
@@ -662,12 +708,10 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
           ref={storyCardRef}
           username={postUser?.username || "unknown"}
           challengeTitle={post.challenge_title}
-          mediaUrl={post.media?.file_path}
-          postText={post.body}
+          postText={post.body ?? undefined}
           profileImageUrl={profileImageUrl || undefined}
           completionCount={completionCount}
           variant="post"
-          onImageLoad={onImageLoad}
         />
 
         {localPreviews.length > 0 && (
@@ -680,6 +724,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
                   username={preview.username}
                   text={preview.text}
                   replyToUsername={preview.replyToUsername}
+                  hasMedia={preview.has_media}
                   isLast={isLast}
                 />
               );
@@ -695,6 +740,29 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         )}
 
         <View style={inlineCommentContainer}>
+          {inlineCommentMediaItems.length > 0 ? (
+            <MediaGrid
+              items={inlineCommentMediaItems.map((item) => ({
+                uri: item.thumbnailUri || item.previewUrl,
+                isVideo: item.isVideo,
+                useImageForVideo: true,
+              }))}
+              onRemove={handleRemoveInlineCommentMedia}
+              height={120}
+              style={inlineCommentMediaPreviewStyle}
+            />
+          ) : null}
+          <View style={inlineCommentRowStyle}>
+            <TouchableOpacity
+              onPress={handleInlineCommentMediaUpload}
+              disabled={inlineCommentMediaItems.length >= 4 || isInlineCommentMediaUploading || isAddingComment}
+              style={[
+                inlineCommentMediaButtonStyle,
+                (inlineCommentMediaItems.length >= 4 || isInlineCommentMediaUploading) ? inlineCommentMediaButtonDisabledStyle : null,
+              ]}
+            >
+              <MaterialIcons name="add-photo-alternate" size={18} color={colors.light.primary} />
+            </TouchableOpacity>
           <TextInput
             style={inlineCommentInput}
             placeholder={t("Add a comment...")}
@@ -707,11 +775,12 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
             textAlignVertical="top"
           />
           <AnimatedSendButton
-            hasContent={inlineComment.trim().length > 0}
+            hasContent={inlineComment.trim().length > 0 || inlineCommentMediaItems.length > 0}
             onPress={handleInlineComment}
-            disabled={isAddingComment}
+            disabled={isAddingComment || isInlineCommentMediaUploading}
             size="small"
           />
+          </View>
         </View>
 
         <Modal
@@ -770,7 +839,8 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               </TouchableOpacity>
             </View>
             <ImageViewer
-              imageUrls={[{ url: post.media?.file_path || "" }]}
+              imageUrls={imageViewerItems.map((item) => ({ url: item.file_path || "" }))}
+              index={selectedImageViewerIndex}
               enableSwipeDown
               onSwipeDown={() => setShowFullScreenImage(false)}
               renderIndicator={() => <></>}
@@ -951,16 +1021,34 @@ const viewAllCommentsStyle: TextStyle = {
 };
 
 const inlineCommentContainer: ViewStyle = {
-  flexDirection: "row",
-  alignItems: "flex-end",
   marginTop: 6,
   paddingHorizontal: 8,
-  gap: 4,
   paddingVertical: 6,
   backgroundColor: colors.neutral.white,
   borderRadius: 8,
   borderWidth: 1,
   borderColor: colors.neutral.grey2,
+};
+
+const inlineCommentRowStyle: ViewStyle = {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 4,
+};
+
+const inlineCommentMediaPreviewStyle: ViewStyle = {
+  marginBottom: 8,
+  width: "100%",
+};
+
+const inlineCommentMediaButtonStyle: ViewStyle = {
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: 2,
+};
+
+const inlineCommentMediaButtonDisabledStyle: ViewStyle = {
+  opacity: 0.45,
 };
 
 const inlineCommentInput: TextStyle = {

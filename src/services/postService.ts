@@ -14,7 +14,7 @@ const BASE_SELECT = `
       file_path
     )
   ),
-  media (
+  media:media!post_media_id_fkey (
     file_path,
     upload_status
   ),
@@ -25,6 +25,7 @@ const BASE_SELECT = `
     created_at,
     user_id,
     parent_comment_id,
+    media_id,
     profiles!comments_user_id_profiles_fkey (
       username
     )
@@ -63,12 +64,63 @@ function getCommentPreviews(post: PostRecord) {
       username: c.profiles.username,
       text: c.body,
       replyToUsername: c.parent_comment_id ? commentUserMap.get(c.parent_comment_id) : undefined,
+      has_media: !!c.media_id,
     }));
   return previews.length > 0 ? previews : undefined;
 }
 
-function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+export type PostMediaRow = {
+  post_id: number;
+  media_id: number;
+  position: number;
+  media: {
+    file_path: string | null;
+    upload_status?: string | null;
+  } | null;
+};
+
+function normalizeMediaItems(post: PostRecord): Post["media_items"] {
   const mediaUrl = resolveMediaUrl(post.media?.file_path);
+  const mediaItems = (post.post_media || [])
+    .filter(
+      (item) =>
+        item.media?.file_path &&
+        item.media.upload_status !== "failed" &&
+        item.media.upload_status !== "pending"
+    )
+    .sort((a, b) => a.position - b.position)
+    .map((item) => ({
+      media_id: item.media_id,
+      file_path: resolveMediaUrl(item.media?.file_path) || item.media?.file_path || null,
+      position: item.position,
+    }));
+
+  return mediaItems.length > 0
+    ? mediaItems
+    : mediaUrl || post.media?.file_path
+      ? [
+          {
+            media_id: post.media_id || 0,
+            file_path: mediaUrl || post.media?.file_path || null,
+            position: 0,
+          },
+        ]
+      : undefined;
+}
+
+function hasRenderableBody(post: PostRecord): boolean {
+  return typeof post.body === "string" && post.body.trim().length > 0;
+}
+
+function isRenderablePost(post: PostRecord): boolean {
+  return post.is_welcome === true ||
+    hasRenderableBody(post) ||
+    (normalizeMediaItems(post)?.length ?? 0) > 0;
+}
+
+export function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {}): Post {
+  const mediaUrl = resolveMediaUrl(post.media?.file_path);
+  const normalizedMediaItems = normalizeMediaItems(post);
   const { comments, likes, challenges, side_quests } = post;
 
   return {
@@ -77,6 +129,7 @@ function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {
     body: post.body,
     media_id: post.media_id ?? undefined,
     media: mediaUrl ? { file_path: mediaUrl } : post.media ? { file_path: post.media.file_path } : undefined,
+    media_items: normalizedMediaItems,
     created_at: post.created_at,
     featured: post.featured,
     challenge_id: post.challenge_id ?? null,
@@ -90,6 +143,13 @@ function normalizePost(post: PostRecord, likedPosts: Record<number, boolean> = {
     quest_title: side_quests?.title,
     comment_previews: getCommentPreviews(post),
   };
+}
+
+export function formatPosts(
+  posts: PostRecord[],
+  likedPosts: Record<number, boolean> = {}
+): Post[] {
+  return posts.map((post) => normalizePost(post, likedPosts));
 }
 
 export function formatFeedPosts(
@@ -129,6 +189,44 @@ function applyBlockedFilter<T extends { not: (column: string, operator: string, 
   return query.not("user_id", "in", quotedList);
 }
 
+export async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[]> {
+  const postIds = posts.map((post) => post.id);
+  if (postIds.length === 0) return posts;
+
+  try {
+    const { data, error } = await supabase
+      .from("post_media")
+      .select("post_id, media_id, position, media (file_path, upload_status)")
+      .in("post_id", postIds);
+
+    if (error) throw error;
+
+    const mediaByPostId = new Map<number, PostRecord["post_media"]>();
+    for (const row of (data || []) as unknown as PostMediaRow[]) {
+      const items = mediaByPostId.get(row.post_id) || [];
+      items.push({
+        media_id: row.media_id,
+        position: row.position,
+        media: row.media,
+      });
+      mediaByPostId.set(row.post_id, items);
+    }
+
+    return posts.map((post) => ({
+      ...post,
+      post_media: mediaByPostId.get(post.id)?.sort((a, b) => a.position - b.position),
+    }));
+  } catch (error) {
+    console.warn("Post media hydration skipped:", error);
+    return posts;
+  }
+}
+
+export async function hydrateSinglePostMedia(post: PostRecord): Promise<PostRecord> {
+  const [hydratedPost] = await hydratePostMedia([post]);
+  return hydratedPost || post;
+}
+
 export const postService = {
   async fetchPostsForChallenge(
     challengeId: number,
@@ -142,8 +240,6 @@ export const postService = {
       .from("post")
       .select(select)
       .eq("challenge_id", challengeId)
-      .not("body", "is", null)
-      .not("media.upload_status", "in", '("failed","pending")')
       .order("created_at", { ascending: false });
 
     query = applyBlockedFilter(query, blockedUserIds);
@@ -154,7 +250,7 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as PostRecord[];
+    const rows = (await hydratePostMedia((data ?? []) as PostRecord[])).filter(isRenderablePost);
     return { posts: rows, hasMore: rows.length === postsPerPage };
   },
 
@@ -613,7 +709,6 @@ export const postService = {
     let query = supabase
       .from("post")
       .select(select)
-      .not("media.upload_status", "in", '("failed","pending")')
       .order("created_at", { ascending: false });
 
     if (feedType === "challenge") {
@@ -630,7 +725,7 @@ export const postService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    const rows = (data ?? []) as PostRecord[];
+    const rows = (await hydratePostMedia((data ?? []) as PostRecord[])).filter(isRenderablePost);
 
     if (feedType === "discussion" && rows.length > 0) {
       const newest = rows[0].created_at;
@@ -641,7 +736,6 @@ export const postService = {
         .select(select)
         .is("challenge_id", null)
         .eq("is_welcome", true)
-        .not("media.upload_status", "in", '("failed","pending")')
         .gte("created_at", oldest);
 
       if (pageParam === 1) {
@@ -654,7 +748,10 @@ export const postService = {
       const { data: welcomeData, error: welcomeError } = await welcomeQuery;
       if (welcomeError) throw welcomeError;
 
-      const merged = [...rows, ...((welcomeData ?? []) as PostRecord[])]
+      const welcomeRows = (await hydratePostMedia((welcomeData ?? []) as PostRecord[])).filter(
+        isRenderablePost
+      );
+      const merged = [...rows, ...welcomeRows]
         .filter((p, i, arr) => arr.findIndex((x) => x.id === p.id) === i)
         .sort((a, b) => (a.created_at > b.created_at ? -1 : a.created_at < b.created_at ? 1 : 0));
 
@@ -694,7 +791,7 @@ export const postService = {
 
     if (error) throw error;
 
-    const rows = (data ?? []) as PostRecord[];
+    const rows = (await hydratePostMedia((data ?? []) as PostRecord[])).filter(isRenderablePost);
     const postMap = new Map(rows.map((p) => [p.id, p]));
     const posts = orderedIds
       .map((id) => postMap.get(id))

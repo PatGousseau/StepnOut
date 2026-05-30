@@ -72,7 +72,7 @@ class BackgroundUploadService {
   // Process the upload queue
   private async processQueue() {
     if (this.isProcessing) return;
-    
+
     this.isProcessing = true;
     console.log('Starting upload queue processing');
 

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase, supabaseStorageUrl } from "../lib/supabase";
-import { Comment, Post } from "../types";
+import { supabase } from "../lib/supabase";
+import { Comment, Post, PostRecord } from "../types";
+import { formatPosts, hydratePostMedia } from "../services/postService";
 
 type CommentWithPost = Comment & {
   post?: Pick<Post, "id" | "body" | "created_at" | "challenge_title" | "quest_id" | "quest_title">;
@@ -25,8 +26,10 @@ type HydratedRow = {
   item_type: "post" | "comment";
   item_id: number;
   created_at: string;
-  post: any;
-  comment: any;
+  post: (Post & {
+    media?: { file_path?: string | null } | null;
+  }) | null;
+  comment: CommentWithPost | null;
 };
 
 const PAGE_SIZE = 20;
@@ -37,6 +40,7 @@ export const useProfileActivity = (targetUserId: string) => {
   const [items, setItems] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const fetchNextPageRef = useRef<(reset?: boolean) => Promise<void>>(async () => {});
 
   const lastCursor = useMemo(() => {
     if (items.length === 0) return null;
@@ -75,28 +79,29 @@ export const useProfileActivity = (targetUserId: string) => {
           return;
         }
 
+        const hydratedPosts = await hydratePostMedia(
+          hydrated
+            .filter((r): r is HydratedRow & { item_type: "post"; post: NonNullable<HydratedRow["post"]> } =>
+              r.item_type === "post" && !!r.post
+            )
+            .map((r) => r.post as PostRecord)
+        );
+        const formattedPosts = formatPosts(hydratedPosts);
+        const formattedPostMap = new Map(formattedPosts.map((post) => [post.id, post]));
+
         const nextItems: ActivityItem[] = hydrated
           .map((r) => {
             if (r.item_type === "post") {
               const post = r.post;
               if (!post) return null;
 
-              const mediaPath = post.media?.file_path;
-              const media = {
-                file_path: mediaPath ? `${supabaseStorageUrl}/${mediaPath}` : null,
-              };
+              const formattedPost = formattedPostMap.get(post.id);
+              if (!formattedPost) return null;
 
               return {
                 type: "post" as const,
                 createdAt: r.created_at,
-                post: {
-                  ...post,
-                  media,
-                  comment_previews:
-                    Array.isArray(post.comment_previews) && post.comment_previews.length > 0
-                      ? post.comment_previews
-                      : undefined,
-                },
+                post: formattedPost,
               };
             }
 
@@ -123,9 +128,13 @@ export const useProfileActivity = (targetUserId: string) => {
   );
 
   useEffect(() => {
+    fetchNextPageRef.current = fetchNextPage;
+  }, [fetchNextPage]);
+
+  useEffect(() => {
     setItems([]);
     setHasMore(true);
-    fetchNextPage(true);
+    fetchNextPageRef.current(true);
   }, [targetUserId]);
 
   const removePost = useCallback((postId: number) => {

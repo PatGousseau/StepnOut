@@ -4,15 +4,11 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
-  Image,
-  ScrollView,
   Keyboard,
   KeyboardEvent,
   useWindowDimensions,
   ViewStyle,
-  ImageStyle,
   TextStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,6 +21,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import { captureEvent } from "../lib/posthog";
 import { POST_EVENTS } from "../constants/analyticsEvents";
+import { MediaGrid } from "./MediaGrid";
 
 interface DiscussFabProps {
   onPostCreated?: () => void;
@@ -38,8 +35,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
   const { height: screenHeight } = useWindowDimensions();
   const [modalVisible, setModalVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const keyboardVerticalOffset = Platform.OS === "ios" ? Math.max(insets.top - 12, 0) : 0;
-  const modalMaxHeight = Math.round(screenHeight * 0.5);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   React.useEffect(() => {
     const syncKeyboardVisibility = (visible: boolean, event?: KeyboardEvent) => {
@@ -48,6 +44,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
       }
 
       setKeyboardVisible(visible);
+      setKeyboardHeight(visible ? event?.endCoordinates?.height ?? 0 : 0);
     };
 
     const showSubscription = Keyboard.addListener(
@@ -67,6 +64,7 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
 
   const {
     selectedMedia,
+    selectedMediaItems,
     setPostText,
     isSubmitting,
     uploadProgress,
@@ -85,6 +83,17 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
     },
     successMessage: t("Post sent successfully!"),
   });
+  const modalTopPadding = insets.top + 12;
+  const modalBottomPadding = keyboardVisible ? keyboardHeight + 12 : insets.bottom + 12;
+  const availableModalHeight = Math.max(260, screenHeight - modalTopPadding - modalBottomPadding);
+  const modalHeight = Math.round(
+    Math.min(availableModalHeight, screenHeight * (keyboardVisible ? 0.92 : 0.78))
+  );
+  const modalHeaderHeight = 74;
+  const mediaPreviewHeight =
+    selectedMediaItems.length > 0
+      ? Math.max(120, Math.min(190, Math.floor((modalHeight - modalHeaderHeight - 88) / 2)))
+      : 0;
 
   const handleOpen = () => {
     setModalVisible(true);
@@ -125,142 +134,119 @@ const DiscussFab = ({ onPostCreated, bottomOffset = 16 }: DiscussFabProps) => {
         statusBarTranslucent
       >
         <View style={backdropStyle} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={keyboardViewStyle}
-          keyboardVerticalOffset={keyboardVerticalOffset}
+        <View
+          style={[
+            modalContainerStyle,
+            {
+              paddingTop: modalTopPadding,
+              paddingBottom: modalBottomPadding,
+              paddingHorizontal: "5%",
+            },
+          ]}
         >
-          <View
-            style={[
-              modalContainerStyle,
-              {
-                paddingTop: insets.top + 12,
-                paddingBottom: keyboardVisible ? 0 : insets.bottom + 12,
-                paddingHorizontal: "5%",
-              },
-            ]}
-          >
-            <ScrollView
-              style={modalScrollStyle}
-              contentContainerStyle={[
-                scrollContentStyle,
-                { justifyContent: keyboardVisible ? "flex-start" : "center" },
-              ]}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            >
-              <View style={[modalContentStyle, { maxHeight: modalMaxHeight }]}>
-                <View style={modalHeaderStyle}>
-                  <View style={headerGlowStyle} />
-                  <View style={headerRingStyle} />
-                  <View style={headerFillStyle} />
-                  <Text style={modalTitleStyle}>{t("Start a discussion")}</Text>
-                  <TouchableOpacity
-                    style={closeButtonStyle}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <MaterialIcons
-                      name="close"
-                      size={20}
-                      color={colors.light.text}
-                      style={closeIconStyle}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <View style={modalBodyStyle}>
-                  {selectedMedia ? (
-                    <View style={mediaPreviewContainerStyle}>
-                      <Image
-                        source={{
-                          uri: selectedMedia.isVideo
-                            ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
-                            : selectedMedia.previewUrl,
-                        }}
-                        style={mediaPreviewStyle}
-                        resizeMode="contain"
-                      />
-                      <TouchableOpacity
-                        style={removeMediaButtonStyle}
-                        onPress={handleRemoveMedia}
-                      >
-                        <MaterialIcons name="close" size={12} color="white" />
-                      </TouchableOpacity>
-                      {selectedMedia.isVideo && (
-                        <View style={videoIndicatorStyle}>
-                          <MaterialIcons name="play-circle-filled" size={24} color="white" />
-                        </View>
-                      )}
-                    </View>
-                  ) : null}
+          <View style={[modalContentStyle, { height: modalHeight }]}>
+            <View style={modalHeaderStyle}>
+              <View style={headerGlowStyle} />
+              <View style={headerRingStyle} />
+              <View style={headerFillStyle} />
+              <Text style={modalTitleStyle}>{t("Start a discussion")}</Text>
+              <TouchableOpacity
+                style={closeButtonStyle}
+                onPress={() => setModalVisible(false)}
+              >
+                <MaterialIcons
+                  name="close"
+                  size={20}
+                  color={colors.light.text}
+                  style={closeIconStyle}
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={modalBodyStyle}>
+              {selectedMediaItems.length > 0 ? (
+                <MediaGrid
+                  items={selectedMediaItems.map((item) => ({
+                    uri: item.thumbnailUri || item.previewUrl,
+                    isVideo: item.isVideo,
+                    useImageForVideo: true,
+                  }))}
+                  onRemove={handleRemoveMedia}
+                  height={mediaPreviewHeight}
+                  style={mediaPreviewContainerStyle}
+                />
+              ) : null}
 
-                  <TextInput
-                    style={textInputStyle}
-                    multiline
-                    scrollEnabled
-                    textAlignVertical="top"
-                    autoFocus
-                    placeholder={t(
-                      "Share your thoughts, start a discussion, or share an achievement..."
-                    )}
-                    placeholderTextColor="#999"
-                    maxLength={1000}
-                    onChangeText={setPostText}
+              <TextInput
+                style={[
+                  textInputStyle,
+                  selectedMediaItems.length > 0
+                    ? textInputWithMediaStyle
+                    : textInputWithoutMediaStyle,
+                ]}
+                multiline
+                scrollEnabled
+                textAlignVertical="top"
+                autoFocus
+                placeholder={t(
+                  "Share your thoughts, start a discussion, or share an achievement..."
+                )}
+                placeholderTextColor="#999"
+                maxLength={1000}
+                onChangeText={setPostText}
+              />
+            </View>
+            <View style={modalFooterStyle}>
+              <View style={mediaUploadContainerStyle}>
+                <TouchableOpacity
+                  style={[
+                    mediaUploadButtonStyle,
+                    selectedMediaItems.length >= 4 ? mediaUploadButtonDisabledStyle : null,
+                  ]}
+                  onPress={handleMediaUpload}
+                  disabled={selectedMediaItems.length >= 4}
+                >
+                  <MaterialIcons
+                    name="add-photo-alternate"
+                    size={20}
+                    color={selectedMediaItems.length >= 4 ? colors.neutral.darkGrey : colors.light.primary}
                   />
+                  <Text
+                    style={[
+                      mediaUploadTextStyle,
+                      selectedMediaItems.length >= 4 ? mediaUploadTextDisabledStyle : null,
+                    ]}
+                  >
+                    {t("Add media")}
+                  </Text>
+                </TouchableOpacity>
 
-                  <View style={mediaUploadContainerStyle}>
-                    <TouchableOpacity
-                      style={[
-                        mediaUploadButtonStyle,
-                        selectedMedia ? mediaUploadButtonDisabledStyle : null,
-                      ]}
-                      onPress={handleMediaUpload}
-                      disabled={!!selectedMedia}
-                    >
-                      <MaterialIcons
-                        name="add-photo-alternate"
-                        size={20}
-                        color={selectedMedia ? colors.neutral.darkGrey : colors.light.primary}
-                      />
-                      <Text
-                        style={[
-                          mediaUploadTextStyle,
-                          selectedMedia ? mediaUploadTextDisabledStyle : null,
-                        ]}
-                      >
-                        {t("Add media")}
-                      </Text>
-                    </TouchableOpacity>
+                <FeatureActionButton
+                  disabled={isSubmitting}
+                  fullWidth={false}
+                  onPress={onSubmit}
+                  showIcon={false}
+                  style={submitButtonStyle}
+                  title={t(isSubmitting ? "Submitting..." : "Submit")}
+                  tone="indigo"
+                  variant="pill"
+                />
+              </View>
 
-                    <FeatureActionButton
-                      disabled={isSubmitting}
-                      fullWidth={false}
-                      onPress={onSubmit}
-                      showIcon={false}
-                      style={submitButtonStyle}
-                      title={t(isSubmitting ? "Submitting..." : "Submit")}
-                      tone="indigo"
-                      variant="pill"
+              {uploadProgress !== null && (
+                <View style={uploadProgressContainerStyle}>
+                  <Text style={uploadProgressTextStyle}>
+                    {t("Uploading media...")} {Math.round(uploadProgress)}%
+                  </Text>
+                  <View style={progressBarContainerStyle}>
+                    <View
+                      style={[progressBarFillStyle, { width: `${uploadProgress}%` }]}
                     />
                   </View>
-
-                  {uploadProgress !== null && (
-                    <View style={uploadProgressContainerStyle}>
-                      <Text style={uploadProgressTextStyle}>
-                        {t("Uploading media...")} {Math.round(uploadProgress)}%
-                      </Text>
-                      <View style={progressBarContainerStyle}>
-                        <View
-                          style={[progressBarFillStyle, { width: `${uploadProgress}%` }]}
-                        />
-                      </View>
-                    </View>
-                  )}
                 </View>
-              </View>
-            </ScrollView>
+              )}
+            </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </>
   );
@@ -276,10 +262,6 @@ const fabStyle: ViewStyle = {
   elevation: 6,
 };
 
-const keyboardViewStyle: ViewStyle = {
-  flex: 1,
-};
-
 const backdropStyle: ViewStyle = {
   backgroundColor: "rgba(0,0,0,0.5)",
   bottom: 0,
@@ -292,15 +274,7 @@ const backdropStyle: ViewStyle = {
 const modalContainerStyle: ViewStyle = {
   alignItems: "center",
   flex: 1,
-};
-
-const modalScrollStyle: ViewStyle = {
-  flex: 1,
-  width: "100%",
-};
-
-const scrollContentStyle: ViewStyle = {
-  flexGrow: 1,
+  justifyContent: "flex-end",
 };
 
 const modalContentStyle: ViewStyle = {
@@ -308,7 +282,6 @@ const modalContentStyle: ViewStyle = {
   borderColor: colors.light.accent2,
   borderRadius: 26,
   borderWidth: 1,
-  flex: 1,
   overflow: "hidden",
   padding: 0,
   shadowColor: "#000",
@@ -390,41 +363,8 @@ const closeIconStyle: TextStyle = {
 };
 
 const mediaPreviewContainerStyle: ViewStyle = {
-  position: "relative",
   width: "100%",
-  aspectRatio: 1.5,
-  borderRadius: 18,
   marginBottom: 14,
-  overflow: "hidden",
-};
-
-const mediaPreviewStyle: ImageStyle = {
-  width: "100%",
-  height: "100%",
-  borderRadius: 18,
-  backgroundColor: colors.light.accent3,
-};
-
-const removeMediaButtonStyle: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 12,
-  height: 18,
-  justifyContent: "center",
-  position: "absolute",
-  right: 8,
-  top: 8,
-  width: 18,
-};
-
-const videoIndicatorStyle: ViewStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: [{ translateX: -12 }, { translateY: -12 }],
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 12,
-  padding: 4,
 };
 
 const textInputStyle: TextStyle = {
@@ -432,7 +372,6 @@ const textInputStyle: TextStyle = {
   borderColor: colors.light.accent2,
   borderRadius: 18,
   borderWidth: 1,
-  flex: 1,
   marginBottom: 6,
   minHeight: 120,
   paddingHorizontal: 14,
@@ -515,6 +454,26 @@ const progressBarFillStyle: ViewStyle = {
 const modalBodyStyle: ViewStyle = {
   flex: 1,
   padding: 20,
+  width: "100%",
+};
+
+const textInputWithMediaStyle: TextStyle = {
+  flex: 1,
+  marginBottom: 0,
+};
+
+const textInputWithoutMediaStyle: TextStyle = {
+  flex: 1,
+  marginBottom: 0,
+};
+
+const modalFooterStyle: ViewStyle = {
+  backgroundColor: "white",
+  borderTopColor: colors.light.accent2,
+  borderTopWidth: 1,
+  paddingHorizontal: 20,
+  paddingTop: 14,
+  paddingBottom: 20,
 };
 
 export default DiscussFab;

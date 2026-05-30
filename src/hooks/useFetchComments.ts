@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
 import { Comment } from "../types";
 import { commentService } from "../services/commentService";
+import { MediaSelectionResult } from "../utils/handleMediaUpload";
+import { backgroundUploadService } from "../services/backgroundUploadService";
 
 export const useFetchComments = (postId: number) => {
   const queryClient = useQueryClient();
@@ -25,40 +26,40 @@ export const useFetchComments = (postId: number) => {
       userId,
       body,
       parentCommentId,
+      mediaItems,
     }: {
       userId: string;
       body: string;
       parentCommentId?: number | null;
+      mediaItems?: MediaSelectionResult[];
     }) => {
-      const { data, error } = await supabase
-        .from("comments")
-        .insert([
-          {
-            post_id: postId,
-            user_id: userId,
-            body,
-            parent_comment_id: parentCommentId ?? null,
-          },
-        ])
-        .select(`
-          *,
-          likes:likes(count)
-        `);
+      const newComment = await commentService.createComment({
+        postId,
+        userId,
+        body,
+        parentCommentId,
+        mediaItems,
+      });
 
-      if (error) throw error;
+      if (mediaItems && mediaItems.length > 0) {
+        let completedUploads = 0;
 
-      const newComment = data?.[0]
-        ? {
-            id: data[0].id,
-            text: data[0].body,
-            userId: data[0].user_id,
-            post_id: postId,
-            parent_comment_id: data[0].parent_comment_id,
-            created_at: data[0].created_at,
-            likes_count: data[0].likes?.count || 0,
-            liked: false,
-          }
-        : null;
+        mediaItems.forEach((item) => {
+          backgroundUploadService.addToQueue(
+            item.mediaId,
+            item.pendingUpload,
+            postId,
+            undefined,
+            () => {
+              completedUploads += 1;
+              if (completedUploads < mediaItems.length) return;
+
+              queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+              queryClient.invalidateQueries({ queryKey: ["home-posts"] });
+            }
+          );
+        });
+      }
 
       return newComment;
     },
@@ -75,8 +76,13 @@ export const useFetchComments = (postId: number) => {
     },
   });
 
-  const addComment = async (userId: string, body: string, parentCommentId?: number | null) => {
-    return addCommentMutation.mutateAsync({ userId, body, parentCommentId });
+  const addComment = async (
+    userId: string,
+    body: string,
+    parentCommentId?: number | null,
+    mediaItems?: MediaSelectionResult[]
+  ) => {
+    return addCommentMutation.mutateAsync({ userId, body, parentCommentId, mediaItems });
   };
 
   return {

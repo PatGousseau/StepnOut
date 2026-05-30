@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
   Animated,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -22,6 +21,7 @@ import { MediaSelectionResult } from "../utils/handleMediaUpload";
 import { FeatureActionButton } from "./FeatureActionButton";
 import { captureEvent } from "../lib/posthog";
 import { CHALLENGE_EVENTS } from "../constants/analyticsEvents";
+import { MediaGrid } from "./MediaGrid";
 
 type CompletionPostComposerVariant = "challenge" | "quest";
 
@@ -31,7 +31,7 @@ interface CompletionPostComposerProps {
   checkingCompletion: boolean;
   buildSubmitData: (args: { userId: string; comfortRating: number | null }) => Record<string, unknown>;
   onCompleted: (args: {
-    selectedMedia: MediaSelectionResult | null;
+    selectedMediaItems: MediaSelectionResult[];
     submittedText: string;
     comfortRating: number | null;
   }) => void;
@@ -99,7 +99,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
   }[variant];
 
   const {
-    selectedMedia,
+    selectedMediaItems,
     postText,
     setPostText,
     isSubmitting,
@@ -111,7 +111,7 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
     onUploadComplete: () => {
       setModalVisible(false);
       onCompleted({
-        selectedMedia,
+        selectedMediaItems,
         submittedText: submittedTextRef.current || t(config.placeholderTextKey),
         comfortRating: showComfortSlider ? comfortRating : null,
       });
@@ -221,31 +221,18 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
                   keyboardDismissMode="on-drag"
                 >
                   <View style={styles.modalBody}>
-                    {selectedMedia ? (
-                      <TouchableOpacity
-                        style={styles.mediaPreviewContainer}
+                    {selectedMediaItems.length > 0 ? (
+                      <MediaGrid
+                        items={selectedMediaItems.map((item) => ({
+                          uri: item.thumbnailUri || item.previewUrl,
+                          isVideo: item.isVideo,
+                          useImageForVideo: true,
+                        }))}
                         onPress={() => setFullScreenPreview(true)}
-                        disabled={false}
-                        activeOpacity={0.92}
-                      >
-                        <Image
-                          source={{ uri: selectedMedia.thumbnailUri || selectedMedia.previewUrl }}
-                          style={styles.mediaPreview}
-                          resizeMode="cover"
-                        />
-                        {selectedMedia.isVideo && (
-                          <View style={styles.mediaPreviewPlayOverlay}>
-                            <MaterialIcons name="play-circle-filled" size={26} color="white" />
-                          </View>
-                        )}
-                        <TouchableOpacity
-                          style={styles.removeMediaButton}
-                          onPress={handleRemoveMedia}
-                          disabled={false}
-                        >
-                          <MaterialIcons name="close" size={12} color="white" />
-                        </TouchableOpacity>
-                      </TouchableOpacity>
+                        onRemove={handleRemoveMedia}
+                        height={180}
+                        style={styles.mediaPreviewContainer}
+                      />
                     ) : null}
 
                     {uploadProgress !== null && (
@@ -307,20 +294,20 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
                         backgroundColor: config.actionBackgroundColor,
                         borderColor: config.actionBorderColor,
                       },
-                      selectedMedia ? styles.mediaActionButtonDisabled : null,
+                      selectedMediaItems.length >= 4 ? styles.mediaActionButtonDisabled : null,
                     ]}
                     onPress={handleMediaUpload}
-                    disabled={!!selectedMedia}
+                    disabled={selectedMediaItems.length >= 4}
                   >
                     <MaterialIcons
                       name="add-photo-alternate"
                       size={20}
-                      color={selectedMedia ? colors.neutral.darkGrey : config.headerAccentColor}
+                      color={selectedMediaItems.length >= 4 ? colors.neutral.darkGrey : config.headerAccentColor}
                     />
                     <Text
                       style={[
                         styles.mediaActionText,
-                        { color: selectedMedia ? colors.neutral.darkGrey : config.headerAccentColor },
+                        { color: selectedMediaItems.length >= 4 ? colors.neutral.darkGrey : config.headerAccentColor },
                       ]}
                     >
                       {t("Add media")}
@@ -356,10 +343,15 @@ export const CompletionPostComposer: React.FC<CompletionPostComposerProps> = ({
           onPress={() => setFullScreenPreview(false)}
         >
           <View style={styles.fullScreenImageWrapper}>
-            <Image
-              source={{ uri: selectedMedia?.previewUrl || "" }}
+            <MediaGrid
+              items={selectedMediaItems.map((item) => ({
+                uri: item.thumbnailUri || item.previewUrl,
+                isVideo: item.isVideo,
+                useImageForVideo: true,
+              }))}
+              height={420}
               style={styles.fullScreenImage}
-              resizeMode="contain"
+              onPress={() => setFullScreenPreview(false)}
             />
           </View>
         </TouchableOpacity>
@@ -520,30 +512,9 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     maxWidth: "82%",
   },
-  mediaPreview: {
-    backgroundColor: colors.light.accent3,
-    borderRadius: 18,
-    height: "100%",
-    width: "100%",
-  },
   mediaPreviewContainer: {
-    borderRadius: 18,
-    height: 96,
     marginBottom: 4,
-    overflow: "hidden",
-    position: "relative",
     width: "100%",
-  },
-  mediaPreviewPlayOverlay: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.35)",
-    borderRadius: 18,
-    bottom: 0,
-    justifyContent: "center",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
   },
   progressBarContainer: {
     backgroundColor: "#ddd",
@@ -555,17 +526,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.light.accent,
     borderRadius: 2,
     height: "100%",
-  },
-  removeMediaButton: {
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 12,
-    height: 18,
-    justifyContent: "center",
-    position: "absolute",
-    right: 8,
-    top: 8,
-    width: 18,
   },
   sliderEndLabel: {
     fontSize: 13,

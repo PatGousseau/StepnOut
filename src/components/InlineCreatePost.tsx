@@ -1,14 +1,11 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   TextInput,
   TouchableOpacity,
-  Image,
   ViewStyle,
   TextStyle,
-  ImageStyle,
   Modal,
-  Pressable,
 } from "react-native";
 import { colors } from "../constants/Colors";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -18,6 +15,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { Loader } from "./Loader";
 import { useMediaUpload } from "../hooks/useMediaUpload";
 import ImageViewer from "react-native-image-zoom-viewer";
+import { MediaGrid } from "./MediaGrid";
 
 const POST_PROMPT_KEYS = [
   "What made you step outside your comfort zone today?",
@@ -40,20 +38,24 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
   const { user } = useAuth();
   const { t } = useLanguage();
   const [inputText, setInputText] = useState("");
-  
-  // Pick a random prompt when refreshKey changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const placeholderKey = useMemo(() => {
+
+  const [placeholderKey, setPlaceholderKey] = useState(() => {
     const randomIndex = Math.floor(Math.random() * POST_PROMPT_KEYS.length);
     return POST_PROMPT_KEYS[randomIndex];
+  });
+
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * POST_PROMPT_KEYS.length);
+    setPlaceholderKey(POST_PROMPT_KEYS[randomIndex]);
   }, [refreshKey]);
-  
+
   const placeholder = t(placeholderKey);
   const [isFocused, setIsFocused] = useState(false);
   const [showFullScreenImage, setShowFullScreenImage] = useState(false);
+  const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
 
   const {
-    selectedMedia,
+    selectedMediaItems,
     isUploading,
     handleMediaUpload,
     handleRemoveMedia,
@@ -84,7 +86,7 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
     setPostText(text);
   };
 
-  const hasContent = inputText.trim().length > 0 || selectedMedia;
+  const hasContent = inputText.trim().length > 0 || selectedMediaItems.length > 0;
 
   return (
     <View style={containerStyle}>
@@ -93,26 +95,21 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
         <View style={mediaPreviewContainerStyle}>
           <Loader />
         </View>
-      ) : selectedMedia ? (
-        <Pressable style={mediaPreviewContainerStyle} onPress={() => setShowFullScreenImage(true)}>
-          <Image
-            source={{
-              uri: selectedMedia.isVideo
-                ? selectedMedia.thumbnailUri || selectedMedia.previewUrl
-                : selectedMedia.previewUrl,
-            }}
-            style={mediaPreviewStyle}
-            resizeMode="cover"
-          />
-          <TouchableOpacity style={removeMediaButtonStyle} onPress={handleRemoveMedia}>
-            <MaterialIcons name="close" size={12} color="white" />
-          </TouchableOpacity>
-          {selectedMedia.isVideo && (
-            <View style={videoIndicatorStyle}>
-              <MaterialIcons name="play-circle-filled" size={20} color="white" />
-            </View>
-          )}
-        </Pressable>
+      ) : selectedMediaItems.length > 0 ? (
+        <MediaGrid
+          items={selectedMediaItems.map((item) => ({
+            uri: item.thumbnailUri || item.previewUrl,
+            isVideo: item.isVideo,
+            useImageForVideo: true,
+          }))}
+          onPress={(index) => {
+            setSelectedPreviewIndex(index);
+            setShowFullScreenImage(true);
+          }}
+          onRemove={handleRemoveMedia}
+          height={160}
+          style={mediaPreviewContainerStyle}
+        />
       ) : null}
 
       {/* Input row */}
@@ -159,7 +156,8 @@ const InlineCreatePost = ({ onPostCreated, refreshKey = 0 }: InlineCreatePostPro
             <MaterialIcons name="close" size={28} color="white" />
           </TouchableOpacity>
           <ImageViewer
-            imageUrls={[{ url: selectedMedia?.previewUrl || "" }]}
+            imageUrls={selectedMediaItems.map((item) => ({ url: item.thumbnailUri || item.previewUrl }))}
+            index={selectedPreviewIndex}
             enableSwipeDown
             onSwipeDown={() => setShowFullScreenImage(false)}
             renderIndicator={() => <></>}
@@ -220,41 +218,8 @@ const mediaButtonStyle: ViewStyle = {
 
 
 const mediaPreviewContainerStyle: ViewStyle = {
-  position: "relative",
   width: "100%",
-  height: 100,
-  borderRadius: 8,
   marginBottom: 8,
-  overflow: "hidden",
-  backgroundColor: colors.neutral.grey2,
-};
-
-const mediaPreviewStyle: ImageStyle = {
-  width: "100%",
-  height: "100%",
-  borderRadius: 8,
-};
-
-const removeMediaButtonStyle: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "rgba(0,0,0,0.6)",
-  borderRadius: 10,
-  height: 20,
-  justifyContent: "center",
-  position: "absolute",
-  right: 6,
-  top: 6,
-  width: 20,
-};
-
-const videoIndicatorStyle: ViewStyle = {
-  position: "absolute",
-  top: "50%",
-  left: "50%",
-  transform: [{ translateX: -10 }, { translateY: -10 }],
-  backgroundColor: "rgba(0,0,0,0.5)",
-  borderRadius: 10,
-  padding: 2,
 };
 
 const fullScreenContainerStyle: ViewStyle = {
@@ -271,4 +236,3 @@ const closeFullScreenButtonStyle: ViewStyle = {
 };
 
 export default InlineCreatePost;
-
