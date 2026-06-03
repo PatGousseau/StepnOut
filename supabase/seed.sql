@@ -558,20 +558,20 @@ VALUES
 -- Quest posts (daily side quests)
 INSERT INTO public.post (id, user_id, body, challenge_id, quest_id, media_id, is_welcome, featured, created_at)
 VALUES
-  (30, '11111111-1111-1111-1111-111111111111', 'I tried the one-block safari quest after dinner and ended up noticing a tiny ceramics studio I''ve walked past for years without seeing.', null, 2, null, false, false, now() - interval '5 days'),
-  (31, '33333333-3333-3333-3333-333333333333', 'Today''s quest was to find the best bench within walking distance. I tested three and fully support turning ordinary errands into field research.', null, 7, 18, false, false, now() - interval '2 days'),
-  (32, '22222222-2222-2222-2222-222222222222', 'Picked a quest out of the hat and wound up borrowing a random cookbook from the library. Weirdly energizing.', null, 6, null, false, false, now() - interval '20 hours'),
-  (33, '44444444-4444-4444-4444-444444444444', 'Did the market color hunt quest and came home with an aggressively orange snack lineup. Zero regrets.', null, 8, 19, false, true, now() - interval '9 hours'),
-  (34, '44444444-4444-4444-4444-444444444444', 'Took the tiny adventure prompt seriously and walked a route home I''d never tried. Found a mural and a bakery I somehow always missed.', null, 3, null, false, false, now() - interval '4 days'),
-  (35, '44444444-4444-4444-4444-444444444444', 'Used the quest as an excuse to linger in a bookstore and ask the staff for a weird recommendation. Ended up leaving with a poetry collection.', null, 5, null, false, false, now() - interval '2 days');
+  (30, '11111111-1111-1111-1111-111111111111', 'I did the street-history quest and found out my block used to have a ceramics workshop on it. I''m never going to walk home the same way again.', null, 14, null, false, false, now() - interval '5 days'),
+  (31, '33333333-3333-3333-3333-333333333333', 'Made a mini-map for a friend who just moved nearby with my favorite coffee spot, the least annoying shortcut, and the bench that gets the best evening light.', null, 10, 18, false, false, now() - interval '2 days'),
+  (32, '22222222-2222-2222-2222-222222222222', 'Left a caffè sospeso at the bar near my place and ended up chatting with the barista about who usually claims them. Weirdly energizing.', null, 12, null, false, false, now() - interval '20 hours'),
+  (33, '44444444-4444-4444-4444-444444444444', 'Sat in on a public hearing this morning and was surprised by how absorbing it was. It felt like seeing the city''s backstage for an hour.', null, 8, 19, false, true, now() - interval '9 hours'),
+  (34, '44444444-4444-4444-4444-444444444444', 'Filed a proper civic report about a dead streetlight on my route home and actually kept the protocol number like the quest said. Extremely adult behavior from me.', null, 16, null, false, false, now() - interval '4 days'),
+  (35, '44444444-4444-4444-4444-444444444444', 'Called my aunt to untangle an old family story about a move across town and came away with three names, two addresses, and one piece of gossip I was absolutely not prepared for.', null, 5, null, false, false, now() - interval '2 days');
 
 -- Seed side quest draw history so quest-tagged seed posts also appear in side quest history
 INSERT INTO public.side_quest_draws (id, user_id, quest_id, local_day, created_at)
 VALUES
-  (1, '11111111-1111-1111-1111-111111111111', 2, current_date - 5, now() - interval '5 days'),
-  (2, '33333333-3333-3333-3333-333333333333', 7, current_date - 2, now() - interval '2 days'),
-  (3, '22222222-2222-2222-2222-222222222222', 6, current_date - 1, now() - interval '20 hours'),
-  (4, '44444444-4444-4444-4444-444444444444', 3, current_date - 4, now() - interval '4 days'),
+  (1, '11111111-1111-1111-1111-111111111111', 14, current_date - 5, now() - interval '5 days'),
+  (2, '33333333-3333-3333-3333-333333333333', 10, current_date - 2, now() - interval '2 days'),
+  (3, '22222222-2222-2222-2222-222222222222', 12, current_date - 1, now() - interval '20 hours'),
+  (4, '44444444-4444-4444-4444-444444444444', 16, current_date - 4, now() - interval '4 days'),
   (5, '44444444-4444-4444-4444-444444444444', 5, current_date - 2, now() - interval '2 days'),
   (6, '44444444-4444-4444-4444-444444444444', 8, current_date, now() - interval '9 hours');
 
