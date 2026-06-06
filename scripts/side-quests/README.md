@@ -90,6 +90,18 @@ Build a migration from a finished annotated JSON file:
 ./scripts/side-quests/run.sh build-migration scripts/side-quests/output/<stamp>.annotated.json <migration-name>.sql
 ```
 
+Export the current active quest copy as editable JSON:
+
+```bash
+./scripts/side-quests/run.sh export-copy
+```
+
+Build a copy-only update migration from an edited export:
+
+```bash
+./scripts/side-quests/run.sh build-copy-migration scripts/side-quests/output/active-side-quest-copy.json <migration-name>.sql
+```
+
 ## Output
 
 Each pipeline run writes a sequence of intermediate files keyed by an ISO timestamp:
