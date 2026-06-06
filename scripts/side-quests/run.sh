@@ -23,6 +23,14 @@ case "${COMMAND}" in
     shift
     node scripts/side-quests/build-side-quest-migration.mjs "$@"
     ;;
+  export-copy)
+    shift
+    node scripts/side-quests/export-side-quest-copy.mjs "$@"
+    ;;
+  build-copy-migration)
+    shift
+    node scripts/side-quests/build-side-quest-copy-update-migration.mjs "$@"
+    ;;
   *)
     echo "Usage:"
     echo "  ./scripts/side-quests/run.sh run"
@@ -30,6 +38,8 @@ case "${COMMAND}" in
     echo "  ./scripts/side-quests/run.sh critique <seeds.json>"
     echo "  ./scripts/side-quests/run.sh annotate <raw-json-file>"
     echo "  ./scripts/side-quests/run.sh build-migration <annotated-json-file> <migration-file-name.sql>"
+    echo "  ./scripts/side-quests/run.sh export-copy [output-json-file]"
+    echo "  ./scripts/side-quests/run.sh build-copy-migration <edited-copy-json-file> <migration-file-name.sql>"
     exit 1
     ;;
 esac
