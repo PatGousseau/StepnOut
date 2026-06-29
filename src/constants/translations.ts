@@ -439,6 +439,7 @@ export const translations = {
   "A little uncomfortable in a good way": "Un po' scomoda nel modo giusto",
   "What should we steer away from?": "Da cosa dovremmo stare alla larga?",
   "Lots of planning": "Troppa organizzazione",
+  "Talking to strangers": "Parlare con sconosciuti",
   "Going far": "Andare lontano",
   "A month from now, what would make this feel worth it?": "Tra un mese, cosa ti farebbe pensare che ne sia valsa la pena?",
   "I did things I normally would not do": "Ho fatto cose che normalmente non farei",
