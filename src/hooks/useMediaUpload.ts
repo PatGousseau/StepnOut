@@ -9,6 +9,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { supabase } from '../lib/supabase';
 import { captureEvent } from '../lib/posthog';
 import { POST_EVENTS } from '../constants/analyticsEvents';
+import { shouldFallbackToLegacyMedia } from '../services/mediaJoinTableSupport';
 
 interface UseMediaUploadOptions {
   onUploadComplete?: () => void;
@@ -159,8 +160,12 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
           );
 
         if (postMediaError) {
-          await supabase.from('post').delete().eq('id', postData.id);
-          throw postMediaError;
+          if (shouldFallbackToLegacyMedia(postMediaError, mediaItems.length)) {
+            console.warn('post_media unavailable, falling back to legacy post.media_id support');
+          } else {
+            await supabase.from('post').delete().eq('id', postData.id);
+            throw postMediaError;
+          }
         }
       }
 

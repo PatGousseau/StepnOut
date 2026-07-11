@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { imageService } from "./imageService";
+import { shouldFallbackToLegacyMedia } from "./mediaJoinTableSupport";
 import { Comment, CommentRecord } from "../types";
 import { MediaSelectionResult } from "../utils/handleMediaUpload";
 
@@ -187,6 +188,8 @@ export const commentService = {
 
     if (error) throw error;
 
+    let fellBackToLegacyMedia = false;
+
     if (mediaItems.length > 0) {
       const { error: commentMediaError } = await supabase
         .from("comment_media")
@@ -198,15 +201,27 @@ export const commentService = {
           }))
         );
 
-      if (commentMediaError) throw commentMediaError;
+      if (commentMediaError) {
+        if (shouldFallbackToLegacyMedia(commentMediaError, mediaItems.length)) {
+          fellBackToLegacyMedia = true;
+          console.warn('comment_media unavailable, falling back to legacy comments.media_id support');
+        } else {
+          await supabase.from("comments").delete().eq("id", data.id);
+          throw commentMediaError;
+        }
+      }
     }
 
     const comment = formatComment(data as CommentRecord);
     if (mediaItems.length === 0) return comment;
 
+    const resolvedMediaItems = fellBackToLegacyMedia
+      ? mediaItems.slice(0, 1)
+      : mediaItems;
+
     return {
       ...comment,
-      media_items: mediaItems.map((item, index) => ({
+      media_items: resolvedMediaItems.map((item, index) => ({
         media_id: item.mediaId,
         file_path: item.isVideo ? item.pendingUpload.originalUri : item.previewUrl,
         preview_path: item.thumbnailUri || item.previewUrl,
