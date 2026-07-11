@@ -18,6 +18,19 @@ class BackgroundUploadService {
   private maxRetries = 3;
   private maxConcurrentUploads = 2;
 
+  private scheduleNextProcessing() {
+    if (this.uploadQueue.length === 0) {
+      if (this.activeUploads.size === 0) {
+        this.isProcessing = false;
+        console.log('Upload queue processing completed');
+      }
+      return;
+    }
+
+    this.isProcessing = false;
+    setTimeout(() => this.processQueue(), 100);
+  }
+
   // Add an upload to the queue
   addToQueue(
     mediaId: number,
@@ -85,14 +98,7 @@ class BackgroundUploadService {
       // Process upload without blocking the queue
       this.processUpload(item).finally(() => {
         this.activeUploads.delete(item.id);
-        
-        // Continue processing if there are more items
-        if (this.uploadQueue.length > 0) {
-          setTimeout(() => this.processQueue(), 100);
-        } else if (this.activeUploads.size === 0) {
-          this.isProcessing = false;
-          console.log('Upload queue processing completed');
-        }
+        this.scheduleNextProcessing();
       });
     }
 
