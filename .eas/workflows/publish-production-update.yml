@@ -40,4 +40,7 @@ jobs:
       - uses: eas/checkout
       - uses: eas/install_node_modules
       - name: Publish update
-        run: eas update --branch production --environment production --message "CI OTA from main" --non-interactive
+        # Label the update with the latest commit subject so entries in
+        # `eas update:list` are identifiable (delivery is keyed on update ID,
+        # not the message, but a readable label makes rollbacks/debugging easy).
+        run: eas update --branch production --environment production --message "$(git log -1 --pretty=%s)" --non-interactive
