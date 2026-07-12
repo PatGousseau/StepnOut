@@ -13,8 +13,8 @@ type ChallengeTabButtonProps = {
   accessibilityLabel?: string;
 };
 
-function NotificationDot() {
-  return <View style={styles.notificationDot} />;
+function NotificationDot({ style }: { style?: object }) {
+  return <View style={[styles.notificationDot, style]} />;
 }
 
 function ChallengeTabButton({
@@ -35,7 +35,7 @@ function ChallengeTabButton({
       <View style={styles.challengeButtonWrap}>
         <View style={styles.challengeCircle}>
           <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={26} color="white" />
-          {hasUnseenChallenge && <NotificationDot />}
+          {hasUnseenChallenge && <NotificationDot style={styles.challengeDot} />}
         </View>
       </View>
     </Pressable>
@@ -183,5 +183,11 @@ const styles = StyleSheet.create({
     height: 11,
     borderRadius: 5.5,
     backgroundColor: colors.light.alertRed,
+  },
+  // The challenge tab's trophy sits in a 58px circle, so the dot needs a
+  // tighter offset to rest on the circle's rim instead of floating away.
+  challengeDot: {
+    top: 4,
+    right: 4,
   },
 });
