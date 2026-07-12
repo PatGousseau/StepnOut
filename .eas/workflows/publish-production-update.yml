@@ -1,0 +1,46 @@
+# Ships JS / asset changes to production over-the-air (OTA).
+#
+# MANUAL trigger only — nothing deploys automatically. Run it yourself from
+# the Expo dashboard (Workflows -> Run) or:
+#   eas workflow:run .eas/workflows/publish-production-update.yml
+#
+# Only use this for JS-only changes. If a change touches native code
+# (new native deps, app.json native config, SDK bump), use
+# build-and-submit-ios.yml instead — an OTA can't ship native changes.
+#
+# Why this is reliable: it runs on EAS servers using the EAS "production"
+# environment variables — never your local .env — so the local-dev Supabase
+# URL/key can't leak into a production bundle, and a missing key fails loudly
+# in `verify_env` instead of crashing on users' phones.
+
+name: Publish production update
+
+jobs:
+  verify_env:
+    name: Verify required env vars
+    environment: production
+    steps:
+      - name: Ensure required EXPO_PUBLIC_* vars are present
+        run: |
+          missing=0
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_POSTHOG_API_KEY; do
+            if [ -z "$(printenv "$v")" ]; then echo "❌ Missing $v"; missing=1; fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Aborting: required production env vars are missing in EAS."
+            exit 1
+          fi
+          echo "✅ All required env vars present"
+
+  publish_update:
+    name: Publish OTA to production
+    needs: [verify_env]
+    environment: production
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Publish update
+        # Label the update with the latest commit subject so entries in
+        # `eas update:list` are identifiable (delivery is keyed on update ID,
+        # not the message, but a readable label makes rollbacks/debugging easy).
+        run: eas update --branch production --environment production --message "$(git log -1 --pretty=%s)" --non-interactive
