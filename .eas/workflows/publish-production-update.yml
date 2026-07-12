@@ -43,5 +43,5 @@ jobs:
     type: update
     params:
       branch: production
-      platform: ios
+      platform: all          # ships both iOS and Android bundles in one run
       message: "Production OTA (manual workflow run)"

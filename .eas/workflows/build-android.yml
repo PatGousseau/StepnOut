@@ -1,0 +1,42 @@
+# Native Android build (production). Produces a signed .aab (Android App Bundle).
+#
+# MANUAL trigger only — run from the Expo dashboard (Workflows -> Run) or:
+#   eas workflow:run .eas/workflows/build-android.yml
+#
+# Use for NATIVE changes / version bumps. JS-only changes ship over-the-air
+# via publish-production-update.yml (platform: all) — no rebuild needed.
+#
+# This does NOT auto-submit to Google Play. When the build finishes, download
+# the .aab from the EAS build page and upload it yourself in Google Play
+# Console (Production -> Create new release -> upload the .aab). The .aab is
+# signed with your EAS-managed Android keystore, so Google Play accepts it.
+#
+# (Want one-click auto-submit later instead of manual upload? Add a Google Play
+# service account, then a `type: submit` job — see build-and-submit-ios.yml.)
+
+name: Build production (Android)
+
+jobs:
+  verify_env:
+    name: Verify required env vars
+    environment: production
+    steps:
+      - name: Ensure required EXPO_PUBLIC_* vars are present
+        run: |
+          missing=0
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_POSTHOG_API_KEY; do
+            if [ -z "$(printenv "$v")" ]; then echo "❌ Missing $v"; missing=1; fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Aborting: required production env vars are missing in EAS."
+            exit 1
+          fi
+          echo "✅ All required env vars present"
+
+  build_android:
+    name: Build Android (production)
+    needs: [verify_env]
+    type: build
+    params:
+      platform: android
+      profile: production
