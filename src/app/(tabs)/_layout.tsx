@@ -175,13 +175,14 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 6,
   },
+  // Matches the header bell's unread badge (Header.tsx `badge`).
   notificationDot: {
     position: 'absolute',
-    top: -5,
-    right: -6,
-    width: 11,
-    height: 11,
-    borderRadius: 5.5,
+    top: -4,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 10,
     backgroundColor: colors.light.alertRed,
   },
 });
