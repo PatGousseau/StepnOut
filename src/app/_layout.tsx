@@ -186,6 +186,12 @@ function RootLayoutNav() {
 
       if (!session?.user?.id || loading) return;
 
+      // Only prompt to enable notifications on iOS; hide the banner on Android.
+      if (Platform.OS === 'android') {
+        setShowNotificationsBanner(false);
+        return;
+      }
+
       const isAuthRoute =
         pathname === '/login' ||
         pathname === '/register' ||
