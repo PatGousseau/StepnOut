@@ -1,0 +1,43 @@
+# Ships JS / asset changes to production over-the-air (OTA).
+#
+# Runs AUTOMATICALLY every time you merge to `main`, and can also be run
+# on demand from the Expo dashboard (Workflows -> Run) or:
+#   eas workflow:run .eas/workflows/publish-production-update.yml
+#
+# Why this is reliable: it runs on EAS servers using the EAS "production"
+# environment variables — never your local .env — so the local-dev Supabase
+# URL/key can't leak into a production bundle, and a missing key fails loudly
+# in `verify_env` instead of crashing on users' phones.
+
+name: Publish production update
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  verify_env:
+    name: Verify required env vars
+    environment: production
+    steps:
+      - name: Ensure required EXPO_PUBLIC_* vars are present
+        run: |
+          missing=0
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_POSTHOG_API_KEY; do
+            if [ -z "$(printenv "$v")" ]; then echo "❌ Missing $v"; missing=1; fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Aborting: required production env vars are missing in EAS."
+            exit 1
+          fi
+          echo "✅ All required env vars present"
+
+  publish_update:
+    name: Publish OTA to production
+    needs: [verify_env]
+    environment: production
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Publish update
+        run: eas update --branch production --environment production --message "CI OTA from main" --non-interactive

@@ -1,0 +1,50 @@
+# Full native build + TestFlight submission for iOS.
+#
+# MANUAL trigger only (no `on:` block) — run it from the Expo dashboard
+# (Workflows -> Run) or:
+#   eas workflow:run .eas/workflows/build-and-submit-ios.yml
+#
+# Use this when you have NATIVE changes that an OTA update can't ship:
+#   - new native dependencies
+#   - changes to app.json native config / config plugins
+#   - Expo SDK upgrades
+#   - a marketing-version bump (ios/StepnOut/Info.plist CFBundleShortVersionString)
+#
+# JS-only changes do NOT need this — they ship automatically via
+# publish-production-update.yml when you merge to main.
+
+name: Build & submit production (iOS)
+
+jobs:
+  verify_env:
+    name: Verify required env vars
+    environment: production
+    steps:
+      - name: Ensure required EXPO_PUBLIC_* vars are present
+        run: |
+          missing=0
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_POSTHOG_API_KEY; do
+            if [ -z "$(printenv "$v")" ]; then echo "❌ Missing $v"; missing=1; fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Aborting: required production env vars are missing in EAS."
+            exit 1
+          fi
+          echo "✅ All required env vars present"
+
+  build_ios:
+    name: Build iOS (production)
+    needs: [verify_env]
+    type: build
+    params:
+      platform: ios
+      profile: production
+
+  submit_ios:
+    name: Submit to TestFlight
+    needs: [build_ios]
+    type: submit
+    params:
+      platform: ios
+      profile: production
+      build_id: ${{ needs.build_ios.outputs.build_id }}
