@@ -177,13 +177,11 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    top: -3,
-    right: -3,
-    width: 13,
-    height: 13,
-    borderRadius: 6.5,
+    top: -5,
+    right: -6,
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
     backgroundColor: colors.light.alertRed,
-    borderWidth: 2,
-    borderColor: colors.light.background,
   },
 });
