@@ -56,12 +56,13 @@ python scripts/shortform_video/generate.py path/to/video.json \
     "narration_speed": 1.1
   },
   "captions": {
-    "words_per_chunk": 3
+    "words_per_chunk": 2
   },
   "footage": {
     "fallback_queries": ["cinematic city aesthetic"],
     "search_pages": [1, 2, 3, 4],
-    "zoom_amount": 0.08
+    "zoom_amount": 0.08,
+    "default_cuts": 2
   },
   "output": {
     "filename": "example.mp4",
@@ -76,11 +77,26 @@ python scripts/shortform_video/generate.py path/to/video.json \
   "scenes": [
     {
       "narration": "[confident] Spoken line here.",
-      "queries": ["pexels query one", "pexels query two"]
+      "queries": ["pexels query one", "pexels query two"],
+      "cuts": 3
     }
   ]
 }
 ```
+
+## Series Format
+
+The generator supports a repeatable visual structure without encoding any specific
+challenge mechanics:
+
+- State the challenge immediately in the first spoken line and its kinetic captions;
+  do not lead with an abstract reframe or a separate title card.
+- `footage.default_cuts` controls the number of distinct Pexels clips in each
+  narration scene. Override it per scene with `cuts`; use 3 for the hook and
+  closing beat, and 1 only when a deliberate pause is useful.
+
+The included rejection config is an example of this pacing: a strong first-frame
+premise, faster footage changes around concrete examples, and a shorter delivery.
 
 `audio_bed` supports three modes:
 

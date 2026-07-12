@@ -53,7 +53,7 @@ class VoiceConfig:
 
 @dataclass
 class CaptionConfig:
-    words_per_chunk: int = 3
+    words_per_chunk: int = 2
     font: str = "Futura"
     font_size: int = 112
     margin_v: int = 700
@@ -66,6 +66,7 @@ class FootageConfig:
     fallback_queries: list[str] = field(default_factory=lambda: list(DEFAULT_FALLBACK_QUERIES))
     search_pages: list[int] = field(default_factory=lambda: [1, 2, 3, 4])
     zoom_amount: float = 0.08
+    default_cuts: int = 2
 
 
 @dataclass
@@ -97,6 +98,7 @@ class AudioBedConfig:
 class SceneConfig:
     narration: str
     queries: list[str]
+    cuts: int | None = None
 
 
 @dataclass
@@ -206,7 +208,7 @@ def load_video_config(path: Path) -> VideoConfig:
 
     voice = VoiceConfig(**raw.get("voice", {}))
     captions = CaptionConfig(
-        words_per_chunk=max(1, int(raw.get("captions", {}).get("words_per_chunk", 3))),
+        words_per_chunk=max(1, int(raw.get("captions", {}).get("words_per_chunk", 2))),
         font=raw.get("captions", {}).get("font", "Futura"),
         font_size=int(raw.get("captions", {}).get("font_size", 112)),
         margin_v=int(raw.get("captions", {}).get("margin_v", 700)),
@@ -217,6 +219,7 @@ def load_video_config(path: Path) -> VideoConfig:
         fallback_queries=list(raw.get("footage", {}).get("fallback_queries", DEFAULT_FALLBACK_QUERIES)),
         search_pages=list(raw.get("footage", {}).get("search_pages", [1, 2, 3, 4])),
         zoom_amount=float(raw.get("footage", {}).get("zoom_amount", 0.08)),
+        default_cuts=max(1, int(raw.get("footage", {}).get("default_cuts", 2))),
     )
     output = OutputConfig(
         width=int(raw.get("output", {}).get("width", 1080)),
@@ -239,13 +242,19 @@ def load_video_config(path: Path) -> VideoConfig:
         instruments=list(audio_bed_raw.get("instruments", [])),
         tags=list(audio_bed_raw.get("tags", [])),
     )
-
     scenes = []
     for index, scene in enumerate(raw.get("scenes", []), start=1):
         queries = scene.get("queries") or ([scene["query"]] if scene.get("query") else [])
         if not scene.get("narration") or not queries:
             raise SystemExit(f"Scene {index} needs 'narration' and 'queries'.")
-        scenes.append(SceneConfig(narration=scene["narration"], queries=queries))
+        cuts = scene.get("cuts")
+        scenes.append(
+            SceneConfig(
+                narration=scene["narration"],
+                queries=queries,
+                cuts=max(1, int(cuts)) if cuts is not None else None,
+            )
+        )
 
     if not scenes:
         raise SystemExit(f"No scenes found in config: {path}")
@@ -883,65 +892,63 @@ def render_scene(
     output: OutputConfig,
     footage: FootageConfig,
     brand: BrandOverlay,
-    source_clip: Path,
+    source_clips: list[Path],
     audio_path: Path,
     subtitle_path: Path,
     dest: Path,
 ) -> None:
-    source_duration = probe_duration(source_clip)
-    max_start = max(0.0, source_duration - duration - 0.1)
-    start = round(random.uniform(0.0, max_start), 3) if max_start > 0 else 0.0
     subtitle_filter = f"subtitles='{ffmpeg_escape(str(subtitle_path))}'"
-    progress_filter = f"drawbox=x=0:y=0:w='iw*t/{duration}':h=16:color=white@0.95:t=fill"
-    frames = max(1, int(round(duration * output.fps)))
-    if index % 2 == 0:
-        zoom_expr = f"1+{footage.zoom_amount}*in/{frames}"
-    else:
-        zoom_expr = f"{1 + footage.zoom_amount}-{footage.zoom_amount}*in/{frames}"
-    zoom_filter = (
-        f"zoompan=z='{zoom_expr}':x='(iw-iw/zoom)/2':y='(ih-ih/zoom)/2'"
-        f":d=1:s={output.width}x{output.height}:fps={output.fps}"
-    )
-    base_filter_chain = ",".join(
-        [
-            f"trim=start={start}:duration={duration}",
-            "setpts=PTS-STARTPTS",
-            f"fps={output.fps}",
-            f"scale={output.width}:{output.height}:force_original_aspect_ratio=increase",
-            f"crop={output.width}:{output.height}",
-            zoom_filter,
-            "eq=saturation=1.14:contrast=1.06:brightness=-0.01",
-            "vignette",
-            "format=yuv420p",
-            subtitle_filter,
-            progress_filter,
-        ]
+    cut_duration = duration / len(source_clips)
+    video_chains = []
+    for clip_index, source_clip in enumerate(source_clips):
+        source_duration = probe_duration(source_clip)
+        max_start = max(0.0, source_duration - cut_duration - 0.1)
+        start = round(random.uniform(0.0, max_start), 3) if max_start > 0 else 0.0
+        frames = max(1, int(round(cut_duration * output.fps)))
+        zoom_in = (index + clip_index) % 2 == 0
+        zoom_expr = (
+            f"1+{footage.zoom_amount}*in/{frames}"
+            if zoom_in
+            else f"{1 + footage.zoom_amount}-{footage.zoom_amount}*in/{frames}"
+        )
+        zoom_filter = (
+            f"zoompan=z='{zoom_expr}':x='(iw-iw/zoom)/2':y='(ih-ih/zoom)/2'"
+            f":d=1:s={output.width}x{output.height}:fps={output.fps}"
+        )
+        video_chains.append(
+            f"[{clip_index}:v]trim=start={start}:duration={cut_duration:.3f},setpts=PTS-STARTPTS,"
+            f"fps={output.fps},scale={output.width}:{output.height}:force_original_aspect_ratio=increase,"
+            f"crop={output.width}:{output.height},{zoom_filter},eq=saturation=1.14:contrast=1.06:brightness=-0.01,"
+            f"vignette,format=yuv420p[v{clip_index}]"
+        )
+
+    video_labels = "".join(f"[v{clip_index}]" for clip_index in range(len(source_clips)))
+    base_chain = (
+        ";".join(video_chains)
+        + f";{video_labels}concat=n={len(source_clips)}:v=1:a=0,"
+        + f"{subtitle_filter}[base]"
     )
 
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-stream_loop",
-        "-1",
-        "-i",
-        str(source_clip),
-        "-i",
-        str(audio_path),
-    ]
+    cmd = ["ffmpeg", "-y"]
+    for source_clip in source_clips:
+        cmd.extend(["-stream_loop", "-1", "-i", str(source_clip)])
+    audio_input_index = len(source_clips)
+    cmd.extend(["-i", str(audio_path)])
 
     if brand.path:
         brand_expr = build_brand_overlay_expr(brand)
         filter_complex = (
-            f"[0:v]{base_filter_chain}[base];"
-            f"[1:a]apad=whole_dur={duration:.3f},atrim=0:{duration:.3f}[a];"
-            f"[2:v]scale={brand.width}:-1[brand];"
+            f"{base_chain};"
+            f"[{audio_input_index}:a]apad=whole_dur={duration:.3f},atrim=0:{duration:.3f}[a];"
+            f"[{audio_input_index + 1}:v]scale={brand.width}:-1[brand];"
             f"[base][brand]overlay={brand_expr}[v]"
         )
         cmd.extend(["-loop", "1", "-i", str(brand.path)])
     else:
         filter_complex = (
-            f"[0:v]{base_filter_chain}[v];"
-            f"[1:a]apad=whole_dur={duration:.3f},atrim=0:{duration:.3f}[a]"
+            f"{base_chain};"
+            f"[{audio_input_index}:a]apad=whole_dur={duration:.3f},atrim=0:{duration:.3f}[a];"
+            "[base]copy[v]"
         )
 
     cmd.extend(
@@ -1115,35 +1122,43 @@ def render_video(config_path: Path, video_config: VideoConfig, runtime: RuntimeC
             relative_words,
         )
 
-        video, file_data = choose_source_clip(
-            runtime,
-            video_config.footage,
-            scene.queries,
-            used_video_ids,
-        )
+        cut_count = scene.cuts or video_config.footage.default_cuts
+        selected_clips = [
+            choose_source_clip(
+                runtime,
+                video_config.footage,
+                scene.queries,
+                used_video_ids,
+            )
+            for _ in range(cut_count)
+        ]
         print(f"  pexels queries: {scene.queries}")
-        print(f"  source: {video.get('url')}")
-        http_download(file_data["link"], source_clip_path)
+        source_clip_paths = []
+        for clip_index, (video, file_data) in enumerate(selected_clips, start=1):
+            clip_path = source_clip_path.with_stem(f"{source_clip_path.stem}_{clip_index:02d}")
+            print(f"  source {clip_index}/{cut_count}: {video.get('url')}")
+            http_download(file_data["link"], clip_path)
+            source_clip_paths.append(clip_path)
+            attribution_records.append(
+                {
+                    "scene": f"{index + 1}.{clip_index}",
+                    "photographer": video.get("user", {}).get("name", "unknown"),
+                    "url": video.get("url", ""),
+                }
+            )
         render_scene(
             index,
             duration,
             video_config.output,
             video_config.footage,
             brand_overlay,
-            source_clip_path,
+            source_clip_paths,
             audio_path,
             subtitle_path,
             rendered_clip_path,
         )
 
         rendered_clips.append(rendered_clip_path)
-        attribution_records.append(
-            {
-                "scene": index + 1,
-                "photographer": video.get("user", {}).get("name", "unknown"),
-                "url": video.get("url", ""),
-            }
-        )
 
     concat_videos(runtime.work_dir, rendered_clips, runtime.output_path)
     if resolved_audio_bed.path:

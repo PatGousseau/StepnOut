@@ -3,10 +3,10 @@
     "model_id": "eleven_v3",
     "voice_id": "wWWn96OtTHu1sn8SRGEr",
     "voice_name": "Hale",
-    "narration_speed": 1.1
+    "narration_speed": 1.16
   },
   "captions": {
-    "words_per_chunk": 3,
+    "words_per_chunk": 2,
     "font": "Futura",
     "font_size": 112,
     "margin_v": 700,
@@ -16,7 +16,8 @@
   "footage": {
     "fallback_queries": ["cinematic city aesthetic", "golden hour street people"],
     "search_pages": [1, 2, 3, 4],
-    "zoom_amount": 0.08
+    "zoom_amount": 0.08,
+    "default_cuts": 2
   },
   "output": {
     "width": 1080,
@@ -33,33 +34,37 @@
     "mode": "match",
     "volume": 0.16,
     "mood": "inspiring",
-    "energy": "low",
-    "instruments": ["piano"]
+    "energy": "medium",
+    "instruments": ["piano", "strings"]
   },
   "scenes": [
     {
-      "narration": "[confident] Your mission this week? Go get rejected.",
-      "queries": ["confident man walking city", "young person walking urban street"]
+      "narration": "[confident] This week's challenge: get rejected on purpose.",
+      "queries": ["confident man walking city", "young person walking urban street"],
+      "cuts": 3
     },
     {
-      "narration": "[encouraging] Ask for the discount. Ask for the upgrade. Ask for what you actually want.",
-      "queries": ["coffee shop counter barista", "ordering cafe customer"]
+      "narration": "[encouraging] Ask for the discount. The upgrade. The thing you actually want.",
+      "queries": ["coffee shop counter barista", "ordering cafe customer"],
+      "cuts": 3
     },
     {
-      "narration": "[playful] You're not hunting for a yes. You're hunting for the no.",
-      "queries": ["people talking conversation cafe", "friends laughing street"]
+      "narration": "[playful] You are not hunting for a yes. You are hunting for the no.",
+      "queries": ["people talking conversation cafe", "friends laughing street"],
+      "cuts": 2
     },
     {
-      "narration": "[serious] Because every no is proof... that you asked.",
+      "narration": "[serious] Every no means you did the hard part. You asked.",
       "queries": ["thoughtful man window city", "young man portrait urban"]
     },
     {
-      "narration": "[calm] And rejection stops being scary... once you start collecting them.",
+      "narration": "[calm] Confidence does not come first. It comes after.",
       "queries": ["sunset city walk calm", "person relaxed rooftop city"]
     },
     {
-      "narration": "[confident] Save this. Three no's. Seven days. Go.",
-      "queries": ["person running city morning", "determined walk city night"]
+      "narration": "[confident] Three no's. Seven days. Start today.",
+      "queries": ["person running city morning", "determined walk city night"],
+      "cuts": 3
     }
   ]
 }
