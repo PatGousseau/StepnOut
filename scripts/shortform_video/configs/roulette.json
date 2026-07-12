@@ -1,0 +1,81 @@
+{
+  "voice": {
+    "voice_id": "wWWn96OtTHu1sn8SRGEr",
+    "model_id": "eleven_v3",
+    "narration_speed": 1.3
+  },
+  "output": {
+    "filename": "roulette_take_yourself_out.mp4",
+    "width": 1080,
+    "height": 1920,
+    "fps": 24
+  },
+  "roulette": {
+    "spin_duration": 5.0,
+    "turns": 7.5,
+    "reveal_delay": 0.45,
+    "winner": "take-yourself-out",
+    "candidates": [
+      {
+        "id": "take-yourself-out",
+        "title": "TAKE YOURSELF\nOUT",
+        "spoken_title": "take yourself out",
+        "completion": "Do one thing this week you would usually save for company: a movie, market, class, or meal.",
+        "narration": "[energetic, fast] Pick one thing you usually save for company. Go anyway. [thoughtful] This is not about proving you are independent. It is about not making someone else's availability the price of a life you want. Feeling exposed at first is normal. That is your comfort zone growing."
+      },
+      {
+        "id": "solo-event",
+        "title": "GO TO AN EVENT\nON YOUR OWN",
+        "spoken_title": "go to an event on your own",
+        "completion": "Pick one event and stay for thirty minutes before deciding whether to leave.",
+        "narration": "[upbeat] Pick one event, go by yourself, and give it thirty minutes. [thoughtful] Going solo is not a punishment. It changes the question from who will come with me to what might happen if I show up."
+      },
+      {
+        "id": "send-invite",
+        "title": "SEND THE\nACTUAL INVITE",
+        "spoken_title": "send the actual invite",
+        "completion": "Text one person a plan with a day, time, and place. No vague maybe sometime.",
+        "narration": "[confident] Make the plan specific enough that the other person can answer it. [thoughtful] The risk is not sending a text. It is letting someone see that you wanted to spend time with them. That is how plans become real."
+      },
+      {
+        "id": "new-door",
+        "title": "WALK INTO A\nNEW PLACE",
+        "spoken_title": "walk into a place you have never entered",
+        "completion": "Enter one cafe, store, class, or bar you have walked past before. Ask one real question.",
+        "narration": "[energised] Walk in, look around, and ask one question you could not ask from the pavement. [thoughtful] You do not need to buy anything or become a regular. Opening a door is enough to interrupt the loop."
+      },
+      {
+        "id": "try-class",
+        "title": "BOOK THE\nBEGINNER CLASS",
+        "spoken_title": "book the beginner class",
+        "completion": "Find one beginner class and reserve a spot before you can research your way out of it.",
+        "narration": "[energetic] Reserve the beginner class before you can overthink every review. [thoughtful] Being new at something is not evidence that you do not belong there. It is how you find out whether you might love it."
+      },
+      {
+        "id": "ask-question",
+        "title": "ASK THE\nQUESTION",
+        "spoken_title": "ask the question",
+        "completion": "Ask someone one question you usually keep in your head because it might sound too curious.",
+        "narration": "[curious, quick] Ask the question you almost edit out because it reveals you are genuinely interested. [thoughtful] You do not need a clever follow-up. Real attention is more memorable than trying to look impressive."
+      },
+      {
+        "id": "sit-bar",
+        "title": "SIT AT THE\nBAR",
+        "spoken_title": "sit at the bar",
+        "completion": "Have one drink or snack at the bar instead of taking the safest empty table in the corner.",
+        "narration": "[easygoing, upbeat] Sit at the bar for one drink or snack, and let yourself be visible for a while. [thoughtful] Nothing has to happen. But small conversations do not usually travel all the way to the empty corner table."
+      },
+      {
+        "id": "say-yes",
+        "title": "SAY YES TO\nTHE INVITATION",
+        "spoken_title": "say yes to the invitation you almost declined",
+        "completion": "Accept one safe, manageable invitation you would normally decline out of habit.",
+        "narration": "[bright] Say yes to the invitation you were about to decline by reflex. [thoughtful] A more interesting life is not always a dramatic decision. Sometimes it is already asking you in."
+      }
+    ]
+  },
+  "narration": {
+    "spin_line": "[bright, punchy, playful, fast] Today's side quest is on the wheel.",
+    "reveal_lead": "[excited, punchy] Today's challenge:"
+  }
+}

@@ -36,6 +36,31 @@ To use a custom config:
 python scripts/shortform_video/generate.py path/to/video.json
 ```
 
+## Roulette Format
+
+The roulette renderer is a separate, config-driven format: it uses original
+motion graphics rather than Pexels footage. The wheel conceals every challenge
+label while spinning, selects an outcome automatically, then reveals its
+completion rule with dedicated narration and mechanical click SFX.
+
+```bash
+python scripts/shortform_video/roulette.py scripts/shortform_video/configs/roulette.json
+```
+
+`roulette.candidates` contains the reusable challenge catalog. Set
+`roulette.winner` for a specific outcome, or omit it and use `--seed` to select
+a reproducible random candidate:
+
+```bash
+python scripts/shortform_video/roulette.py path/to/roulette.json --seed 42 \
+  --output /tmp/roulette.mp4
+```
+
+Each candidate needs an `id`, visual `title`, natural-language `spoken_title`,
+concrete `completion` rule, and a custom `narration` insight. `voice.narration_speed`
+controls final delivery pace. The renderer currently targets
+1080x1920 at 24 fps.
+
 Useful flags:
 
 ```bash
