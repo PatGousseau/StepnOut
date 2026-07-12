@@ -1,8 +1,12 @@
 # Ships JS / asset changes to production over-the-air (OTA).
 #
-# Runs AUTOMATICALLY every time you merge to `main`, and can also be run
-# on demand from the Expo dashboard (Workflows -> Run) or:
+# MANUAL trigger only — nothing deploys automatically. Run it yourself from
+# the Expo dashboard (Workflows -> Run) or:
 #   eas workflow:run .eas/workflows/publish-production-update.yml
+#
+# Only use this for JS-only changes. If a change touches native code
+# (new native deps, app.json native config, SDK bump), use
+# build-and-submit-ios.yml instead — an OTA can't ship native changes.
 #
 # Why this is reliable: it runs on EAS servers using the EAS "production"
 # environment variables — never your local .env — so the local-dev Supabase
@@ -10,10 +14,6 @@
 # in `verify_env` instead of crashing on users' phones.
 
 name: Publish production update
-
-on:
-  push:
-    branches: ['main']
 
 jobs:
   verify_env:
