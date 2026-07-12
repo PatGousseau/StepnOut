@@ -96,7 +96,7 @@ function TabsLayoutNav() {
           const showDot = route.name === 'path' && hasNewSideQuest;
 
           return (
-            <View>
+            <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
               <Ionicons name={iconName} size={size} color={color} />
               {showDot && <NotificationDot />}
             </View>
@@ -177,13 +177,13 @@ const styles = StyleSheet.create({
   },
   notificationDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    top: -3,
+    right: -3,
+    width: 13,
+    height: 13,
+    borderRadius: 6.5,
     backgroundColor: colors.light.alertRed,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: colors.light.background,
   },
 });
