@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   notificationDot: {
     position: 'absolute',
     top: -5,
-    right: -6,
+    right: -7,
     width: 11,
     height: 11,
     borderRadius: 5.5,
