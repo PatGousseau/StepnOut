@@ -1,0 +1,65 @@
+{
+  "voice": {
+    "model_id": "eleven_v3",
+    "voice_id": "wWWn96OtTHu1sn8SRGEr",
+    "voice_name": "Hale",
+    "narration_speed": 1.1
+  },
+  "captions": {
+    "words_per_chunk": 3,
+    "font": "Futura",
+    "font_size": 112,
+    "margin_v": 700,
+    "primary_color": "&H00FFFFFF",
+    "accent_color": "&H0082534D"
+  },
+  "footage": {
+    "fallback_queries": ["cinematic city aesthetic", "golden hour street people"],
+    "search_pages": [1, 2, 3, 4],
+    "zoom_amount": 0.08
+  },
+  "output": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "filename": "rejection.mp4",
+    "brand_image": "assets/stepnout-wordmark-white.png",
+    "brand_position": "bottom_left",
+    "brand_width": 260,
+    "brand_margin_x": 56,
+    "brand_margin_y": 132
+  },
+  "audio_bed": {
+    "mode": "match",
+    "volume": 0.16,
+    "mood": "inspiring",
+    "energy": "low",
+    "instruments": ["piano"]
+  },
+  "scenes": [
+    {
+      "narration": "[confident] Your mission this week? Go get rejected.",
+      "queries": ["confident man walking city", "young person walking urban street"]
+    },
+    {
+      "narration": "[encouraging] Ask for the discount. Ask for the upgrade. Ask for what you actually want.",
+      "queries": ["coffee shop counter barista", "ordering cafe customer"]
+    },
+    {
+      "narration": "[playful] You're not hunting for a yes. You're hunting for the no.",
+      "queries": ["people talking conversation cafe", "friends laughing street"]
+    },
+    {
+      "narration": "[serious] Because every no is proof... that you asked.",
+      "queries": ["thoughtful man window city", "young man portrait urban"]
+    },
+    {
+      "narration": "[calm] And rejection stops being scary... once you start collecting them.",
+      "queries": ["sunset city walk calm", "person relaxed rooftop city"]
+    },
+    {
+      "narration": "[confident] Save this. Three no's. Seven days. Go.",
+      "queries": ["person running city morning", "determined walk city night"]
+    }
+  ]
+}

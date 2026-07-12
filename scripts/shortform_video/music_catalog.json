@@ -1,0 +1,88 @@
+{
+  "tracks": [
+    {
+      "path": "music/pixabay/alexguz-atmospheric-inspiring-ambient-piano-165491.mp3",
+      "moods": ["inspiring", "calm"],
+      "energy": "low",
+      "instruments": ["piano"],
+      "tags": ["ambient", "cinematic"]
+    },
+    {
+      "path": "music/pixabay/alex_makemusic-soft-ambient-10782.mp3",
+      "moods": ["calm", "warm"],
+      "energy": "low",
+      "instruments": ["ambient"],
+      "tags": ["soft", "minimal"]
+    },
+    {
+      "path": "music/pixabay/dream-protocol-fun-times-ahead-soft-acoustic-guitar-instrumental-22173.mp3",
+      "moods": ["warm", "uplifting"],
+      "energy": "medium",
+      "instruments": ["guitar"],
+      "tags": ["acoustic", "hopeful"]
+    },
+    {
+      "path": "music/pixabay/dream-protocol-lazy-sundays-soft-acoustic-guitar-piano-and-strings-95400.mp3",
+      "moods": ["warm", "nostalgic"],
+      "energy": "low",
+      "instruments": ["guitar", "piano", "strings"],
+      "tags": ["acoustic", "gentle"]
+    },
+    {
+      "path": "music/pixabay/katzen_tupas-walking-back-again-inspirational-soft-piano-117721.mp3",
+      "moods": ["inspiring", "reflective"],
+      "energy": "low",
+      "instruments": ["piano"],
+      "tags": ["soft", "documentary"]
+    },
+    {
+      "path": "music/pixabay/lvymusic-piano-chill-ambient-125800.mp3",
+      "moods": ["calm", "reflective"],
+      "energy": "low",
+      "instruments": ["piano"],
+      "tags": ["ambient", "chill"]
+    },
+    {
+      "path": "music/pixabay/music_for_creators-beautiful-piano-and-strings-136826.mp3",
+      "moods": ["emotional", "inspiring"],
+      "energy": "medium",
+      "instruments": ["piano", "strings"],
+      "tags": ["cinematic", "uplifting"]
+    },
+    {
+      "path": "music/pixabay/musiclfiles-positive-emotional-cinematic-presentation-123836.mp3",
+      "moods": ["inspiring", "uplifting"],
+      "energy": "medium",
+      "instruments": ["piano", "strings"],
+      "tags": ["cinematic", "presentation"]
+    },
+    {
+      "path": "music/pixabay/onetent-happy-inspiration-music-159193.mp3",
+      "moods": ["uplifting", "bright"],
+      "energy": "medium",
+      "instruments": ["piano"],
+      "tags": ["happy", "motivational"]
+    },
+    {
+      "path": "music/pixabay/piano_music-calm-nature-122814.mp3",
+      "moods": ["calm", "gentle"],
+      "energy": "low",
+      "instruments": ["piano"],
+      "tags": ["nature", "soft"]
+    },
+    {
+      "path": "music/pixabay/sigmamusicart-historical-documentary-background-atmospheric-moments-253424.mp3",
+      "moods": ["reflective", "serious"],
+      "energy": "low",
+      "instruments": ["ambient", "strings"],
+      "tags": ["documentary", "atmospheric"]
+    },
+    {
+      "path": "music/pixabay/soulprodmusic-starry-sky-beautiful-chill-inspire-music-127824.mp3",
+      "moods": ["calm", "inspiring"],
+      "energy": "low",
+      "instruments": ["ambient", "piano"],
+      "tags": ["chill", "dreamy"]
+    }
+  ]
+}
