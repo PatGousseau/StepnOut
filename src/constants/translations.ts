@@ -114,6 +114,7 @@ export const translations = {
   "You stepped out!": "Sei uscito dalla tua zona!",
   "Bravo!": "Bravo!",
   "(count) people": "(count) persone",
+  people: "persone",
   "have stepped out of their comfort zone this week.":
     "sono uscite dalla loro zona di comfort questa settimana.",
   "Inspire your friend to be the (count)th!": "Ispira il tuo amico ad essere il (count)°!",
@@ -452,6 +453,7 @@ export const translations = {
   Reflective: "Riflessiva",
   "Choose all that apply": "Scegli tutte quelle che si applicano",
   "Spending money": "Spendere soldi",
+  "Talking to strangers": "Parlare con sconosciuti",
   "Group/social situations": "Situazioni di gruppo/sociali",
   "Physically demanding activities": "Attività fisicamente impegnative",
   "Nighttime activities": "Attività notturne",
