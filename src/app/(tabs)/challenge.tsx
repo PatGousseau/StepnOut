@@ -1,12 +1,21 @@
+import { useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { ChallengeSkeleton } from '@/src/components/Skeleton';
 import { ChallengePage } from '../../components/ChallengePage';
 import { Text } from '../../components/StyledText';
 import { useActiveChallenge } from '../../hooks/useActiveChallenge';
-import { View, StyleSheet } from 'react-native';
-import { colors } from '@/src/constants/Colors';
+import { useTabBadges } from '../../contexts/TabBadgeContext';
 
 const ChallengeScreen: React.FC = () => {
   const { activeChallenge, loading } = useActiveChallenge();
+  const { markChallengeSeen } = useTabBadges();
+
+  // Clear the "new challenge" dot whenever the user opens this tab.
+  useFocusEffect(
+    useCallback(() => {
+      markChallengeSeen();
+    }, [markChallengeSeen])
+  );
 
   if (loading) {
     return <ChallengeSkeleton />;
@@ -17,12 +26,5 @@ const ChallengeScreen: React.FC = () => {
   }
   return <ChallengePage id={activeChallenge.id} />;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.light.background,
-    flex: 1,
-  },
-});
 
 export default ChallengeScreen;

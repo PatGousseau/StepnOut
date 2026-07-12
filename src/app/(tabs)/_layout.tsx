@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View, GestureResponderEvent, Platform } from 're
 import { colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { TabBadgeProvider, useTabBadges } from '../../contexts/TabBadgeContext';
 
 type ChallengeTabButtonProps = {
   onPress?: (e: GestureResponderEvent) => void;
@@ -12,11 +13,16 @@ type ChallengeTabButtonProps = {
   accessibilityLabel?: string;
 };
 
+function NotificationDot() {
+  return <View style={styles.notificationDot} />;
+}
+
 function ChallengeTabButton({
   onPress,
   accessibilityLabel,
 }: ChallengeTabButtonProps) {
   const pathname = usePathname();
+  const { hasUnseenChallenge } = useTabBadges();
   const focused = pathname === '/challenge' || pathname.startsWith('/challenge/');
   return (
     <Pressable
@@ -29,6 +35,7 @@ function ChallengeTabButton({
       <View style={styles.challengeButtonWrap}>
         <View style={styles.challengeCircle}>
           <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={26} color="white" />
+          {hasUnseenChallenge && <NotificationDot />}
         </View>
       </View>
     </Pressable>
@@ -36,8 +43,17 @@ function ChallengeTabButton({
 }
 
 export default function TabsLayout() {
+  return (
+    <TabBadgeProvider>
+      <TabsLayoutNav />
+    </TabBadgeProvider>
+  );
+}
+
+function TabsLayoutNav() {
   const { isAdmin } = useAuth();
   const { t } = useLanguage();
+  const { hasNewSideQuest } = useTabBadges();
 
   return (
     <Tabs
@@ -77,7 +93,14 @@ export default function TabsLayout() {
               iconName = 'home';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          const showDot = route.name === 'path' && hasNewSideQuest;
+
+          return (
+            <View>
+              <Ionicons name={iconName} size={size} color={color} />
+              {showDot && <NotificationDot />}
+            </View>
+          );
         },
       })}
     >
@@ -151,5 +174,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 6,
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.light.alertRed,
+    borderWidth: 1.5,
+    borderColor: colors.light.background,
   },
 });
