@@ -21,12 +21,12 @@ function NotificationDot({ style }: { style?: object }) {
 
 // A faded silver ring with a bright arc that continuously orbits it — a softer,
 // more attention-drawing alternative to a dot for the challenge tab.
-const SHIMMER_SIZE = 66;
-const SHIMMER_STROKE = 2.5;
+const SHIMMER_SIZE = 60; // ride on the purple circle's border (58px) for contrast
+const SHIMMER_STROKE = 3;
 const SHIMMER_RADIUS = (SHIMMER_SIZE - SHIMMER_STROKE) / 2;
 const SHIMMER_CIRC = 2 * Math.PI * SHIMMER_RADIUS;
-const SHIMMER_ARC = SHIMMER_CIRC * 0.3; // visible arc length (~30% of the ring)
-const SHIMMER_SILVER = '#E8EAF2';
+const SHIMMER_ARC = SHIMMER_CIRC * 0.5; // visible arc length (~50% of the ring)
+const SHIMMER_SILVER = '#EDEEF4';
 
 function ChallengeShimmerRing() {
   const spin = useRef(new Animated.Value(0)).current;
@@ -35,7 +35,7 @@ function ChallengeShimmerRing() {
     const anim = Animated.loop(
       Animated.timing(spin, {
         toValue: 1,
-        duration: 2800,
+        duration: 2300,
         easing: Easing.linear,
         useNativeDriver: true,
       })
@@ -55,7 +55,7 @@ function ChallengeShimmerRing() {
           cy={SHIMMER_SIZE / 2}
           r={SHIMMER_RADIUS}
           stroke={SHIMMER_SILVER}
-          strokeOpacity={0.18}
+          strokeOpacity={0.5}
           strokeWidth={SHIMMER_STROKE}
           fill="none"
         />
@@ -64,9 +64,18 @@ function ChallengeShimmerRing() {
       <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ rotate }] }]}>
         <Svg width={SHIMMER_SIZE} height={SHIMMER_SIZE}>
           <Defs>
-            <LinearGradient id="challengeShimmer" x1="0" y1="0" x2={SHIMMER_SIZE} y2="0">
-              <Stop offset="0" stopColor={SHIMMER_SILVER} stopOpacity="0" />
-              <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0.95" />
+            <LinearGradient
+              id="challengeShimmer"
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1="0"
+              x2={SHIMMER_SIZE}
+              y2="0"
+            >
+              {/* Soft glint: fades in and out on both ends, bright in the middle */}
+              <Stop offset="0" stopColor="#EDEEF4" stopOpacity="0" />
+              <Stop offset="0.5" stopColor="#FFFFFF" stopOpacity="1" />
+              <Stop offset="1" stopColor="#EDEEF4" stopOpacity="0" />
             </LinearGradient>
           </Defs>
           <Circle
