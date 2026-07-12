@@ -8,10 +8,14 @@
 # (new native deps, app.json native config, SDK bump), use
 # build-and-submit-ios.yml instead — an OTA can't ship native changes.
 #
-# Why this is reliable: it runs on EAS servers using the EAS "production"
-# environment variables — never your local .env — so the local-dev Supabase
-# URL/key can't leak into a production bundle, and a missing key fails loudly
-# in `verify_env` instead of crashing on users' phones.
+# This runs on EAS servers using the EAS "production" environment. There is no
+# local .env on the server, so local-dev Supabase values can't leak into a
+# production bundle. `verify_env` fails loudly if a required key is missing,
+# instead of shipping a bundle that crashes on users' devices.
+#
+# Note: EAS automatically records the git commit on every published update
+# (visible in `eas update:list`), so updates stay traceable regardless of the
+# static message below.
 
 name: Publish production update
 
@@ -36,11 +40,8 @@ jobs:
     name: Publish OTA to production
     needs: [verify_env]
     environment: production
-    steps:
-      - uses: eas/checkout
-      - uses: eas/install_node_modules
-      - name: Publish update
-        # Label the update with the latest commit subject so entries in
-        # `eas update:list` are identifiable (delivery is keyed on update ID,
-        # not the message, but a readable label makes rollbacks/debugging easy).
-        run: eas update --branch production --environment production --message "$(git log -1 --pretty=%s)" --non-interactive
+    type: update
+    params:
+      branch: production
+      platform: ios
+      message: "Production OTA (manual workflow run)"
