@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 import { useActiveChallenge } from '../hooks/useActiveChallenge';
 import { sideQuestService } from '../services/sideQuestService';
 
-const LAST_SEEN_CHALLENGE_ID_KEY = 'last_seen_challenge_id';
+const LAST_SEEN_CHALLENGE_ID_KEY = 'last_seen_challenge_id_v2';
 
 // Local calendar day (YYYY-MM-DD) — must match the key useSideQuests uses so
 // the daily-draw query shares its cache and clears reactively after a pull.
