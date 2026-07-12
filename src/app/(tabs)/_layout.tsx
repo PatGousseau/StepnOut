@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   // The challenge tab's trophy sits in a 58px circle, so the dot needs a
   // tighter offset to rest on the circle's rim instead of floating away.
   challengeDot: {
-    top: 4,
-    right: 4,
+    top: 2,
+    right: 2,
   },
 });
