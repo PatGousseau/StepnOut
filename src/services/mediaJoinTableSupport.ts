@@ -8,7 +8,9 @@ type SupabaseErrorShape = {
 function isMissingRelationError(error: SupabaseErrorShape | null | undefined) {
   return error?.code === MISSING_RELATION_CODE ||
     error?.message?.includes('relation "post_media" does not exist') ||
-    error?.message?.includes('relation "comment_media" does not exist');
+    error?.message?.includes('relation "comment_media" does not exist') ||
+    error?.message?.includes('relation "post_media_items" does not exist') ||
+    error?.message?.includes('relation "comment_media_items" does not exist');
 }
 
 export function shouldFallbackToLegacyMedia(error: SupabaseErrorShape | null | undefined, mediaCount: number) {
