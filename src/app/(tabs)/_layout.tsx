@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import { usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View, GestureResponderEvent, Platform } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Pressable, StyleSheet, View, GestureResponderEvent, Platform, Animated, Easing } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -15,6 +17,72 @@ type ChallengeTabButtonProps = {
 
 function NotificationDot({ style }: { style?: object }) {
   return <View style={[styles.notificationDot, style]} />;
+}
+
+// A faded silver ring with a bright arc that continuously orbits it — a softer,
+// more attention-drawing alternative to a dot for the challenge tab.
+const SHIMMER_SIZE = 66;
+const SHIMMER_STROKE = 2.5;
+const SHIMMER_RADIUS = (SHIMMER_SIZE - SHIMMER_STROKE) / 2;
+const SHIMMER_CIRC = 2 * Math.PI * SHIMMER_RADIUS;
+const SHIMMER_ARC = SHIMMER_CIRC * 0.3; // visible arc length (~30% of the ring)
+const SHIMMER_SILVER = '#E8EAF2';
+
+function ChallengeShimmerRing() {
+  const spin = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.timing(spin, {
+        toValue: 1,
+        duration: 2800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [spin]);
+
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+
+  return (
+    <View pointerEvents="none" style={styles.shimmerWrap}>
+      {/* Faded base ring */}
+      <Svg width={SHIMMER_SIZE} height={SHIMMER_SIZE} style={StyleSheet.absoluteFill}>
+        <Circle
+          cx={SHIMMER_SIZE / 2}
+          cy={SHIMMER_SIZE / 2}
+          r={SHIMMER_RADIUS}
+          stroke={SHIMMER_SILVER}
+          strokeOpacity={0.18}
+          strokeWidth={SHIMMER_STROKE}
+          fill="none"
+        />
+      </Svg>
+      {/* Orbiting shimmer arc */}
+      <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ rotate }] }]}>
+        <Svg width={SHIMMER_SIZE} height={SHIMMER_SIZE}>
+          <Defs>
+            <LinearGradient id="challengeShimmer" x1="0" y1="0" x2={SHIMMER_SIZE} y2="0">
+              <Stop offset="0" stopColor={SHIMMER_SILVER} stopOpacity="0" />
+              <Stop offset="1" stopColor="#FFFFFF" stopOpacity="0.95" />
+            </LinearGradient>
+          </Defs>
+          <Circle
+            cx={SHIMMER_SIZE / 2}
+            cy={SHIMMER_SIZE / 2}
+            r={SHIMMER_RADIUS}
+            stroke="url(#challengeShimmer)"
+            strokeWidth={SHIMMER_STROKE}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={`${SHIMMER_ARC} ${SHIMMER_CIRC - SHIMMER_ARC}`}
+          />
+        </Svg>
+      </Animated.View>
+    </View>
+  );
 }
 
 function ChallengeTabButton({
@@ -35,8 +103,8 @@ function ChallengeTabButton({
       <View style={styles.challengeButtonWrap}>
         <View style={styles.challengeCircle}>
           <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={26} color="white" />
-          {hasUnseenChallenge && <NotificationDot style={styles.challengeDot} />}
         </View>
+        {hasUnseenChallenge && <ChallengeShimmerRing />}
       </View>
     </Pressable>
   );
@@ -184,10 +252,12 @@ const styles = StyleSheet.create({
     borderRadius: 5.5,
     backgroundColor: colors.light.alertRed,
   },
-  // The challenge tab's trophy sits in a 58px circle, so the dot needs a
-  // tighter offset to rest on the circle's rim instead of floating away.
-  challengeDot: {
-    top: 2,
-    right: 2,
+  // Shimmer ring overlay, centered over the trophy circle within the 76px wrap.
+  shimmerWrap: {
+    position: 'absolute',
+    top: (76 - SHIMMER_SIZE) / 2,
+    left: (76 - SHIMMER_SIZE) / 2,
+    width: SHIMMER_SIZE,
+    height: SHIMMER_SIZE,
   },
 });
