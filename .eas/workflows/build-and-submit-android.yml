@@ -1,0 +1,50 @@
+# Full native build + Google Play submission for Android.
+#
+# MANUAL trigger only — run it from the Expo dashboard (Workflows -> Run) or:
+#   eas workflow:run .eas/workflows/build-and-submit-android.yml
+#
+# Use this when you have NATIVE changes that an OTA update can't ship
+# (new native deps, app.json native config, Expo SDK upgrade, version bump).
+# JS-only changes ship via publish-production-update.yml (platform: all).
+#
+# PREREQUISITE: the submit_android job needs Google Play credentials
+# (a Play Console service account) configured for this project, e.g. run
+# `eas credentials` or `eas submit --platform android` once interactively to
+# set them up. Without them, the build succeeds but submit fails with a clear
+# credentials error.
+
+name: Build & submit production (Android)
+
+jobs:
+  verify_env:
+    name: Verify required env vars
+    environment: production
+    steps:
+      - name: Ensure required EXPO_PUBLIC_* vars are present
+        run: |
+          missing=0
+          for v in EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_POSTHOG_API_KEY; do
+            if [ -z "$(printenv "$v")" ]; then echo "❌ Missing $v"; missing=1; fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "Aborting: required production env vars are missing in EAS."
+            exit 1
+          fi
+          echo "✅ All required env vars present"
+
+  build_android:
+    name: Build Android (production)
+    needs: [verify_env]
+    type: build
+    params:
+      platform: android
+      profile: production
+
+  submit_android:
+    name: Submit to Google Play
+    needs: [build_android]
+    type: submit
+    params:
+      platform: android
+      profile: production
+      build_id: ${{ needs.build_android.outputs.build_id }}
