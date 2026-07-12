@@ -150,7 +150,7 @@ export const useMediaUpload = (options: UseMediaUploadOptions = {}): UseMediaUpl
 
       if (mediaItems.length > 0) {
         const { error: postMediaError } = await supabase
-          .from('post_media')
+          .from('post_media_items')
           .insert(
             mediaItems.map((item, index) => ({
               post_id: postData.id,

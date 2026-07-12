@@ -84,7 +84,7 @@ export const commentService = {
 
     try {
       const { data, error } = await supabase
-        .from("comment_media")
+        .from("comment_media_items")
         .select("comment_id, media_id, position, media (file_path, upload_status)")
         .in("comment_id", commentIds);
 
@@ -192,7 +192,7 @@ export const commentService = {
 
     if (mediaItems.length > 0) {
       const { error: commentMediaError } = await supabase
-        .from("comment_media")
+        .from("comment_media_items")
         .insert(
           mediaItems.map((item, index) => ({
             comment_id: data.id,

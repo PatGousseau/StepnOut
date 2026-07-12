@@ -195,7 +195,7 @@ export async function hydratePostMedia(posts: PostRecord[]): Promise<PostRecord[
 
   try {
     const { data, error } = await supabase
-      .from("post_media")
+      .from("post_media_items")
       .select("post_id, media_id, position, media (file_path, upload_status)")
       .in("post_id", postIds);
 
