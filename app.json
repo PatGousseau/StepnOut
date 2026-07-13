@@ -3,6 +3,7 @@
     "name": "StepnOut",
     "slug": "stepnout",
     "version": "2.3.0",
+    "platforms": ["ios", "android"],
     "orientation": "portrait",
     "scheme": "com.patrickgousseau.stepnout",
     "userInterfaceStyle": "automatic",
