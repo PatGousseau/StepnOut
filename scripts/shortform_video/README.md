@@ -56,9 +56,17 @@ python scripts/shortform_video/roulette.py path/to/roulette.json --seed 42 \
   --output /tmp/roulette.mp4
 ```
 
+`roulette.hooks` is the opening hook catalog. A hook is selected at random for
+each render; use `--hook waiting-ready` to force one while refining its pacing.
+The opening hook and wheel transition are generated as one narration take, and
+ElevenLabs timestamps reveal every hook word when it is actually spoken.
+Those timestamps also drive two-word highlighted captions during the wheel
+spin and the post-card insight narration.
+
 Each candidate needs an `id`, visual `title`, natural-language `spoken_title`,
 concrete `completion` rule, and a custom `narration` insight. `voice.narration_speed`
-controls final delivery pace. The renderer currently targets
+controls the delivery pace across the hook, roulette transition, and outcome
+narration. The renderer currently targets
 1080x1920 at 24 fps.
 
 Useful flags:
@@ -101,7 +109,7 @@ python scripts/shortform_video/generate.py path/to/video.json \
   },
   "scenes": [
     {
-      "narration": "[confident] Spoken line here.",
+      "narration": "Spoken line here.",
       "queries": ["pexels query one", "pexels query two"],
       "cuts": 3
     }
