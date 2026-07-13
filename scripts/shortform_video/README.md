@@ -63,6 +63,11 @@ ElevenLabs timestamps reveal every hook word when it is actually spoken.
 Those timestamps also drive two-word highlighted captions during the wheel
 spin and the post-card insight narration.
 
+Set `footage.enabled` and per-candidate `footage_queries` to place two Pexels
+clips behind the compact challenge card during the insight section. The renderer
+falls back to the abstract background when `PEXELS_API_KEY` is unavailable; use
+`--skip-footage` while refining the rest of the video.
+
 Each candidate needs an `id`, visual `title`, natural-language `spoken_title`,
 concrete `completion` rule, and a custom `narration` insight. `voice.narration_speed`
 controls the delivery pace across the hook, roulette transition, and outcome

@@ -23,6 +23,7 @@ import struct
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 import wave
 from dataclasses import dataclass
@@ -52,6 +53,7 @@ class Candidate:
     spoken_title: str
     completion: str
     narration: str
+    footage_queries: list[str]
 
 
 @dataclass(frozen=True)
@@ -88,6 +90,13 @@ class VoiceSettings:
 
 
 @dataclass(frozen=True)
+class FootageSettings:
+    enabled: bool
+    clip_count: int
+    fallback_queries: list[str]
+
+
+@dataclass(frozen=True)
 class OutputSettings:
     filename: str
     width: int
@@ -99,6 +108,7 @@ class OutputSettings:
 class VideoSettings:
     roulette: RouletteSettings
     voice: VoiceSettings
+    footage: FootageSettings
     output: OutputSettings
 
 
@@ -111,6 +121,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hook", help="Hook ID override for a deterministic render.")
     parser.add_argument("--seed", type=int, help="Select a candidate deterministically when no winner is configured.")
     parser.add_argument("--skip-narration", action="store_true", help="Reuse cached TTS files while tuning visuals.")
+    parser.add_argument("--skip-footage", action="store_true", help="Render the insight section without Pexels footage.")
     return parser.parse_args()
 
 
@@ -145,6 +156,7 @@ def load_settings(path: Path) -> VideoSettings:
             spoken_title=str(item.get("spoken_title", item["title"].replace("\n", " ").lower())),
             completion=str(item["completion"]),
             narration=str(item["narration"]),
+            footage_queries=[str(query) for query in item.get("footage_queries", [])],
         )
         for item in roulette_raw.get("candidates", [])
     ]
@@ -166,6 +178,7 @@ def load_settings(path: Path) -> VideoSettings:
 
     voice_raw = raw.get("voice", {})
     narration_raw = raw.get("narration", {})
+    footage_raw = raw.get("footage", {})
     output_raw = raw.get("output", {})
     output = OutputSettings(
         filename=str(output_raw.get("filename", "side_quest_roulette.mp4")),
@@ -197,6 +210,11 @@ def load_settings(path: Path) -> VideoSettings:
                 )
             ),
             reveal_lead=str(narration_raw.get("reveal_lead", "Today's challenge:")),
+        ),
+        footage=FootageSettings(
+            enabled=bool(footage_raw.get("enabled", True)),
+            clip_count=max(1, min(4, int(footage_raw.get("clip_count", 2)))),
+            fallback_queries=[str(query) for query in footage_raw.get("fallback_queries", ["person exploring city", "person at cafe alone"])],
         ),
         output=output,
     )
@@ -343,6 +361,183 @@ def change_tempo(source: Path, destination: Path, speed: float) -> None:
             str(destination),
         ]
     )
+
+
+def pexels_search(api_key: str, query: str) -> list[dict[str, object]]:
+    params = urllib.parse.urlencode(
+        {
+            "query": query,
+            "orientation": "portrait",
+            "per_page": 15,
+            "size": "medium",
+        }
+    )
+    request = urllib.request.Request(
+        f"https://api.pexels.com/v1/videos/search?{params}",
+        headers={
+            "Authorization": api_key,
+            "Accept": "application/json",
+            "User-Agent": "StepnOutVideoBot/1.0 (+https://stepnout.com)",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request) as response:
+            payload = json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Pexels search failed: {detail}") from error
+    return [video for video in payload.get("videos", []) if isinstance(video, dict)]
+
+
+def pick_pexels_file(video: dict[str, object]) -> dict[str, object] | None:
+    files = video.get("video_files", [])
+    if not isinstance(files, list):
+        return None
+    candidates = [
+        file_data
+        for file_data in files
+        if isinstance(file_data, dict) and str(file_data.get("link", "")).endswith(".mp4")
+    ]
+    if not candidates:
+        return None
+    return max(
+        candidates,
+        key=lambda file_data: (
+            int(file_data.get("height") or 0) >= int(file_data.get("width") or 0),
+            {"sd": 1, "hd": 2, "uhd": 3}.get(str(file_data.get("quality", "")), 0),
+            int(file_data.get("width") or 0) * int(file_data.get("height") or 0),
+        ),
+    )
+
+
+def download_pexels_footage(
+    settings: FootageSettings,
+    winner: Candidate,
+    work_dir: Path,
+    seed: int | None,
+) -> list[Path]:
+    if not settings.enabled:
+        return []
+    api_key = os.environ.get("PEXELS_API_KEY")
+    if not api_key:
+        print("Pexels footage skipped: missing PEXELS_API_KEY")
+        return []
+
+    queries = winner.footage_queries or settings.fallback_queries
+    if not queries:
+        return []
+    destination_dir = work_dir / "footage"
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    chooser = random.Random(f"{seed}:{winner.id}:footage") if seed is not None else random.Random()
+    query_order = list(queries)
+    chooser.shuffle(query_order)
+    used_ids: set[int] = set()
+    downloaded: list[Path] = []
+    attribution: list[str] = []
+
+    for query in query_order:
+        if len(downloaded) >= settings.clip_count:
+            break
+        for video in pexels_search(api_key, query):
+            video_id = video.get("id")
+            if not isinstance(video_id, int) or video_id in used_ids:
+                continue
+            file_data = pick_pexels_file(video)
+            if file_data is None:
+                continue
+            link = str(file_data.get("link", ""))
+            if not link:
+                continue
+            used_ids.add(video_id)
+            destination = destination_dir / f"{winner.id}_{video_id}.mp4"
+            if not destination.exists():
+                request = urllib.request.Request(
+                    link,
+                    headers={"User-Agent": "StepnOutVideoBot/1.0 (+https://stepnout.com)"},
+                )
+                with urllib.request.urlopen(request) as response:
+                    destination.write_bytes(response.read())
+            downloaded.append(destination)
+            user = video.get("user", {})
+            name = user.get("name", "unknown") if isinstance(user, dict) else "unknown"
+            attribution.append(f"{video_id}\t{name}\t{video.get('url', '')}")
+            break
+
+    if attribution:
+        (destination_dir / f"{winner.id}_attribution.txt").write_text("\n".join(attribution) + "\n", encoding="utf-8")
+    if not downloaded:
+        print("Pexels footage skipped: no usable portrait clips found")
+    return downloaded
+
+
+def build_footage_background(sources: list[Path], duration: float, destination: Path) -> Path | None:
+    if not sources or duration < 0.1:
+        return None
+    clip_duration = duration / len(sources)
+    command = ["ffmpeg", "-y"]
+    for source in sources:
+        command.extend(["-stream_loop", "-1", "-i", str(source)])
+    filters = []
+    labels = []
+    for index in range(len(sources)):
+        label = f"clip{index}"
+        labels.append(f"[{label}]")
+        filters.append(
+            f"[{index}:v]trim=duration={clip_duration:.3f},setpts=PTS-STARTPTS,"
+            f"scale={WIDTH}:{HEIGHT}:force_original_aspect_ratio=increase,"
+            f"crop={WIDTH}:{HEIGHT},fps={FPS},format=yuv420p[{label}]"
+        )
+    filters.append("".join(labels) + f"concat=n={len(sources)}:v=1:a=0,format=yuv420p[footage]")
+    command.extend(
+        [
+            "-filter_complex",
+            ";".join(filters),
+            "-map",
+            "[footage]",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "20",
+            "-movflags",
+            "+faststart",
+            str(destination),
+        ]
+    )
+    run(command)
+    return destination
+
+
+def open_footage_reader(path: Path) -> subprocess.Popen[bytes]:
+    return subprocess.Popen(
+        [
+            "ffmpeg",
+            "-stream_loop",
+            "-1",
+            "-i",
+            str(path),
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-",
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def next_footage_frame(process: subprocess.Popen[bytes]) -> Image.Image | None:
+    if process.stdout is None:
+        return None
+    raw_frame = process.stdout.read(WIDTH * HEIGHT * 3)
+    if len(raw_frame) != WIDTH * HEIGHT * 3:
+        return None
+    frame = Image.frombytes("RGB", (WIDTH, HEIGHT), raw_frame)
+    return Image.blend(frame, Image.new("RGB", (WIDTH, HEIGHT), (37, 40, 96)), 0.14)
 
 
 def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
@@ -703,6 +898,7 @@ def draw_roulette_frame(
     insight_words: list[WordTiming],
     reveal_start: float,
     insight_start: float,
+    use_footage_background: bool,
 ) -> None:
     draw = ImageDraw.Draw(frame)
     navy = (77, 83, 130)
@@ -713,8 +909,9 @@ def draw_roulette_frame(
     spin_duration = settings.roulette.spin_duration
     rotation = wheel_rotation(time, spin_duration, total_rotation)
 
-    frame.paste(background((255, 255, 253), (245, 242, 237)), (0, 0))
-    draw_ambient_background(frame, time)
+    if not use_footage_background:
+        frame.paste(background((255, 255, 253), (245, 242, 237)), (0, 0))
+        draw_ambient_background(frame, time)
 
     if time < reveal_start:
         draw_centered(draw, "TODAY'S", WIDTH / 2, 92, font(FONT_FUTURA, 45), navy)
@@ -857,6 +1054,8 @@ def render_visual(
     reveal_start: float,
     insight_start: float,
     roulette_start: float,
+    footage_path: Path | None,
+    footage_start: float,
     duration: float,
     destination: Path,
 ) -> None:
@@ -888,11 +1087,21 @@ def render_visual(
     ]
     print(">>", " ".join(command))
     process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    footage_process: subprocess.Popen[bytes] | None = None
     total_frames = int(math.ceil(duration * FPS))
     try:
         for frame_index in range(total_frames):
             time = frame_index / FPS
-            frame = background((255, 255, 253), (245, 242, 237)).copy()
+            use_footage_background = footage_path is not None and time >= footage_start
+            if use_footage_background:
+                if footage_process is None:
+                    footage_process = open_footage_reader(footage_path)
+                frame = next_footage_frame(footage_process)
+                if frame is None:
+                    use_footage_background = False
+                    frame = background((255, 255, 253), (245, 242, 237)).copy()
+            else:
+                frame = background((255, 255, 253), (245, 242, 237)).copy()
             if time < roulette_start:
                 draw_hook_frame(frame, time, hook, hook_word_timings)
             else:
@@ -906,6 +1115,7 @@ def render_visual(
                     insight_words,
                     reveal_start,
                     insight_start,
+                    use_footage_background,
                 )
             process.stdin.write(finish(frame).tobytes())
     except BrokenPipeError:
@@ -913,6 +1123,11 @@ def render_visual(
     finally:
         if process.stdin:
             process.stdin.close()
+        if footage_process:
+            if footage_process.stdout:
+                footage_process.stdout.close()
+            footage_process.terminate()
+            footage_process.wait()
     if process.wait() != 0:
         raise RuntimeError("ffmpeg failed while rendering roulette visuals")
 
@@ -999,6 +1214,15 @@ def main() -> None:
     duration = reveal_start + reveal_duration + 0.9
     reveal_start_in_roulette = reveal_start - roulette_start
     insight_start = reveal_start_in_roulette + insight_words[0].start
+    footage_start = roulette_start + insight_start
+    footage_path: Path | None = None
+    if not args.skip_footage:
+        footage_sources = download_pexels_footage(settings.footage, winner, work_dir, args.seed)
+        footage_path = build_footage_background(
+            footage_sources,
+            duration - footage_start,
+            work_dir / f"footage_{winner.id}.mp4",
+        )
     winner_index = settings.roulette.candidates.index(winner)
     total_rotation = winning_rotation(len(settings.roulette.candidates), winner_index, settings.roulette.turns)
     write_click_track(
@@ -1018,6 +1242,8 @@ def main() -> None:
         reveal_start_in_roulette,
         insight_start,
         roulette_start,
+        footage_path,
+        footage_start,
         duration,
         visual,
     )
@@ -1026,6 +1252,7 @@ def main() -> None:
     result = {
         "winner": winner.id,
         "hook": hook.id,
+        "footage": str(footage_path) if footage_path else None,
         "duration_seconds": round(probe_duration(output), 2),
         "output": str(output),
     }
