@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { Session } from "@supabase/supabase-js";
@@ -50,7 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
-  const appState = useRef(AppState.currentState);
 
   useEffect(() => {
     let authSubscription: { unsubscribe: () => void } | null = null;
@@ -165,25 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Handle app state changes - refresh session when returning from background
-  useEffect(() => {
-    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        // Refresh session when app returns from background
-        const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-        if (refreshedSession) {
-          setSession(refreshedSession);
-        }
-      }
-      appState.current = nextAppState;
-    };
-
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
-    return () => subscription.remove();
-  }, []);
+  // Session refresh on foreground is handled centrally in src/lib/supabase.ts
+  // via supabase.auth.startAutoRefresh()/stopAutoRefresh() wired to AppState.
+  // onAuthStateChange above keeps `session` in sync when the token is refreshed,
+  // so we no longer call getSession() here (which could itself hang on a wedged
+  // refresh and defeat the purpose).
 
   // Helper: Check if username is taken
   const checkUsernameAvailable = async (username: string, excludeUserId?: string) => {
