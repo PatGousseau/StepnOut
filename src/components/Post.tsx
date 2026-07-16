@@ -964,6 +964,7 @@ const challengeTitleStyle: TextStyle = {
 const questTitleStyle: TextStyle = {
   color: colors.sideQuest.text,
   fontSize: 13,
+  flex: 1,
 };
 
 const containerStyle: ViewStyle = {
