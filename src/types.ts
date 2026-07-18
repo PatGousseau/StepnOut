@@ -72,6 +72,7 @@ export interface PostRecord {
   featured: boolean;
   challenge_id?: number | null;
   challenge_title?: string;
+  challenge_title_it?: string;
   quest_id?: number | null;
   quest_title?: string;
   comfort_zone_rating?: number | null;
@@ -80,7 +81,7 @@ export interface PostRecord {
   }[];
   comments?: PostCommentRecord[];
   profiles?: PostProfileRecord | null;
-  challenges?: { title: string } | null;
+  challenges?: { title: string; title_it?: string | null } | null;
   side_quests?: { title: string } | null;
   is_welcome?: boolean | null;
 }
@@ -119,6 +120,7 @@ export interface Challenge {
     featured: boolean;
     challenge_id?: number | null;
     challenge_title?: string;
+    challenge_title_it?: string;
     quest_id?: number | null;
     quest_title?: string;
     comfort_zone_rating?: number | null;
