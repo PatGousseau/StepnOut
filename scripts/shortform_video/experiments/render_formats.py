@@ -166,6 +166,24 @@ EXPERIMENTS = [
         visual="domino",
         sound="domino",
     ),
+    Experiment(
+        slug="comfort_zone_calendar",
+        title="Comfort-zone calendar",
+        hypothesis=(
+            "A provocative fake calendar makes avoidance visible, then turns the viewer's "
+            "next move into a playful, concrete override rather than generic advice."
+        ),
+        narration=(
+            "[urgent, deadpan news bulletin] Your comfort zone has made your weekend plans. Again. "
+            "[quick] Friday: maybe later. Saturday: stay home. "
+            "[sharp] Override it. Today's side quest: make a plan that cannot hide in the group chat. "
+            "Pick a place. Pick a time. Send it to someone, or book it for yourself. "
+            "[direct, warm] You do not need to feel social yet. You need a plan that exists outside your head."
+        ),
+        min_duration=24.0,
+        visual="calendar",
+        sound="override",
+    ),
 ]
 
 
@@ -254,6 +272,7 @@ def make_sfx(destination: Path, duration: float, style: str) -> None:
         "game": [(0.35, 980, 0.09, 0.45), (2.8, 660, 0.08, 0.35), (4.8, 720, 0.08, 0.35), (8.3, 880, 0.1, 0.45), (14.4, 1040, 0.12, 0.55), (18.1, 1320, 0.2, 0.5)],
         "tension": [(0.5, 170, 0.28, 0.16), (5.0, 220, 0.12, 0.18), (10.2, 280, 0.10, 0.19), (14.8, 420, 0.12, 0.23), (18.6, 680, 0.3, 0.25)],
         "domino": [(1.4, 400, 0.07, 0.34), (5.0, 450, 0.07, 0.34), (9.0, 500, 0.07, 0.34), (13.0, 550, 0.07, 0.34), (16.1, 600, 0.07, 0.34), (19.0, 740, 0.24, 0.44)],
+        "override": [(0.10, 94, 0.22, 1.15), (0.82, 138, 0.14, 0.78), (2.35, 82, 0.18, 0.84), (4.70, 246, 0.08, 0.52), (7.60, 178, 0.12, 0.58), (10.90, 560, 0.14, 0.70), (14.20, 760, 0.10, 0.52), (18.40, 980, 0.20, 0.76)],
     }
     events = events_by_style[style]
     command = ["ffmpeg", "-y"]
@@ -744,6 +763,161 @@ def draw_domino(frame: Image.Image, t: float, duration: float) -> None:
         draw_centered(draw, "THAT'S HOW BORING DAYS LOSE.", WIDTH / 2, 1740, font(FONT_HEAVY, 49), cream)
 
 
+def draw_wobble_centered(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    center_x: float,
+    top_y: float,
+    typeface: ImageFont.FreeTypeFont,
+    fill: tuple[int, int, int],
+    t: float,
+    *,
+    index: int = 0,
+    amount: float = 8.0,
+    stroke_width: int = 0,
+    stroke_fill: tuple[int, int, int] | None = None,
+) -> None:
+    """Keep kinetic type readable by wobbling its position, not its layout."""
+    x = center_x + math.sin(t * (5.6 + index * 0.23) + index * 1.7) * amount
+    y = top_y + math.cos(t * (6.2 + index * 0.19) + index * 2.1) * amount * 0.45
+    draw_centered(
+        draw,
+        text,
+        x,
+        y,
+        typeface,
+        fill,
+        stroke_width=stroke_width,
+        stroke_fill=stroke_fill,
+        spacing=-8,
+    )
+
+
+def draw_calendar_card(
+    draw: ImageDraw.ImageDraw,
+    day: str,
+    time: str,
+    plan: str,
+    y: float,
+    color: tuple[int, int, int],
+    t: float,
+    index: int,
+    *,
+    x: float = 62,
+    alpha: float = 1.0,
+) -> None:
+    """Draw a stable calendar card with a small physical wobble."""
+    width = 956
+    height = 190
+    wobble_x = math.sin(t * 4.8 + index * 1.9) * 6 * alpha
+    wobble_y = math.cos(t * 5.4 + index * 1.1) * 4 * alpha
+    left = int(x + wobble_x)
+    top = int(y + wobble_y)
+    right = left + width
+    bottom = top + height
+    ink = (30, 35, 58)
+    paper = (255, 251, 239)
+    shadow = tuple(int(lerp(paper[channel], ink[channel], 0.70)) for channel in range(3))
+    draw.rounded_rectangle((left + 12, top + 14, right + 12, bottom + 14), radius=30, fill=shadow)
+    draw.rounded_rectangle((left, top, right, bottom), radius=30, fill=paper, outline=ink, width=5)
+    draw.rounded_rectangle((left + 20, top + 20, left + 200, bottom - 20), radius=19, fill=color)
+    draw_centered(draw, day, left + 110, top + 42, font(FONT_MONO, 29), ink)
+    draw_centered(draw, time, left + 110, top + 92, font(FONT_HEAVY, 46), ink)
+    divider_x = left + 230
+    draw.line((divider_x, top + 25, divider_x, bottom - 25), fill=(220, 217, 232), width=4)
+    plan_font = fit_text(draw, plan, 640, 70)
+    draw_wobble_centered(draw, plan, left + 605, top + 58, plan_font, ink, t, index=index, amount=3.0)
+
+
+def draw_comfort_zone_calendar(frame: Image.Image, t: float, duration: float) -> None:
+    draw = ImageDraw.Draw(frame)
+    ink = (30, 35, 58)
+    paper = (255, 250, 238)
+    lavender = (225, 225, 247)
+    coral = (249, 91, 79)
+    peach = (255, 202, 142)
+    yellow = (255, 221, 81)
+    blue = (126, 162, 255)
+    mint = (112, 215, 176)
+
+    frame.paste(background((255, 248, 237), (230, 228, 249)), (0, 0))
+    for index in range(11):
+        x = (index * 141 + int(t * 28)) % (WIDTH + 140) - 70
+        draw.ellipse((x, 0, x + 14, HEIGHT), fill=(216, 213, 239))
+    draw.ellipse((-260, 1150, 420, 1830), fill=(255, 226, 207))
+    draw.ellipse((720, -130, 1250, 400), fill=(219, 227, 255))
+    draw_label(draw, "WEEKEND UPDATE", 58, 54, fill=paper, background_fill=ink)
+
+    if t < 4.3:
+        punch = ease_out(phase(t, 0.0, 0.55))
+        title_y = lerp(-220, 236, punch)
+        title_font = fit_text(draw, "YOUR COMFORT ZONE", 940, 112)
+        draw_wobble_centered(draw, "YOUR COMFORT ZONE", WIDTH / 2, title_y, title_font, ink, t, index=1, amount=9.0)
+        draw_wobble_centered(draw, "MADE YOUR", WIDTH / 2, title_y + 122, font(FONT_HEAVY, 112), coral, t, index=2, amount=10.0)
+        draw_wobble_centered(draw, "WEEKEND PLANS.", WIDTH / 2, title_y + 247, font(FONT_HEAVY, 112), ink, t, index=3, amount=11.0)
+        card_progress = ease_out(phase(t, 1.35, 2.15))
+        card_x = lerp(WIDTH + 80, 62, card_progress)
+        draw_calendar_card(draw, "FRI", "8:00", "MAYBE LATER", 710, peach, t, 1, x=card_x, alpha=card_progress)
+        second_progress = ease_out(phase(t, 2.00, 2.70))
+        second_x = lerp(-1080, 62, second_progress)
+        draw_calendar_card(draw, "SAT", "7:30", "STAY HOME", 945, blue, t, 2, x=second_x, alpha=second_progress)
+        draw.rounded_rectangle((260, 1265, 820, 1400), radius=48, fill=coral, outline=ink, width=5)
+        draw_wobble_centered(draw, "AGAIN.", WIDTH / 2, 1293, font(FONT_HEAVY, 72), paper, t, index=4, amount=5.0)
+        draw_centered(draw, "SAME PLAN. DIFFERENT FRIDAY.", WIDTH / 2, 1535, font(FONT_FUTURA, 43), ink)
+        return
+
+    if t < 11.8:
+        draw_centered(draw, "AUTOMATICALLY SCHEDULED:", WIDTH / 2, 185, font(FONT_MONO, 35), ink)
+        draw_wobble_centered(draw, "MAYBE LATER.", WIDTH / 2, 250, font(FONT_HEAVY, 102), coral, t, index=5, amount=7.0)
+        draw_calendar_card(draw, "FRI", "8:00", "MAYBE LATER", 480, peach, t, 1)
+        draw_calendar_card(draw, "SAT", "7:30", "STAY HOME", 710, blue, t, 2)
+        draw_calendar_card(draw, "SUN", "ALL DAY", "NEXT WEEK", 940, mint, t, 3)
+        stamp_x = int(WIDTH / 2 + math.sin(t * 8.0) * 9)
+        draw.rounded_rectangle((stamp_x - 352, 1240, stamp_x + 352, 1380), radius=24, outline=coral, width=12)
+        draw_wobble_centered(draw, "COMFORT ZONE APPROVED", stamp_x, 1278, font(FONT_HEAVY, 55), coral, t, index=6, amount=3.0)
+        draw_centered(draw, "THIS CALENDAR HAS A CANCEL BUTTON.", WIDTH / 2, 1505, font(FONT_FUTURA, 43), ink)
+        return
+
+    override = ease_out(phase(t, 11.8, 12.6))
+    draw_centered(draw, "TODAY'S SIDE QUEST", WIDTH / 2, 160, font(FONT_MONO, 36), ink)
+    draw_wobble_centered(draw, "OVERRIDE THE DEFAULT.", WIDTH / 2, 225, fit_text(draw, "OVERRIDE THE DEFAULT.", 950, 100), coral, t, index=7, amount=7.0)
+    switch_left = 265
+    switch_top = 405
+    draw.rounded_rectangle((switch_left, switch_top, 815, switch_top + 128), radius=64, fill=ink)
+    knob_x = lerp(switch_left + 67, 748, override)
+    knob_color = tuple(int(lerp(coral[channel], mint[channel], override)) for channel in range(3))
+    draw.ellipse((knob_x - 50, switch_top + 14, knob_x + 50, switch_top + 114), fill=knob_color, outline=paper, width=4)
+    draw_centered(draw, "OVERRIDE", WIDTH / 2, 443, font(FONT_HEAVY, 46), paper)
+
+    card_top = 625
+    card_bottom = 1425
+    draw.rounded_rectangle((58, card_top + 16, WIDTH - 42, card_bottom + 16), radius=42, fill=(97, 102, 143))
+    draw.rounded_rectangle((42, card_top, WIDTH - 58, card_bottom), radius=42, fill=paper, outline=ink, width=6)
+    draw_centered(draw, "MAKE A PLAN THAT EXISTS", WIDTH / 2, 675, font(FONT_HEAVY, 74), ink)
+    draw_centered(draw, "OUTSIDE YOUR HEAD.", WIDTH / 2, 755, font(FONT_HEAVY, 54), coral)
+    plan_items = [
+        ("PLACE", "SOMEWHERE ACTUAL", peach),
+        ("TIME", "A REAL HOUR", yellow),
+        ("PERSON", "SEND IT OR GO SOLO", mint),
+    ]
+    for index, (label, value, color) in enumerate(plan_items):
+        reveal = ease_out(phase(t, 12.55 + index * 1.15, 13.15 + index * 1.15))
+        base_y = 885 + index * 155
+        row_y = lerp(base_y + 58, base_y, reveal)
+        row_x = 105
+        draw.rounded_rectangle((row_x, row_y, row_x + 870, row_y + 118), radius=25, fill=(246, 243, 235), outline=ink, width=4)
+        draw.rounded_rectangle((row_x + 15, row_y + 15, row_x + 220, row_y + 103), radius=17, fill=color)
+        draw_centered(draw, label, row_x + 117, row_y + 39, font(FONT_MONO, 29), ink)
+        value_font = fit_text(draw, value, 600, 52)
+        draw_wobble_centered(draw, value, row_x + 556, row_y + 34, value_font, ink, t, index=8 + index, amount=2.5)
+    if t > duration - 5.3:
+        draw.rounded_rectangle((115, 1548, WIDTH - 115, 1710), radius=32, fill=coral, outline=ink, width=5)
+        draw_wobble_centered(draw, "MAKE THE PLAN REAL.", WIDTH / 2, 1591, font(FONT_HEAVY, 71), paper, t, index=12, amount=4.0)
+    else:
+        draw_centered(draw, "IT DOESN'T HAVE TO BE BIG.", WIDTH / 2, 1570, font(FONT_FUTURA, 44), ink)
+        draw_centered(draw, "IT JUST HAS TO EXIST.", WIDTH / 2, 1630, font(FONT_HEAVY, 60), ink)
+
+
 VISUALS = {
     "blunt": draw_blunt,
     "brain": draw_brain,
@@ -751,6 +925,7 @@ VISUALS = {
     "roulette": draw_roulette,
     "thriller": draw_thriller,
     "domino": draw_domino,
+    "calendar": draw_comfort_zone_calendar,
 }
 
 

@@ -60,6 +60,7 @@ class Candidate:
 class Hook:
     id: str
     text: str
+    bridge: str
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,7 @@ class VoiceSettings:
     narration_speed: float
     transition_line: str
     reveal_lead: str
+    cta_line: str
 
 
 @dataclass(frozen=True)
@@ -149,6 +151,7 @@ def probe_duration(path: Path) -> float:
 def load_settings(path: Path) -> VideoSettings:
     raw = json.loads(path.read_text(encoding="utf-8"))
     roulette_raw = raw.get("roulette", {})
+    narration_raw = raw.get("narration", {})
     candidates = [
         Candidate(
             id=str(item["id"]),
@@ -168,6 +171,7 @@ def load_settings(path: Path) -> VideoSettings:
         Hook(
             id=str(item["id"]),
             text=str(item["text"]),
+            bridge=str(item.get("bridge", narration_raw.get("transition_line", "Here is one thing to do this week."))),
         )
         for item in roulette_raw.get("hooks", [])
     ]
@@ -177,7 +181,6 @@ def load_settings(path: Path) -> VideoSettings:
         raise SystemExit("roulette.hooks IDs must be unique.")
 
     voice_raw = raw.get("voice", {})
-    narration_raw = raw.get("narration", {})
     footage_raw = raw.get("footage", {})
     output_raw = raw.get("output", {})
     output = OutputSettings(
@@ -210,6 +213,7 @@ def load_settings(path: Path) -> VideoSettings:
                 )
             ),
             reveal_lead=str(narration_raw.get("reveal_lead", "Today's challenge:")),
+            cta_line=str(narration_raw.get("cta_line", "")),
         ),
         footage=FootageSettings(
             enabled=bool(footage_raw.get("enabled", True)),
@@ -266,7 +270,7 @@ def generate_narration(text: str, destination: Path, voice: VoiceSettings) -> No
 
 
 def generate_narration_with_timestamps(text: str, destination: Path, voice: VoiceSettings) -> dict[str, object]:
-    """Generate the opening as one take so its delivery and timing stay coherent."""
+    """Generate narration as one take so delivery and timing stay coherent."""
     api_key = os.environ.get("ELEVENLABS_API_KEY") or os.environ.get("ELEVEN_LABS_API_KEY")
     if not api_key:
         raise SystemExit("Missing ELEVENLABS_API_KEY.")
@@ -296,7 +300,8 @@ def generate_narration_with_timestamps(text: str, destination: Path, voice: Voic
 
 
 def reveal_script(voice: VoiceSettings, winner: Candidate) -> str:
-    return f"{voice.reveal_lead} {winner.spoken_title}. {winner.narration}"
+    cta = f" {voice.cta_line}" if voice.cta_line else ""
+    return f"{voice.reveal_lead} {winner.spoken_title}. {winner.narration}{cta}"
 
 
 def hook_script(hook: Hook) -> str:
@@ -304,7 +309,11 @@ def hook_script(hook: Hook) -> str:
 
 
 def intro_script(hook: Hook, voice: VoiceSettings) -> str:
-    return f"{hook_script(hook)} {voice.transition_line}"
+    return f"{hook_script(hook)} {hook.bridge}"
+
+
+def narration_script(hook: Hook, voice: VoiceSettings, winner: Candidate) -> str:
+    return f"{intro_script(hook, voice)} {reveal_script(voice, winner)}"
 
 
 def aligned_words(alignment: dict[str, object], speed: float) -> list[WordTiming]:
@@ -354,6 +363,27 @@ def change_tempo(source: Path, destination: Path, speed: float) -> None:
             str(source),
             "-filter:a",
             f"atempo={speed:.3f}",
+            "-c:a",
+            "libmp3lame",
+            "-b:a",
+            "128k",
+            str(destination),
+        ]
+    )
+
+
+def trim_audio(source: Path, destination: Path, start: float, end: float | None = None) -> None:
+    trim = f"atrim=start={start:.4f}"
+    if end is not None:
+        trim += f":end={end:.4f}"
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(source),
+            "-filter:a",
+            f"{trim},asetpts=PTS-STARTPTS",
             "-c:a",
             "libmp3lame",
             "-b:a",
@@ -669,8 +699,8 @@ def draw_wrapped(
     return len(lines) * (line_height + line_gap) - line_gap
 
 
-def caption_state(time: float, words: list[WordTiming], words_per_chunk: int = 2) -> tuple[list[WordTiming], int] | None:
-    """Return the current short caption and the word to highlight."""
+def caption_state(time: float, words: list[WordTiming], words_per_chunk: int = 4) -> tuple[list[WordTiming], int] | None:
+    """Return the current caption group and the word to highlight."""
     for chunk_start in range(0, len(words), words_per_chunk):
         chunk = words[chunk_start : chunk_start + words_per_chunk]
         chunk_end = (
@@ -1027,8 +1057,8 @@ def mix_audio(
             str(clicks),
             "-filter_complex",
             (
-                "[0:a]volume=1.16,adelay=0|0[intro];"
-                f"[1:a]volume=1.12,adelay={reveal_delay}|{reveal_delay}[reveal];"
+                "[0:a]volume=1.14,adelay=0|0[intro];"
+                f"[1:a]volume=1.14,adelay={reveal_delay}|{reveal_delay}[reveal];"
                 "[2:a]volume=0.88[clicks];"
                 "[intro][reveal][clicks]amix=inputs=3:normalize=0,"
                 f"apad=whole_dur={duration:.3f},atrim=0:{duration:.3f},alimiter=limit=0.92[a]"
@@ -1167,10 +1197,10 @@ def main() -> None:
     hook = choose_hook(settings, args.hook, args.seed)
     work_dir = args.work_dir.resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
+    raw_narration_audio = work_dir / f"narration_{hook.id}_{winner.id}_raw.mp3"
+    narration_alignment = work_dir / f"narration_{hook.id}_{winner.id}_alignment.json"
     raw_intro_audio = work_dir / f"intro_{hook.id}_raw.mp3"
-    intro_alignment = work_dir / f"intro_{hook.id}_alignment.json"
     raw_reveal_audio = work_dir / f"reveal_{winner.id}_raw.mp3"
-    reveal_alignment = work_dir / f"reveal_{winner.id}_alignment.json"
     intro_audio = work_dir / f"intro_{hook.id}.mp3"
     reveal_audio = work_dir / f"reveal_{winner.id}.mp3"
     effects = work_dir / "roulette_clicks.wav"
@@ -1178,20 +1208,29 @@ def main() -> None:
     visual = work_dir / "visual.mp4"
     output = args.output.resolve() if args.output else (work_dir / settings.output.filename).resolve()
 
-    if not args.skip_narration or not raw_intro_audio.exists() or not intro_alignment.exists():
-        print(f"Generating opening narration for {hook.id}")
-        alignment = generate_narration_with_timestamps(intro_script(hook, settings.voice), raw_intro_audio, settings.voice)
-        intro_alignment.write_text(json.dumps(alignment), encoding="utf-8")
-    if not args.skip_narration or not raw_reveal_audio.exists() or not reveal_alignment.exists():
-        print(f"Generating reveal narration for {winner.id}")
-        alignment = generate_narration_with_timestamps(reveal_script(settings.voice, winner), raw_reveal_audio, settings.voice)
-        reveal_alignment.write_text(json.dumps(alignment), encoding="utf-8")
+    if not args.skip_narration or not raw_narration_audio.exists() or not narration_alignment.exists():
+        print(f"Generating narration for {hook.id} / {winner.id}")
+        alignment = generate_narration_with_timestamps(
+            narration_script(hook, settings.voice, winner),
+            raw_narration_audio,
+            settings.voice,
+        )
+        narration_alignment.write_text(json.dumps(alignment), encoding="utf-8")
+
+    alignment = json.loads(narration_alignment.read_text(encoding="utf-8"))
+    source_word_timings = aligned_words(alignment, 1.0)
+    narration_word_timings = aligned_words(alignment, settings.voice.narration_speed)
+    intro_word_count = len(intro_script(hook, settings.voice).split())
+    if len(source_word_timings) <= intro_word_count:
+        raise RuntimeError("ElevenLabs narration timing is missing the side-quest reveal.")
+    split_time = source_word_timings[intro_word_count].start
+    trim_audio(raw_narration_audio, raw_intro_audio, 0.0, split_time)
+    trim_audio(raw_narration_audio, raw_reveal_audio, split_time)
     change_tempo(raw_intro_audio, intro_audio, settings.voice.narration_speed)
     change_tempo(raw_reveal_audio, reveal_audio, settings.voice.narration_speed)
 
-    alignment = json.loads(intro_alignment.read_text(encoding="utf-8"))
-    intro_word_timings = aligned_words(alignment, settings.voice.narration_speed)
     hook_word_count = len(hook.text.split())
+    intro_word_timings = narration_word_timings[:intro_word_count]
     if len(intro_word_timings) <= hook_word_count:
         raise RuntimeError("ElevenLabs opening narration timing is missing the roulette transition.")
     hook_word_timings = intro_word_timings[:hook_word_count]
@@ -1200,7 +1239,11 @@ def main() -> None:
         WordTiming(word.text, word.start - roulette_start, word.end - roulette_start)
         for word in intro_word_timings[hook_word_count:]
     ]
-    reveal_word_timings = aligned_words(json.loads(reveal_alignment.read_text(encoding="utf-8")), settings.voice.narration_speed)
+    reveal_audio_start = narration_word_timings[intro_word_count].start
+    reveal_word_timings = [
+        WordTiming(word.text, word.start - reveal_audio_start, word.end - reveal_audio_start)
+        for word in narration_word_timings[intro_word_count:]
+    ]
     reveal_prefix_words = len(settings.voice.reveal_lead.split()) + len(winner.spoken_title.split())
     if len(reveal_word_timings) <= reveal_prefix_words:
         raise RuntimeError("ElevenLabs reveal narration timing is missing the insight narration.")

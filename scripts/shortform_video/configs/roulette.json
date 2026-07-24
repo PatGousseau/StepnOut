@@ -23,51 +23,63 @@
     "hooks": [
       {
         "id": "waiting-ready",
-        "text": "YOU KEEP WAITING TO FEEL READY"
+        "text": "YOU KEEP WAITING TO FEEL READY",
+        "bridge": "Instead of waiting, do something now."
       },
       {
         "id": "maybe-later",
-        "text": "MAYBE LATER IS BECOMING A LIFESTYLE"
+        "text": "MAYBE LATER IS QUIETLY BECOMING NEVER",
+        "bridge": "Do it today instead. Let's find today's side quest."
       },
       {
         "id": "comfort-decisions",
-        "text": "YOUR COMFORT ZONE IS MAKING DECISIONS"
+        "text": "SAFE HAS STARTED TO FEEL A LOT LIKE STUCK",
+        "bridge": "Do one small thing that isn't safe. Let's find today's side quest."
       },
       {
         "id": "saving-life",
-        "text": "YOU KEEP SAVING LIFE FOR LATER"
+        "text": "YOU KEEP SAVING THE GOOD STUFF FOR SOMEDAY",
+        "bridge": "Use some of it today. Let's find today's side quest."
       },
       {
         "id": "under-challenged",
-        "text": "YOU ARE NOT BORED YOU ARE UNDER CHALLENGED"
+        "text": "YOUR WEEKEND NEEDS A BETTER STORY",
+        "bridge": "Give it something better. Let's find today's side quest."
       },
       {
         "id": "more-time",
-        "text": "YOU DO NOT NEED MORE TIME"
+        "text": "YOU'VE THOUGHT ABOUT IT LONG ENOUGH",
+        "bridge": "Do one thing instead. Let's find today's side quest."
       },
       {
         "id": "think-courage",
-        "text": "YOU CANNOT THINK YOUR WAY INTO COURAGE"
+        "text": "YOU CAN'T PLAN YOUR WAY OUT OF THIS ONE",
+        "bridge": "Pick one thing and start. Let's find today's side quest."
       },
       {
         "id": "safe-expensive",
-        "text": "THE SAFE CHOICE IS GETTING EXPENSIVE"
+        "text": "PLAYING IT SAFE IS GETTING OLD",
+        "bridge": "Do something different today. Let's find today's side quest."
       },
       {
         "id": "plans-maybe",
-        "text": "YOUR PLANS DESERVE MORE THAN A MAYBE"
+        "text": "YOUR PLANS DESERVE MORE THAN A MAYBE",
+        "bridge": "Make one plan real. Let's find today's side quest."
       },
       {
         "id": "playing-safe",
-        "text": "YOU HAVE BEEN PLAYING IT TOO SAFE"
+        "text": "DO ONE THING YOU'D NORMALLY TALK YOURSELF OUT OF",
+        "bridge": "Do the smaller version today. Let's find today's side quest."
       },
       {
         "id": "begin-badly",
-        "text": "YOU ARE ALLOWED TO BEGIN BADLY"
+        "text": "YOU DON'T HAVE TO BE GOOD AT IT YET",
+        "bridge": "Be bad at something new. Let's find today's side quest."
       },
       {
         "id": "world-smaller",
-        "text": "YOUR WORLD GETS SMALLER WHEN YOU HIDE"
+        "text": "YOU DON'T NEED A PLUS-ONE FOR THIS",
+        "bridge": "Make one plan without them. Let's find today's side quest."
       }
     ],
     "candidates": [
@@ -76,7 +88,7 @@
         "title": "TAKE YOURSELF\nOUT",
         "spoken_title": "take yourself out",
         "completion": "Do one thing this week you would usually save for company: a movie, market, class, or meal.",
-        "narration": "Pick one thing you usually save for company. Go anyway. This is not about proving you are independent. It is about not making someone else's availability the price of a life you want. Feeling exposed at first is normal. That is your comfort zone growing.",
+        "narration": "Go do something on your own that you'd normally wait for a friend to join. Alone, there's nobody to defer to, so you actually find out what you like instead of just going along with the group.",
         "footage_queries": ["person alone cafe city", "woman walking city alone"]
       },
       {
@@ -84,7 +96,7 @@
         "title": "GO TO AN EVENT\nON YOUR OWN",
         "spoken_title": "go to an event on your own",
         "completion": "Pick one event and stay for thirty minutes before deciding whether to leave.",
-        "narration": "Pick one event, go by yourself, and give it thirty minutes. Going solo is not a punishment. It changes the question from who will come with me to what might happen if I show up.",
+        "narration": "Show up to something on your own. Nobody there is watching you the way you imagine — everyone's too busy managing their own awkwardness to notice yours, which is weirdly freeing once you feel it.",
         "footage_queries": ["person concert crowd alone", "person arriving event city"]
       },
       {
@@ -92,7 +104,7 @@
         "title": "SEND THE\nACTUAL INVITE",
         "spoken_title": "send the actual invite",
         "completion": "Text one person a plan with a day, time, and place. No vague maybe sometime.",
-        "narration": "Make the plan specific enough that the other person can answer it. The risk is not sending a text. It is letting someone see that you wanted to spend time with them. That is how plans become real.",
+        "narration": "Pick one person and actually pin it down. A vague 'we should hang out sometime' feels safe because it can't really be turned down, but that's exactly why it never happens.",
         "footage_queries": ["person texting coffee shop", "woman phone city street"]
       },
       {
@@ -100,7 +112,7 @@
         "title": "WALK INTO A\nNEW PLACE",
         "spoken_title": "walk into a place you have never entered",
         "completion": "Enter one cafe, store, class, or bar you have walked past before. Ask one real question.",
-        "narration": "Walk in, look around, and ask one question you could not ask from the pavement. You do not need to buy anything or become a regular. Opening a door is enough to interrupt the loop.",
+        "narration": "Walk into the place you always pass but never enter. The story you've built about it — too cool, not for you, weird to go in alone — almost never survives you actually stepping inside.",
         "footage_queries": ["person entering cafe", "person entering store city"]
       },
       {
@@ -108,7 +120,7 @@
         "title": "BOOK THE\nBEGINNER CLASS",
         "spoken_title": "book the beginner class",
         "completion": "Find one beginner class and reserve a spot before you can research your way out of it.",
-        "narration": "Reserve the beginner class before you can overthink every review. Being new at something is not evidence that you do not belong there. It is how you find out whether you might love it.",
+        "narration": "Sign up for something you'll be genuinely bad at. Being a beginner in a room full of strangers is a rep you almost never get as an adult, and it makes the next unfamiliar thing far easier to walk into.",
         "footage_queries": ["beginner fitness class", "person pottery class"]
       },
       {
@@ -116,7 +128,7 @@
         "title": "ASK THE\nQUESTION",
         "spoken_title": "ask the question",
         "completion": "Ask someone one question you usually keep in your head because it might sound too curious.",
-        "narration": "Ask the question you almost edit out because it reveals you are genuinely interested. You do not need a clever follow-up. Real attention is more memorable than trying to look impressive.",
+        "narration": "Ask the question you'd normally swallow. People like being asked about themselves far more than they like being impressed — real curiosity reads as warmth, not nosiness.",
         "footage_queries": ["people talking cafe", "friends conversation city"]
       },
       {
@@ -124,7 +136,7 @@
         "title": "SIT AT THE\nBAR",
         "spoken_title": "sit at the bar",
         "completion": "Have one drink or snack at the bar instead of taking the safest empty table in the corner.",
-        "narration": "Sit at the bar for one drink or snack, and let yourself be visible for a while. Nothing has to happen. But small conversations do not usually travel all the way to the empty corner table.",
+        "narration": "Take a seat at the bar instead of the corner table. You don't have to talk to anyone — but the corner is a habit, and the bar is where the unplanned, interesting stuff tends to find you.",
         "footage_queries": ["person sitting bar alone", "bartender serving drink"]
       },
       {
@@ -132,13 +144,38 @@
         "title": "SAY YES TO\nTHE INVITATION",
         "spoken_title": "say yes to the invitation you almost declined",
         "completion": "Accept one safe, manageable invitation you would normally decline out of habit.",
-        "narration": "Say yes to the invitation you were about to decline by reflex. A more interesting life is not always a dramatic decision. Sometimes it is already asking you in.",
+        "narration": "Say yes to something you'd reflexively turn down. Most of your no's aren't real decisions, they're autopilot — and a more interesting month is usually hiding behind one of them.",
         "footage_queries": ["friends walking city", "friends laughing cafe"]
+      },
+      {
+        "id": "follow-the-flyer",
+        "title": "FOLLOW THE\nFLYER",
+        "spoken_title": "follow the flyer",
+        "completion": "The next time you see an offline poster, flyer, or window listing, look it up and commit: RSVP, buy a ticket, or put it in your calendar.",
+        "narration": "Pick one thing you almost walked past and follow it through. A good week can start with a real-world invitation, if you let your surroundings surprise you instead of waiting for your usual feed to decide what happens.",
+        "footage_queries": ["person looking at event poster city", "people entering local music venue"]
+      },
+      {
+        "id": "join-the-game",
+        "title": "JOIN THE\nGAME",
+        "spoken_title": "join the game",
+        "completion": "Find an activity already happening — trivia, pickup sport, a group walk, board games, or an open studio — and join for thirty minutes.",
+        "narration": "Walk into something already underway and ask to join. It feels like you're interrupting, but open activities only work because new people keep showing up. The awkward part is usually the door, not the room.",
+        "footage_queries": ["friends playing board games cafe", "people playing pickup basketball"]
+      },
+      {
+        "id": "do-the-tourist-thing",
+        "title": "DO THE\nTOURIST THING",
+        "spoken_title": "do the tourist thing",
+        "completion": "Pick one thing people visit your city for and do it this week, even if it feels obvious.",
+        "narration": "Go do the thing visitors always do in your city. Familiar places disappear when you only move through them with an errand. Choose one on purpose and your own neighborhood stops feeling like a corridor.",
+        "footage_queries": ["person exploring city landmark", "friends sightseeing city"]
       }
     ]
   },
   "narration": {
-    "transition_line": "You don't need a new life. You need one new move.",
-    "reveal_lead": "Today's challenge:"
+    "transition_line": "Here's where it landed.",
+    "reveal_lead": "Today's side quest is",
+    "cta_line": "Comment done when you pull it off, and follow — there's a new side quest every day."
   }
 }

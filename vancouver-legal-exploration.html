@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vancouver After-Dark Exploration — July 17, 2026</title>
+    <style>
+      :root {
+        --paper: #ece8df;
+        --ink: #131a18;
+        --green: #0d5e4c;
+        --lime: #d5ff58;
+        --clay: #cf5e35;
+        --line: #b8b8ad;
+        --soft: #dfe3da;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body { margin: 0; color: var(--ink); background: var(--paper); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.45; }
+      main { width: min(1120px, calc(100% - 40px)); margin: auto; padding: 34px 0 72px; }
+
+      header { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 26px; align-items: end; padding: 28px; color: white; background: var(--green); border-radius: 18px; }
+      .kicker { margin: 0 0 8px; color: var(--lime); font-weight: 800; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { max-width: 760px; margin: 0; font-size: clamp(2.5rem, 7vw, 5.4rem); line-height: .92; letter-spacing: -.065em; }
+      .subtitle { margin: 12px 0 0; color: #d4e2d8; font-size: 1.05rem; }
+      .stamp { padding: 18px; border: 1px solid #72a797; border-radius: 12px; color: #d4e2d8; font-size: .92rem; }
+      .stamp strong { display: block; margin-bottom: 5px; color: white; font-size: 1.1rem; }
+
+      .rule { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start; margin: 26px 0 35px; padding: 18px 20px; border-left: 5px solid var(--clay); background: #f5d9cb; }
+      .rule h2 { margin: 0; font-size: 1.02rem; }
+      .rule p { margin: 0; }
+      .jump { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 38px; }
+      .jump a { padding: 7px 12px; border: 1px solid var(--line); border-radius: 99px; color: var(--ink); font-size: .87rem; text-decoration: none; }
+      .jump a:hover { border-color: var(--green); color: var(--green); }
+
+      section { margin-top: 44px; }
+      h2 { margin: 0 0 15px; font-size: 1.6rem; letter-spacing: -.035em; }
+      .section-copy { max-width: 720px; margin: -6px 0 18px; color: #4a514d; }
+      .cards { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+      article { grid-column: span 4; display: flex; flex-direction: column; min-height: 250px; padding: 20px; background: #faf9f4; border: 1px solid var(--line); border-radius: 12px; }
+      article.wide { grid-column: span 6; }
+      article.hero { background: #1c342e; border-color: #1c342e; color: white; }
+      article.hero .where, article.hero .details { color: #cce0d6; }
+      article.hero a { color: var(--lime); }
+      .when { margin: 0 0 12px; color: var(--green); font-size: .78rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+      .hero .when { color: var(--lime); }
+      h3 { margin: 0; font-size: 1.28rem; line-height: 1.08; letter-spacing: -.035em; }
+      .where { margin: 7px 0 0; color: #545952; font-size: .91rem; }
+      .details { margin: 15px 0 0; color: #343b36; font-size: .94rem; }
+      .label { display: inline-block; width: fit-content; margin-top: 15px; padding: 4px 8px; border-radius: 99px; background: var(--soft); color: #34463e; font-size: .72rem; font-weight: 750; }
+      .hero .label { color: #efffe0; background: #365346; }
+      article a { margin-top: auto; padding-top: 17px; color: var(--green); font-weight: 800; font-size: .9rem; text-decoration: none; }
+      article a:hover { text-decoration: underline; }
+
+      .plan { display: grid; grid-template-columns: 100px 1fr; border-top: 1px solid var(--line); }
+      .plan:last-child { border-bottom: 1px solid var(--line); }
+      .plan-time { padding: 16px 0; color: var(--green); font-weight: 800; }
+      .plan-body { padding: 16px 0; }
+      .plan-body strong { display: block; margin-bottom: 2px; }
+      .plan-body span { color: #535b56; }
+      .checklist { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: 12px; background: var(--line); }
+      .checklist div { padding: 16px; background: #faf9f4; }
+      .checklist b { display: block; margin-bottom: 5px; color: var(--green); }
+      footer { margin-top: 46px; padding-top: 20px; border-top: 1px solid var(--line); color: #5c625d; font-size: .86rem; }
+      footer a { color: var(--green); }
+
+      @media (max-width: 720px) {
+        main { width: min(100% - 28px, 1120px); }
+        header { grid-template-columns: 1fr; padding: 24px; }
+        article, article.wide { grid-column: span 12; }
+        .rule { grid-template-columns: 1fr; gap: 6px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="kicker">Vancouver · Friday, July 17, 2026</p>
+          <h1>Find the city’s edges. Keep it legal.</h1>
+          <p class="subtitle">An after-dark plan with real height, architecture, waterfront, public art, and supervised climbing—without roofs, construction sites, or unsafe access.</p>
+        </div>
+        <div class="stamp"><strong>Tonight’s strongest pick</strong>FIFA Fan Festival at the PNE is open 5–11 PM. Kx5 (Kaskade + deadmau5) is the July 17 signature concert.</div>
+      </header>
+
+      <aside class="rule">
+        <h2>The line</h2>
+        <p>This guide only includes public spaces, venues, and properly supervised climbing. Do not enter roofs, construction sites, rail corridors, closed parks, utility spaces, or anywhere posted as private; do not climb structures or cross barriers. Those spots can turn a fun night into a serious fall, arrest, or rescue situation very quickly.</p>
+      </aside>
+
+      <nav class="jump" aria-label="Jump to section">
+        <a href="#tonight">Ready tonight</a>
+        <a href="#walks">Walk the city</a>
+        <a href="#height">Legal height &amp; climbing</a>
+        <a href="#future">For daylight / another day</a>
+      </nav>
+
+      <section id="tonight">
+        <h2>Ready tonight</h2>
+        <p class="section-copy">These are the best ways to get the “temporary city / hidden angles / somewhere else” feeling without improvising your own access.</p>
+        <div class="cards">
+          <article class="hero wide">
+            <p class="when">5:00–11:00 PM · today</p>
+            <h3>FIFA Fan Festival + Kx5</h3>
+            <p class="where">PNE / Hastings Park · 2901 E Hastings St.</p>
+            <p class="details">A huge, purpose-built outdoor fan space with screens, food vendors, installations, and a new 10,000-capacity amphitheatre. General festival admission is free; the Kx5 signature concert is a separate ticketed experience. This is the no-brainer for a night that feels like you stumbled into a city-sized set.</p>
+            <span class="label">Outdoor · temporary city · electronic</span>
+            <a href="https://www.fifa.com/en/articles/all-you-need-to-know-fifa-fan-festival-2026-vancouver">Hours, entry &amp; travel info ↗</a>
+          </article>
+          <article class="wide">
+            <p class="when">Until 10:00 PM</p>
+            <h3>Climb Base5 — actual vertical adventure</h3>
+            <p class="where">#2–1485 Welch St., North Vancouver</p>
+            <p class="details">Their North Vancouver gym is open Friday 10 AM–10 PM. New climbers can use bouldering and auto-belays with no prior experience, partner, booking, or gear—just complete the waiver and get their orientation. Much more satisfying than trying to climb a building.</p>
+            <span class="label">Indoor climbing · beginner-friendly</span>
+            <a href="https://climbbase5.com/climb/first-time-climbers/">First-visit details ↗</a>
+          </article>
+          <article>
+            <p class="when">Any time · use good judgment</p>
+            <h3>False Creek Olympic Village loop</h3>
+            <p class="where">Start / finish: Creekside Park gazebo</p>
+            <p class="details">A 2.9 km, mostly flat waterfront loop that passes Science World, BC Place, Rogers Arena, Cooper’s Park, bridges, art, and Olympic Village. It’s built as a pedestrian-and-cycle-friendly seawall route—excellent for city lights and architecture.</p>
+            <span class="label">Waterfront · skyline · 2.9 km</span>
+            <a href="https://vancouver.ca/parks-recreation-culture/false-creek-olympic-village.aspx">Route map &amp; directions ↗</a>
+          </article>
+          <article>
+            <p class="when">Before 8:00 PM on weekdays</p>
+            <h3>Robson Square interior + public plaza</h3>
+            <p class="where">800 Robson St.</p>
+            <p class="details">Use the upper-level walkways and staircases as a legal architecture crawl, then loop through the public plaza outside. UBC Robson Square lists weekday public entrance access until 8 PM; the plaza itself is a City public space.</p>
+            <span class="label">Architecture · public access</span>
+            <a href="https://robsonsquare.ubc.ca/internal-building-notices/">Current building hours ↗</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="walks">
+        <h2>Walk the city like it’s a set</h2>
+        <p class="section-copy">These are ordinary public routes, not secluded back-route suggestions. Stay on lit, open paths; ride-share or transit back rather than cutting through unfamiliar industrial blocks late at night.</p>
+        <div class="cards">
+          <article>
+            <p class="when">2.4 km · waterfront</p>
+            <h3>False Creek North</h3>
+            <p class="where">Cooper’s Park → Yaletown / David Lam Park</p>
+            <p class="details">The north shore of False Creek is a paved, relatively flat urban waterfront with marinas, bridges, glass towers, and the Roundhouse area. It is an easy way to keep the exploration feeling social and visible.</p>
+            <span class="label">Marinas · bridges · city lights</span>
+            <a href="https://vancouver.ca/parks-recreation-culture/false-creek-north.aspx">Route details ↗</a>
+          </article>
+          <article>
+            <p class="when">Self-guided</p>
+            <h3>Downtown public-art detour</h3>
+            <p class="where">Downtown / Yaletown / False Creek</p>
+            <p class="details">Use the City’s public-art registry or Yaletown/False Creek self-guided tour to turn a regular walk into a scavenger hunt for sculptures, fountains, reliefs, and installations.</p>
+            <span class="label">Public art · photo walk</span>
+            <a href="https://vancouver.ca/parks-recreation-culture/explore-the-public-art-registries.aspx">Public-art maps ↗</a>
+          </article>
+          <article>
+            <p class="when">9 km · daylight preferred</p>
+            <h3>Stanley Park Seawall</h3>
+            <p class="where">Convention Centre → Stanley Park → English Bay</p>
+            <p class="details">The seawall is Vancouver’s iconic continuous waterfront path. The Stanley Park portion takes two to three hours on foot, so use it at daylight or early dusk—not as a late-night shortcut through the park.</p>
+            <span class="label">Water · mountains · daylight route</span>
+            <a href="https://vancouver.ca/parks-recreation-culture/seawall.aspx">Seawall guide ↗</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="height">
+        <h2>Legal height, not illicit height</h2>
+        <div class="cards">
+          <article class="wide">
+            <p class="when">Friday 9:30 AM–6:00 PM · another day</p>
+            <h3>VPL rooftop garden + terraces</h3>
+            <p class="where">Central Library · 350 W Georgia St. · Levels 8–9</p>
+            <p class="details">This is an actual public rooftop garden, not a “maybe it’s unlocked” roof. The library explicitly welcomes photography and provides Level 8 terraces and a Level 9 rooftop garden. It closes with the library at 6 PM on Fridays, so save it for another day.</p>
+            <span class="label">Public rooftop · legal views · free</span>
+            <a href="https://www.vpl.ca/facilities/outdoor-spaces">Access &amp; hours ↗</a>
+          </article>
+          <article class="wide">
+            <p class="when">Any future visit</p>
+            <h3>Make climbing the destination</h3>
+            <p class="where">Climb Base5 · North Vancouver or Coquitlam</p>
+            <p class="details">Both sites have indoor top-rope climbing, lead climbing, auto-belays, bouldering, and staff-led orientation. For a group of first-timers, the day pass is listed at $31 for adults and gear can be rented; check the gym’s page for current details.</p>
+            <span class="label">Vertical · ropes · controlled environment</span>
+            <a href="https://climbbase5.com/climb/memberships-passes/">Passes &amp; rentals ↗</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="future">
+        <h2>One clean itinerary</h2>
+        <div class="plan"><div class="plan-time">6:00 PM</div><div class="plan-body"><strong>Enter the Fan Festival</strong><span>Walk the large site, get food, and explore the installations before the concert energy ramps up.</span></div></div>
+        <div class="plan"><div class="plan-time">Later</div><div class="plan-body"><strong>Take the long way back downtown</strong><span>Transit or ride-share back toward False Creek; do the Olympic Village loop together on public, open waterfront paths.</span></div></div>
+        <div class="plan"><div class="plan-time">Tomorrow</div><div class="plan-body"><strong>Do a real rooftop and a real climb</strong><span>VPL’s Level 9 garden in the afternoon, then Climb Base5 for the vertical payoff.</span></div></div>
+      </section>
+
+      <section>
+        <h2>Bring the right things</h2>
+        <div class="checklist">
+          <div><b>Battery + map</b>Fully charge phones and download the route before leaving Wi-Fi.</div>
+          <div><b>Real footwear</b>Closed-toe shoes with grip—not sandals—for long walks and climbing.</div>
+          <div><b>Stay together</b>Pick an explicit meet-up spot if anyone splits off; share live location with the group.</div>
+          <div><b>Know the exit</b>Keep transit / ride-share money and do not treat fences, signs, or barriers as a puzzle.</div>
+        </div>
+      </section>
+
+      <footer>
+        Compiled July 17, 2026 from official venue, City of Vancouver, VPL, UBC Robson Square, FIFA, and Climb Base5 information. Hours, capacity, and ticket availability can change—use the links above to confirm before heading out.
+      </footer>
+    </main>
+  </body>
+</html>
