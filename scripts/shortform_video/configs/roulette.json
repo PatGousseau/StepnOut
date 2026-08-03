@@ -7,6 +7,7 @@
   "footage": {
     "enabled": true,
     "clip_count": 2,
+    "excluded_video_ids": [8322538],
     "fallback_queries": ["person exploring city alone", "person sitting cafe alone"]
   },
   "output": {
@@ -14,6 +15,11 @@
     "width": 1080,
     "height": 1920,
     "fps": 24
+  },
+  "audio_bed": {
+    "mode": "file",
+    "path": "music/pixabay/dream-protocol-fun-times-ahead-soft-acoustic-guitar-instrumental-22173.mp3",
+    "volume": 0.3
   },
   "roulette": {
     "spin_duration": 5.0,
@@ -176,6 +182,6 @@
   "narration": {
     "transition_line": "Here's where it landed.",
     "reveal_lead": "Today's side quest is",
-    "cta_line": "Comment done when you pull it off, and follow — there's a new side quest every day."
+    "cta_line": "Then report back — tell us what happened, what surprised you, or how it felt. Follow for more side quests."
   }
 }

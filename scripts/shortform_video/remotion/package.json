@@ -1,0 +1,25 @@
+{
+  "name": "stepnout-shortform-video",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "prepare:roulette": "tsx src/prepare.ts",
+    "prepare:oneoffs": "tsx src/prepare-oneoffs.ts",
+    "studio": "remotion studio src/index.ts",
+    "render:roulette": "remotion render src/index.ts Roulette",
+    "render:oneoff": "remotion render src/index.ts OneOff",
+    "still": "remotion still src/index.ts Roulette",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/captions": "4.0.504",
+    "@remotion/cli": "4.0.504",
+    "remotion": "4.0.504"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "tsx": "4.19.3",
+    "typescript": "5.9.2"
+  }
+}
