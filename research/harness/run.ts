@@ -8,7 +8,14 @@ import {
   scoreQuest, scoreCity, dedupe, selectDiverse, DIFFICULTY_LABEL,
   type UnifiedQuest, type QuestKind, type UserContext,
 } from './pipeline';
-import { ITER1, ITER2, ITER3, ITER4_BOLOGNA_POOL, MILAN_WEEKLY_POOL } from './fixtures';
+import {
+  selectForUser, scoreFit, difficultyWindow, dataDepth, describeUser,
+  type UserProfile, type QuestHistoryEntry,
+} from './profile';
+import {
+  ITER1, ITER2, ITER3, ITER4_BOLOGNA_POOL, MILAN_WEEKLY_POOL,
+  MILAN_WEEK_V7, THIN_WEEK_V8, PROFILES,
+} from './fixtures';
 
 const CITIES = ['Milan', 'Bologna', 'Fabriano'];
 const pad = (s: string, n: number) => (s + ' '.repeat(n)).slice(0, n);
@@ -85,7 +92,115 @@ const verifyOccurrence = async (q: UnifiedQuest) => !/2026-08-12/.test(q.start_d
   }
   const best = deduped.sort((a, b) => scoreQuest(b).aggregate - scoreQuest(a).aggregate)[0];
   console.log(`dedupe: ${ITER4_BOLOGNA_POOL.length} -> ${deduped.length}; honest best "${best.title}" ` +
-    `score ${scoreQuest(best).aggregate} (${best.confidence})\n`);
+    `score ${scoreQuest(best).aggregate} (${best.confidence})`);
+
+  personalization();   // iter 7 — chained so output stays in order
 })();
 
 void (undefined as unknown as UserContext); // UserContext exercised by pipeline.sourceCity in prod
+
+// ===========================================================================
+// ITER 7 — PERSONALIZATION. Validity is a floor; fit is the product.
+// ===========================================================================
+
+function personalization(): void {
+  console.log('\n\n############ ITERATION 8 — FIT, with the five iter-7 fixes applied ############');
+  console.log('# weights UNCHANGED from iter 7 (.35/.20/.20/.15/.10) — only the structure moved.');
+
+  // --- Part 6: same city, same week, six different people -----------------
+
+  console.log('\n=== Same city + same week: does anyone actually get a different quest? ===\n');
+
+  const picks = PROFILES.map(p => ({ p, a: selectForUser(MILAN_WEEK_V7, p) }));
+
+  for (const { p, a } of picks) {
+    console.log(`── ${p.id.toUpperCase()} ─ ${describeUser(p)}`);
+    console.log(`   said: "${p.meaningToDo}"`);
+    console.log(`   bail: "${p.bailCondition || '(skipped)'}"`);
+    if (a.depth.needsMoreInput) {
+      console.log(`   ⚠ NEEDS MORE INPUT — intake should ask before assigning:`);
+      console.log(`     "${a.depth.followUpQuestion}"`);
+    }
+    console.log(`   →  ${a.usedFallback ? '[FALLBACK] ' : ''}${a.quest.title}`);
+    console.log(`      ${a.quest.kind} · ${DIFFICULTY_LABEL[a.quest.difficulty]} (diff ${a.quest.difficulty})` +
+      `   validity ${a.validity}/10   FIT ${a.fit.fit}/10   bail:${a.fit.bailVerdict}`);
+    console.log(`      fit parts: pull ${a.fit.pull} · edge ${a.fit.edge} · solo ${a.fit.soloCalibration}` +
+      ` · bail ${a.fit.bailSafety} · novelty ${a.fit.novelty}`);
+    for (const w of a.fit.why) console.log(`      · ${w}`);
+    const filtered = a.excluded.filter(e => e.by === 'bail-collision');
+    if (filtered.length) {
+      console.log(`      EXCLUDED by their deal-breaker: ${filtered.map(e => e.quest.title).join(' | ')}`);
+    }
+    if (a.relaxations.length) console.log(`      ⚠ relaxed filters to find anything: ${a.relaxations.join(', ')}`);
+    if (a.runnersUp.length) {
+      console.log(`      runners-up: ${a.runnersUp.map(r => `${r.quest.title} (${r.fit})`).join(' | ')}`);
+    }
+    console.log('');
+  }
+
+  const distinct = new Set(picks.map(x => x.a.quest.id));
+  const distinctKinds = new Set(picks.map(x => x.a.quest.kind));
+  console.log(`=> ${distinct.size} distinct quests and ${distinctKinds.size} distinct kinds across ` +
+    `${picks.length} people in ONE city-week.`);
+  console.log('   (If this were 1-2, the personalization would be hollow — that is the finding, not a bug to tune away.)');
+
+  // --- Part 7: what the SAME pool looks like with no profile at all --------
+
+  console.log('\n=== Control: iter-6 behaviour (no profile) on the same pool ===\n');
+  const iter6Pick = [...MILAN_WEEK_V7].sort((a, b) => scoreQuest(b).aggregate - scoreQuest(a).aggregate)[0];
+  console.log(`  everyone would get: "${iter6Pick.title}" (validity ${scoreQuest(iter6Pick).aggregate})`);
+  console.log(`  fit of that quest per person: ` +
+    PROFILES.map(p => `${p.id} ${scoreFit(p, iter6Pick).fit}`).join(' · '));
+  console.log('  => validity alone cannot tell these people apart. That is the gap iter 7 fills.');
+
+  // --- Part 8: the fallback has to be personal too -------------------------
+
+  console.log('\n=== Fallback check: profile with no matching event in the pool ===\n');
+  const tommaso = PROFILES.find(p => p.id === 'tommaso')!;
+  const tAssign = selectForUser(MILAN_WEEK_V7, tommaso);
+  console.log(`  ${tommaso.id} wants: "${tommaso.meaningToDo}"`);
+  console.log(`  pool contains zero physical/sport options.`);
+  console.log(`  → ${tAssign.usedFallback ? 'FALLBACK fired' : 'NO fallback (matched an event)'}: "${tAssign.quest.title}"`);
+  console.log(`    ${tAssign.quest.description}`);
+  console.log(`    eligible_reason: ${tAssign.quest.eligible_reason}`);
+  console.log(`  best event alternative was: ${tAssign.runnersUp.map(r => `${r.quest.title} (fit ${r.fit})`).join(' | ') || 'none'}`);
+
+  // --- Part 8b: does the deal-breaker filter survive a thin pool? ----------
+
+  console.log('\n=== Stress test: same people, Fabriano-sized pool (3 candidates) ===\n');
+  console.log('  iter 8 made the bail condition a hard filter. A filter is only a guarantee');
+  console.log('  if it holds when the pool cannot absorb it. Most Italian towns look like this.\n');
+
+  for (const p of PROFILES) {
+    const a = selectForUser(THIN_WEEK_V8, p);
+    const kept = THIN_WEEK_V8.length - a.excluded.length;
+    console.log(`  ${pad(p.id, 9)} ${pad(`${kept}/${THIN_WEEK_V8.length} survived filters`, 26)}` +
+      `→ ${a.usedFallback ? '[FALLBACK] ' : ''}${pad(a.quest.title, 38)} fit ${a.fit.fit}` +
+      `${a.relaxations.length ? `  ⚠ RELAXED: ${a.relaxations.join(',')}` : ''}`);
+  }
+
+  // --- Part 9: four consecutive weeks for one profile ----------------------
+
+  console.log('\n=== 4 weeks, one profile (sofia): escalation + no category spiral ===\n');
+  const sofia = PROFILES.find(p => p.id === 'sofia')!;
+  const history: QuestHistoryEntry[] = [];
+
+  for (let week = 1; week <= 4; week++) {
+    const p: UserProfile = { ...sofia, history: [...history] };
+    const win = difficultyWindow(p);
+    const a = selectForUser(MILAN_WEEK_V7, p);
+    console.log(`  week ${week}  window ${win.lo}-${win.hi} (attended ${win.attended})  ` +
+      `→ ${pad(a.quest.kind, 22)} ${pad(a.quest.title, 42)} ` +
+      `[diff ${a.quest.difficulty} · fit ${a.fit.fit}]${a.usedFallback ? ' (fallback)' : ''}` +
+      `${a.relaxations.length ? ` (relaxed: ${a.relaxations.join(',')})` : ''}`);
+    history.push({
+      week, questId: a.quest.id, kind: a.quest.kind,
+      difficulty: a.quest.difficulty, attended: true,      // simulate: she goes every week
+    });
+  }
+
+  const diffs = history.map(h => h.difficulty);
+  const kinds = new Set(history.map(h => h.kind));
+  console.log(`\n  difficulty path: ${diffs.join(' → ')}   (escalating: ${diffs[3] > diffs[0] ? 'yes' : 'NO'})`);
+  console.log(`  distinct kinds over 4 weeks: ${kinds.size}/4   (${[...kinds].join(', ')})`);
+}

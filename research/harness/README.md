@@ -20,10 +20,11 @@ StepnOut is about **stepping outside your comfort zone**. A good weekly assignme
 
 | File | Role | Evolves? |
 |---|---|---|
-| `rubric.md` | The judge's scoring criteria — what "good" means | yes (slowly) |
+| `rubric.md` | The **validity** judge's criteria — what "real and attendable" means | yes (slowly) |
 | `config.json` | Tunable sourcing knobs: queries, radius-by-population, sources, fallback | yes (every iteration) |
-| `pipeline.ts` | Production-ready TS: types + source + normalize + judge (`scoreQuest`) | yes (reflects final config) |
-| `fixtures.ts` | Real events sourced live (2026-08-09), typed as `UnifiedQuest` | append |
+| `pipeline.ts` | Production-ready TS: types + source + normalize + validity judge (`scoreQuest`) | yes (reflects final config) |
+| `profile.ts` | **Fit** judge (iter 7): `UserProfile`, `scoreFit`, `selectForUser`, profile-aware fallback | yes |
+| `fixtures.ts` | Real events sourced live (2026-08-09) + user profiles, typed | append |
 | `run.ts` | Runnable driver — scores the fixtures and prints the progression | yes |
 | `tsconfig.json` | Standalone build (not the app's) so the harness runs on its own | — |
 | `iterations/iteration-NN.md` | One loop pass: config used, output, judge scores, failure modes, fix | append-only log |
@@ -55,4 +56,10 @@ The score progression in `RESULTS.md` is whatever this prints — the harness is
 
 ## Status
 
-**6 iterations run, self-verifying.** iter 4 made the score *honest* (dedup + Ferragosto freshness guard); iter 5 added persona pacing + safety; **iter 6 corrected the objective (user feedback): difficulty is a label not a quality signal, all comfort-zone kinds are peers, and diversity over time is the real goal** — judge is now `verifiability(45%)+cost(30%)+attendability(25%)` with `selectDiverse()` choosing. Discovery is at production quality across all city sizes. The remaining frontier is the **attendance feedback loop**, not sourcing. See `RESULTS.md`.
+**8 iterations run, self-verifying.** iter 4 made the score *honest* (dedup + Ferragosto freshness guard); iter 5 added persona pacing + safety; iter 6 corrected the objective (user feedback): difficulty is a label, all kinds are peers, diversity is the goal. **iter 7 added the missing half — selecting FOR a user**, and **iter 8 fixed five of the seven failures it found.** There are now **two judges, deliberately unmerged**: `scoreQuest` (validity — a floor) and `scoreFit` (pull/edge/bail/solo/novelty — the ranking).
+
+Iter 8 made the deal-breaker a hard filter, restored diversity as a hard exclusion, flagged thin input, made prohibition matching negation-aware, replaced array-order tiebreaks, and matched on candidate *content* rather than taxonomy — **with the fit weights unchanged**, so the before/after is readable. One score fell deliberately (a preference had been misread as a fear).
+
+The remaining ceiling is not the scoring. A Fabriano-sized stress pool puts **four of six users on a self-directed mission, three of them the same default one** — so in most of Italy the mission template library *is* the product, and it holds five entries. See `RESULTS.md` and `iterations/iteration-08.md`.
+
+**Matching here is lexical, not model-based** — the harness runs offline with no API spend. Failures are tagged `[LEXICAL]` (goes away with a real model call) vs `[DESIGN]` (doesn't).

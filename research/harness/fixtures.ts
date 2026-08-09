@@ -3,6 +3,7 @@
  * v2: type is not a quality signal; difficulty is a label; attend_mode carried explicitly.
  */
 import type { UnifiedQuest } from './pipeline';
+import type { UserProfile } from './profile';
 
 const base = { description: null, lat: null, lng: null, address: null } as const;
 
@@ -106,4 +107,125 @@ export const MILAN_WEEKLY_POOL: UnifiedQuest[] = [
     title: 'Museo del Novecento free evening', kind: 'exhibition', difficulty: 2, attend_mode: 'solo',
     start_datetime: '2026-08-11T18:00:00+02:00', recurrence: null, venue_name: 'Museo del Novecento',
     city: 'Milan', price_eur: 0, is_free: true, confidence: 'confirmed_dated' },
+];
+
+// ---------------------------------------------------------------------------
+// ITER 7: one Milan week, wide enough that different people CAN diverge.
+//
+// Deliberately contains NO physical/sport option — one test profile wants
+// bouldering, so the POI fallback has to carry them.
+// ---------------------------------------------------------------------------
+
+export const MILAN_WEEK_V7: UnifiedQuest[] = [
+  ...MILAN_WEEKLY_POOL,
+  { ...base, id: 'mi-swing', source: 'meetup', source_url: 'https://www.meetup.com/',
+    title: 'Swing beginners taster — free trial', kind: 'dance_movement', difficulty: 4,
+    attend_mode: 'either', start_datetime: null, recurrence: 'weekly, Wed 20:30',
+    venue_name: 'Circolo Magnolia', city: 'Milan', price_eur: 0, is_free: true,
+    confidence: 'recurring_scheduled', verified_upcoming: true },
+  { ...base, id: 'mi-lifedrawing', source: 'milanotoday', source_url: 'https://www.milanotoday.it/',
+    title: 'Life drawing session, all levels', kind: 'meetup_hobby', difficulty: 3,
+    attend_mode: 'solo', start_datetime: null, recurrence: 'weekly, Wed 19:00',
+    venue_name: 'Spazio Tadini', city: 'Milan', price_eur: 8, is_free: false,
+    confidence: 'recurring_scheduled', verified_upcoming: true },
+  { ...base, id: 'mi-openmic', source: 'milanofree', source_url: 'https://www.milanofree.it/',
+    title: 'Open-mic night, sign up on the door', kind: 'concert', difficulty: 5,
+    attend_mode: 'solo', start_datetime: '2026-08-13T21:00:00+02:00', recurrence: null,
+    venue_name: 'Blue Note Off', city: 'Milan', price_eur: 0, is_free: true,
+    confidence: 'confirmed_dated' },
+  { ...base, id: 'mi-sagra-isola', source: 'eventiesagre', source_url: 'https://www.eventiesagre.it/',
+    title: 'Festa di quartiere, Isola', kind: 'community_sagra', difficulty: 3,
+    attend_mode: 'either', start_datetime: '2026-08-15T17:00:00+02:00', recurrence: null,
+    venue_name: 'Piazza Minniti', city: 'Milan', price_eur: 0, is_free: true,
+    confidence: 'confirmed_dated' },
+  { ...base, id: 'mi-aperitivo-lingua', source: 'ostellobello', source_url: 'https://www.ostellobello.com/',
+    title: 'Aperitivo linguistico, tavoli per lingua', kind: 'language_social', difficulty: 3,
+    attend_mode: 'solo', start_datetime: null, recurrence: 'weekly, Thu 19:00',
+    venue_name: 'Ostello Bello Grande', city: 'Milan', price_eur: 5, is_free: false,
+    confidence: 'recurring_scheduled', verified_upcoming: true },
+  { ...base, id: 'mi-cinema-parco', source: 'milanotoday', source_url: 'https://www.milanotoday.it/',
+    title: 'Cinema all aperto al Parco Sempione', kind: 'cinema', difficulty: 1,
+    attend_mode: 'solo', start_datetime: '2026-08-12T21:45:00+02:00', recurrence: null,
+    venue_name: 'Parco Sempione', city: 'Milan', price_eur: 0, is_free: true,
+    confidence: 'confirmed_dated' },
+];
+
+// ---------------------------------------------------------------------------
+// ITER 8: a THIN week — Fabriano-sized inventory (3 candidates).
+//
+// Iter 8 turned the bail condition into a hard filter. In Milan that is safe
+// because the pool is deep. This fixture tests the case that actually matters:
+// most Italian towns are Fabriano-sized, and a filter is only a guarantee if it
+// survives a pool that can't absorb it.
+// ---------------------------------------------------------------------------
+
+export const THIN_WEEK_V8: UnifiedQuest[] = [
+  { ...base, id: 'th-sagra', source: 'eventiesagre', source_url: 'https://www.eventiesagre.it/',
+    title: 'Sagra della Lumaca, Cancelli', kind: 'community_sagra', difficulty: 3,
+    attend_mode: 'either', start_datetime: '2026-08-15T20:30:00+02:00', recurrence: null,
+    venue_name: 'Cancelli', city: 'Milan', price_eur: 8, is_free: false,
+    confidence: 'confirmed_dated' },
+  { ...base, id: 'th-banda', source: 'virgilio', source_url: 'https://www.virgilio.it/',
+    title: 'Concerto della banda cittadina', kind: 'concert', difficulty: 2,
+    attend_mode: 'solo', start_datetime: '2026-08-14T21:00:00+02:00', recurrence: null,
+    venue_name: 'Piazza del Comune', city: 'Milan', price_eur: 0, is_free: true,
+    confidence: 'confirmed_dated' },
+  { ...base, id: 'th-museo', source: 'virgilio', source_url: 'https://www.virgilio.it/',
+    title: 'Museo della Carta e della Filigrana', kind: 'exhibition', difficulty: 2,
+    attend_mode: 'solo', start_datetime: null, recurrence: 'open daily',
+    venue_name: 'Museo della Carta', city: 'Milan', price_eur: 6, is_free: false,
+    confidence: 'recurring_scheduled', verified_upcoming: true },
+];
+
+// ---------------------------------------------------------------------------
+// ITER 7: user profiles — SAME city, SAME week. Raw wording kept verbatim,
+// exactly as the intake flow would store it.
+// ---------------------------------------------------------------------------
+
+export const PROFILES: UserProfile[] = [
+  {
+    id: 'sofia',
+    meaningToDo: "I've been meaning to actually speak Italian with real people instead of just an app",
+    bailCondition: 'If I have to perform in front of a group I will not go',
+    soloHistory: 'once_or_twice', city: 'Milan', neighbourhood: 'Porta Venezia',
+    followUp: [{
+      question: 'What stops you at the moment?',
+      answer: 'I freeze when I have to speak and make mistakes in front of strangers',
+    }],
+  },
+  {
+    id: 'marco',
+    meaningToDo: 'Been meaning to start dancing again, I have not danced since university',
+    bailCondition: 'Anything that costs more than a pizza',
+    soloHistory: 'regularly', city: 'Milan', neighbourhood: 'NoLo',
+    followUp: [{ question: 'What kind of thing appeals?', answer: 'Something social, not a class where I stand in a line' }],
+  },
+  {
+    id: 'elena',
+    meaningToDo: 'Been meaning to start drawing again, the sketchbook has been untouched for a year',
+    bailCondition: 'Big loud crowds at night',
+    soloHistory: 'never', city: 'Milan', neighbourhood: 'Città Studi',
+    followUp: [{ question: 'What would a good version of this look like?', answer: 'Somewhere quiet where I can look at art slowly and not be rushed' }],
+  },
+  {
+    // NO physical / sport option exists in MILAN_WEEK_V7 — the fallback must carry him.
+    id: 'tommaso',
+    meaningToDo: 'Been meaning to get back into bouldering, I have not climbed since 2019',
+    bailCondition: 'Signing up for a whole course',
+    soloHistory: 'once_or_twice', city: 'Milan', neighbourhood: 'Lambrate',
+  },
+  {
+    // LOW DATA: skipped the follow-up, gave almost nothing.
+    id: 'giulia',
+    meaningToDo: 'idk, get out more',
+    bailCondition: '',
+    soloHistory: 'never', city: 'Milan',
+  },
+  {
+    // LOW DATA, but one word ('people') happens to land in the lexicon.
+    id: 'andrea',
+    meaningToDo: 'meet more people i guess',
+    bailCondition: 'nothing really',
+    soloHistory: 'regularly', city: 'Milan',
+  },
 ];

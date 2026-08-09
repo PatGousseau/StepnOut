@@ -10,5 +10,5 @@
     "lib": ["ES2022", "DOM"],
     "types": []
   },
-  "include": ["pipeline.ts", "fixtures.ts", "run.ts"]
+  "include": ["pipeline.ts", "profile.ts", "fixtures.ts", "run.ts"]
 }
