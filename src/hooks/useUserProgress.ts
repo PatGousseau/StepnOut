@@ -29,7 +29,7 @@ const useUserProgress = (targetUserId: string) => {
           media_id,
           challenge_id,
           is_welcome,
-          challenges (title),
+          challenges (title, title_it),
           media:media!post_media_id_fkey (
             file_path,
             upload_status
@@ -48,7 +48,8 @@ const useUserProgress = (targetUserId: string) => {
       // Drop welcome posts from profile feeds
       const transformedPosts = hydratedPosts.map(post => ({
         ...post,
-        challenge_title: post.challenges?.title
+        challenge_title: post.challenges?.title,
+        challenge_title_it: post.challenges?.title_it ?? undefined
       })).filter(post => !post.is_welcome);
 
       // Then fetch like status separately

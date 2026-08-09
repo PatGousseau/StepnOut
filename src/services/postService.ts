@@ -139,7 +139,8 @@ export function normalizePost(post: PostRecord, likedPosts: Record<number, boole
     comments_count: comments?.length ?? 0,
     liked: likedPosts[post.id] ?? false,
     is_welcome: post.is_welcome ?? null,
-    challenge_title: challenges?.title,
+    challenge_title: challenges?.title ?? post.challenge_title,
+    challenge_title_it: challenges?.title_it ?? post.challenge_title_it,
     quest_title: side_quests?.title,
     comment_previews: getCommentPreviews(post),
   };
@@ -234,7 +235,7 @@ export const postService = {
     blockedUserIds: string[],
     postsPerPage: number = 20
   ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
-    const select = `${BASE_SELECT}, challenges!inner (title), side_quests:quest_id (title)`;
+    const select = `${BASE_SELECT}, challenges!inner (title, title_it), side_quests:quest_id (title)`;
 
     let query = supabase
       .from("post")
@@ -704,7 +705,7 @@ export const postService = {
     blockedUserIds: string[],
     postsPerPage: number = 20
   ): Promise<{ posts: PostRecord[]; hasMore: boolean }> {
-    const select = `${BASE_SELECT}, challenges:challenge_id (title), side_quests:quest_id (title)`;
+    const select = `${BASE_SELECT}, challenges:challenge_id (title, title_it), side_quests:quest_id (title)`;
 
     let query = supabase
       .from("post")
@@ -782,7 +783,7 @@ export const postService = {
     }
 
     const orderedIds: number[] = idRows.map((r: { post_id: number }) => r.post_id);
-    const select = `${BASE_SELECT}, challenges:challenge_id (title), side_quests:quest_id (title)`;
+    const select = `${BASE_SELECT}, challenges:challenge_id (title, title_it), side_quests:quest_id (title)`;
 
     const { data, error } = await supabase
       .from("post")

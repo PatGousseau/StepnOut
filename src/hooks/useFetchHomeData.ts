@@ -266,7 +266,7 @@ export const useFetchHomeData = (sort: FeedSort = "recent") => {
         .from("post")
         .select(`
           *,
-          challenges:challenge_id (title),
+          challenges:challenge_id (title, title_it),
           side_quests:quest_id (title),
           media:media!post_media_id_fkey (file_path),
           likes:likes(count),

@@ -64,7 +64,7 @@ interface PostProps {
 }
 
 const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage = false, onPostDeleted }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { likedPosts, likeCounts, togglePostLike } = useLikes();
   const { postReactions, togglePostReaction } = useReactions();
   const { user, isAdmin, username: currentUserUsername } = useAuth();
@@ -376,6 +376,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
 
   const isChallengePost = !!post.challenge_id;
   const isQuestPost = !!post.quest_id;
+  const challengeTitle = language === "it" ? post.challenge_title_it || post.challenge_title : post.challenge_title;
 
   const handleImageLongPress = async () => {
     try {
@@ -573,7 +574,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
               <View style={tagRowStyle}>
                 <Ionicons name="trophy" size={14} color={colors.light.primary} />
                 <Text style={challengeTitleStyle} numberOfLines={1} ellipsizeMode="tail">
-                  <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {post.challenge_title}
+                  <Text style={{ fontWeight: "bold" }}>{t("Challenge:")}</Text> {challengeTitle}
                 </Text>
               </View>
             </View>
@@ -707,7 +708,7 @@ const Post: React.FC<PostProps> = ({ post, postUser, setPostCounts, isPostPage =
         <InstagramStoryCard
           ref={storyCardRef}
           username={postUser?.username || "unknown"}
-          challengeTitle={post.challenge_title}
+          challengeTitle={challengeTitle}
           postText={post.body ?? undefined}
           profileImageUrl={profileImageUrl || undefined}
           completionCount={completionCount}
