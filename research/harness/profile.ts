@@ -80,9 +80,18 @@ export interface UserProfile {
   history?: QuestHistoryEntry[];
 }
 
-/** All the free text this user gave us, lowercased, in one blob. */
+/**
+ * All the free text THIS USER gave us, lowercased, in one blob.
+ *
+ * iter 9: the follow-up QUESTION used to be included here. It is authored by us,
+ * not by them, so matching on it means matching on our own words. In the first
+ * live run this cost Marco his quest: the question "What kind of thing appeals?"
+ * put "app" in his profile text, "app" is in the language-exchange vocabulary,
+ * and he was handed a language exchange over four real dance events. Only what
+ * the user typed counts.
+ */
 function profileText(p: UserProfile): string {
-  const fu = (p.followUp ?? []).map(f => `${f.question} ${f.answer}`).join(' ');
+  const fu = (p.followUp ?? []).map(f => f.answer).join(' ');
   return `${p.meaningToDo} ${p.bailCondition} ${fu}`.toLowerCase();
 }
 
@@ -195,10 +204,21 @@ function tokens(s: string): string[] {
     .split(/[^a-z0-9']+/).filter(w => w.length > 2 && !STOPWORDS.has(w));
 }
 
-/** Prefix-matched term hits ("sketchbook" counts as a hit for "sketch"). */
+/**
+ * Term hits. Long terms match as prefixes so "sketchbook" counts for "sketch";
+ * short ones must match a whole word.
+ *
+ * iter 9: unrestricted prefix matching let 3-letter terms swallow real words —
+ * "app" matched "appeals", "art" would match "article". Anything under 5 chars
+ * now needs a word boundary. The long-prefix behaviour is what makes Italian
+ * inflection work ("ballo"/"ballare"), so it stays for longer terms.
+ */
 function hits(text: string, terms: string[]): string[] {
   const t = ` ${text} `;
-  return terms.filter(term => t.includes(` ${term}`));
+  return terms.filter(term =>
+    term.length >= 5
+      ? t.includes(` ${term}`)
+      : new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}s?\\b`).test(t));
 }
 
 const NEGATORS = /\b(no|not|non|senza|without|never|free)\b/;
@@ -340,6 +360,21 @@ function pullScore(p: UserProfile, q: UnifiedQuest, evoked: Evoked[]): { pull: n
 // 7. The fit judge — SEPARATE from scoreQuest. Never merged.
 // ---------------------------------------------------------------------------
 
+/**
+ * A model's judgment of one candidate for one person (see matcher.ts). When
+ * supplied, it replaces the lexical stand-in for pull/edge/bail — and ONLY those.
+ * Weights, filters, calibration, tiebreak and fallback are unchanged either way,
+ * so the two matchers are directly comparable.
+ */
+export interface FitJudgment {
+  pull: number;
+  edge: number;
+  bailHit: boolean;
+  reason: string;
+}
+
+export type Judgments = Map<string, FitJudgment>;
+
 export interface FitScore {
   fit: number;                  // 0–10 aggregate
   pull: number;
@@ -355,25 +390,42 @@ export interface FitScore {
 /** UNCHANGED from iter 7 — only the structure around them moved. */
 const W = { pull: 0.35, edge: 0.20, solo: 0.20, bail: 0.15, novelty: 0.10 };
 
-export function scoreFit(p: UserProfile, q: UnifiedQuest): FitScore {
+export function scoreFit(p: UserProfile, q: UnifiedQuest, judgments?: Judgments): FitScore {
+  const judged = judgments?.get(q.id);
   const evoked = evokedKinds(p);
   const why: string[] = [];
+  const win = difficultyWindow(p);
 
   // --- pull ---------------------------------------------------------------
-  const { pull, why: pullWhy } = pullScore(p, q, evoked);
-  why.push(...pullWhy);
+  let pull: number;
+  if (judged) {
+    pull = judged.pull;
+    why.push(`pull: ${judged.reason}`);
+  } else {
+    const r = pullScore(p, q, evoked);
+    pull = r.pull;
+    why.push(...r.why);
+  }
 
   // --- edge ---------------------------------------------------------------
-  const win = difficultyWindow(p);
-  const named = hits(discomfortText(p), KIND_DISCOMFORT[q.kind]);
-  const relevance = named.length ? Math.min(5, 3 + named.length) : 1;
+  // The stretch half stays deterministic even when judged: whether a difficulty
+  // sits above someone's rung is arithmetic we already track, not a judgment call.
   const stretch = q.difficulty >= win.hi ? 5 : q.difficulty >= win.lo ? 3 : 1;
-  const edge = Math.min(10, relevance + stretch);
-  if (named.length) why.push(`edge: they named "${named[0]}" as hard — this asks exactly that`);
+  let edge: number;
+  if (judged) {
+    edge = Math.min(10, Math.round(judged.edge * 0.5) + stretch);
+  } else {
+    const named = hits(discomfortText(p), KIND_DISCOMFORT[q.kind]);
+    const relevance = named.length ? Math.min(5, 3 + named.length) : 1;
+    edge = Math.min(10, relevance + stretch);
+    if (named.length) why.push(`edge: they named "${named[0]}" as hard — this asks exactly that`);
+  }
   if (stretch === 1) why.push('edge: below their current rung — no stretch');
 
   // --- bail ---------------------------------------------------------------
-  const collisions = bailCollisions(p, q);
+  const collisions = judged
+    ? (judged.bailHit ? [`judged: collides with "${p.bailCondition}"`] : [])
+    : bailCollisions(p, q);
   const earned = escalationEarned(p);
   const bailVerdict: FitScore['bailVerdict'] =
     collisions.length === 0 ? 'clear' : earned ? 'escalation' : 'collision';
@@ -381,7 +433,7 @@ export function scoreFit(p: UserProfile, q: UnifiedQuest): FitScore {
   if (bailVerdict === 'escalation') why.push(`bail: hits "${collisions[0]}" — deliberate escalation (${win.attended} attended)`);
   if (bailVerdict === 'collision') why.push(`bail: hits "${collisions[0]}" — EXCLUDED, not earned`);
 
-  // --- solo calibration ---------------------------------------------------
+  // --- solo calibration (always deterministic) ----------------------------
   const dist = q.difficulty < win.lo ? win.lo - q.difficulty
     : q.difficulty > win.hi ? q.difficulty - win.hi : 0;
   const soloCalibration = Math.max(0, 10 - dist * 4);
@@ -437,8 +489,8 @@ export interface Assignment {
  * €10 quest over a free one on exactly this). Order: fit, then pull, then
  * validity, then closeness to the middle of their difficulty window, then id.
  */
-function compare(p: UserProfile, a: UnifiedQuest, b: UnifiedQuest): number {
-  const fa = scoreFit(p, a), fb = scoreFit(p, b);
+function compare(p: UserProfile, a: UnifiedQuest, b: UnifiedQuest, j?: Judgments): number {
+  const fa = scoreFit(p, a, j), fb = scoreFit(p, b, j);
   if (fb.fit !== fa.fit) return fb.fit - fa.fit;
   if (fb.pull !== fa.pull) return fb.pull - fa.pull;
   const va = scoreQuest(a).aggregate, vb = scoreQuest(b).aggregate;
@@ -449,7 +501,7 @@ function compare(p: UserProfile, a: UnifiedQuest, b: UnifiedQuest): number {
   return a.id.localeCompare(b.id);
 }
 
-export function selectForUser(pool: UnifiedQuest[], p: UserProfile): Assignment {
+export function selectForUser(pool: UnifiedQuest[], p: UserProfile, judgments?: Judgments): Assignment {
   const depth = dataDepth(p);
   const history = p.history ?? [];
   const recentKinds = new Set(history.slice(-KIND_COOLDOWN).map(h => h.kind));
@@ -464,7 +516,7 @@ export function selectForUser(pool: UnifiedQuest[], p: UserProfile): Assignment 
    * protected thing in the system.
    */
   const filters: { name: string; keep: (q: UnifiedQuest) => boolean }[] = [
-    { name: 'bail-collision', keep: q => scoreFit(p, q).bailVerdict !== 'collision' },
+    { name: 'bail-collision', keep: q => scoreFit(p, q, judgments).bailVerdict !== 'collision' },
     { name: 'same-quest-recently', keep: q => !recentIds.has(q.id) },
     { name: 'same-category-recently', keep: q => !recentKinds.has(q.kind) },
   ];
@@ -484,22 +536,22 @@ export function selectForUser(pool: UnifiedQuest[], p: UserProfile): Assignment 
     candidates = valid.filter(q => active.every(f => f.keep(q)));
   }
 
-  const ranked = [...candidates].sort((a, b) => compare(p, a, b));
+  const ranked = [...candidates].sort((a, b) => compare(p, a, b, judgments));
   const best = ranked[0];
-  const bestFit = best ? scoreFit(p, best) : null;
+  const bestFit = best ? scoreFit(p, best, judgments) : null;
 
   if (!best || !bestFit || bestFit.fit < FIT_FLOOR || bestFit.pull <= PULL_FLOOR) {
     const mission = buildPersonalMission(p);
     return {
       quest: mission, validity: scoreQuest(mission).aggregate, fit: scoreFit(p, mission),
       usedFallback: true, relaxations, excluded, depth,
-      runnersUp: ranked.slice(0, 3).map(q => ({ quest: q, fit: scoreFit(p, q).fit })),
+      runnersUp: ranked.slice(0, 3).map(q => ({ quest: q, fit: scoreFit(p, q, judgments).fit })),
     };
   }
   return {
     quest: best, validity: scoreQuest(best).aggregate, fit: bestFit,
     usedFallback: false, relaxations, excluded, depth,
-    runnersUp: ranked.slice(1, 4).map(q => ({ quest: q, fit: scoreFit(p, q).fit })),
+    runnersUp: ranked.slice(1, 4).map(q => ({ quest: q, fit: scoreFit(p, q, judgments).fit })),
   };
 }
 

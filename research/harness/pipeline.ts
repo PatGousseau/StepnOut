@@ -111,7 +111,16 @@ export function scoreQuest(q: UnifiedQuest): {
     q.confidence === 'self_directed' ? 8 :
     q.confidence === 'recurring_unresolved' ? 6 :
     q.source_url ? 5 : 2;
-  const cost = q.is_free ? 10 : (q.price_eur ?? 99) <= 15 ? 7 : (q.price_eur ?? 99) <= 30 ? 4 : 1;
+  // iter 9: unknown price is NOT the same as expensive. Real listing pages omit
+  // the price about half the time (10 of 21 in the first live Milan run), and
+  // `?? 99` was scoring every one of them as "over €30" — quietly penalising
+  // most of the real inventory. Unknown now sits mid-scale, below "known cheap"
+  // and above "known expensive", because that is what we actually know.
+  const cost = q.is_free ? 10
+    : q.price_eur == null ? 5
+    : q.price_eur <= 15 ? 7
+    : q.price_eur <= 30 ? 4
+    : 1;
   const attendability =
     q.attend_mode === 'solo' || q.attend_mode === 'either' ? 10 :
     q.attend_mode === 'bring_friend' ? 9 : 5;

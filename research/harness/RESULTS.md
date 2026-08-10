@@ -1,6 +1,6 @@
 # Harness Results
 
-Self-improvement loop for comfort-zone event assignment. Claude-driven, **7 iterations**, real search data (2026-08-09). Two separate judges: **validity** = `rubric.md` (v2), implemented as `scoreQuest()` in `pipeline.ts`; **fit** = `scoreFit()` in `profile.ts` (iter 7). **The numbers below are printed by `run.ts`, not asserted** — reproduce with:
+Self-improvement loop for comfort-zone event assignment. **9 iterations**; iters 1–8 offline against fixtures, **iter 9 against live search + real Italian listing pages** (2026-08-09). Two separate judges: **validity** = `rubric.md` (v2), implemented as `scoreQuest()` in `pipeline.ts`; **fit** = `scoreFit()` in `profile.ts` (iter 7). **The numbers below are printed by `run.ts`, not asserted** — reproduce with:
 
 ```bash
 cd research/harness && npx tsc -p tsconfig.json && node dist/run.js
@@ -50,6 +50,7 @@ dedupe: 3 -> 1; honest best "Bologna BlaBla" 8.2 (recurring_unresolved)
 | 6 | **objective correction (user)** — difficulty→label, diversity is goal | 9.6 | 9.6 | 8.2 | **9.1** | `F-monotony`; un-rewards difficulty |
 | 7 | **fit judge** — select FOR a user (`profile.ts`), validity becomes a gate | — | — | — | — | `F-samequest-everyone`; **reopens `F-monotony` per-user** |
 | 8 | **fixes** — bail→filter, diversity→hard exclusion, thin-input flag, negation, tiebreak, content-match | — | — | — | — | closes 5 of 7 iter-7 findings; **opens `F-thin-fallback`** |
+| 9 | **live engine** — 4 deps implemented, real ingestion, model matcher | 16 events | — | **22 events** | — | `F-past`, `F-outofcity`, `F-unknownprice`, `F-questionleak`; **opens `F-modelneversaysno`** |
 
 \* iter 4's Bologna *decrease* is the point — see below.
 
@@ -185,3 +186,63 @@ Iter 7 concluded the fallback must be profile-aware. Correct, and insufficient: 
 - Scores are the rubric's opinion (`scoreQuest`), not user outcomes. The *relative* progression is grounded in real, reproducible differences in search inventory; *absolute* numbers are the judge's.
 - Recurring "next occurrence" resolution is validated as *possible* (groups/venues/schedules are real — e.g. Bologna BlaBla Wed 20:30, Scuderie Piazza Verdi) but each date must be verified live in production (that's exactly what iter 4's guard enforces).
 - August is atypical (Ferragosto). Re-run one iteration in a normal month before trusting absolute coverage.
+
+## iter 9 — first contact with real data
+
+Iterations 1–8 ran offline against events I wrote and profiles I wrote. Iter 9 implements the four dependencies `pipeline.ts` had stubbed since iteration 1 (`search`, `fetchAndExtract`, `findPois`, `verifyOccurrence`) and runs the whole thing live. Full write-up: `iterations/iteration-09.md`.
+
+```bash
+node dist/ingest.js Milan --smoke              # 1 search, 1 extraction, pennies
+node dist/ingest.js Milan --verify
+node dist/ingest.js Fabriano --verify
+node dist/ingest.js Fabriano --from-cache --llm-match
+```
+
+Smoke run returned a real dated event first try — **BlaBla Language Exchange, Henry's Cafè, 13 Aug 19:30, €13** — the exact category the research doc said only category-targeted search finds, and near-identical to a fixture I had invented in iteration 2.
+
+### The headline: Fabriano beats Milan
+
+|  | Milan | Fabriano (29k) |
+|---|---|---|
+| events after dedupe | 22 | 27 |
+| **passed all gates** | **16** | **22** |
+
+The research doc's central claim is that coverage collapses in small towns. It doesn't. **`comune.fabriano.an.it/eventi/` alone supplied 14 of Fabriano's 22 events** — the municipal calendar carries the whole summer programme. Milan has no equivalent: six domains, six events sharing one useless homepage URL, one page returning nothing. The hard case is the metro, not the town. `config.json` has this backwards, and `comune.<city>.<prov>.it` is not in it.
+
+### Four defects only real data could expose (all fixed)
+
+- **Unknown price scored as expensive.** `(price_eur ?? 99)` meant a missing price scored as ">€30". Real pages omit price constantly — **10 of Milan's 21**. Half the inventory penalised for something we didn't know. Unknown now scores 5.
+- **No date gate.** 4 of 21 Milan events and 5 of 27 Fabriano events had already happened.
+- **No geographic gate.** Milan returned an event in **Sillavengo** — 600 people, ~70km away. The radius table has existed since iteration 2; ingestion never applied it.
+- **The follow-up question polluted matching.** `profileText` included the follow-up *question*, so "What kind of thing appeals?" put **"app"** in Marco's text → language-exchange vocabulary → Marco, who wants to dance, in a pool with four real dance events, got a language exchange.
+
+Iterations 1–8 output is unchanged after all four — verified.
+
+### The `[LEXICAL]` tag was doing real work
+
+> **Sofia** — *"speak Italian with real people"* → **Le Vie di San Francesco**, a religious pilgrimage walk, fit 9.1. Trace: `pull: said "people", "group"`.
+
+Real inventory also breaks the taxonomy: extraction filed a municipal **walking group** as `dance_movement`, a **mountain-bike granfondo** and a **pilgrimage** as `meetup_hobby`. Eight kinds cannot hold real Italian small-town inventory.
+
+### Model judging vs keyword, same Fabriano pool
+
+`matcher.ts` replaces **only** pull/edge/bail — one call per user, all candidates at once. Gate, filters, weights, tiebreak and fallback untouched.
+
+| | keyword | model-judged |
+|---|---|---|
+| Sofia | pilgrimage walk | Frazion Tour — *"speak Italian with locals"* |
+| Marco | walking group, below his rung | Frazioni di Folk — *"social folk dancing, no class line"* |
+| Elena | **fallback** | **Notte nei musei** — *"evening museum visit for slow art viewing"* |
+| Tommaso | fallback | MTB granfondo — *"near bouldering's physicality"* |
+| Giulia | fallback | Zero Festival — *"social and free"* |
+| Andrea | pilgrimage walk | Sagra della Lumaca |
+| | 5 distinct, **3 fallbacks** | 6 distinct, **0 fallbacks** |
+
+Marco's reason cites his follow-up (*"not a class where I stand in a line"*). Elena's is sharpest: the keyword path **excluded** Notte nei musei via her *"big loud crowds at night"* deal-breaker (21:30 → night flag → collision). The model judged `bail_hit: false` — a museum evening is not a big loud crowd — and found her the one Fabriano event that fits a year-untouched sketchbook. **Iteration 8's finding D is fixed by judgment, not by more rules.**
+
+Milan went the other way — the model produced *more* fallbacks (3) than Fabriano (0), because Milan genuinely had no art event for Elena and no climbing for Tommaso. It reads inventory rather than being uniformly generous.
+
+### Two things that got worse or stayed broken
+
+- **The model never says "nothing here fits".** In Fabriano it found a connection for all six, including Giulia — whose entire input is *"idk, get out more"* — at fit 7.3. The `PULL_FLOOR` fallback now depends on a model volunteering a low score, which is the thing models are worst at.
+- **Verifiability is inflated, and it is 45% of validity.** `verifyOccurrence` never fires (it only runs on `recurring_scheduled`; extraction returns `confirmed_dated` for nearly everything — Milan: 6 checked, **0 demoted**). And six Milan events cite `https://www.vibeevents.it/` — the bare homepage — as their confirm link, all scoring 10/10. The gate drops URL-less events; it cannot tell a useless URL from a good one, and "confirm on the official site" is what the whole design rests on.

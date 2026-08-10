@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "lib": ["ES2022", "DOM"],
-    "types": []
+    "types": ["node"]
   },
-  "include": ["pipeline.ts", "profile.ts", "fixtures.ts", "run.ts"]
+  "include": ["pipeline.ts", "profile.ts", "fixtures.ts", "run.ts", "engine.ts", "ingest.ts"]
 }
