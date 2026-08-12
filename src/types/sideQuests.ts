@@ -85,6 +85,12 @@ export interface SideQuest {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Personalized quests are ordinary side quests scoped to one user.
+  // Curated quests leave user_id null.
+  user_id?: string | null;
+  source?: "curated" | "personalized";
+  intake_id?: number | null;
+  horizon?: "today" | "weekend" | null;
 }
 
 export interface SideQuestDraw {

@@ -91,8 +91,13 @@ function RootLayoutNav() {
     pathname.includes('/esplora/category/') ||
     pathname === '/esplora/saved';
 
+  // The personalized quest intake is a self-contained flow with its own close
+  // button and progress bar, so it renders without any global chrome.
+  const isPersonalizedQuestFlow = pathname.includes('/personalized-quest/');
+
   // hide logo on auth screens
   const hideLogo =
+    isPersonalizedQuestFlow ||
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/forgot-password' ||
@@ -390,7 +395,7 @@ function RootLayoutNav() {
       onLayout={onLayoutRootView}
     >
       <StatusBar backgroundColor={colors.light.background} style="dark" />
-      {!isEsploraDetail && (
+      {!isEsploraDetail && !isPersonalizedQuestFlow && (
         <Header
           onNotificationPress={handleNotificationPress}
           onMenuPress={handleMenuPress}
@@ -464,6 +469,15 @@ function RootLayoutNav() {
             // edge-only swipe so it doesn't steal horizontal gestures from PagerView
             fullScreenGestureEnabled: false,
             gestureResponseDistance: 24,
+          }}
+        />
+        <Stack.Screen
+          name="personalized-quest/intake"
+          options={{
+            headerShown: false,
+            // A back-swipe mid-intake would silently drop the answers, so the
+            // flow is left via its own Close button.
+            gestureEnabled: false,
           }}
         />
       </Stack>

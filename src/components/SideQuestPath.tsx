@@ -27,6 +27,7 @@ import { SideQuestDailyDraw } from "./sideQuest/SideQuestDailyDraw";
 import { SideQuestQuestionnaire } from "./sideQuest/SideQuestQuestionnaire";
 import { SideQuestResults } from "./sideQuest/SideQuestResults";
 import { QuestPreviewCard } from "./ChallengePreviewCard";
+import { FeatureActionButton } from "./FeatureActionButton";
 
 function buildDraft(profile: ReturnType<typeof useSideQuests>["profile"]): SideQuestQuestionnaireDraft {
   if (!profile) return SIDE_QUEST_EMPTY_DRAFT;
@@ -332,6 +333,21 @@ export const SideQuestPath: React.FC = () => {
       />
 
       {!isRevealing && (
+        <View style={styles.personalizedWrap}>
+          <FeatureActionButton
+            title={t("Get quests made for you")}
+            subtitle={t("Answer a few questions, get two quests written for you")}
+            // INTAKE_STARTED is fired by the intake hook once the row exists,
+            // so it is deliberately not fired here as well.
+            onPress={() => router.push("/personalized-quest/intake")}
+            tone="coral"
+            variant="card"
+            fullWidth
+          />
+        </View>
+      )}
+
+      {!isRevealing && (
         <View style={styles.editPrefsWrap}>
           <Text style={styles.editPrefsPrompt}>{t("Want a different mix of side quests?")}</Text>
           <TouchableOpacity
@@ -411,6 +427,10 @@ const styles = StyleSheet.create({
   editPrefsWrap: {
     alignItems: "center",
     marginTop: "auto",
+    paddingTop: 24,
+  },
+  personalizedWrap: {
+    paddingHorizontal: 16,
     paddingTop: 24,
   },
   pageTitle: {

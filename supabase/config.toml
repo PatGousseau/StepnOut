@@ -357,8 +357,20 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# Read from the gitignored .env at the project root, so the key never lands in git.
+[edge_runtime.secrets]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+
+# These two authenticate the caller in-function via auth.getUser(), which
+# validates the token against the auth server and returns 401 when it fails.
+# The gateway's own check is disabled because it verifies with the legacy HS256
+# JWT secret while the auth server now issues ES256 tokens, so it rejects every
+# valid token locally.
+[functions.generate-quest-followup]
+verify_jwt = false
+
+[functions.generate-personalized-quests]
+verify_jwt = false
 
 [analytics]
 enabled = true

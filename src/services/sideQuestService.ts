@@ -271,6 +271,9 @@ export const sideQuestService = {
     const { data, error } = await supabase
       .from("side_quests")
       .select("*")
+      // Personalized quests are generated for one user and must never enter
+      // the curated draw pool.
+      .is("user_id", null)
       .eq("is_active", true)
       .order("id", { ascending: true });
 
