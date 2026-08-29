@@ -111,6 +111,23 @@ export const ONE_OFFS: OneOffDefinition[] = [
       {time: 15.0, frequency: 920, length: 0.1, volume: 0.23},
     ],
   },
+  {
+    id: 'life-begins',
+    title: 'Maybe next time',
+    narration:
+      "You keep saying you'll go when you feel more like yourself again. The invitation comes in. Your thumb hovers over the reply. You picture walking in late. Making small talk. Finding somewhere to stand. Maybe next time. Each time feels harmless on its own. But after enough maybes, a simple plan can start to feel enormous. That's what avoidance does. It grows in the space you give it. Then, one ordinary night, you send: I'll come for a bit. You go. You stay twenty minutes. You laugh once. On the way home, you remember: you haven't missed your chance. You just needed to begin.",
+    music: 'music/pixabay/litesaturation-hope-strings-piano-90-bpm-13972.mp3',
+    musicVolume: 0.21,
+    musicStart: 1.8,
+    minDuration: 34,
+    sfx: [
+      {time: 4.5, frequency: 680, length: 0.08, volume: 0.18},
+      {time: 10.8, frequency: 360, length: 0.1, volume: 0.12},
+      {time: 21.2, frequency: 880, length: 0.09, volume: 0.25},
+      {time: 24.0, frequency: 470, length: 0.14, volume: 0.2},
+      {time: 28.2, frequency: 920, length: 0.16, volume: 0.18},
+    ],
+  },
 ];
 
 export const oneOffById = (id: OneOffId) => {

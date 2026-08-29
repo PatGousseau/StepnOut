@@ -1,5 +1,14 @@
 # Shortform Video Generator
 
+## Current pipeline
+
+New video work lives in the [Remotion handoff guide](remotion/README.md). It
+documents the active CLI workflow for Roulette and bespoke one-off videos,
+including narration, synchronized captions, rendering, and adding a new video.
+
+The Python tools documented below are preserved as legacy prototypes; do not
+start new work in them unless explicitly asked.
+
 This directory contains the tracked version of the short-form video generator prototype.
 
 It takes:

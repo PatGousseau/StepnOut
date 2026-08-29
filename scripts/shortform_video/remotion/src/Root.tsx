@@ -1,5 +1,6 @@
 import {Composition} from 'remotion';
 
+import {CharacterStudy} from './CharacterStudy';
 import {OneOff} from './OneOffs';
 import {Roulette} from './Roulette';
 import type {OneOffRenderProps, RouletteRenderProps} from './types';
@@ -87,6 +88,7 @@ export const RemotionRoot = () => {
           height: props.height,
         })}
       />
+      <Composition id="CharacterStudy" component={CharacterStudy} width={1080} height={1920} fps={24} durationInFrames={144} />
     </>
   );
 };

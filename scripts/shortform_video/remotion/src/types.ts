@@ -58,7 +58,8 @@ export type OneOffId =
   | 'nature-documentary'
   | 'message-thriller'
   | 'first-door'
-  | 'comfort-zone-calendar';
+  | 'comfort-zone-calendar'
+  | 'life-begins';
 
 export type OneOffRenderProps = {
   id: OneOffId;
