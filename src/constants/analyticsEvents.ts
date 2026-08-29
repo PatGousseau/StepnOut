@@ -165,6 +165,26 @@ export const ESPLORA_EVENTS = {
 } as const;
 
 // ============================================
+// PERSONALIZED QUEST EVENTS
+// ============================================
+export const PERSONALIZED_QUEST_EVENTS = {
+  INTAKE_STARTED: 'pq_intake_started',
+  // Fired with a `step` property — this is what makes per-screen drop-off measurable.
+  INTAKE_STEP_VIEWED: 'pq_intake_step_viewed',
+  INTAKE_COMPLETED: 'pq_intake_completed',
+  INTAKE_ABANDONED: 'pq_intake_abandoned',
+  // Fired with `variant`: 'clarify' | 'deepen'.
+  FOLLOWUP_FIRED: 'pq_followup_fired',
+  // Fired with `reason`: 'model_skip' | 'timeout' | 'error'.
+  FOLLOWUP_SKIPPED: 'pq_followup_skipped',
+  READBACK_VIEWED: 'pq_readback_viewed',
+  QUESTS_VIEWED: 'pq_quests_viewed',
+  // Whether the speculative result was shown or a regenerated one.
+  SPECULATIVE_USED: 'pq_speculative_used',
+  GENERATION_FAILED: 'pq_generation_failed',
+} as const;
+
+// ============================================
 // USER PROPERTY KEYS (for setUserProperties)
 // ============================================
 export const USER_PROPERTIES = {
@@ -188,6 +208,7 @@ export const ANALYTICS_EVENTS = {
   CHALLENGE: CHALLENGE_EVENTS,
   PROFILE: PROFILE_EVENTS,
   SIDE_QUEST: SIDE_QUEST_EVENTS,
+  PERSONALIZED_QUEST: PERSONALIZED_QUEST_EVENTS,
   FEED: FEED_EVENTS,
   UI: UI_EVENTS,
   SCREEN: SCREEN_EVENTS,

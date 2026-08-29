@@ -44,7 +44,12 @@ export const QuestPage: React.FC = () => {
     [drawHistoryQuery.data, questId]
   );
 
-  const canCompleteQuest = !!historyEntry;
+  // Personalized quests are generated for this user rather than drawn, so they
+  // have no draw-history entry but are still theirs to complete.
+  const isOwnPersonalizedQuest =
+    questQuery.data?.source === "personalized" && questQuery.data?.user_id === user?.id;
+
+  const canCompleteQuest = !!historyEntry || isOwnPersonalizedQuest;
 
   const drawDateLabel = useMemo(() => {
     if (!historyEntry) return null;
@@ -81,11 +86,15 @@ export const QuestPage: React.FC = () => {
   }
 
   const isToday = historyEntry?.draw.local_day === localDay;
-  const eyebrowText = canCompleteQuest
-    ? isToday
-      ? t("Today's quest")
-      : t("Past quest")
-    : t("Side quest");
+  const eyebrowText = isOwnPersonalizedQuest
+    ? questQuery.data?.horizon === "weekend"
+      ? t("This weekend")
+      : t("Next 24 hours")
+    : canCompleteQuest
+      ? isToday
+        ? t("Today's quest")
+        : t("Past quest")
+      : t("Side quest");
 
   return (
     <ScrollView

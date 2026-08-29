@@ -469,5 +469,36 @@ export const translations = {
   "Want a different mix of side quests?": "Vuoi un mix diverso di side quest?",
   "Edit preferences": "Modifica preferenze",
   "Back": "Indietro",
-  "Quest not found": "Quest non trovata"
+  "Quest not found": "Quest non trovata",
+
+  // Personalized side quest intake
+  "What's something you've been meaning to do for months and still haven't?":
+    "C'è qualcosa che rimandi da mesi e che ancora non hai fatto?",
+  "that pottery class, travelling alone, asking someone out":
+    "quel corso di ceramica, viaggiare da solo, invitare qualcuno fuori",
+  "What would make you bail on something you'd already said yes to?":
+    "Cosa ti farebbe dare buca a qualcosa a cui avevi già detto di sì?",
+  "going alone, having to talk in front of people, late nights":
+    "andarci da solo, dover parlare davanti agli altri, fare tardi",
+  "Ever gone to something like that on your own?": "Ci sei mai andato da solo a una cosa del genere?",
+  "Never": "Mai",
+  "Once or twice": "Una o due volte",
+  "Yeah, regularly": "Sì, regolarmente",
+  "Where are you based?": "Dove vivi?",
+  "Milano, Navigli": "Milano, Navigli",
+  "a sentence is plenty": "basta una frase",
+  "Working out what's in your way...": "Sto capendo cosa ti blocca...",
+  "Your first challenge": "La tua prima sfida",
+  "Do this one in the next 24 hours": "Falla nelle prossime 24 ore",
+  "Then, this weekend": "Poi, questo weekend",
+  "Next 24 hours": "Prossime 24 ore",
+  "This weekend": "Questo weekend",
+  "Show me my first challenge": "Mostrami la mia prima sfida",
+  "Something went wrong building your quests. Try again in a moment.":
+    "Qualcosa è andato storto nel creare le tue quest. Riprova tra poco.",
+  "Get quests made for you": "Ottieni quest fatte per te",
+  "Answer a few questions, get two quests written for you":
+    "Rispondi a poche domande, ricevi due quest scritte per te",
+  "Use voice input": "Usa l'input vocale",
+  "Close": "Chiudi"
 };
