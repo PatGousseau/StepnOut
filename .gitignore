@@ -7,6 +7,12 @@ scripts/side-quests/review/
 scripts/side-quests/build-prune-side-quests-migration.mjs
 .codex/
 
+# local review artifacts
+tmp/autoreview-ledger.md
+
+# local short-form video workspace
+scripts/shortform_video/
+
 # local-only scripts
 .local/
 
