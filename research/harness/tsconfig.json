@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["pipeline.ts", "profile.ts", "fixtures.ts", "run.ts", "engine.ts", "ingest.ts"]
+}

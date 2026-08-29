@@ -1,0 +1,19 @@
+{
+  "name": "comfort-zone-harness",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Offline harness + live ingestion engine for comfort-zone quest assignment. Research only.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "harness": "tsc -p tsconfig.json && node dist/run.js",
+    "ingest": "tsc -p tsconfig.json && node dist/ingest.js",
+    "assign": "tsc -p tsconfig.json && node dist/ingest.js --from-cache"
+  },
+  "dependencies": {
+    "openai": "^4.77.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

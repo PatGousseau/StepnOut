@@ -1,0 +1,112 @@
+{
+  "_version": 5,
+  "_changelog": [
+    "v1: single generic query per city, city-only radius, no scoring, no fallback (baseline)",
+    "v2: comfort-zone category-targeted queries; radius scales with population; added recurring-community sources (BlaBla/Tandem/Meetup/Ostello Bello)",
+    "v3: added self-directed POI-anchored fallback for empty/weak weeks; verifiability confidence + confirm-link; difficulty ladder 1-5; recurrence resolution",
+    "v4: cross-source dedup (title+date/recurrence key); freshness guard (verifyOccurrence downgrades unverified recurring slots — Ferragosto)",
+    "v5: persona/difficulty windows (rankForPersona); safety pass (safetyOk drops 18+/late-night for timid); persona-tuned fallback mission",
+    "v6: OBJECTIVE CORRECTION (user) — difficulty is a label, not quality; all comfort-zone kinds are peers; judge = verifiability(45%)+cost(30%)+attendability(25%); diversity (selectDiverse) is the real selector; bring-a-friend is a valid attend mode"
+  ],
+
+  "radius_by_population": [
+    { "max_pop": 50000, "radius_km": 40, "note": "small town: must query province + accept recurring/self-directed" },
+    { "max_pop": 150000, "radius_km": 25 },
+    { "max_pop": 500000, "radius_km": 15 },
+    { "max_pop": null, "radius_km": 6, "note": "major metro: dense, stay tight" }
+  ],
+
+  "comfort_zone_categories": [
+    {
+      "id": "language_social",
+      "label": "Language exchange / international social nights",
+      "stretch": "high",
+      "queries": [
+        "language exchange {city} {month} {year}",
+        "{city} tandem aperitivo conoscere persone serata",
+        "BlaBla {city} language exchange"
+      ],
+      "recurring_sources": ["blablacommunity.com", "tandem.net", "meetup.com", "ostellobello.com"]
+    },
+    {
+      "id": "dance_movement",
+      "label": "Beginner social dance / movement",
+      "stretch": "high",
+      "queries": [
+        "{city} corso ballo principianti serata sociale {month} {year}",
+        "{city} salsa bachata social beginners {month} {year}",
+        "{city} lezione prova gratuita ballo swing tango"
+      ]
+    },
+    {
+      "id": "meetup_hobby",
+      "label": "Hobby / board-game / creative meetups",
+      "stretch": "medium-high",
+      "queries": [
+        "{city} meetup {month} {year} conoscere persone",
+        "{city} serata giochi da tavolo aperitivo {month} {year}",
+        "{city} workshop laboratorio creativo {month} {year}"
+      ]
+    },
+    {
+      "id": "community_sagra",
+      "label": "Sagre / community festivals (small-town backbone)",
+      "stretch": "medium",
+      "queries": [
+        "sagra {city} provincia {month} {year} weekend",
+        "feste paesane {city} dintorni {month} {year}"
+      ],
+      "sources": ["trovasagre.com", "eventiesagre.it", "itinerarinelgusto.it"]
+    },
+    {
+      "id": "novel_passive",
+      "label": "Novel-but-passive (concerts, cinema, exhibitions, markets)",
+      "stretch": "low",
+      "note": "kept as low-difficulty filler / easy-week option, never the only category",
+      "queries": [
+        "eventi gratuiti {city} {month} {year} weekend",
+        "concerti gratuiti mercatini {city} {month} {year}"
+      ]
+    }
+  ],
+
+  "aggregator_sources": {
+    "generic_city": ["{city}today.it", "virgilio.it/italia/{city}/eventi", "{city}weekend.it"],
+    "milan_specific": ["milanopocket.it", "milanofree.it", "milanotoday.it", "yesmilano.it"],
+    "note": "national fallback virgilio.it/italia/{city} covers every comune including small towns"
+  },
+
+  "fallback": {
+    "trigger": "no candidate scoring >= 7 on comfort-zone stretch after all categories + radius expansion",
+    "strategy": "self_directed_poi_mission",
+    "description": "Anchor a self-directed comfort-zone challenge to a real POI (from OSM/Places). NOT just 'visit a landmark' (novelty only) — a social MISSION at a real place, so it stretches even where no organized event exists.",
+    "poi_sources": ["overpass (self-hosted)", "foursquare_os_places"],
+    "mission_templates": [
+      { "difficulty": 3, "template": "Go to {busy_central_cafe_or_bar} for aperitivo alone, sit at the bar (not a table), and stay 45 min." },
+      { "difficulty": 4, "template": "At {busy_central_cafe_or_bar}, order in the local way and start one conversation with a stranger or the bartender." },
+      { "difficulty": 4, "template": "Visit {notable_local_museum_or_site} solo and ask a staff member to tell you the one thing most visitors miss." },
+      { "difficulty": 2, "template": "Explore {market_or_park} alone for an hour with your phone in your pocket." }
+    ]
+  },
+
+  "extraction": {
+    "target_schema": "UnifiedQuest",
+    "must_capture": ["title", "start_datetime_or_recurrence", "venue_name", "address", "price", "source_url", "kind"],
+    "difficulty_ladder": {
+      "1": "public, fully anonymous, novel (market, viewpoint)",
+      "2": "public, novel, longer solo dwell (museum, exhibition)",
+      "3": "among people, structured, low forced interaction (class, communal-table sagra)",
+      "4": "designed for interaction with strangers (language exchange, beginners' social dance)",
+      "5": "high visibility / performance (open-mic, improv, karaoke)"
+    },
+    "verifiability": {
+      "require_confirm_link": true,
+      "flag_if_undated": true,
+      "confidence": ["confirmed_dated", "recurring_scheduled", "listed_unconfirmed"]
+    }
+  },
+
+  "output": {
+    "per_city": { "primary": 1, "backups_min_score": 7, "max_backups": 4 }
+  }
+}
