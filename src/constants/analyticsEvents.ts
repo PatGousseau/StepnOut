@@ -164,6 +164,17 @@ export const ESPLORA_EVENTS = {
   SAVED_OPENED: 'esplora_saved_opened',
 } as const;
 
+export const GROWTH_GUIDANCE_EVENTS = {
+  INTAKE_STARTED: 'growth_guidance_intake_started',
+  STEP_VIEWED: 'growth_guidance_step_viewed',
+  CLARIFICATION_REQUESTED: 'growth_guidance_clarification_requested',
+  PROPOSAL_GENERATED: 'growth_guidance_proposal_generated',
+  PROPOSAL_CORRECTED: 'growth_guidance_proposal_corrected',
+  PLAN_CONFIRMED: 'growth_guidance_plan_confirmed',
+  GENERATION_FAILED: 'growth_guidance_generation_failed',
+  INTAKE_ABANDONED: 'growth_guidance_intake_abandoned',
+} as const;
+
 // ============================================
 // USER PROPERTY KEYS (for setUserProperties)
 // ============================================
@@ -192,4 +203,5 @@ export const ANALYTICS_EVENTS = {
   UI: UI_EVENTS,
   SCREEN: SCREEN_EVENTS,
   ESPLORA: ESPLORA_EVENTS,
+  GROWTH_GUIDANCE: GROWTH_GUIDANCE_EVENTS,
 } as const;
