@@ -1,0 +1,155 @@
+export type GrowthEvalFixture = {
+  id: string;
+  description: string;
+  answers: Record<string, unknown>;
+  event_preferences: Record<string, unknown> | null;
+  expectations: string[];
+  correction?: string;
+};
+
+export const growthEvalFixtures: GrowthEvalFixture[] = [
+  {
+    id: 'university-friendship',
+    description: 'A commuting student wants a few closer friendships without nightlife or costly plans.',
+    answers: {
+      current_situation: 'I know people in my classes, but none of them feel like real friends. I usually wait for them to start talking.',
+      recent_example: 'After a seminar two classmates kept chatting. I smiled and left for my bus instead of joining them.',
+      desired_change: 'I want two or three friendships where we talk and make plans outside class, not just more acquaintances.',
+      why_it_matters: 'University feels lonely and I want people I can share normal life with.',
+      prior_attempts: 'I joined one society, but meetings were infrequent and everyone left quickly afterward.',
+      likely_barriers: 'I hesitate to initiate, commute home after class, and have very little discretionary money.',
+      practice_context: 'On campus between classes or for 20 minutes before my bus. Daytime is best.',
+      challenge_level: 'balanced',
+      disliked_guidance: 'Nightlife, expensive events, or advice that just says to be more social.',
+      boundaries: 'No bars or clubs and no plans that cost much.',
+      clarifications: [],
+    },
+    event_preferences: null,
+    expectations: [
+      'Distinguishes initiating contact from developing repeated contact.',
+      'Does not use “be more social” as the goal.',
+      'The first step is inexpensive, daytime-compatible, and under the user’s control.',
+    ],
+  },
+  {
+    id: 'workplace-participation',
+    description: 'A remote professional wants to contribute earlier without performative confidence exercises.',
+    answers: {
+      current_situation: 'I prepare useful ideas for remote meetings but wait so long to speak that the discussion moves on.',
+      recent_example: 'Yesterday I had a concern about a launch dependency and stayed quiet until my manager raised it near the end.',
+      desired_change: 'I want to contribute relevant ideas earlier in meetings while staying thoughtful and professional.',
+      why_it_matters: 'My work would be more useful and decisions might improve.',
+      prior_attempts: 'I write notes before meetings. That helps me think, but not with choosing a safe moment to speak.',
+      likely_barriers: 'I worry about interrupting or being wrong in front of senior colleagues.',
+      practice_context: 'Two recurring video meetings each week where I know the agenda in advance.',
+      challenge_level: 'gentle',
+      disliked_guidance: 'Performative confidence exercises or generic public-speaking challenges.',
+      boundaries: 'Keep it within safe professional behavior; I cannot gamble with workplace relationships.',
+      clarifications: [],
+    },
+    event_preferences: null,
+    expectations: [
+      'Stays within safe professional behavior and uses an existing meeting context.',
+      'Does not suggest local events, public speaking, or performative confidence.',
+      'Defines an observable contribution attempt without promising a workplace outcome.',
+    ],
+  },
+  {
+    id: 'creative-practice',
+    description: 'A parent with unpredictable time wants drawing back for personal meaning, not productivity.',
+    answers: {
+      current_situation: 'I stopped drawing after becoming a parent even though it used to feel like a part of me.',
+      recent_example: 'I had twenty free minutes Sunday, but assumed it was not enough to set up and scrolled on my phone.',
+      desired_change: 'I want drawing to be present in my life again, even if it is irregular and small.',
+      why_it_matters: 'It feels personally meaningful and playful, not like another responsibility.',
+      prior_attempts: 'I planned an hour every Saturday, but family schedules changed and I missed it three weeks in a row.',
+      likely_barriers: 'Unpredictable free time, low energy, and too much setup.',
+      practice_context: 'Short windows at home after bedtime or while my child is occupied.',
+      challenge_level: 'gentle',
+      disliked_guidance: 'Streaks, output targets, productivity systems, or sharing work online.',
+      boundaries: 'It must be easy to stop and cannot depend on a fixed weekly time.',
+      clarifications: [],
+    },
+    event_preferences: null,
+    expectations: [
+      'Treats energy and opportunity as central constraints.',
+      'Does not force exposure, social sharing, streaks, or productivity optimization.',
+      'Protects enjoyment and makes setup compatible with unpredictable short windows.',
+    ],
+  },
+  {
+    id: 'relocation-accessibility',
+    description: 'A recently relocated wheelchair user is open to accessible nearby community opportunities.',
+    answers: {
+      current_situation: 'I moved recently and do not yet feel connected to the area.',
+      recent_example: 'I found a community workshop online but could not confirm step-free access, so I did not go.',
+      desired_change: 'I want a couple of recurring places where I recognize people and feel part of the community.',
+      why_it_matters: 'I miss everyday familiarity and want this place to feel like home.',
+      prior_attempts: 'I tried searching event listings, but accessibility information was inconsistent.',
+      likely_barriers: 'Finding suitable opportunities is hard, and I cannot travel far.',
+      practice_context: 'Weekends within a short accessible trip from home.',
+      challenge_level: 'balanced',
+      disliked_guidance: 'Suggestions that treat accessibility as something I should just work around.',
+      boundaries: 'Wheelchair-accessible venues and routes are required. No event should be assumed accessible without verification.',
+      clarifications: [],
+    },
+    event_preferences: {
+      enabled: true,
+      approximate_location: 'East Vancouver',
+      travel_radius: 'About 4 km',
+      availability: 'Weekend afternoons',
+      cost_preference: 'Free or under $15',
+      accessibility_needs: 'Confirmed step-free entrance and accessible washroom',
+    },
+    expectations: [
+      'Treats accessibility and opportunity as central, hard constraints.',
+      'Does not invent or assume that a venue or event is accessible.',
+      'Uses repeated contact only because it fits this community goal.',
+    ],
+  },
+  {
+    id: 'sparse-intake',
+    description: 'Short ambiguous answers do not support a confident formulation.',
+    answers: {
+      current_situation: 'Everything feels stuck.',
+      recent_example: 'It happened yesterday.',
+      desired_change: 'I want things to be better.',
+      why_it_matters: 'It matters a lot.',
+      prior_attempts: 'A few things.',
+      likely_barriers: 'Not sure.',
+      practice_context: 'Sometimes.',
+      challenge_level: 'balanced',
+      disliked_guidance: 'Bad advice.',
+      boundaries: 'None I guess.',
+      clarifications: [],
+    },
+    event_preferences: null,
+    expectations: [
+      'Returns one high-value clarification question instead of inventing a personalized plan.',
+    ],
+  },
+  {
+    id: 'correction',
+    description: 'The user corrects an achievement-focused interpretation toward enjoyment and connection.',
+    answers: {
+      current_situation: 'I have not played music much since finishing school and I miss having it in my life.',
+      recent_example: 'I opened my keyboard last weekend, played scales for five minutes, judged myself, and stopped.',
+      desired_change: 'I want to play music regularly again.',
+      why_it_matters: 'Music used to make me feel engaged and connected to myself.',
+      prior_attempts: 'I made a demanding practice schedule and quit after a week.',
+      likely_barriers: 'I compare myself with how skilled I used to be and turn it into work.',
+      practice_context: 'At home in short evening windows.',
+      challenge_level: 'gentle',
+      disliked_guidance: 'Performance targets, streaks, or posting progress.',
+      boundaries: 'No public performance for now.',
+      clarifications: [],
+    },
+    event_preferences: null,
+    correction: 'This still treats music like achievement. I am looking for enjoyment and a sense of connection, not improvement or performance.',
+    expectations: [
+      'The revised goal, formulation, milestones, or strategy materially shifts toward enjoyment and connection.',
+      'The revision is not a wording-only version of an achievement or skill-building plan.',
+      'No public performance is proposed.',
+    ],
+  },
+];

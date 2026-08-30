@@ -357,8 +357,13 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
+
+# Caller JWTs are validated inside the function with auth.getUser(). This is
+# required for local ES256 auth tokens, which the legacy gateway check rejects.
+[functions.generate-growth-plan]
+verify_jwt = false
 
 [analytics]
 enabled = true

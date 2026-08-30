@@ -91,8 +91,11 @@ function RootLayoutNav() {
     pathname.includes('/esplora/category/') ||
     pathname === '/esplora/saved';
 
+  const isGrowthGuidanceFlow = pathname.includes('/growth-guidance/');
+
   // hide logo on auth screens
   const hideLogo =
+    isGrowthGuidanceFlow ||
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/forgot-password' ||
@@ -390,7 +393,7 @@ function RootLayoutNav() {
       onLayout={onLayoutRootView}
     >
       <StatusBar backgroundColor={colors.light.background} style="dark" />
-      {!isEsploraDetail && (
+      {!isEsploraDetail && !isGrowthGuidanceFlow && (
         <Header
           onNotificationPress={handleNotificationPress}
           onMenuPress={handleMenuPress}
@@ -464,6 +467,13 @@ function RootLayoutNav() {
             // edge-only swipe so it doesn't steal horizontal gestures from PagerView
             fullScreenGestureEnabled: false,
             gestureResponseDistance: 24,
+          }}
+        />
+        <Stack.Screen
+          name="growth-guidance/intake"
+          options={{
+            headerShown: false,
+            gestureEnabled: false,
           }}
         />
       </Stack>

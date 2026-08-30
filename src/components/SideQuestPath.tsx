@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { router } from "expo-router";
 import { AppAlert } from "./AppAlert";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Text } from "./StyledText";
 import { Loader } from "./Loader";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -27,6 +25,7 @@ import { SideQuestDailyDraw } from "./sideQuest/SideQuestDailyDraw";
 import { SideQuestQuestionnaire } from "./sideQuest/SideQuestQuestionnaire";
 import { SideQuestResults } from "./sideQuest/SideQuestResults";
 import { QuestPreviewCard } from "./ChallengePreviewCard";
+import { GrowthGuidanceEntry } from "./growthGuidance/GrowthGuidanceEntry";
 
 function buildDraft(profile: ReturnType<typeof useSideQuests>["profile"]): SideQuestQuestionnaireDraft {
   if (!profile) return SIDE_QUEST_EMPTY_DRAFT;
@@ -332,6 +331,12 @@ export const SideQuestPath: React.FC = () => {
       />
 
       {!isRevealing && (
+        <View style={styles.growthGuidanceWrap}>
+          <GrowthGuidanceEntry />
+        </View>
+      )}
+
+      {!isRevealing && (
         <View style={styles.editPrefsWrap}>
           <Text style={styles.editPrefsPrompt}>{t("Want a different mix of side quests?")}</Text>
           <TouchableOpacity
@@ -384,6 +389,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 16,
     paddingBottom: 32,
+  },
+  growthGuidanceWrap: {
+    paddingTop: 24,
   },
   pastQuestCard: {
     marginBottom: 12,
