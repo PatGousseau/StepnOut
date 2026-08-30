@@ -25,7 +25,11 @@ import {
   GrowthIntakeAnswers,
   GrowthPlanProposal,
 } from "../../types/growthGuidance";
-import { getGrowthIntakeResumeStep } from "../../utils/growthGuidance";
+import {
+  countWords,
+  getGrowthIntakeResumeStep,
+  MIN_GROWTH_CLARIFICATION_WORDS,
+} from "../../utils/growthGuidance";
 import { FeatureActionButton } from "../FeatureActionButton";
 import { ProgressSegments } from "../ProgressSegments";
 import { Text } from "../StyledText";
@@ -134,6 +138,10 @@ export function PersonalizedGrowthIntake() {
   const [saving, setSaving] = useState(false);
   const [eventPreferencesReady, setEventPreferencesReady] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const clarificationWordCount = countWords(clarificationAnswer);
+  const clarificationCanContinue = clarificationContext === "correction"
+    ? !!clarificationAnswer.trim()
+    : clarificationWordCount >= MIN_GROWTH_CLARIFICATION_WORDS;
 
   useEffect(() => {
     let active = true;
@@ -307,7 +315,7 @@ export function PersonalizedGrowthIntake() {
   };
 
   const submitClarification = async () => {
-    if (!clarificationAnswer.trim() || !intakeId) return;
+    if (!clarificationCanContinue || !intakeId) return;
     if (clarificationContext === "correction" && plan) {
       const expandedCorrection = `${pendingCorrection}\n${clarificationQuestion}: ${clarificationAnswer.trim()}`;
       await runGeneration(expandedCorrection, plan.id);
@@ -595,10 +603,19 @@ export function PersonalizedGrowthIntake() {
             <Text style={styles.eyebrow}>{t("ONE MORE THING")}</Text>
             <QuestionInput
               label={clarificationQuestion}
-              placeholder="A short answer is enough"
+              placeholder={clarificationContext === "intake"
+                ? "Write at least 4 words"
+                : "A short answer is enough"}
               value={clarificationAnswer}
               onChangeText={setClarificationAnswer}
             />
+            {clarificationContext === "intake" && (
+              <Text style={styles.optionalHint}>
+                {t("At least 4 words are required. (count)/4", {
+                  count: clarificationWordCount,
+                })}
+              </Text>
+            )}
             <Text style={styles.optionalHint}>
               {t("We'd rather ask than invent a detail that changes your plan.")}
             </Text>
@@ -678,7 +695,7 @@ export function PersonalizedGrowthIntake() {
         }
         return <FeatureActionButton title={t("Build my direction")} onPress={finishIntake} disabled={!canContinue} variant="pill" />;
       case "clarification":
-        return <FeatureActionButton title={t("Continue")} onPress={submitClarification} disabled={!clarificationAnswer.trim()} variant="pill" />;
+        return <FeatureActionButton title={t("Continue")} onPress={submitClarification} disabled={!clarificationCanContinue} variant="pill" />;
       case "proposal":
         return (
           <View style={styles.footerActions}>

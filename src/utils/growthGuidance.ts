@@ -1,5 +1,11 @@
 import { GrowthIntakeAnswers } from "../types/growthGuidance";
 
+export const MIN_GROWTH_CLARIFICATION_WORDS = 4;
+
+export function countWords(value: string): number {
+  return value.trim().split(/\s+/).filter(Boolean).length;
+}
+
 export type GrowthIntakeQuestionStep =
   | "situation"
   | "direction"

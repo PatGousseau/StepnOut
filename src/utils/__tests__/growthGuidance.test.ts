@@ -1,5 +1,15 @@
 import { EMPTY_GROWTH_INTAKE } from "../../types/growthGuidance";
-import { getGrowthIntakeResumeStep } from "../growthGuidance";
+import { countWords, getGrowthIntakeResumeStep } from "../growthGuidance";
+
+describe("countWords", () => {
+  it("counts words separated by mixed whitespace", () => {
+    expect(countWords("  one two\nthree   four ")).toBe(4);
+  });
+
+  it("returns zero for an empty response", () => {
+    expect(countWords("   ")).toBe(0);
+  });
+});
 
 describe("getGrowthIntakeResumeStep", () => {
   it("returns to the first unanswered question group", () => {

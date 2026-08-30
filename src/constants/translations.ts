@@ -520,6 +520,8 @@ export const translations = {
   "Retry loading preferences": "Riprova a caricare le preferenze",
   "We restored your answers, but couldn't load your optional event preferences. Retry before building your direction.": "Abbiamo ripristinato le tue risposte, ma non siamo riusciti a caricare le preferenze facoltative per gli eventi. Riprova prima di creare la tua direzione.",
   "ONE MORE THING": "ANCORA UNA COSA",
+  "Write at least 4 words": "Scrivi almeno 4 parole",
+  "At least 4 words are required. (count)/4": "Sono necessarie almeno 4 parole. (count)/4",
   "A short answer is enough": "Basta una risposta breve",
   "We'd rather ask than invent a detail that changes your plan.": "Preferiamo chiedere invece di inventare un dettaglio che cambierebbe il tuo piano.",
   "Building your direction...": "Stiamo creando la tua direzione...",
