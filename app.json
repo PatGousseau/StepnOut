@@ -72,7 +72,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone for video recording."
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone when you choose to record a voice journal or video."
         }
       ]
     ],

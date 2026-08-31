@@ -160,6 +160,16 @@ Deno.serve(async (req) => {
     if (planError) throw planError;
     if (!plan) return respond({ error: "active_plan_not_found" }, 409);
 
+    const { data: claimedId, error: claimError } = await service.rpc(
+      "claim_growth_adaptation",
+      { p_user_id: authData.user.id, p_interaction_id: interactionId },
+    );
+    if (claimError) throw claimError;
+    if (!claimedId) {
+      return respond({ error: "adaptation_in_progress_or_rate_limited" }, 429);
+    }
+    requestId = claimedId as string;
+
     const [
       intakeResult,
       stepResult,
@@ -174,7 +184,7 @@ Deno.serve(async (req) => {
       service.from("growth_steps").select("*").eq("user_id", authData.user.id)
         .eq("status", "active").maybeSingle(),
       service.from("growth_interactions").select(
-        "id, kind, report_outcome, follow_up, journal_text, step_snapshot, created_at",
+        "id, kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at",
       )
         .eq("user_id", authData.user.id)
         .neq("id", interactionId)
@@ -198,16 +208,6 @@ Deno.serve(async (req) => {
     if (interactionsResult.error) throw interactionsResult.error;
     if (responsesResult.error) throw responsesResult.error;
     if (evidenceResult.error) throw evidenceResult.error;
-
-    const { data: claimedId, error: claimError } = await service.rpc(
-      "claim_growth_adaptation",
-      { p_user_id: authData.user.id, p_interaction_id: interactionId },
-    );
-    if (claimError) throw claimError;
-    if (!claimedId) {
-      return respond({ error: "adaptation_in_progress_or_rate_limited" }, 429);
-    }
-    requestId = claimedId as string;
 
     const recentInteractions = (interactionsResult.data || []).slice(0, 8);
     const decisionContext = getGrowthAdaptationDecisionContext(
@@ -236,8 +236,9 @@ Deno.serve(async (req) => {
     );
 
     const { data: saved, error: persistError } = await service.rpc(
-      "persist_growth_adaptive_response",
+      "persist_growth_adaptive_response_if_current",
       {
+        p_request_id: requestId,
         p_user_id: authData.user.id,
         p_interaction_id: interactionId,
         p_response_type: generated.response_type,

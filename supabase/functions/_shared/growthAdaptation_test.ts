@@ -6,6 +6,7 @@ import {
   buildGrowthAdaptationInput,
   getGrowthAdaptationRepair,
   getGrowthAdaptationSchema,
+  GROWTH_ADAPTATION_SYSTEM_PROMPT,
   validateGrowthAdaptationResult,
 } from "./growthAdaptation.ts";
 
@@ -270,4 +271,45 @@ Deno.test("normalizes an explicit journal count question into a pending completi
     proposed_step_completion: false,
   }, "journal");
   assertEquals(result.proposed_step_completion, true);
+});
+
+Deno.test("keeps a reviewed voice transcript identifiable in model context", () => {
+  const input = JSON.parse(buildGrowthAdaptationInput({
+    locale: "en",
+    originalIntake: {},
+    plan: { goal: "Contribute earlier" },
+    activeStep: nextStep,
+    interaction: {
+      kind: "journal",
+      journal_text: "I did not talk to them.",
+      voice_journal_id: "reviewed-voice-journal",
+    },
+    recentInteractions: [],
+    recentResponses: [],
+  }));
+  assertEquals(
+    input.current_user_interaction.voice_journal_id,
+    "reviewed-voice-journal",
+  );
+  assertEquals(
+    input.current_user_interaction.journal_text,
+    "I did not talk to them.",
+  );
+});
+
+Deno.test("voice guidance prompt covers uncertainty, emotional weight, and safety", () => {
+  assertEquals(
+    GROWTH_ADAPTATION_SYSTEM_PROMPT.includes("transcription uncertainty"),
+    true,
+  );
+  assertEquals(
+    GROWTH_ADAPTATION_SYSTEM_PROMPT.includes(
+      "Longer or more emotional speech is not stronger evidence",
+    ),
+    true,
+  );
+  assertEquals(
+    GROWTH_ADAPTATION_SYSTEM_PROMPT.includes("self-harm, immediate danger"),
+    true,
+  );
 });

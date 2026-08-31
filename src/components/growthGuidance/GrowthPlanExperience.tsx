@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { randomUUID } from "expo-crypto";
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -16,6 +18,7 @@ import { growthGuidanceService } from "../../services/growthGuidanceService";
 import {
   GrowthAttemptFollowUp,
   GrowthAttemptOutcome,
+  GrowthInteraction,
   GrowthPlanExperience as GrowthPlanExperienceData,
   GrowthPlanProposal,
 } from "../../types/growthGuidance";
@@ -26,6 +29,7 @@ import {
 import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
 import { GrowthPlanCard } from "./GrowthPlanCard";
+import { VoiceJournalRecorder } from "./VoiceJournalRecorder";
 
 const OUTCOMES: Array<[GrowthAttemptOutcome, string]> = [
   ["did_it", "Did it"],
@@ -38,6 +42,7 @@ const FOLLOW_UP_LABELS = Object.fromEntries([
   ...GROWTH_ATTEMPT_FOLLOW_UPS.attempted,
   ...GROWTH_ATTEMPT_FOLLOW_UPS.not_attempted,
 ]) as Record<GrowthAttemptFollowUp, string>;
+const JOURNAL_PAGE_SIZE = 20;
 
 function ChoiceChip({
   label,
@@ -65,7 +70,10 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
   const { user } = useAuth();
   const { language, t } = useLanguage();
   const [experience, setExperience] = useState<GrowthPlanExperienceData | null>(null);
-  const [mode, setMode] = useState<"home" | "report" | "journal">("home");
+  const [journalEntries, setJournalEntries] = useState<GrowthInteraction[]>([]);
+  const [hasOlderJournals, setHasOlderJournals] = useState(false);
+  const [loadingOlderJournals, setLoadingOlderJournals] = useState(false);
+  const [mode, setMode] = useState<"home" | "report" | "journal" | "voice">("home");
   const [outcome, setOutcome] = useState<GrowthAttemptOutcome | null>(null);
   const [followUp, setFollowUp] = useState<GrowthAttemptFollowUp | null>(null);
   const [journalText, setJournalText] = useState("");
@@ -78,8 +86,13 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
 
   const load = useCallback(async () => {
     if (!user?.id) return null;
-    const result = await growthGuidanceService.fetchPlanExperience(user.id);
+    const [result, journals] = await Promise.all([
+      growthGuidanceService.fetchPlanExperience(user.id),
+      growthGuidanceService.fetchJournalHistory(user.id, 0, JOURNAL_PAGE_SIZE),
+    ]);
     setExperience(result);
+    setJournalEntries(journals);
+    setHasOlderJournals(journals.length === JOURNAL_PAGE_SIZE);
     setPendingInteractionId(result?.pendingInteractionId || null);
     return result;
   }, [user?.id]);
@@ -108,6 +121,35 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
     return { ...activePlan, first_step: experience.activeStep };
   }, [activePlan, experience?.activeStep]);
   const followUps = outcome ? getGrowthAttemptFollowUps(outcome) : [];
+  const visibleInteractions = useMemo(() => {
+    const items = new Map<string, GrowthInteraction>();
+    experience?.interactions.forEach((interaction) => items.set(interaction.id, interaction));
+    journalEntries.forEach((interaction) => items.set(interaction.id, interaction));
+    return [...items.values()].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [experience?.interactions, journalEntries]);
+
+  const loadOlderJournals = async () => {
+    if (!user?.id || loadingOlderJournals) return;
+    setLoadingOlderJournals(true);
+    try {
+      const older = await growthGuidanceService.fetchJournalHistory(
+        user.id,
+        journalEntries.length,
+        JOURNAL_PAGE_SIZE
+      );
+      setJournalEntries((current) => [
+        ...current,
+        ...older.filter((entry) => !current.some((item) => item.id === entry.id)),
+      ]);
+      setHasOlderJournals(older.length === JOURNAL_PAGE_SIZE);
+    } catch {
+      setError(t("We couldn't load older journals. Please try again."));
+    } finally {
+      setLoadingOlderJournals(false);
+    }
+  };
 
   const resetForm = () => {
     setMode("home");
@@ -248,6 +290,74 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
     }
   };
 
+  const handleVoiceSubmitted = async (result: {
+    interaction: GrowthPlanExperienceData["interactions"][number];
+    response: GrowthPlanExperienceData["latestResponse"];
+  }) => {
+    if (!result.response) {
+      setPendingInteractionId(result.interaction.id);
+      setError(t("Your entry was saved, but the response isn't ready yet."));
+    } else {
+      setPendingInteractionId(null);
+    }
+    setExperience((current) => current ? {
+      ...current,
+      interactions: [
+        result.interaction,
+        ...current.interactions.filter((item) => item.id !== result.interaction.id),
+      ],
+      latestResponse: result.response,
+      pendingInteractionId: result.response ? null : result.interaction.id,
+    } : current);
+    resetForm();
+    await refreshAfterMutation();
+  };
+
+  const deleteJournal = (interactionId: string) => {
+    Alert.alert(
+      t("Delete journal entry?"),
+      t("The journal, transcript, audio, and its generated response will be permanently deleted. Plan or step changes you separately confirmed remain part of your active plan."),
+      [
+        { text: t("Cancel"), style: "cancel" },
+        {
+          text: t("Delete"),
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await growthGuidanceService.deleteJournal({ interactionId });
+                captureEvent(GROWTH_GUIDANCE_EVENTS.JOURNAL_DELETED);
+                setJournalEntries((current) =>
+                  current.filter((item) => item.id !== interactionId)
+                );
+                setPendingInteractionId(null);
+                setExperience((current) => current ? {
+                  ...current,
+                  interactions: current.interactions.filter(
+                    (item) => item.id !== interactionId
+                  ),
+                  latestResponse: null,
+                  pendingInteractionId: null,
+                } : current);
+                try {
+                  await load();
+                } catch {
+                  setError(t("The journal was deleted, but your activity couldn't be refreshed."));
+                }
+              } catch {
+                setError(t("We couldn't delete that journal entry. Please try again."));
+              } finally {
+                setSaving(false);
+              }
+            })();
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) return <ActivityIndicator color={colors.light.primary} />;
 
   if (loadFailed && !experience) {
@@ -354,10 +464,10 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         <FeatureActionButton title={t("Retry response")} onPress={retryResponse} variant="pill" />
       )}
 
-      {!!experience?.interactions.length && (
+      {!!visibleInteractions.length && (
         <View style={styles.history}>
           <Text style={styles.responseLabel}>{t("RECENT CHECK-INS")}</Text>
-          {experience.interactions.map((interaction) => (
+          {visibleInteractions.map((interaction) => (
             <View key={interaction.id} style={styles.historyItem}>
               <Text style={styles.historyTitle}>
                 {t(interaction.kind === "report" ? "Step report" : "Journal")}
@@ -376,8 +486,25 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
               {!!interaction.journal_text && (
                 <Text style={styles.historyText}>{interaction.journal_text}</Text>
               )}
+              {interaction.kind === "journal" && (
+                <TouchableOpacity
+                  onPress={() => deleteJournal(interaction.id)}
+                  style={styles.historyDelete}
+                  disabled={saving}
+                >
+                  <Text style={styles.historyDeleteLabel}>{t("Delete journal")}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ))}
+          {hasOlderJournals && (
+            <FeatureActionButton
+              title={t("Load older journals")}
+              onPress={loadOlderJournals}
+              disabled={loadingOlderJournals}
+              variant="pill"
+            />
+          )}
         </View>
       )}
 
@@ -394,6 +521,12 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
             <Text style={styles.secondaryActionTitle}>{t("Add a journal entry")}</Text>
             <Text style={styles.hint}>{t("Write whenever something relevant happens.")}</Text>
           </TouchableOpacity>
+          {Platform.OS !== "web" && (
+            <TouchableOpacity style={styles.secondaryAction} onPress={() => setMode("voice")}>
+              <Text style={styles.secondaryActionTitle}>{t("Record a voice journal")}</Text>
+              <Text style={styles.hint}>{t("Review the transcript before submitting it.")}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -459,6 +592,16 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         </View>
       )}
 
+      {mode === "voice" && experience && (
+        <VoiceJournalRecorder
+          planId={experience.plan.id}
+          stepId={experience.activeStep?.id}
+          locale={language}
+          onSubmitted={handleVoiceSubmitted}
+          onUseText={() => setMode("journal")}
+        />
+      )}
+
       {saving && <ActivityIndicator color={colors.light.primary} />}
     </View>
   );
@@ -497,6 +640,8 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingBottom: 10,
   },
+  historyDelete: { alignSelf: "flex-start", paddingVertical: 4 },
+  historyDeleteLabel: { color: colors.light.alertRed, fontSize: 13, fontWeight: "700" },
   historyText: { color: colors.light.text, fontSize: 14, lineHeight: 20 },
   historyTitle: { color: colors.light.text, fontSize: 13, fontWeight: "800" },
   input: {

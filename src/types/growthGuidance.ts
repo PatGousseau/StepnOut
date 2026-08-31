@@ -95,8 +95,32 @@ export interface GrowthInteraction {
   report_outcome: GrowthAttemptOutcome | null;
   follow_up: GrowthAttemptFollowUp | null;
   journal_text: string | null;
+  voice_journal_id: string | null;
   step_snapshot: GrowthFirstStep | null;
   created_at: string;
+}
+
+export type GrowthVoiceJournalStatus =
+  | "uploading"
+  | "transcribing"
+  | "review"
+  | "submitted"
+  | "failed";
+
+export interface GrowthVoiceJournal {
+  id: string;
+  plan_id: string;
+  step_id: string | null;
+  status: GrowthVoiceJournalStatus;
+  object_path: string;
+  mime_type: "audio/m4a" | "audio/mp4";
+  duration_ms: number;
+  machine_transcript: string | null;
+  reviewed_transcript: string | null;
+  transcript_edited: boolean;
+  created_at: string;
+  updated_at: string;
+  submitted_at: string | null;
 }
 
 export interface GrowthPlanUpdate {
