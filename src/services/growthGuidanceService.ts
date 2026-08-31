@@ -11,6 +11,7 @@ import {
   GrowthPlanExperience,
   GrowthPlanProposal,
   GrowthStep,
+  GrowthVoiceJournal,
 } from "../types/growthGuidance";
 
 const INTAKE_FIELDS = "id, user_id, answers, status, created_at, updated_at, completed_at";
@@ -165,7 +166,7 @@ export const growthGuidanceService = {
           .maybeSingle(),
         supabase
           .from("growth_interactions")
-          .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, step_snapshot, created_at")
+          .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(20),
@@ -194,6 +195,22 @@ export const growthGuidanceService = {
       latestResponse,
       pendingInteractionId: latestInteractionId && !latestResponse ? latestInteractionId : null,
     };
+  },
+
+  async fetchJournalHistory(
+    userId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<GrowthInteraction[]> {
+    const { data, error } = await supabase
+      .from("growth_interactions")
+      .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at")
+      .eq("user_id", userId)
+      .eq("kind", "journal")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    return (data || []) as GrowthInteraction[];
   },
 
   async submitInteraction(params: {
@@ -255,5 +272,111 @@ export const growthGuidanceService = {
     });
     if (error) throw error;
     return data as GrowthAdaptiveResponse;
+  },
+
+  async beginVoiceJournal(params: {
+    voiceJournalId: string;
+    planId: string;
+    stepId?: string;
+    durationMs: number;
+  }): Promise<GrowthVoiceJournal> {
+    const { data, error } = await supabase.rpc("begin_growth_voice_journal", {
+      p_voice_journal_id: params.voiceJournalId,
+      p_plan_id: params.planId,
+      p_step_id: params.stepId || null,
+      p_mime_type: "audio/m4a",
+      p_duration_ms: Math.round(params.durationMs),
+    });
+    if (error) throw error;
+    return data as GrowthVoiceJournal;
+  },
+
+  async fetchVoiceJournalDraft(): Promise<GrowthVoiceJournal | null> {
+    const { data, error } = await supabase
+      .from("growth_voice_journals")
+      .select(
+        "id, plan_id, step_id, status, object_path, mime_type, duration_ms, machine_transcript, reviewed_transcript, transcript_edited, created_at, updated_at, submitted_at"
+      )
+      .neq("status", "submitted")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return (data as GrowthVoiceJournal | null) || null;
+  },
+
+  async uploadVoiceJournalAudio(
+    voiceJournal: GrowthVoiceJournal,
+    localUri: string
+  ): Promise<void> {
+    const audioResponse = await fetch(localUri);
+    const audio = await audioResponse.arrayBuffer();
+    const { error } = await supabase.storage
+      .from("growth-journal-audio")
+      .upload(voiceJournal.object_path, audio, {
+        contentType: voiceJournal.mime_type,
+        upsert: true,
+      });
+    if (error) throw error;
+  },
+
+  async transcribeVoiceJournal(
+    voiceJournalId: string,
+    locale: string
+  ): Promise<{ voiceJournal: GrowthVoiceJournal; transcript: string }> {
+    const { data, error } = await supabase.functions.invoke(
+      "transcribe-growth-journal",
+      { body: { voice_journal_id: voiceJournalId, locale } }
+    );
+    if (error) throw error;
+    if (!data || (data as { error?: string }).error) {
+      throw new Error((data as { error?: string })?.error || "voice_transcription_failed");
+    }
+    return {
+      voiceJournal: data.voice_journal as GrowthVoiceJournal,
+      transcript: data.transcript as string,
+    };
+  },
+
+  async submitVoiceJournal(params: {
+    voiceJournalId: string;
+    interactionId: string;
+    reviewedTranscript: string;
+    locale: string;
+  }): Promise<{ interaction: GrowthInteraction; response: GrowthAdaptiveResponse | null }> {
+    const { data: interaction, error: submitError } = await supabase.rpc(
+      "submit_growth_voice_journal",
+      {
+        p_voice_journal_id: params.voiceJournalId,
+        p_interaction_id: params.interactionId,
+        p_reviewed_transcript: params.reviewedTranscript.trim(),
+      }
+    );
+    if (submitError) throw submitError;
+    try {
+      const response = await this.adaptInteraction(
+        (interaction as GrowthInteraction).id,
+        params.locale
+      );
+      return { interaction: interaction as GrowthInteraction, response };
+    } catch {
+      return { interaction: interaction as GrowthInteraction, response: null };
+    }
+  },
+
+  async deleteJournal(params: {
+    interactionId?: string;
+    voiceJournalId?: string;
+  }): Promise<void> {
+    const { data, error } = await supabase.functions.invoke("delete-growth-journal", {
+      body: {
+        interaction_id: params.interactionId || null,
+        voice_journal_id: params.voiceJournalId || null,
+      },
+    });
+    if (error) throw error;
+    if (!data || (data as { error?: string }).error) {
+      throw new Error((data as { error?: string })?.error || "journal_deletion_failed");
+    }
   },
 };

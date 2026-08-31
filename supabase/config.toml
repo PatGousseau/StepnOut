@@ -368,6 +368,15 @@ verify_jwt = false
 [functions.adapt-growth-plan]
 verify_jwt = false
 
+[functions.transcribe-growth-journal]
+verify_jwt = false
+
+[functions.delete-growth-journal]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

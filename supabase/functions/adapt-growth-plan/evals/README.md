@@ -1,6 +1,8 @@
 # Growth adaptation evaluations
 
-These longitudinal fixtures cover the seven required issue #280 timelines. Each
+These longitudinal fixtures cover the seven required issue #280 timelines plus
+the corrected-transcript, emotional-ambiguity, transcription-uncertainty, and
+immediate-safety voice timelines from issue #281. Each
 generated artifact retains the original intake, confirmed plan, active step,
 chronological user evidence, earlier model responses (explicitly separated from
 evidence), generated response, proposed state change, confirmation state, and a
