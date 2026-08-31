@@ -85,6 +85,49 @@ Deno.test("report schema disallows journal-only implicit completion", () => {
   );
 });
 
+Deno.test("journal schema disallows completion when there is no active step", () => {
+  assertEquals(
+    getGrowthAdaptationSchema("journal", false, false).properties
+      .proposed_step_completion,
+    { type: "boolean", enum: [false] },
+  );
+});
+
+Deno.test("rejects a completion proposal when the journal has no active step", () => {
+  assertThrows(() =>
+    validateGrowthAdaptationResult(
+      {
+        response_type: "reflection",
+        message: "There is no active step to complete.",
+        clarification_question: null,
+        next_step: null,
+        proposed_plan_update: null,
+        proposed_step_completion: true,
+      },
+      "journal",
+      false,
+    )
+  );
+});
+
+Deno.test("rejects a completion question when the journal has no active step", () => {
+  assertThrows(() =>
+    validateGrowthAdaptationResult(
+      {
+        response_type: "clarification",
+        message: "This sounds like a completed action.",
+        clarification_question:
+          "Should this count as completing the active step?",
+        next_step: null,
+        proposed_plan_update: null,
+        proposed_step_completion: false,
+      },
+      "journal",
+      false,
+    )
+  );
+});
+
 Deno.test("requires a complete next step with a plan revision", () => {
   assertThrows(() =>
     validateGrowthAdaptationResult({

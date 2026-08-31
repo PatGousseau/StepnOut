@@ -115,8 +115,10 @@ export const GROWTH_ADAPTATION_SCHEMA = {
 export function getGrowthAdaptationSchema(
   interactionKind: "report" | "journal",
   forcePlanRevision = false,
+  canProposeStepCompletion = true,
 ) {
-  const completionSchema = interactionKind === "report"
+  const completionSchema = interactionKind === "report" ||
+      !canProposeStepCompletion
     ? { type: "boolean", enum: [false] }
     : GROWTH_ADAPTATION_SCHEMA.properties.proposed_step_completion;
   if (forcePlanRevision) {
@@ -133,7 +135,9 @@ export function getGrowthAdaptationSchema(
       },
     };
   }
-  if (interactionKind === "journal") return GROWTH_ADAPTATION_SCHEMA;
+  if (interactionKind === "journal" && canProposeStepCompletion) {
+    return GROWTH_ADAPTATION_SCHEMA;
+  }
   return {
     ...GROWTH_ADAPTATION_SCHEMA,
     properties: {
@@ -316,6 +320,7 @@ function validPlanUpdate(update: PlanUpdate | null) {
 export function validateGrowthAdaptationResult(
   value: unknown,
   interactionKind: "report" | "journal",
+  canProposeStepCompletion = true,
 ): GrowthAdaptationResult {
   if (!value || typeof value !== "object") {
     throw new Error("Adaptation output is not an object");
@@ -330,15 +335,23 @@ export function validateGrowthAdaptationResult(
   ) {
     throw new Error("Adaptation output does not satisfy the base contract");
   }
-  if (result.proposed_step_completion && interactionKind !== "journal") {
+  if (
+    result.proposed_step_completion &&
+    (interactionKind !== "journal" || !canProposeStepCompletion)
+  ) {
     throw new Error(
-      "Only journal evidence can propose implicit step completion",
+      "Only journal evidence tied to an active step can propose implicit step completion",
     );
   }
   const countQuestion = result.clarification_question || "";
   const asksToCountJournal = interactionKind === "journal" &&
     /\b(?:should|would you like|do you want|vuoi|dovrei|desideri)\b[\s\S]{0,180}\b(?:count|complet\w*|resoconto|conta\w*)\b/iu
       .test(countQuestion);
+  if (asksToCountJournal && !canProposeStepCompletion) {
+    throw new Error(
+      "A journal without an active step cannot ask to confirm step completion",
+    );
+  }
   const normalized = asksToCountJournal
     ? { ...result, proposed_step_completion: true }
     : result;
