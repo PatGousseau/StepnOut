@@ -171,6 +171,9 @@ export const GROWTH_GUIDANCE_EVENTS = {
   PROPOSAL_GENERATED: 'growth_guidance_proposal_generated',
   PROPOSAL_CORRECTED: 'growth_guidance_proposal_corrected',
   PLAN_CONFIRMED: 'growth_guidance_plan_confirmed',
+  REPORT_SUBMITTED: 'growth_guidance_report_submitted',
+  JOURNAL_SUBMITTED: 'growth_guidance_journal_submitted',
+  ADAPTATION_CONFIRMED: 'growth_guidance_adaptation_confirmed',
   GENERATION_FAILED: 'growth_guidance_generation_failed',
   INTAKE_ABANDONED: 'growth_guidance_intake_abandoned',
 } as const;

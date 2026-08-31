@@ -365,6 +365,9 @@ OPENAI_API_KEY = "env(OPENAI_API_KEY)"
 [functions.generate-growth-plan]
 verify_jwt = false
 
+[functions.adapt-growth-plan]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

@@ -1,5 +1,11 @@
+import { describe, expect, it } from "@jest/globals";
+
 import { EMPTY_GROWTH_INTAKE } from "../../types/growthGuidance";
-import { countWords, getGrowthIntakeResumeStep } from "../growthGuidance";
+import {
+  countWords,
+  getGrowthAttemptFollowUps,
+  getGrowthIntakeResumeStep,
+} from "../growthGuidance";
 
 describe("countWords", () => {
   it("counts words separated by mixed whitespace", () => {
@@ -8,6 +14,31 @@ describe("countWords", () => {
 
   it("returns zero for an empty response", () => {
     expect(countWords("   ")).toBe(0);
+  });
+});
+
+describe("getGrowthAttemptFollowUps", () => {
+  it.each(["did_it", "partly"] as const)(
+    "uses expectation choices after %s",
+    (outcome) => {
+      expect(getGrowthAttemptFollowUps(outcome).map(([value]) => value)).toEqual([
+        "easier_than_expected",
+        "about_the_same",
+        "harder_than_expected",
+        "not_sure",
+        "other",
+      ]);
+    }
+  );
+
+  it("uses distinct opportunity and motivation choices after a non-attempt", () => {
+    expect(getGrowthAttemptFollowUps("didnt_do_it").map(([value]) => value)).toEqual([
+      "no_opportunity",
+      "forgot",
+      "too_uncomfortable",
+      "not_relevant",
+      "other",
+    ]);
   });
 });
 

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'node:crypto';
 
 const { API_URL, ANON_KEY, SERVICE_ROLE_KEY } = process.env;
 if (!API_URL || !ANON_KEY || !SERVICE_ROLE_KEY) {
@@ -60,6 +61,62 @@ try {
   if (confirmationError) throw confirmationError;
   if (confirmed?.status !== 'active') throw new Error('Plan was not activated');
 
+  const { data: activeStep, error: stepError } = await alice
+    .from('growth_steps')
+    .select('id')
+    .eq('status', 'active')
+    .single();
+  if (stepError) throw stepError;
+
+  const journalId = randomUUID();
+  const { error: journalError } = await alice.rpc('submit_growth_interaction', {
+    p_interaction_id: journalId,
+    p_plan_id: planId,
+    p_step_id: activeStep.id,
+    p_kind: 'journal',
+    p_report_outcome: null,
+    p_follow_up: null,
+    p_journal_text: 'The meeting was cancelled, so there was no opportunity today.',
+  });
+  if (journalError) throw journalError;
+  const { data: journalAdaptation, error: journalAdaptationError } =
+    await alice.functions.invoke('adapt-growth-plan', {
+      body: { interaction_id: journalId, locale: 'en' },
+    });
+  if (journalAdaptationError) throw journalAdaptationError;
+  if (!journalAdaptation?.response?.id) throw new Error('Journal adaptation was not persisted');
+  if (journalAdaptation.response.confirmation_status === 'pending') {
+    const { error: rejectionError } = await alice.rpc('confirm_growth_adaptive_response', {
+      p_response_id: journalAdaptation.response.id,
+      p_accepted: false,
+    });
+    if (rejectionError) throw rejectionError;
+  }
+
+  const reportId = randomUUID();
+  const { error: reportError } = await alice.rpc('submit_growth_interaction', {
+    p_interaction_id: reportId,
+    p_plan_id: planId,
+    p_step_id: activeStep.id,
+    p_kind: 'report',
+    p_report_outcome: 'didnt_do_it',
+    p_follow_up: 'no_opportunity',
+    p_journal_text: 'The meeting was cancelled.',
+  });
+  if (reportError) throw reportError;
+  const { data: reportAdaptation, error: reportAdaptationError } =
+    await alice.functions.invoke('adapt-growth-plan', {
+      body: { interaction_id: reportId, locale: 'en' },
+    });
+  if (reportAdaptationError) throw reportAdaptationError;
+  if (!reportAdaptation?.response?.id) throw new Error('Report adaptation was not persisted');
+
+  const { count: interactionCount, error: historyError } = await alice
+    .from('growth_interactions')
+    .select('id', { count: 'exact', head: true });
+  if (historyError) throw historyError;
+  if (interactionCount !== 2) throw new Error('Journal and report history was not retained');
+
   const { error: bobAuthError } = await bob.auth.signInWithPassword({
     email: 'bob@test.com',
     password: 'password123',
@@ -75,6 +132,23 @@ try {
   console.log('growth guidance smoke test passed');
 } finally {
   if (intakeId) {
+    const { data: plans } = await service
+      .from('growth_plans')
+      .select('id')
+      .eq('intake_id', intakeId);
+    const planIds = (plans || []).map(({ id }) => id);
+    const { data: interactions } = planIds.length
+      ? await service.from('growth_interactions').select('id').in('plan_id', planIds)
+      : { data: [] };
+    const interactionIds = (interactions || []).map(({ id }) => id);
+    if (interactionIds.length) {
+      await service.from('growth_adaptation_requests').delete().in('interaction_id', interactionIds);
+      await service.from('growth_adaptive_responses').delete().in('interaction_id', interactionIds);
+    }
+    if (planIds.length) {
+      await service.from('growth_interactions').delete().in('plan_id', planIds);
+      await service.from('growth_steps').delete().in('plan_id', planIds);
+    }
     await service.from('growth_plan_evidence').delete().eq('intake_id', intakeId);
     await service.from('growth_plans').delete().eq('intake_id', intakeId);
     await service.from('growth_event_preferences').delete().eq('intake_id', intakeId);
