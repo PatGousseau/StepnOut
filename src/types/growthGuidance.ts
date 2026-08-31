@@ -63,6 +63,73 @@ export interface GrowthPlanProposal {
   confirmed_at: string | null;
 }
 
+export type GrowthAttemptOutcome = "did_it" | "partly" | "didnt_do_it";
+
+export type GrowthAttemptFollowUp =
+  | "easier_than_expected"
+  | "about_the_same"
+  | "harder_than_expected"
+  | "not_sure"
+  | "no_opportunity"
+  | "forgot"
+  | "too_uncomfortable"
+  | "not_relevant"
+  | "other";
+
+export interface GrowthStep extends GrowthFirstStep {
+  id: string;
+  plan_id: string;
+  user_id: string;
+  sequence: number;
+  status: "active" | "attempted" | "replaced" | "dismissed";
+  created_at: string;
+  ended_at: string | null;
+}
+
+export interface GrowthInteraction {
+  id: string;
+  plan_id: string;
+  step_id: string | null;
+  user_id: string;
+  kind: "report" | "journal";
+  report_outcome: GrowthAttemptOutcome | null;
+  follow_up: GrowthAttemptFollowUp | null;
+  journal_text: string | null;
+  step_snapshot: GrowthFirstStep | null;
+  created_at: string;
+}
+
+export interface GrowthPlanUpdate {
+  goal: string;
+  formulation: string;
+  milestones: GrowthMilestone[];
+  current_focus: string;
+  evidence_summary: string;
+}
+
+export interface GrowthAdaptiveResponse {
+  id: string;
+  plan_id: string;
+  interaction_id: string;
+  user_id: string;
+  response_type: "reflection" | "clarification" | "next_step" | "plan_revision";
+  message: string;
+  clarification_question: string | null;
+  next_step: GrowthFirstStep | null;
+  proposed_plan_update: GrowthPlanUpdate | null;
+  proposed_step_completion: boolean;
+  confirmation_status: "none" | "pending" | "accepted" | "rejected";
+  created_at: string;
+}
+
+export interface GrowthPlanExperience {
+  plan: GrowthPlanProposal;
+  activeStep: GrowthStep | null;
+  interactions: GrowthInteraction[];
+  latestResponse: GrowthAdaptiveResponse | null;
+  pendingInteractionId: string | null;
+}
+
 export type GrowthGenerationResult =
   | { result_type: "clarification"; clarification_question: string; plan: null }
   | { result_type: "proposal"; clarification_question: null; plan: GrowthPlanProposal };

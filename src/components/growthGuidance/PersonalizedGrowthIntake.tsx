@@ -34,6 +34,7 @@ import { FeatureActionButton } from "../FeatureActionButton";
 import { ProgressSegments } from "../ProgressSegments";
 import { Text } from "../StyledText";
 import { GrowthPlanCard } from "./GrowthPlanCard";
+import { GrowthPlanExperience } from "./GrowthPlanExperience";
 
 type Step =
   | "intro"
@@ -657,7 +658,7 @@ export function PersonalizedGrowthIntake() {
                 {t("Your first experiment is ready. Progress comes from what you try and learn, not from a perfect result.")}
               </Text>
             </View>
-            <GrowthPlanCard plan={plan} />
+            <GrowthPlanExperience initialPlan={plan} />
           </View>
         ) : null;
     }
@@ -708,7 +709,7 @@ export function PersonalizedGrowthIntake() {
       case "correction":
         return <FeatureActionButton title={t("Revise the direction")} onPress={submitCorrection} disabled={!correction.trim()} variant="pill" />;
       case "confirmed":
-        return <FeatureActionButton title={t("Done")} onPress={close} variant="pill" />;
+        return null;
     }
   };
 

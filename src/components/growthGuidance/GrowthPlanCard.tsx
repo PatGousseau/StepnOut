@@ -5,7 +5,15 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { GrowthPlanProposal } from "../../types/growthGuidance";
 import { Text } from "../StyledText";
 
-export function GrowthPlanCard({ plan }: { plan: GrowthPlanProposal }) {
+export function GrowthPlanCard({
+  plan,
+  active = false,
+  showStep = true,
+}: {
+  plan: GrowthPlanProposal;
+  active?: boolean;
+  showStep?: boolean;
+}) {
   const { t } = useLanguage();
 
   return (
@@ -28,6 +36,11 @@ export function GrowthPlanCard({ plan }: { plan: GrowthPlanProposal }) {
             </View>
             <View style={styles.milestoneText}>
               <Text style={styles.milestoneTitle}>{milestone.title}</Text>
+              {active && (
+                <Text style={styles.milestoneState}>
+                  {t(index === 0 ? "Current focus" : "Later")}
+                </Text>
+              )}
               <Text style={styles.body}>{milestone.description}</Text>
             </View>
           </View>
@@ -39,8 +52,10 @@ export function GrowthPlanCard({ plan }: { plan: GrowthPlanProposal }) {
         <Text style={styles.focus}>{plan.current_focus}</Text>
       </View>
 
-      <View style={styles.stepCard}>
-        <Text style={styles.stepLabel}>{t("YOUR FIRST EXPERIMENT")}</Text>
+      {showStep && <View style={styles.stepCard}>
+        <Text style={styles.stepLabel}>
+          {t(active ? "YOUR ACTIVE EXPERIMENT" : "YOUR FIRST EXPERIMENT")}
+        </Text>
         <Text style={styles.stepTitle}>{plan.first_step.title}</Text>
         <Text style={styles.body}>{plan.first_step.rationale}</Text>
         <Text style={styles.detailLabel}>{t("What to do")}</Text>
@@ -53,7 +68,7 @@ export function GrowthPlanCard({ plan }: { plan: GrowthPlanProposal }) {
             <Text style={styles.body}>{plan.first_step.if_then_plan}</Text>
           </>
         )}
-      </View>
+      </View>}
     </View>
   );
 }
@@ -130,6 +145,12 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     fontSize: 16,
     fontWeight: "700",
+  },
+  milestoneState: {
+    color: colors.light.primary,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   section: {
     gap: 13,
