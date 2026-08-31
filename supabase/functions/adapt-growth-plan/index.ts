@@ -22,6 +22,7 @@ async function generateAdaptation(
   input: string,
   interactionKind: "report" | "journal",
   requiresPlanRevision: boolean,
+  canProposeStepCompletion: boolean,
 ) {
   const requestGeneration = async (
     repairInstruction: string | null,
@@ -53,6 +54,7 @@ async function generateAdaptation(
             schema: getGrowthAdaptationSchema(
               interactionKind,
               forcePlanRevision,
+              canProposeStepCompletion,
             ),
           },
         },
@@ -71,6 +73,7 @@ async function generateAdaptation(
     return validateGrowthAdaptationResult(
       JSON.parse(outputText),
       interactionKind,
+      canProposeStepCompletion,
     );
   };
 
@@ -229,6 +232,7 @@ Deno.serve(async (req) => {
       }),
       interaction.kind,
       decisionContext.requires_plan_revision_for_repeated_contradiction,
+      interaction.kind === "journal" && interaction.step_id !== null,
     );
 
     const { data: saved, error: persistError } = await service.rpc(

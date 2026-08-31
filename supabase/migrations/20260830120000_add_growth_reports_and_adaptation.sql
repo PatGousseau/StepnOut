@@ -334,6 +334,11 @@ begin
   where interaction.id = p_interaction_id and interaction.user_id = p_user_id and plan.status = 'active'
   for update of interaction, plan;
   if not found then raise exception 'Current growth interaction not found'; end if;
+  if p_proposed_step_completion and (
+    v_interaction.kind <> 'journal' or v_interaction.step_id is null
+  ) then
+    raise exception 'Step completion requires a journal tied to an active step';
+  end if;
 
   v_confirmation := case
     when p_proposed_plan_update is not null or p_proposed_step_completion

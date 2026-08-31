@@ -41,6 +41,23 @@ begin
 end;
 $test$;
 
+create function pg_temp.expect_step_completion_proposal_blocked(
+  user_id uuid, interaction_id uuid
+)
+returns void language plpgsql as $test$
+begin
+  begin
+    perform public.persist_growth_adaptive_response(
+      user_id, interaction_id, 'reflection', 'Count this as complete.', null,
+      null, null, true, 'test-model', 'test-prompt'
+    );
+    raise exception 'Invalid step completion proposal unexpectedly succeeded';
+  exception when others then
+    if sqlerrm = 'Invalid step completion proposal unexpectedly succeeded' then raise; end if;
+  end;
+end;
+$test$;
+
 insert into public.growth_intakes (id, user_id, answers, status)
 values (
   'cccccccc-cccc-cccc-cccc-ccccccccccc3',
@@ -206,6 +223,9 @@ select id from public.submit_growth_interaction(
 ) \gset revision_journal_
 
 reset role;
+select pg_temp.expect_step_completion_proposal_blocked(
+  '11111111-1111-1111-1111-111111111111', :'revision_journal_id'::uuid
+);
 select id from public.persist_growth_adaptive_response(
   '11111111-1111-1111-1111-111111111111', :'revision_journal_id'::uuid, 'plan_revision',
   'The reports point to an opportunity constraint. This revision stays tentative.', null,
