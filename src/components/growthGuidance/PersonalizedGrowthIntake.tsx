@@ -30,11 +30,11 @@ import {
   getGrowthIntakeResumeStep,
   MIN_GROWTH_CLARIFICATION_WORDS,
 } from "../../utils/growthGuidance";
-import { FeatureActionButton } from "../FeatureActionButton";
 import { ProgressSegments } from "../ProgressSegments";
 import { Text } from "../StyledText";
 import { GrowthPlanCard } from "./GrowthPlanCard";
 import { GrowthPlanExperience } from "./GrowthPlanExperience";
+import { GrowthButton, GrowthDisclosure } from "./GrowthUI";
 
 type Step =
   | "intro"
@@ -543,6 +543,7 @@ export function PersonalizedGrowthIntake() {
               value={answers.boundaries}
               onChangeText={(value) => updateAnswer("boundaries", value)}
             />
+            <GrowthDisclosure title={t("Optional: nearby opportunities")}>
             <TouchableOpacity
               style={styles.eventToggle}
               onPress={() => updateEventPreference("enabled", !eventPreferences.enabled)}
@@ -596,6 +597,7 @@ export function PersonalizedGrowthIntake() {
                 />
               </View>
             )}
+            </GrowthDisclosure>
           </View>
         );
       case "clarification":
@@ -650,17 +652,7 @@ export function PersonalizedGrowthIntake() {
           </View>
         );
       case "confirmed":
-        return plan ? (
-          <View style={styles.planWrap}>
-            <View style={styles.confirmedBanner}>
-              <Text style={styles.confirmedTitle}>{t("Direction confirmed")}</Text>
-              <Text style={styles.confirmedBody}>
-                {t("Your first experiment is ready. Progress comes from what you try and learn, not from a perfect result.")}
-              </Text>
-            </View>
-            <GrowthPlanExperience initialPlan={plan} />
-          </View>
-        ) : null;
+        return null;
     }
   };
 
@@ -679,39 +671,41 @@ export function PersonalizedGrowthIntake() {
     }
     switch (step) {
       case "intro":
-        return <FeatureActionButton title={t("Start the conversation")} onPress={start} variant="pill" />;
+        return <GrowthButton title={t("Start the conversation")} onPress={start} />;
       case "situation":
-        return <FeatureActionButton title={t("Next")} onPress={() => saveAndGo("direction")} disabled={!canContinue} variant="pill" />;
+        return <GrowthButton title={t("Next")} onPress={() => saveAndGo("direction")} disabled={!canContinue} />;
       case "direction":
-        return <FeatureActionButton title={t("Next")} onPress={() => saveAndGo("attempts")} disabled={!canContinue} variant="pill" />;
+        return <GrowthButton title={t("Next")} onPress={() => saveAndGo("attempts")} disabled={!canContinue} />;
       case "attempts":
-        return <FeatureActionButton title={t("Next")} onPress={() => saveAndGo("barriers")} disabled={!canContinue} variant="pill" />;
+        return <GrowthButton title={t("Next")} onPress={() => saveAndGo("barriers")} disabled={!canContinue} />;
       case "barriers":
-        return <FeatureActionButton title={t("Next")} onPress={() => saveAndGo("preferences")} disabled={!canContinue} variant="pill" />;
+        return <GrowthButton title={t("Next")} onPress={() => saveAndGo("preferences")} disabled={!canContinue} />;
       case "preferences":
-        return <FeatureActionButton title={t("Next")} onPress={() => saveAndGo("boundaries")} disabled={!canContinue} variant="pill" />;
+        return <GrowthButton title={t("Next")} onPress={() => saveAndGo("boundaries")} disabled={!canContinue} />;
       case "boundaries":
         if (!eventPreferencesReady) {
-          return <FeatureActionButton title={t("Retry loading preferences")} onPress={retryEventPreferences} variant="pill" />;
+          return <GrowthButton title={t("Retry loading preferences")} onPress={retryEventPreferences} />;
         }
-        return <FeatureActionButton title={t("Build my direction")} onPress={finishIntake} disabled={!canContinue} variant="pill" />;
+        return <GrowthButton title={t("Build my direction")} onPress={finishIntake} disabled={!canContinue} />;
       case "clarification":
-        return <FeatureActionButton title={t("Continue")} onPress={submitClarification} disabled={!clarificationCanContinue} variant="pill" />;
+        return <GrowthButton title={t("Continue")} onPress={submitClarification} disabled={!clarificationCanContinue} />;
       case "proposal":
         return (
           <View style={styles.footerActions}>
-            <FeatureActionButton title={t("This fits")} onPress={confirmPlan} variant="pill" />
+            <GrowthButton title={t("This fits")} onPress={confirmPlan} />
             <TouchableOpacity style={styles.secondaryButton} onPress={() => setStep("correction")}>
               <Text style={styles.secondaryButtonText}>{t("Not quite — let me explain")}</Text>
             </TouchableOpacity>
           </View>
         );
       case "correction":
-        return <FeatureActionButton title={t("Revise the direction")} onPress={submitCorrection} disabled={!correction.trim()} variant="pill" />;
+        return <GrowthButton title={t("Revise the direction")} onPress={submitCorrection} disabled={!correction.trim()} />;
       case "confirmed":
         return null;
     }
   };
+
+  if (step === "confirmed" && plan) return <GrowthPlanExperience initialPlan={plan} />;
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -728,8 +722,10 @@ export function PersonalizedGrowthIntake() {
               <ProgressSegments total={INTAKE_STEPS.length} activeIndex={progressIndex} />
             </View>
           )}
+          {INTAKE_STEPS.indexOf(step) > 0 && step !== "proposal" && <TouchableOpacity accessibilityRole="button" disabled={saving} style={styles.closeButton} onPress={() => setStep(INTAKE_STEPS[INTAKE_STEPS.indexOf(step) - 1])}><Text style={styles.secondaryButtonText}>{t("Back")}</Text></TouchableOpacity>}
         </View>
         <ScrollView
+          key={step}
           style={styles.flex}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
@@ -771,16 +767,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   closeButton: { paddingVertical: 6 },
   closeText: { color: colors.light.lightText, fontSize: 15 },
-  confirmedBanner: {
-    backgroundColor: colors.light.easyGreen,
-    borderRadius: 16,
-    gap: 6,
-    padding: 16,
-  },
-  confirmedBody: { color: colors.light.text, fontSize: 14, lineHeight: 20 },
-  confirmedTitle: { color: colors.light.text, fontSize: 18, fontWeight: "800" },
   container: { backgroundColor: colors.light.background, flex: 1 },
-  content: { flexGrow: 1, paddingBottom: 32, paddingHorizontal: 20, paddingTop: 24 },
+  content: { flexGrow: 1, paddingBottom: 32, paddingHorizontal: 20, paddingTop: 24, width: "100%", maxWidth: 680, alignSelf: "center" },
   correctionInput: { minHeight: 150 },
   disclaimer: { color: colors.light.lightText, fontSize: 13, lineHeight: 19 },
   error: {

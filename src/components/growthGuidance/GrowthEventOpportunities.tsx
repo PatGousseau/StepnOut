@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   StyleSheet,
   Switch,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { randomUUID } from "expo-crypto";
@@ -20,8 +20,8 @@ import {
   growthEventService,
 } from "../../services/growthEventService";
 import { EMPTY_EVENT_PREFERENCES } from "../../types/growthGuidance";
-import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
+import { GrowthButton, GrowthDisclosure, GrowthHeading, GrowthStepCard, ui, useGrowthConfirm } from "./GrowthUI";
 
 const EMPTY: EventPreferences = {
   ...EMPTY_EVENT_PREFERENCES,
@@ -41,15 +41,19 @@ const REASONS = {
 };
 
 export function GrowthEventOpportunities(
-  { userId, intakeId, onChanged, blocked }: {
+  { userId, intakeId, onChanged, blocked, onBusyChange, onBackHandlerChange }: {
     userId: string;
     intakeId: string;
     onChanged: () => Promise<void>;
     blocked: boolean;
+    onBusyChange?: (busy: boolean) => void;
+    onBackHandlerChange?: (handler: (() => boolean) | null) => void;
   },
 ) {
   const { t, language } = useLanguage();
+  const { confirm, confirmation } = useGrowthConfirm();
   const [preferences, setPreferences] = useState<EventPreferences>(EMPTY);
+  const [savedPreferences, setSavedPreferences] = useState<EventPreferences>(EMPTY);
   const [areas, setAreas] = useState<EventArea[]>([]);
   const [selection, setSelection] = useState<EventSelection | null>(null);
   const [event, setEvent] = useState<EventOpportunity | null>(null);
@@ -58,7 +62,25 @@ export function GrowthEventOpportunities(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cost, setCost] = useState("");
+  const [rejecting, setRejecting] = useState(false);
+  useEffect(() => { onBusyChange?.(busy); return () => onBusyChange?.(false); }, [busy, onBusyChange]);
+  const cancelEditing = useCallback(() => {
+    if (!editing) return false;
+    const savedCost = savedPreferences.max_cost_eur === null ? "" : String(savedPreferences.max_cost_eur);
+    const discard = () => { setPreferences(savedPreferences); setCost(savedCost); setEditing(false); };
+    if (JSON.stringify(preferences) !== JSON.stringify(savedPreferences) || cost !== savedCost) {
+      confirm(t("Discard preference changes?"), t("Your saved preferences will stay as they are."), [
+        { text: t("Keep editing"), style: "cancel" }, { text: t("Discard changes"), style: "destructive", onPress: discard },
+      ]);
+    } else discard();
+    return true;
+  }, [editing, savedPreferences, preferences, cost, confirm, t]);
+  useEffect(() => {
+    onBackHandlerChange?.(cancelEditing);
+    return () => onBackHandlerChange?.(null);
+  }, [cancelEditing, onBackHandlerChange]);
   const display = async (item: EventSelection | null) => {
+    setRejecting(false);
     const detail = item?.event_id
       ? await growthEventService.event(item.id)
       : null;
@@ -83,6 +105,7 @@ export function GrowthEventOpportunities(
       if (!active) return;
       const prefs = data.preferences || EMPTY;
       setPreferences(prefs);
+      setSavedPreferences(prefs);
       setCost(prefs.max_cost_eur === null ? "" : String(prefs.max_cost_eur));
       setAreas(data.areas);
       setSelection(data.selection);
@@ -144,8 +167,10 @@ export function GrowthEventOpportunities(
       };
       await growthEventService.save(userId, intakeId, next);
       setPreferences(next);
+      setSavedPreferences(next);
       setSelection(null);
       setEvent(null);
+      setRejecting(false);
       setEditing(false);
     });
   const choose = (reason: string | null) =>
@@ -153,6 +178,7 @@ export function GrowthEventOpportunities(
       if (!selection) return;
       await growthEventService.choose(selection.id, reason);
       captureEvent("growth_event_choice", { reason: reason || "accepted" });
+      setRejecting(false);
       setSelection(null);
       setEvent(null);
       await onChanged();
@@ -160,23 +186,24 @@ export function GrowthEventOpportunities(
   if (loading) return <ActivityIndicator />;
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>{t("Nearby opportunities")}</Text>
-      <Text>
-        {t(
-          "Optional settings for practising your current step. An everyday opportunity may be a better fit.",
-        )}
-      </Text>
+      {confirmation}
+      <GrowthHeading eyebrow={t("OUT IN THE WORLD")} title={t(editing ? "Your preferences" : "Explore nearby")} subtitle={t(editing ? "Choose what feels practical for you." : "A place to try your step, when it helps. Everyday opportunities count too.")} />
       {!!error && <Text style={styles.error}>{error}</Text>}
-      <FeatureActionButton
-        title={t("Event preferences")}
-        onPress={() => setEditing(!editing)}
+      {!editing && !preferences.enabled && <View style={styles.form}><Text style={ui.rowTitle}>{t("A little more possibility")}</Text><Text style={ui.body}>{t("Choose an approximate area and what works for you. You never need to share your precise location.")}</Text></View>}
+      <GrowthButton
+        title={t(editing ? "Back to opportunities" : preferences.enabled ? "Edit preferences" : "Set up nearby opportunities")}
+        onPress={() => {
+          if (editing) cancelEditing();
+          else setEditing(true);
+        }}
         disabled={busy}
-        variant="pill"
+        secondary={preferences.enabled || editing}
       />
       {editing && (
-        <View style={styles.form}>
+        <View style={styles.form} pointerEvents={busy ? "none" : "auto"}>
           <Text>{t("Enable nearby opportunities")}</Text>
           <Switch
+            accessibilityLabel={t("Enable nearby opportunities")}
             value={preferences.enabled}
             onValueChange={(enabled) =>
               setPreferences({ ...preferences, enabled })}
@@ -194,10 +221,9 @@ export function GrowthEventOpportunities(
             </Text>
           )}
           {areas.map((area) => (
-            <FeatureActionButton
+            <GrowthButton
               key={area.id}
               title={area.area}
-              variant="pill"
               onPress={() =>
                 setPreferences({
                   ...preferences,
@@ -238,22 +264,21 @@ export function GrowthEventOpportunities(
           />
           <Text>{t("Wheelchair access must be confirmed")}</Text>
           <Switch
+            accessibilityLabel={t("Wheelchair access must be confirmed")}
             value={preferences.wheelchair_required}
             onValueChange={(wheelchair_required) =>
               setPreferences({ ...preferences, wheelchair_required })}
           />
-          <FeatureActionButton
+          <GrowthButton
             title={t("Save event preferences")}
             onPress={save}
             disabled={busy}
-            variant="pill"
           />
-          <FeatureActionButton
+          <GrowthButton
             title={t("Delete event preferences")}
             disabled={busy}
-            variant="pill"
             onPress={() =>
-              Alert.alert(
+              confirm(
                 t("Delete event preferences?"),
                 t("This removes your event location, preferences, and suggestion history."),
                 [
@@ -265,6 +290,7 @@ export function GrowthEventOpportunities(
                       void act(async () => {
                         await growthEventService.remove(userId);
                         setPreferences(EMPTY);
+                        setSavedPreferences(EMPTY);
                         setCost("");
                         setSelection(null);
                         setEvent(null);
@@ -277,11 +303,12 @@ export function GrowthEventOpportunities(
           />
         </View>
       )}
+      {blocked && !editing && <Text style={ui.caption}>{t("Review your pending response before choosing an event step.")}</Text>}
       {preferences.enabled && !editing && (
-        <FeatureActionButton
+        <GrowthButton
           title={t("Find a suitable opportunity")}
           disabled={busy || blocked}
-          variant="pill"
+          busy={busy}
           onPress={() =>
             act(async () => {
               await display(
@@ -311,6 +338,7 @@ export function GrowthEventOpportunities(
                   ? t("Cost unknown")
                   : `€${event.cost_eur}`}
               </Text>
+              <GrowthDisclosure title={t("Access & source details")}>
               <Text>
                 {event.accessibility || t("Accessibility details unknown")}
               </Text>
@@ -327,39 +355,26 @@ export function GrowthEventOpportunities(
                 {t("Last verified")}:{" "}
                 {new Date(event.verified_at).toLocaleString()}
               </Text>
-              <FeatureActionButton
+              <GrowthButton
                 title={t("Confirm details at the source")}
                 onPress={() =>
                   act(async () => {
                     await Linking.openURL(event.source_url);
                   })}
-                variant="pill"
               />
               {event.provenance.map((source, index) => (
                 <Text key={`${source.source_id}-${index}`}>
                   {source.source_id}: {source.source_url}
                 </Text>
               ))}
+              </GrowthDisclosure>
               {!!selection.proposed_step && (
-                <>
-                  <Text style={styles.heading}>
-                    {selection.proposed_step.title}
-                  </Text>
-                  <Text>{selection.proposed_step.rationale}</Text>
-                  <Text>{selection.proposed_step.action}</Text>
-                  <Text>
-                    {t("What counts as trying it")}:{" "}
-                    {selection.proposed_step.completion_criterion}
-                  </Text>
-                  {!!selection.proposed_step.if_then_plan && (
-                    <Text>{selection.proposed_step.if_then_plan}</Text>
-                  )}
-                  <FeatureActionButton
+                <GrowthStepCard step={selection.proposed_step}>
+                  <GrowthButton
                     title={t("Use this as my next step")}
                     disabled={busy || blocked}
-                    variant="pill"
                     onPress={() =>
-                      Alert.alert(
+                      confirm(
                         t("Use this as my next step"),
                         t("This replaces your current step after confirmation. Your goal stays the same."),
                         [
@@ -373,16 +388,16 @@ export function GrowthEventOpportunities(
                         ],
                       )}
                   />
-                </>
+                </GrowthStepCard>
               )}
-              {Object.entries(REASONS).map(([reason, label]) => (
-                <FeatureActionButton
+              <GrowthButton title={t(rejecting ? "Cancel" : "Not for me")} secondary onPress={() => setRejecting(!rejecting)} disabled={busy} />
+              {rejecting && <Text style={ui.rowTitle}>{t("What doesn't fit?")}</Text>}
+              {rejecting && Object.entries(REASONS).map(([reason, label]) => (
+                <TouchableOpacity accessibilityRole="button" style={styles.reason}
                   key={reason}
-                  title={t(label)}
                   disabled={busy}
-                  variant="pill"
                   onPress={() => choose(reason)}
-                />
+                ><Text style={ui.link}>{t(label)}</Text></TouchableOpacity>
               ))}
             </>
           )}
@@ -398,15 +413,16 @@ export function GrowthEventOpportunities(
   );
 }
 const styles = StyleSheet.create({
-  container: { gap: 12 },
+  container: { gap: 20 },
   form: {
-    gap: 10,
-    padding: 12,
+    gap: 16,
+    padding: 20,
     backgroundColor: colors.neutral.white,
-    borderRadius: 12,
+    borderRadius: 24,
   },
   heading: { fontSize: 18, fontWeight: "700" },
   error: { color: colors.light.alertRed },
+  reason: { minHeight: 48, justifyContent: "center", borderBottomWidth: 1, borderBottomColor: colors.light.accent2, padding: 10 },
   input: {
     borderWidth: 1,
     borderColor: colors.neutral.grey2,

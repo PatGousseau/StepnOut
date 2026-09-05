@@ -25,8 +25,9 @@ import {
   MAX_VOICE_JOURNAL_DURATION_MS,
   normalizeVoiceJournalDuration,
 } from "../../utils/voiceJournal";
-import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
+import { GrowthButton, GrowthDisclosure, GrowthHeading, ui, useGrowthConfirm } from "./GrowthUI";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 type VoicePhase =
   | "intro"
@@ -47,14 +48,17 @@ export function VoiceJournalRecorder({
   locale,
   onSubmitted,
   onUseText,
+  onBusyChange,
 }: {
   planId: string;
   stepId?: string;
   locale: string;
   onSubmitted: (result: SubmissionResult) => Promise<void>;
   onUseText: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const { t } = useLanguage();
+  const { confirm, confirmation } = useGrowthConfirm();
   const tRef = useRef(t);
   tRef.current = t;
   const recordingRef = useRef<Audio.Recording | null>(null);
@@ -73,6 +77,11 @@ export function VoiceJournalRecorder({
   const [machineTranscript, setMachineTranscript] = useState("");
   const [reviewedTranscript, setReviewedTranscript] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    onBusyChange?.(phase === "processing" || phase === "recording");
+    return () => onBusyChange?.(false);
+  }, [phase, onBusyChange]);
 
   const removeLocalFile = useCallback(async (uri: string | null) => {
     if (!uri) return;
@@ -365,19 +374,18 @@ export function VoiceJournalRecorder({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{t("Voice journal")}</Text>
+      {confirmation}
+      <GrowthHeading eyebrow={t("VOICE JOURNAL")} title={t(phase === "review" ? "Make it your words" : "Talk it through")} />
+      <View style={styles.stages}>{["Record", "Review", "Reflect"].map((label, index) => <Text key={label} style={[styles.stage, (index === 0 && phase !== "review" || index === 1 && phase === "review") && styles.activeStage]}>{index + 1} · {t(label)}</Text>)}</View>
       {phase === "intro" && (
         <>
-          <Text style={styles.body}>
-            {t("With your permission, StepnOut records audio on this device, uploads it to private storage, and sends it for transcription. Your audio and reviewed transcript are stored until you delete the journal.")}
-          </Text>
-          <Text style={styles.body}>
-            {t("The transcript becomes evidence only after you review and submit it. You can edit or discard it, and voice journaling never collects your location.")}
-          </Text>
-          <FeatureActionButton
+          <View style={styles.mic}><MaterialCommunityIcons name="microphone-outline" size={44} color={colors.light.primary} /></View>
+          <Text style={ui.body}>{t("Up to 3 minutes, just for you. Review and edit the transcript before it shapes your guidance.")}</Text>
+          <Text style={ui.caption}>{t("Audio is uploaded privately for transcription. Audio and text stay saved until you delete the journal.")}</Text>
+          <GrowthDisclosure title={t("How your recording is used")}><Text style={ui.caption}>{t("The transcript becomes evidence only after you review and submit it. You can edit or discard it, and voice journaling never collects your location.")}</Text></GrowthDisclosure>
+          <GrowthButton
             title={t("Start recording")}
             onPress={startRecording}
-            variant="pill"
           />
         </>
       )}
@@ -386,10 +394,9 @@ export function VoiceJournalRecorder({
         <>
           <Text style={styles.timer}>{formatVoiceJournalDuration(durationMs)} / 3:00</Text>
           <Text style={styles.recordingLabel}>{t("Recording…")}</Text>
-          <FeatureActionButton
+          <GrowthButton
             title={t("Finish recording")}
             onPress={() => finishRecording()}
-            variant="pill"
           />
           <TouchableOpacity onPress={cancelRecording} style={styles.textButton}>
             <Text style={styles.textButtonLabel}>{t("Cancel and discard")}</Text>
@@ -402,10 +409,9 @@ export function VoiceJournalRecorder({
           <Text style={styles.body}>
             {t("Recording ready")} · {formatVoiceJournalDuration(durationMs)}
           </Text>
-          <FeatureActionButton
+          <GrowthButton
             title={t("Upload and transcribe")}
             onPress={processRecording}
-            variant="pill"
           />
           <TouchableOpacity onPress={discard} style={styles.textButton}>
             <Text style={styles.textButtonLabel}>{t("Discard recording")}</Text>
@@ -428,11 +434,10 @@ export function VoiceJournalRecorder({
             placeholder={t("Review your transcript")}
             placeholderTextColor={colors.light.lightText}
           />
-          <FeatureActionButton
+          <GrowthButton
             title={t("Submit reviewed transcript")}
             onPress={submit}
             disabled={!reviewedTranscript.trim()}
-            variant="pill"
           />
           <TouchableOpacity onPress={discard} style={styles.textButton}>
             <Text style={styles.textButtonLabel}>{t("Discard audio and transcript")}</Text>
@@ -443,17 +448,15 @@ export function VoiceJournalRecorder({
       {phase === "failed" && (
         <>
           {(audioUploaded || !!localUri) && (
-            <FeatureActionButton
+            <GrowthButton
               title={t(audioUploaded ? "Retry transcription" : "Retry upload and transcription")}
               onPress={processRecording}
-              variant="pill"
             />
           )}
           {!voiceJournalId && (
-            <FeatureActionButton
+            <GrowthButton
               title={t("Try recording again")}
               onPress={startRecording}
-              variant="pill"
             />
           )}
           {(voiceJournalId || localUri) && (
@@ -465,11 +468,14 @@ export function VoiceJournalRecorder({
       )}
 
       {phase === "processing" && (
-        <ActivityIndicator color={colors.light.primary} />
+        <View style={styles.processing}><ActivityIndicator color={colors.light.primary} /><Text style={ui.caption}>{t("Getting your journal ready…")}</Text></View>
       )}
       {!!message && <Text style={styles.message}>{message}</Text>}
       {phase !== "recording" && phase !== "processing" && (
-        <TouchableOpacity onPress={onUseText} style={styles.textButton}>
+        <TouchableOpacity accessibilityRole="button" onPress={() => {
+          if (localUri || voiceJournalId) confirm(t("Switch to writing?"), t("Discard this recording first, or stay here to finish reviewing it."), [{ text: t("OK") }]);
+          else onUseText();
+        }} style={styles.textButton}>
           <Text style={styles.textButtonLabel}>{t("Write instead")}</Text>
         </TouchableOpacity>
       )}
@@ -478,12 +484,17 @@ export function VoiceJournalRecorder({
 }
 
 const styles = StyleSheet.create({
+  activeStage: { color: colors.light.primary, backgroundColor: colors.light.accent2 },
+  mic: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.light.accent3, alignItems: "center", justifyContent: "center", alignSelf: "center", marginVertical: 12 },
+  processing: { alignItems: "center", gap: 16, paddingVertical: 24 },
+  stage: { color: colors.neutral.grey3, fontSize: 12, padding: 10, borderRadius: 12, overflow: "hidden" },
+  stages: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   body: { color: colors.light.text, fontSize: 14, lineHeight: 21 },
   card: {
     backgroundColor: colors.neutral.white,
-    borderRadius: 16,
-    gap: 14,
-    padding: 16,
+    borderRadius: 24,
+    gap: 18,
+    padding: 22,
   },
   input: {
     backgroundColor: colors.light.background,
@@ -505,5 +516,4 @@ const styles = StyleSheet.create({
   textButton: { alignItems: "center", padding: 8 },
   textButtonLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
   timer: { color: colors.light.text, fontSize: 28, fontWeight: "800", textAlign: "center" },
-  title: { color: colors.light.text, fontSize: 20, fontWeight: "800" },
 });

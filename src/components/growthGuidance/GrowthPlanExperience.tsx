@@ -1,9 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { router } from "expo-router";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { randomUUID } from "expo-crypto";
 import {
   ActivityIndicator,
-  Alert,
+  BackHandler,
+  KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -27,11 +32,18 @@ import {
   getGrowthAttemptFollowUps,
   GROWTH_ATTEMPT_FOLLOW_UPS,
 } from "../../utils/growthGuidance";
-import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
 import { GrowthPlanCard, MILESTONE_LABELS } from "./GrowthPlanCard";
 import { VoiceJournalRecorder } from "./VoiceJournalRecorder";
 import { GrowthEventOpportunities } from "./GrowthEventOpportunities";
+import { GrowthButton, GrowthHeading, GrowthRow, GrowthStepCard, ui, useGrowthConfirm } from "./GrowthUI";
+
+type Screen = "home" | "history" | "direction" | "report" | "journal" | "voice" | "request" | "options" | "events" | "response" | "entry";
+const TABS = [
+  { screen: "home", label: "Today", icon: "white-balance-sunny" },
+  { screen: "history", label: "Journal", icon: "notebook-outline" },
+  { screen: "direction", label: "My direction", icon: "compass-outline" },
+] as const;
 
 const OUTCOMES: Array<[GrowthAttemptOutcome, string]> = [
   ["did_it", "Did it"],
@@ -75,12 +87,20 @@ function ChoiceChip({
 export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanProposal }) {
   const { user } = useAuth();
   const { language, t } = useLanguage();
+  const { confirm, confirmation } = useGrowthConfirm();
   const [experience, setExperience] = useState<GrowthPlanExperienceData | null>(null);
   const [journalEntries, setJournalEntries] = useState<GrowthInteraction[]>([]);
   const [hasOlderJournals, setHasOlderJournals] = useState(false);
   const [loadingOlderJournals, setLoadingOlderJournals] = useState(false);
-  const [mode, setMode] = useState<"home" | "report" | "journal" | "voice" | "request">("home");
+  const [mode, setMode] = useState<Screen>("home");
+  const [selectedEntry, setSelectedEntry] = useState<GrowthInteraction | null>(null);
+  const [reportStage, setReportStage] = useState(0);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const eventBackRef = useRef<(() => boolean) | null>(null);
+  const setEventBackHandler = useCallback((handler: (() => boolean) | null) => { eventBackRef.current = handler; }, []);
   const [requestKind, setRequestKind] = useState<GrowthRequestKind>("change");
+  const [requestOrigin, setRequestOrigin] = useState<Screen>("home");
   const [outcome, setOutcome] = useState<GrowthAttemptOutcome | null>(null);
   const [followUp, setFollowUp] = useState<GrowthAttemptFollowUp | null>(null);
   const [journalText, setJournalText] = useState("");
@@ -90,6 +110,8 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
   const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => { scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [mode, reportStage]);
 
   const load = useCallback(async () => {
     if (!user?.id) return null;
@@ -164,7 +186,34 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
     setFollowUp(null);
     setJournalText("");
     setDraftInteractionId(null);
+    setReportStage(0);
   };
+
+  const goBack = () => {
+    if (saving || voiceBusy) return;
+    if (mode === "events" && eventBackRef.current?.()) return;
+    if (mode === "report" && reportStage > 0) { setReportStage(reportStage - 1); return; }
+    const leave = () => {
+      resetForm();
+      if (["journal", "voice", "entry"].includes(mode)) setMode("history");
+      if (mode === "request") setMode(requestOrigin);
+    };
+    if (mode === "voice") {
+      confirm(t("Leave voice journal?"), t("Unuploaded audio and unsaved transcript edits will be lost. Uploaded recordings can be resumed here."), [
+        { text: t("Stay here"), style: "cancel" }, { text: t("Leave"), onPress: leave },
+      ]);
+    } else if (journalText.trim() && ["journal", "request", "report"].includes(mode)) {
+      confirm(t("Leave this draft?"), t("Your unsent text will be discarded."), [
+        { text: t("Keep writing"), style: "cancel" },
+        { text: t("Discard draft"), style: "destructive", onPress: leave },
+      ]);
+    } else if (TABS.some((tab) => tab.screen === mode)) router.back();
+    else leave();
+  };
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => { goBack(); return true; });
+    return () => subscription.remove();
+  });
 
   const refreshAfterMutation = async () => {
     try {
@@ -216,6 +265,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         pendingInteractionId: result.response ? null : result.interaction.id,
       } : current);
       resetForm();
+      setMode("response");
       await refreshAfterMutation();
     } catch {
       try {
@@ -225,6 +275,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         );
         if (persisted) {
           resetForm();
+          setMode("response");
           setError(t("Your entry was saved, but the response isn't ready yet."));
         } else {
           setError(t("We couldn't save that check-in. Please try again."));
@@ -331,11 +382,12 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
       pendingInteractionId: result.response ? null : result.interaction.id,
     } : current);
     resetForm();
+    setMode("response");
     await refreshAfterMutation();
   };
 
   const deleteJournal = (interactionId: string) => {
-    Alert.alert(
+    confirm(
       t("Delete journal entry?"),
       t("The journal, transcript, audio, and its generated response will be permanently deleted. Plan or step changes you separately confirmed remain part of your active plan."),
       [
@@ -353,6 +405,8 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
                 setJournalEntries((current) =>
                   current.filter((item) => item.id !== interactionId)
                 );
+                setSelectedEntry(null);
+                setMode("history");
                 setPendingInteractionId(null);
                 setExperience((current) => current ? {
                   ...current,
@@ -379,33 +433,82 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
     );
   };
 
-  if (loading) return <ActivityIndicator color={colors.light.primary} />;
+  if (loading) return <SafeAreaView style={styles.screen}><View style={styles.loading}><ActivityIndicator color={colors.light.primary} /><Text style={ui.caption}>{t("Loading your space…")}</Text></View></SafeAreaView>;
 
   if (loadFailed && !experience) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.screen}><ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.error}>{error}</Text>
         <GrowthPlanCard plan={initialPlan} showStep={false} />
-        <FeatureActionButton
+        <GrowthButton
           title={t("Retry loading activity")}
           onPress={retryLoad}
-          variant="pill"
         />
-      </View>
+        <GrowthButton title={t("Close")} secondary onPress={() => router.back()} />
+      </ScrollView></SafeAreaView>
     );
   }
 
   const response = experience?.latestResponse;
+  const blocked = saving || !!pendingInteractionId || response?.confirmation_status === "pending";
+  const isTab = TABS.some((tab) => tab.screen === mode);
+  const openRequest = (kind: GrowthRequestKind) => { setRequestOrigin(mode); setRequestKind(kind); setJournalText(""); setDraftInteractionId(null); setMode("request"); };
   return (
+    <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+    {confirmation}
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View style={styles.navigation}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t(isTab ? "Close" : "Back")} disabled={saving || voiceBusy} onPress={goBack} style={styles.navButton}>
+          <MaterialCommunityIcons name={isTab ? "close" : "arrow-left"} size={24} color={colors.light.primary} />
+        </TouchableOpacity>
+        <Text style={styles.brand}>{t("YOUR GROWTH SPACE")}</Text>
+        <View style={styles.navSpacer} />
+      </View>
+    <ScrollView ref={scrollRef} style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
     <View style={styles.container}>
       {!!error && <Text style={styles.error}>{error}</Text>}
+      {mode === "direction" && <>
+      <GrowthHeading title={t("The bigger picture")} subtitle={t("A working direction. You can change it as you learn.")} />
       <GrowthPlanCard
         plan={visiblePlan}
         active={true}
-        showStep={!experience || !!experience.activeStep}
+        showStep={false}
       />
+      <GrowthRow icon="compass-outline" title={t("Review my direction")} subtitle={t("Something changed? Let's revisit what fits.")} disabled={blocked} onPress={() => openRequest("review")} />
+      </>}
 
-      {!!response && (
+      {mode === "home" && <>
+        <GrowthHeading eyebrow={t("AT YOUR OWN PACE")} title={t("A little forward.")} subtitle={t("One thing to try. Something to learn.")} />
+        {(!!pendingInteractionId || !!response) && <GrowthRow icon="message-text-outline"
+          title={t(pendingInteractionId ? "Your check-in is saved" : response?.confirmation_status === "pending" ? "A change for you to review" : "Your latest reflection")}
+          subtitle={t(pendingInteractionId ? "Your response needs another try." : response?.confirmation_status === "pending" ? "Nothing changes until you choose." : "Read your response from StepnOut.")}
+          onPress={() => setMode("response")} />}
+        {experience?.activeStep ? <GrowthStepCard step={experience.activeStep} accepted={!!experience.activeStep.accepted_at}>
+          {!blocked && <>
+            {!experience.activeStep.accepted_at && <GrowthButton title={t("I'll try this")} onPress={() => chooseStep("accept")} />}
+            <GrowthButton title={t("Check in on this step")} secondary={!experience.activeStep.accepted_at} onPress={() => setMode("report")} />
+            <TouchableOpacity accessibilityRole="button" style={styles.textButton} onPress={() => setMode("options")}><Text style={ui.link}>{t("Adjust this step")}</Text></TouchableOpacity>
+          </>}
+        </GrowthStepCard> : <View style={styles.formCard}>
+          <GrowthHeading title={t("Room for a fresh step")} subtitle={t("Your direction is still here. Choose a next step when you're ready.")} />
+          {!blocked && <GrowthButton title={t("Find my next step")} onPress={() => openRequest("period")} />}
+        </View>}
+        {!!experience?.activeStep && Date.now() - Math.max(new Date(experience.activeStep.created_at).getTime(), new Date(experience.activeStep.accepted_at || 0).getTime(), ...experience.interactions.map((item) => new Date(item.created_at).getTime())) > 14 * 86400000 && <Text style={ui.caption}>{t("Welcome back. Does this step still fit? You can keep it, change it, or set it aside.")}</Text>}
+        <View style={styles.actions}>
+          <GrowthRow icon="lightning-bolt-outline" title={t("An opportunity right now")} subtitle={t("Get a small step for the moment you're in.")} disabled={blocked} onPress={() => openRequest("immediate")} />
+          <GrowthRow icon="map-marker-outline" title={t("Explore nearby")} subtitle={t("Optional places and events to practise.")} onPress={() => setMode("events")} />
+        </View>
+      </>}
+
+      {mode === "options" && <>
+        <GrowthHeading title={t("Make it fit you")} subtitle={t("Your current step stays until you approve a change.")} />
+        {(["easier", "change", "period", "review"] as GrowthRequestKind[]).filter((kind) => !!experience?.activeStep || !["easier", "change"].includes(kind)).map((kind) =>
+          <GrowthRow key={kind} icon={kind === "easier" ? "feather" : kind === "period" ? "calendar-outline" : "compass-outline"} title={t(REQUEST_LABELS[kind])} disabled={blocked} onPress={() => openRequest(kind)} />)}
+        {!!experience?.activeStep && <GrowthButton title={t("Set this step aside")} secondary disabled={blocked} onPress={() => confirm(t("Set this step aside?"), t("Your plan stays available. You can ask for another step whenever it fits."), [{ text: t("Cancel"), style: "cancel" }, { text: t("Set aside"), onPress: () => { void chooseStep("dismiss").then(() => setMode("home")); } }])} />}
+      </>}
+
+      {mode === "response" && <GrowthHeading title={t("A moment to reflect")} subtitle={t("Take what helps. You have the final say.")} />}
+      {mode === "response" && !!response && !pendingInteractionId && (
         <View style={styles.responseCard}>
           <Text style={styles.responseLabel}>{t("STEPnOUT RESPONSE")}</Text>
           <Text style={styles.responseText}>{response.message}</Text>
@@ -439,29 +542,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
                   </Text>
                 </View>
               )}
-              {!!response.next_step && (
-                <View style={styles.proposalPreview}>
-                  <Text style={styles.responseLabel}>
-                    {t("PROPOSED ACTIVE EXPERIMENT")}
-                  </Text>
-                  <Text style={styles.previewTitle}>{response.next_step.title}</Text>
-                  <Text style={styles.hint}>{response.next_step.rationale}</Text>
-                  <Text style={styles.previewLabel}>{t("What to do")}</Text>
-                  <Text style={styles.responseText}>{response.next_step.action}</Text>
-                  <Text style={styles.previewLabel}>{t("What counts as trying it")}</Text>
-                  <Text style={styles.responseText}>
-                    {response.next_step.completion_criterion}
-                  </Text>
-                  {!!response.next_step.if_then_plan && (
-                    <>
-                      <Text style={styles.previewLabel}>{t("If-then plan")}</Text>
-                      <Text style={styles.responseText}>
-                        {response.next_step.if_then_plan}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              )}
+              {!!response.next_step && <GrowthStepCard step={response.next_step} />}
               <Text style={styles.hint}>
                 {t(response.proposed_plan_update
                   ? "This would revise your working plan. Nothing changes until you confirm."
@@ -469,12 +550,12 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
                     ? "Should this count as your step report?"
                     : "Use this as your active step?")}
               </Text>
-              <FeatureActionButton
+              <GrowthButton
                 title={t("Confirm change")}
+                disabled={saving}
                 onPress={() => confirmResponse(true)}
-                variant="pill"
               />
-              <TouchableOpacity onPress={() => confirmResponse(false)} style={styles.textButton}>
+              <TouchableOpacity accessibilityRole="button" disabled={saving} onPress={() => confirmResponse(false)} style={styles.textButton}>
                 <Text style={styles.textButtonLabel}>{t("Keep my plan as it is")}</Text>
               </TouchableOpacity>
             </View>
@@ -482,15 +563,26 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         </View>
       )}
 
-      {pendingInteractionId && (
-        <FeatureActionButton title={t("Retry response")} onPress={retryResponse} variant="pill" />
+      {mode === "response" && pendingInteractionId && (
+        <GrowthButton title={t("Retry response")} onPress={retryResponse} />
       )}
+      {mode === "response" && !pendingInteractionId && response?.confirmation_status !== "pending" && <>
+        {!!response?.clarification_question && <GrowthButton title={t("Write a reply")} onPress={() => setMode("journal")} />}
+        <GrowthButton title={t("Back to today")} secondary onPress={() => setMode("home")} />
+      </>}
 
-      {!!visibleInteractions.length && (
+      {mode === "history" && <>
+        <GrowthHeading title={t("Your journal")} subtitle={t("A little space to notice what happens.")} />
+        <GrowthRow icon="pencil-outline" title={t("Write an entry")} subtitle={t("A thought, a small win, or something that felt hard.")} disabled={blocked} onPress={() => setMode("journal")} />
+        {Platform.OS !== "web" ? <GrowthRow icon="microphone-outline" title={t("Talk it through")} subtitle={t("Record, review the transcript, then share it.")} disabled={blocked} onPress={() => setMode("voice")} /> : <Text style={ui.caption}>{t("Voice journaling is available in the mobile app.")}</Text>}
+        {blocked && <GrowthRow icon="message-text-outline" title={t("Review your pending response")} subtitle={t("Finish this check-in before adding another.")} onPress={() => setMode("response")} />}
+        {!visibleInteractions.length && <View style={styles.emptyCard}><MaterialCommunityIcons name="notebook-outline" size={36} color={colors.light.primary} /><Text style={ui.rowTitle}>{t("Your story starts here")}</Text><Text style={ui.caption}>{t("Your entries and step check-ins will collect here. No daily streak to keep up with.")}</Text></View>}
+      </>}
+      {mode === "history" && !!visibleInteractions.length && (
         <View style={styles.history}>
           <Text style={styles.responseLabel}>{t("RECENT CHECK-INS")}</Text>
           {visibleInteractions.map((interaction) => (
-            <View key={interaction.id} style={styles.historyItem}>
+            <TouchableOpacity accessibilityRole="button" key={interaction.id} style={styles.historyItem} onPress={() => { setSelectedEntry(interaction); setMode("entry"); }}>
               <Text style={styles.historyTitle}>
                 {t(interaction.request_kind ? REQUEST_LABELS[interaction.request_kind] : interaction.kind === "report" ? "Step report" : "Journal")}
                 {" · "}
@@ -506,77 +598,34 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
                 </Text>
               )}
               {!!interaction.journal_text && (
-                <Text style={styles.historyText}>{interaction.journal_text}</Text>
+                <Text numberOfLines={2} style={styles.historyText}>{interaction.journal_text}</Text>
               )}
-              {interaction.kind === "journal" && (
-                <TouchableOpacity
-                  onPress={() => deleteJournal(interaction.id)}
-                  style={styles.historyDelete}
-                  disabled={saving}
-                >
-                  <Text style={styles.historyDeleteLabel}>{t("Delete journal")}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+              <Text style={ui.link}>{t("Read entry")}</Text>
+            </TouchableOpacity>
           ))}
           {hasOlderJournals && (
-            <FeatureActionButton
+            <GrowthButton
               title={t("Load older journals")}
               onPress={loadOlderJournals}
               disabled={loadingOlderJournals}
-              variant="pill"
             />
           )}
         </View>
       )}
+      {mode === "entry" && selectedEntry && <>
+        <GrowthHeading eyebrow={new Date(selectedEntry.created_at).toLocaleDateString(language === "it" ? "it-IT" : "en-CA", { day: "numeric", month: "long", year: "numeric" })} title={t(selectedEntry.request_kind ? REQUEST_LABELS[selectedEntry.request_kind] : selectedEntry.kind === "report" ? "Step report" : selectedEntry.voice_journal_id ? "Voice journal" : "Journal")} />
+        {!!selectedEntry.step_snapshot && <Text style={ui.caption}>{selectedEntry.step_snapshot.title}</Text>}
+        {!!selectedEntry.report_outcome && <Text style={ui.rowTitle}>{t(OUTCOME_LABELS[selectedEntry.report_outcome])}{selectedEntry.follow_up ? ` · ${t(FOLLOW_UP_LABELS[selectedEntry.follow_up])}` : ""}</Text>}
+        {!!selectedEntry.journal_text && <View style={styles.formCard}><Text style={ui.body}>{selectedEntry.journal_text}</Text></View>}
+        {selectedEntry.kind === "journal" && <TouchableOpacity accessibilityRole="button" onPress={() => deleteJournal(selectedEntry.id)} style={styles.textButton} disabled={saving}><Text style={styles.historyDeleteLabel}>{t("Delete journal")}</Text></TouchableOpacity>}
+      </>}
 
-      {mode === "home" && !pendingInteractionId && response?.confirmation_status !== "pending" && (
-        <View style={styles.actions}>
-          {!!experience?.activeStep && !experience.activeStep.accepted_at && (
-            <FeatureActionButton title={t("I'll try this")} onPress={() => chooseStep("accept")} disabled={saving} variant="pill" />
-          )}
-          {!!experience?.activeStep?.accepted_at && <Text style={styles.hint}>{t("You've chosen to try this step.")}</Text>}
-          {!!experience?.activeStep && Date.now() - Math.max(
-            new Date(experience.activeStep.created_at).getTime(),
-            new Date(experience.activeStep.accepted_at || 0).getTime(),
-            ...experience.interactions.map((item) => new Date(item.created_at).getTime())
-          ) > 14 * 86400000 && (
-            <Text style={styles.hint}>{t("Welcome back. Does this step still fit? You can keep it, change it, or set it aside.")}</Text>
-          )}
-          {(Object.keys(REQUEST_LABELS) as GrowthRequestKind[]).filter((kind) =>
-            !!experience?.activeStep || !["easier", "change"].includes(kind)
-          ).map((kind) => (
-            <FeatureActionButton key={kind} title={t(REQUEST_LABELS[kind])} disabled={saving}
-              onPress={() => { setRequestKind(kind); setMode("request"); setJournalText(""); setDraftInteractionId(null); }} variant="pill" />
-          ))}
-          {!!experience?.activeStep && (
-            <TouchableOpacity disabled={saving} style={styles.textButton} onPress={() => Alert.alert(
-              t("Set this step aside?"), t("Your plan stays available. You can ask for another step whenever it fits."),
-              [{ text: t("Cancel"), style: "cancel" }, { text: t("Set aside"), onPress: () => { void chooseStep("dismiss"); } }]
-            )}><Text style={styles.textButtonLabel}>{t("Set this step aside")}</Text></TouchableOpacity>
-          )}
-          {!!experience?.activeStep && (
-            <FeatureActionButton
-              title={t("Report on this step")}
-              onPress={() => setMode("report")}
-              variant="pill"
-            />
-          )}
-          <TouchableOpacity style={styles.secondaryAction} onPress={() => setMode("journal")}>
-            <Text style={styles.secondaryActionTitle}>{t("Add a journal entry")}</Text>
-            <Text style={styles.hint}>{t("Write whenever something relevant happens.")}</Text>
-          </TouchableOpacity>
-          {Platform.OS !== "web" && (
-            <TouchableOpacity style={styles.secondaryAction} onPress={() => setMode("voice")}>
-              <Text style={styles.secondaryActionTitle}>{t("Record a voice journal")}</Text>
-              <Text style={styles.hint}>{t("Review the transcript before submitting it.")}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
 
       {mode === "report" && (
         <View style={styles.formCard}>
+          <Text style={ui.eyebrow}>{t("CHECK-IN (number) OF 3", { number: reportStage + 1 })}</Text>
+          <Text style={ui.caption}>{experience?.activeStep?.title}</Text>
+          {reportStage === 0 && <>
           <Text style={styles.formTitle}>{t("Did you try it?")}</Text>
           <View style={styles.chips}>
             {OUTCOMES.map(([value, label]) => (
@@ -586,7 +635,9 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
               }} />
             ))}
           </View>
-          {!!outcome && (
+          <GrowthButton title={t("Continue")} disabled={!outcome} onPress={() => setReportStage(1)} />
+          </>}
+          {reportStage === 1 && !!outcome && (
             <>
               <Text style={styles.formTitle}>
                 {t(outcome === "didnt_do_it" ? "What got in the way?" : "How did it compare with what you expected?")}
@@ -596,8 +647,11 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
                   <ChoiceChip key={value} label={label} selected={followUp === value} onPress={() => setFollowUp(value)} />
                 ))}
               </View>
+              <GrowthButton title={t("Continue")} disabled={!followUp} onPress={() => setReportStage(2)} />
             </>
           )}
+          {reportStage === 2 && <>
+          <GrowthHeading title={t("Anything to add?")} subtitle={t("A few words can help. Skipping is fine too.")} />
           <TextInput
             style={styles.input}
             value={journalText}
@@ -605,20 +659,20 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
             placeholder={t("Optional: add what happened")}
             placeholderTextColor={colors.light.lightText}
             multiline
+            accessibilityLabel={t("Optional: add what happened")}
+            editable={!saving}
             maxLength={4000}
           />
-          <FeatureActionButton title={t("Submit report")} onPress={submit} disabled={!outcome || !followUp} variant="pill" />
-          <TouchableOpacity onPress={resetForm} style={styles.textButton}>
-            <Text style={styles.textButtonLabel}>{t("Cancel")}</Text>
-          </TouchableOpacity>
+          <GrowthButton title={t("Submit report")} onPress={submit} busy={saving} disabled={!outcome || !followUp} />
+          </>}
         </View>
       )}
 
       {(mode === "journal" || mode === "request") && (
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>{t(mode === "request" ? REQUEST_LABELS[requestKind] : "What's on your mind?")}</Text>
+          <GrowthHeading title={t(mode === "request" ? REQUEST_LABELS[requestKind] : "What's on your mind?")} />
           <Text style={styles.hint}>
-            {t(mode === "request" ? "Describe what should change, the situation, or the time you have. Your current step stays until you confirm a replacement." : "A journal entry is evidence from you. We'll ask before it changes your plan or completes a step.")}
+            {t(mode === "request" ? "Tell us what would help and the time you have. You'll review any change before it happens." : "Write freely. We'll reflect with you and ask before changing your plan.")}
           </Text>
           <TextInput
             style={[styles.input, styles.journalInput]}
@@ -628,12 +682,12 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
             placeholderTextColor={colors.light.lightText}
             multiline
             maxLength={4000}
+            accessibilityLabel={t(mode === "request" ? "What would help?" : "Your journal entry")}
+            editable={!saving}
             textAlignVertical="top"
           />
-          <FeatureActionButton title={t(mode === "request" ? "Ask for guidance" : "Add a journal entry")} onPress={submit} disabled={saving || !journalText.trim()} variant="pill" />
-          <TouchableOpacity onPress={resetForm} style={styles.textButton}>
-            <Text style={styles.textButtonLabel}>{t("Cancel")}</Text>
-          </TouchableOpacity>
+          <Text style={styles.characterCount}>{journalText.length}/4000</Text>
+          <GrowthButton title={t(mode === "request" ? "Ask for guidance" : "Save & reflect")} onPress={submit} busy={saving} disabled={!journalText.trim()} />
         </View>
       )}
 
@@ -644,19 +698,45 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
           locale={language}
           onSubmitted={handleVoiceSubmitted}
           onUseText={() => setMode("journal")}
+          onBusyChange={setVoiceBusy}
         />
       )}
 
-      {user?.id && mode === "home" && <GrowthEventOpportunities userId={user.id} intakeId={activePlan.intake_id}
+      {user?.id && mode === "events" && <GrowthEventOpportunities userId={user.id} intakeId={activePlan.intake_id}
+        onBusyChange={setVoiceBusy}
+        onBackHandlerChange={setEventBackHandler}
         onChanged={refreshAfterMutation} blocked={saving || !!pendingInteractionId || response?.confirmation_status === "pending"} />}
       {saving && <ActivityIndicator color={colors.light.primary} />}
     </View>
+    </ScrollView>
+    {isTab && <View style={styles.tabs}>{TABS.map((tab) => <TouchableOpacity key={tab.screen} accessibilityRole="tab" accessibilityState={{ selected: mode === tab.screen }} onPress={() => setMode(tab.screen)} style={[styles.tab, mode === tab.screen && styles.activeTab]}>
+      <MaterialCommunityIcons name={tab.icon} size={23} color={colors.light.primary} /><Text style={[styles.tabLabel, mode === tab.screen && styles.activeTabLabel]}>{t(tab.label)}</Text>
+    </TouchableOpacity>)}</View>}
+    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  activeTab: { backgroundColor: colors.light.accent2 },
+  activeTabLabel: { fontWeight: "800" },
+  brand: { color: colors.light.primary, fontSize: 11, fontWeight: "800", letterSpacing: 1.6, flex: 1, textAlign: "center" },
+  characterCount: { color: colors.neutral.grey3, fontSize: 12, textAlign: "right" },
+  content: { padding: 20, paddingBottom: 32, width: "100%", maxWidth: 680, alignSelf: "center", flexGrow: 1 },
+  emptyCard: { alignItems: "center", gap: 12, padding: 28, backgroundColor: colors.light.accent3, borderRadius: 22 },
+  flex: { flex: 1 },
+  loading: { flex: 1, justifyContent: "center", alignItems: "center", gap: 14 },
+  navigation: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 4 },
+  navButton: { height: 48, width: 48, alignItems: "center", justifyContent: "center" },
+  navSpacer: { width: 48 },
+  screen: { flex: 1, backgroundColor: colors.light.background },
+  tab: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 10, paddingHorizontal: 4, gap: 5, borderRadius: 18, minHeight: 64 },
+  tabLabel: { color: colors.light.primary, fontSize: 12, textAlign: "center" },
+  tabs: { flexDirection: "row", paddingHorizontal: 12, paddingVertical: 8, gap: 5, backgroundColor: colors.light.background, borderTopWidth: 1, borderTopColor: colors.neutral.grey2 },
   actions: { gap: 10 },
   chip: {
+    minHeight: 44,
+    justifyContent: "center",
     backgroundColor: colors.light.accent3,
     borderColor: colors.light.accent2,
     borderRadius: 999,
@@ -677,17 +757,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 12,
   },
-  formCard: { backgroundColor: colors.neutral.white, borderRadius: 16, gap: 15, padding: 16 },
+  formCard: { backgroundColor: colors.neutral.white, borderRadius: 24, gap: 20, padding: 22 },
   formTitle: { color: colors.light.text, fontSize: 18, fontWeight: "800" },
-  hint: { color: colors.light.lightText, fontSize: 13, lineHeight: 19 },
+  hint: { color: colors.neutral.grey3, fontSize: 14, lineHeight: 21 },
   history: { gap: 10 },
-  historyItem: {
-    borderBottomColor: colors.neutral.grey2,
-    borderBottomWidth: 1,
-    gap: 5,
-    paddingBottom: 10,
-  },
-  historyDelete: { alignSelf: "flex-start", paddingVertical: 4 },
+  historyItem: { backgroundColor: colors.neutral.white, borderRadius: 18, padding: 18, gap: 10 },
   historyDeleteLabel: { color: colors.light.alertRed, fontSize: 13, fontWeight: "700" },
   historyText: { color: colors.light.text, fontSize: 14, lineHeight: 20 },
   historyTitle: { color: colors.light.text, fontSize: 13, fontWeight: "800" },
@@ -701,7 +775,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
     padding: 12,
   },
-  journalInput: { minHeight: 130 },
+  journalInput: { minHeight: 220, lineHeight: 24, padding: 16 },
   previewItem: { gap: 2 },
   previewLabel: {
     color: colors.light.primary,
@@ -721,14 +795,6 @@ const styles = StyleSheet.create({
   responseCard: { backgroundColor: colors.light.accent2, borderRadius: 16, gap: 10, padding: 16 },
   responseLabel: { color: colors.light.primary, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
   responseText: { color: colors.light.text, fontSize: 16, lineHeight: 23 },
-  secondaryAction: {
-    borderColor: colors.light.primary,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 3,
-    padding: 15,
-  },
-  secondaryActionTitle: { color: colors.light.primary, fontSize: 16, fontWeight: "800" },
-  textButton: { alignItems: "center", padding: 8 },
+  textButton: { alignItems: "center", justifyContent: "center", padding: 10, minHeight: 44 },
   textButtonLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
 });

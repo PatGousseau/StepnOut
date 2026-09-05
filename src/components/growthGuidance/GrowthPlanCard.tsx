@@ -4,6 +4,7 @@ import { colors } from "../../constants/Colors";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { GrowthPlanProposal } from "../../types/growthGuidance";
 import { Text } from "../StyledText";
+import { GrowthDisclosure, GrowthStepCard } from "./GrowthUI";
 
 export const MILESTONE_LABELS = {
   later: "Later", current: "Current focus", evidence: "Evidence of progress",
@@ -26,11 +27,10 @@ export function GrowthPlanCard({
       <Text style={styles.eyebrow}>{t("YOUR DIRECTION")}</Text>
       <Text style={styles.goal}>{plan.goal}</Text>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t("What may be getting in the way")}</Text>
+      <GrowthDisclosure title={t("What may be getting in the way")}>
         <Text style={styles.body}>{plan.formulation}</Text>
         <Text style={styles.tentative}>{t("This is a starting hypothesis, not a label.")}</Text>
-      </View>
+      </GrowthDisclosure>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t("A possible path")}</Text>
@@ -46,7 +46,7 @@ export function GrowthPlanCard({
                   {t(MILESTONE_LABELS[milestone.status || (index === 0 ? "current" : "later")])}
                 </Text>
               )}
-              <Text style={styles.body}>{milestone.description}</Text>
+              <GrowthDisclosure title={t("About this part")}><Text style={styles.body}>{milestone.description}</Text></GrowthDisclosure>
             </View>
           </View>
         ))}
@@ -57,23 +57,7 @@ export function GrowthPlanCard({
         <Text style={styles.focus}>{plan.current_focus}</Text>
       </View>
 
-      {showStep && <View style={styles.stepCard}>
-        <Text style={styles.stepLabel}>
-          {t(active ? "YOUR ACTIVE EXPERIMENT" : "YOUR FIRST EXPERIMENT")}
-        </Text>
-        <Text style={styles.stepTitle}>{plan.first_step.title}</Text>
-        <Text style={styles.body}>{plan.first_step.rationale}</Text>
-        <Text style={styles.detailLabel}>{t("What to do")}</Text>
-        <Text style={styles.body}>{plan.first_step.action}</Text>
-        <Text style={styles.detailLabel}>{t("What counts as trying it")}</Text>
-        <Text style={styles.body}>{plan.first_step.completion_criterion}</Text>
-        {!!plan.first_step.if_then_plan && (
-          <>
-            <Text style={styles.detailLabel}>{t("If-then plan")}</Text>
-            <Text style={styles.body}>{plan.first_step.if_then_plan}</Text>
-          </>
-        )}
-      </View>}
+      {showStep && <GrowthStepCard step={plan.first_step} />}
     </View>
   );
 }
@@ -86,13 +70,6 @@ const styles = StyleSheet.create({
   },
   container: {
     gap: 24,
-  },
-  detailLabel: {
-    color: colors.light.primary,
-    fontSize: 13,
-    fontWeight: "700",
-    marginTop: 6,
-    textTransform: "uppercase",
   },
   eyebrow: {
     color: colors.light.primary,
@@ -164,26 +141,6 @@ const styles = StyleSheet.create({
     color: colors.light.text,
     fontSize: 19,
     fontWeight: "800",
-  },
-  stepCard: {
-    backgroundColor: colors.sideQuest.highlightSoft,
-    borderColor: colors.sideQuest.bgBorder,
-    borderRadius: 18,
-    borderWidth: 1,
-    gap: 10,
-    padding: 18,
-  },
-  stepLabel: {
-    color: colors.sideQuest.text,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.9,
-  },
-  stepTitle: {
-    color: colors.sideQuest.textStrong,
-    fontSize: 21,
-    fontWeight: "800",
-    lineHeight: 27,
   },
   tentative: {
     color: colors.light.lightText,
