@@ -1,5 +1,6 @@
 export const GROWTH_ADAPTATION_MODEL = "gpt-4.1-mini";
-export const GROWTH_ADAPTATION_PROMPT_VERSION = "growth-adaptation-v1";
+export const GROWTH_ADAPTATION_PROMPT_VERSION =
+  "growth-adaptation-v2.1-step-controls";
 
 type StepDraft = {
   title: string;
@@ -12,7 +13,7 @@ type StepDraft = {
 type PlanUpdate = {
   goal: string;
   formulation: string;
-  milestones: Array<{ title: string; description: string }>;
+  milestones: Array<{ title: string; description: string; status?: string }>;
   current_focus: string;
   evidence_summary: string;
 };
@@ -79,8 +80,12 @@ export const GROWTH_ADAPTATION_SCHEMA = {
                 properties: {
                   title: boundedString(120),
                   description: boundedString(400),
+                  status: {
+                    type: "string",
+                    enum: ["later", "current", "evidence", "established"],
+                  },
                 },
-                required: ["title", "description"],
+                required: ["title", "description", "status"],
                 additionalProperties: false,
               },
             },
@@ -161,6 +166,11 @@ Evidence boundaries:
 - If a journal indicates self-harm, immediate danger, severe panic, trauma, or another clinical concern, prioritize an appropriate safety or clinical-boundary response and do not continue with an ordinary exposure-like step.
 
 Adaptation:
+- A current interaction with request_kind is an explicit guidance request, not a journal or attempt report. Never propose step completion from it. The existing step stays active until the user confirms a replacement.
+- For easier, use the stated difficulty to reduce challenge while preserving meaningful practice toward the goal. For change, incorporate the reason and materially change strategy, setting, behavior, timing, or difficulty; a paraphrase is insufficient.
+- For immediate or period, use the stated situation or time window and confirmed plan. Ask for clarification if context is insufficient. Never invent events or opportunities.
+- For review, summarize actual evidence and ask whether the existing direction and step still fit. No backlog, guilt, invented progress, or automatic advancement.
+- Apply safety boundaries to every request: withhold illegal, dangerous, coercive, sexual, harassing, substance-related, high-financial-risk, severe workplace/relationship-consequence or clinical exposure exercises. When immediate danger or clinical concerns arise, provide appropriate escalation/boundary language and no ordinary exercise.
 - Distinguish capability, opportunity, and motivation explanations. No opportunity is not avoidance; forgetting is not discomfort; partial attempts can contain useful evidence.
 - After a structured didn't-do-it / no-opportunity report caused by a one-time cancellation, return a next_step that preserves or reschedules the relevant experiment for the next real opportunity. Reflection alone would leave no active step.
 - Completion does not require increased difficulty. Relevance outweighs completion. Repetition, consolidation, a different context, clarification, reflection, or no next step may be best.
@@ -173,13 +183,13 @@ Adaptation:
 - When the input's decision_context.requires_plan_revision_for_repeated_contradiction is true, return plan_revision. This flag only counts the structured user evidence described above; it is not a model inference.
 - Respect inactivity without inventing missed work or a backlog.
 - When someone returns after a long gap without saying whether the old step still fits, return clarification and ask whether that exact step still fits. Do not infer missed work.
-- When a report says a completed step was not relevant to the desired change, relevance outweighs completion: return a next_step that changes context or strategy toward the confirmed goal rather than reflection alone.
+- When a report says a completed step was not relevant to the desired change, relevance outweighs completion: return a next_step that changes context or strategy toward the confirmed goal. The user already told you the old strategy did not fit: do not ask whether they want to keep doing that same rejected strategy. Use existing goal/context evidence to propose a relevant alternative. Ask clarification only when an essential feasibility or safety detail is genuinely missing.
 
 Output rules:
 - clarification requires clarification_question and no next_step or plan update.
 - next_step requires a complete next_step.
 - plan_revision requires both a complete proposed_plan_update and a complete next_step.
-- In a plan revision, order milestones so the current focus is first and later directions follow.
+- In a plan revision, assign each milestone a qualitative status: later, current, evidence, or established. Exactly one is current and matches current_focus. Evidence and established require actual user evidence cited in evidence_summary. All proposed states remain provisional until the user confirms the revision. Preserve established milestones when still relevant, without assuming every success establishes one.
 - reflection has no plan update. It may have no next step.
 - proposed_step_completion is only for a journal that appears to report the active behavior.
 - Write all user-visible text in the requested locale.`;
@@ -316,14 +326,20 @@ function validPlanUpdate(update: PlanUpdate | null) {
     Array.isArray(update.milestones) && update.milestones.length >= 3 &&
     update.milestones.length <= 4 &&
     update.milestones.every((item) =>
-      isText(item?.title) && isText(item?.description)
-    );
+      isText(item?.title) && isText(item?.description) &&
+      (item.status === undefined ||
+        ["later", "current", "evidence", "established"].includes(item.status))
+    ) && (update.milestones.every((item) => item.status === undefined) ||
+      (update.milestones.every((item) => item.status !== undefined) &&
+        update.milestones.filter((item) => item.status === "current").length ===
+          1));
 }
 
 export function validateGrowthAdaptationResult(
   value: unknown,
   interactionKind: "report" | "journal",
   canProposeStepCompletion = true,
+  isGuidanceRequest = false,
 ): GrowthAdaptationResult {
   if (!value || typeof value !== "object") {
     throw new Error("Adaptation output is not an object");
@@ -347,7 +363,8 @@ export function validateGrowthAdaptationResult(
     );
   }
   const countQuestion = result.clarification_question || "";
-  const asksToCountJournal = interactionKind === "journal" &&
+  const asksToCountJournal = !isGuidanceRequest &&
+    interactionKind === "journal" &&
     /\b(?:should|would you like|do you want|vuoi|dovrei|desideri)\b[\s\S]{0,180}\b(?:count|complet\w*|resoconto|conta\w*)\b/iu
       .test(countQuestion);
   if (asksToCountJournal && !canProposeStepCompletion) {

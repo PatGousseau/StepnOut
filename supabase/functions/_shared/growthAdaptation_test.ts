@@ -21,6 +21,24 @@ const nextStep = {
   if_then_plan: null,
 };
 
+Deno.test("an immediate request can clarify the desired action without inferring journal completion", () => {
+  const result = validateGrowthAdaptationResult(
+    {
+      response_type: "clarification",
+      message: "Tell me about the situation.",
+      clarification_question:
+        "What would you like to complete during this opportunity?",
+      next_step: null,
+      proposed_plan_update: null,
+      proposed_step_completion: false,
+    },
+    "journal",
+    false,
+    true,
+  );
+  assertEquals(result.proposed_step_completion, false);
+});
+
 Deno.test("accepts a report response with a concrete next step", () => {
   const result = validateGrowthAdaptationResult({
     response_type: "next_step",

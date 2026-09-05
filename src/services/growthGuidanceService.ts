@@ -10,6 +10,7 @@ import {
   GrowthInteraction,
   GrowthPlanExperience,
   GrowthPlanProposal,
+  GrowthRequestKind,
   GrowthStep,
   GrowthVoiceJournal,
 } from "../types/growthGuidance";
@@ -158,7 +159,7 @@ export const growthGuidanceService = {
       await Promise.all([
         supabase
           .from("growth_steps")
-          .select("id, plan_id, user_id, sequence, status, title, rationale, action, completion_criterion, if_then_plan, created_at, ended_at")
+          .select("id, plan_id, user_id, sequence, status, title, rationale, action, completion_criterion, if_then_plan, created_at, ended_at, accepted_at")
           .eq("user_id", userId)
           .eq("status", "active")
           .order("sequence", { ascending: false })
@@ -166,7 +167,7 @@ export const growthGuidanceService = {
           .maybeSingle(),
         supabase
           .from("growth_interactions")
-          .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at")
+          .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, voice_journal_id, request_kind, step_snapshot, created_at")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(20),
@@ -204,7 +205,7 @@ export const growthGuidanceService = {
   ): Promise<GrowthInteraction[]> {
     const { data, error } = await supabase
       .from("growth_interactions")
-      .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at")
+      .select("id, plan_id, step_id, user_id, kind, report_outcome, follow_up, journal_text, voice_journal_id, request_kind, step_snapshot, created_at")
       .eq("user_id", userId)
       .eq("kind", "journal")
       .order("created_at", { ascending: false })
@@ -222,10 +223,17 @@ export const growthGuidanceService = {
     followUp?: GrowthAttemptFollowUp;
     journalText?: string;
     locale: string;
+    requestKind?: GrowthRequestKind;
   }): Promise<{ interaction: GrowthInteraction; response: GrowthAdaptiveResponse | null }> {
     const { data: interaction, error: submitError } = await supabase.rpc(
-      "submit_growth_interaction",
-      {
+      params.requestKind ? "request_growth_guidance" : "submit_growth_interaction",
+      params.requestKind ? {
+        p_interaction_id: params.interactionId,
+        p_plan_id: params.planId,
+        p_step_id: params.stepId || null,
+        p_request_kind: params.requestKind,
+        p_context: params.journalText?.trim() || null,
+      } : {
         p_interaction_id: params.interactionId,
         p_plan_id: params.planId,
         p_step_id: params.stepId || null,
@@ -260,6 +268,13 @@ export const growthGuidanceService = {
       throw new Error((data as { error?: string })?.error || "growth_adaptation_failed");
     }
     return data.response as GrowthAdaptiveResponse;
+  },
+
+  async setStepChoice(stepId: string, choice: "accept" | "dismiss"): Promise<void> {
+    const { error } = await supabase.rpc("set_growth_step_choice", {
+      p_step_id: stepId, p_choice: choice,
+    });
+    if (error) throw error;
   },
 
   async confirmAdaptiveResponse(

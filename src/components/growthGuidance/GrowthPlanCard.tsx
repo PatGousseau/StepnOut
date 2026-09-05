@@ -5,6 +5,11 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { GrowthPlanProposal } from "../../types/growthGuidance";
 import { Text } from "../StyledText";
 
+export const MILESTONE_LABELS = {
+  later: "Later", current: "Current focus", evidence: "Evidence of progress",
+  established: "Established enough to move forward",
+};
+
 export function GrowthPlanCard({
   plan,
   active = false,
@@ -38,7 +43,7 @@ export function GrowthPlanCard({
               <Text style={styles.milestoneTitle}>{milestone.title}</Text>
               {active && (
                 <Text style={styles.milestoneState}>
-                  {t(index === 0 ? "Current focus" : "Later")}
+                  {t(MILESTONE_LABELS[milestone.status || (index === 0 ? "current" : "later")])}
                 </Text>
               )}
               <Text style={styles.body}>{milestone.description}</Text>

@@ -38,6 +38,7 @@ export interface GrowthIntake {
 export interface GrowthMilestone {
   title: string;
   description: string;
+  status?: "later" | "current" | "evidence" | "established";
 }
 
 export interface GrowthFirstStep {
@@ -84,7 +85,10 @@ export interface GrowthStep extends GrowthFirstStep {
   status: "active" | "attempted" | "replaced" | "dismissed";
   created_at: string;
   ended_at: string | null;
+  accepted_at: string | null;
 }
+
+export type GrowthRequestKind = "easier" | "change" | "immediate" | "period" | "review";
 
 export interface GrowthInteraction {
   id: string;
@@ -96,6 +100,7 @@ export interface GrowthInteraction {
   follow_up: GrowthAttemptFollowUp | null;
   journal_text: string | null;
   voice_journal_id: string | null;
+  request_kind: GrowthRequestKind | null;
   step_snapshot: GrowthFirstStep | null;
   created_at: string;
 }
