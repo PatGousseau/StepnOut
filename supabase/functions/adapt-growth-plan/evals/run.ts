@@ -5,6 +5,7 @@ import {
   getGrowthAdaptationRepair,
   getGrowthAdaptationSchema,
   GROWTH_ADAPTATION_MODEL,
+  GROWTH_ADAPTATION_PROMPT_VERSION,
   GROWTH_ADAPTATION_SYSTEM_PROMPT,
   validateGrowthAdaptationResult,
 } from "../../_shared/growthAdaptation.ts";
@@ -95,13 +96,20 @@ for (const fixture of selected) {
             schema: getGrowthAdaptationSchema(
               fixture.current_interaction.kind,
               forcePlanRevision,
+              !fixture.current_interaction.request_kind,
             ),
           },
         },
       });
+      await Deno.writeTextFile(
+        new URL(`${fixture.id}-run-${run}-raw.json`, outputDirectory),
+        generatedResponse.output_text,
+      );
       return validateGrowthAdaptationResult(
         JSON.parse(generatedResponse.output_text),
         fixture.current_interaction.kind,
+        !fixture.current_interaction.request_kind,
+        !!fixture.current_interaction.request_kind,
       );
     };
     const initialGenerated = await requestGeneration(null);
@@ -186,6 +194,7 @@ for (const fixture of selected) {
       run,
       model: GROWTH_ADAPTATION_MODEL,
       generated_at: new Date().toISOString(),
+      prompt_version: GROWTH_ADAPTATION_PROMPT_VERSION,
       generated_response: generated,
       proposed_state_change: {
         next_step: generated.next_step,

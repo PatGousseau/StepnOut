@@ -23,6 +23,7 @@ async function generateAdaptation(
   interactionKind: "report" | "journal",
   requiresPlanRevision: boolean,
   canProposeStepCompletion: boolean,
+  isGuidanceRequest: boolean,
 ) {
   const requestGeneration = async (
     repairInstruction: string | null,
@@ -74,6 +75,7 @@ async function generateAdaptation(
       JSON.parse(outputText),
       interactionKind,
       canProposeStepCompletion,
+      isGuidanceRequest,
     );
   };
 
@@ -184,7 +186,7 @@ Deno.serve(async (req) => {
       service.from("growth_steps").select("*").eq("user_id", authData.user.id)
         .eq("status", "active").maybeSingle(),
       service.from("growth_interactions").select(
-        "id, kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at",
+        "id, kind, request_kind, report_outcome, follow_up, journal_text, voice_journal_id, step_snapshot, created_at",
       )
         .eq("user_id", authData.user.id)
         .neq("id", interactionId)
@@ -232,7 +234,9 @@ Deno.serve(async (req) => {
       }),
       interaction.kind,
       decisionContext.requires_plan_revision_for_repeated_contradiction,
-      interaction.kind === "journal" && interaction.step_id !== null,
+      interaction.kind === "journal" && interaction.step_id !== null &&
+        !interaction.request_kind,
+      !!interaction.request_kind,
     );
 
     const { data: saved, error: persistError } = await service.rpc(

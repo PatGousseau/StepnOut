@@ -21,6 +21,7 @@ import {
   GrowthInteraction,
   GrowthPlanExperience as GrowthPlanExperienceData,
   GrowthPlanProposal,
+  GrowthRequestKind,
 } from "../../types/growthGuidance";
 import {
   getGrowthAttemptFollowUps,
@@ -28,7 +29,7 @@ import {
 } from "../../utils/growthGuidance";
 import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
-import { GrowthPlanCard } from "./GrowthPlanCard";
+import { GrowthPlanCard, MILESTONE_LABELS } from "./GrowthPlanCard";
 import { VoiceJournalRecorder } from "./VoiceJournalRecorder";
 
 const OUTCOMES: Array<[GrowthAttemptOutcome, string]> = [
@@ -43,6 +44,10 @@ const FOLLOW_UP_LABELS = Object.fromEntries([
   ...GROWTH_ATTEMPT_FOLLOW_UPS.not_attempted,
 ]) as Record<GrowthAttemptFollowUp, string>;
 const JOURNAL_PAGE_SIZE = 20;
+const REQUEST_LABELS: Record<GrowthRequestKind, string> = {
+  easier: "Make it easier", change: "Change this", immediate: "I have an opportunity right now",
+  period: "Find a step for a time period", review: "Review my direction",
+};
 
 function ChoiceChip({
   label,
@@ -73,7 +78,8 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
   const [journalEntries, setJournalEntries] = useState<GrowthInteraction[]>([]);
   const [hasOlderJournals, setHasOlderJournals] = useState(false);
   const [loadingOlderJournals, setLoadingOlderJournals] = useState(false);
-  const [mode, setMode] = useState<"home" | "report" | "journal" | "voice">("home");
+  const [mode, setMode] = useState<"home" | "report" | "journal" | "voice" | "request">("home");
+  const [requestKind, setRequestKind] = useState<GrowthRequestKind>("change");
   const [outcome, setOutcome] = useState<GrowthAttemptOutcome | null>(null);
   const [followUp, setFollowUp] = useState<GrowthAttemptFollowUp | null>(null);
   const [journalText, setJournalText] = useState("");
@@ -186,10 +192,11 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         followUp: followUp || undefined,
         journalText,
         locale: language,
+        requestKind: mode === "request" ? requestKind : undefined,
       });
       captureEvent(
-        isReport ? GROWTH_GUIDANCE_EVENTS.REPORT_SUBMITTED : GROWTH_GUIDANCE_EVENTS.JOURNAL_SUBMITTED,
-        isReport ? { outcome, follow_up: followUp } : {}
+        isReport ? GROWTH_GUIDANCE_EVENTS.REPORT_SUBMITTED : mode === "request" ? "growth_guidance_requested" : GROWTH_GUIDANCE_EVENTS.JOURNAL_SUBMITTED,
+        isReport ? { outcome, follow_up: followUp } : mode === "request" ? { request_kind: requestKind } : {}
       );
       if (!result.response) {
         setPendingInteractionId(result.interaction.id);
@@ -250,6 +257,19 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
     } finally {
       setSaving(false);
     }
+  };
+
+  const chooseStep = async (choice: "accept" | "dismiss") => {
+    if (!experience?.activeStep || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      await growthGuidanceService.setStepChoice(experience.activeStep.id, choice);
+      captureEvent("growth_step_choice", { choice });
+      await refreshAfterMutation();
+    } catch {
+      setError(t("We couldn't save that choice. Please try again."));
+    } finally { setSaving(false); }
   };
 
   const confirmResponse = async (accepted: boolean) => {
@@ -380,7 +400,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
       {!!error && <Text style={styles.error}>{error}</Text>}
       <GrowthPlanCard
         plan={visiblePlan}
-        active={!!experience?.activeStep}
+        active={true}
         showStep={!experience || !!experience.activeStep}
       />
 
@@ -408,6 +428,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
                   {response.proposed_plan_update.milestones.map((milestone) => (
                     <View key={milestone.title} style={styles.previewItem}>
                       <Text style={styles.previewTitle}>{milestone.title}</Text>
+                      {!!milestone.status && <Text style={styles.hint}>{t(MILESTONE_LABELS[milestone.status])}</Text>}
                       <Text style={styles.hint}>{milestone.description}</Text>
                     </View>
                   ))}
@@ -470,7 +491,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
           {visibleInteractions.map((interaction) => (
             <View key={interaction.id} style={styles.historyItem}>
               <Text style={styles.historyTitle}>
-                {t(interaction.kind === "report" ? "Step report" : "Journal")}
+                {t(interaction.request_kind ? REQUEST_LABELS[interaction.request_kind] : interaction.kind === "report" ? "Step report" : "Journal")}
                 {" · "}
                 {new Date(interaction.created_at).toLocaleDateString(
                   language === "it" ? "it-IT" : "en-CA"
@@ -510,6 +531,29 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
 
       {mode === "home" && !pendingInteractionId && response?.confirmation_status !== "pending" && (
         <View style={styles.actions}>
+          {!!experience?.activeStep && !experience.activeStep.accepted_at && (
+            <FeatureActionButton title={t("I'll try this")} onPress={() => chooseStep("accept")} disabled={saving} variant="pill" />
+          )}
+          {!!experience?.activeStep?.accepted_at && <Text style={styles.hint}>{t("You've chosen to try this step.")}</Text>}
+          {!!experience?.activeStep && Date.now() - Math.max(
+            new Date(experience.activeStep.created_at).getTime(),
+            new Date(experience.activeStep.accepted_at || 0).getTime(),
+            ...experience.interactions.map((item) => new Date(item.created_at).getTime())
+          ) > 14 * 86400000 && (
+            <Text style={styles.hint}>{t("Welcome back. Does this step still fit? You can keep it, change it, or set it aside.")}</Text>
+          )}
+          {(Object.keys(REQUEST_LABELS) as GrowthRequestKind[]).filter((kind) =>
+            !!experience?.activeStep || !["easier", "change"].includes(kind)
+          ).map((kind) => (
+            <FeatureActionButton key={kind} title={t(REQUEST_LABELS[kind])} disabled={saving}
+              onPress={() => { setRequestKind(kind); setMode("request"); setJournalText(""); setDraftInteractionId(null); }} variant="pill" />
+          ))}
+          {!!experience?.activeStep && (
+            <TouchableOpacity disabled={saving} style={styles.textButton} onPress={() => Alert.alert(
+              t("Set this step aside?"), t("Your plan stays available. You can ask for another step whenever it fits."),
+              [{ text: t("Cancel"), style: "cancel" }, { text: t("Set aside"), onPress: () => { void chooseStep("dismiss"); } }]
+            )}><Text style={styles.textButtonLabel}>{t("Set this step aside")}</Text></TouchableOpacity>
+          )}
           {!!experience?.activeStep && (
             <FeatureActionButton
               title={t("Report on this step")}
@@ -569,11 +613,11 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         </View>
       )}
 
-      {mode === "journal" && (
+      {(mode === "journal" || mode === "request") && (
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>{t("What's on your mind?")}</Text>
+          <Text style={styles.formTitle}>{t(mode === "request" ? REQUEST_LABELS[requestKind] : "What's on your mind?")}</Text>
           <Text style={styles.hint}>
-            {t("A journal entry is evidence from you. We'll ask before it changes your plan or completes a step.")}
+            {t(mode === "request" ? "Describe what should change, the situation, or the time you have. Your current step stays until you confirm a replacement." : "A journal entry is evidence from you. We'll ask before it changes your plan or completes a step.")}
           </Text>
           <TextInput
             style={[styles.input, styles.journalInput]}
@@ -585,7 +629,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
             maxLength={4000}
             textAlignVertical="top"
           />
-          <FeatureActionButton title={t("Add a journal entry")} onPress={submit} disabled={!journalText.trim()} variant="pill" />
+          <FeatureActionButton title={t(mode === "request" ? "Ask for guidance" : "Add a journal entry")} onPress={submit} disabled={saving || !journalText.trim()} variant="pill" />
           <TouchableOpacity onPress={resetForm} style={styles.textButton}>
             <Text style={styles.textButtonLabel}>{t("Cancel")}</Text>
           </TouchableOpacity>
