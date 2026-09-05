@@ -31,6 +31,7 @@ import { FeatureActionButton } from "../FeatureActionButton";
 import { Text } from "../StyledText";
 import { GrowthPlanCard, MILESTONE_LABELS } from "./GrowthPlanCard";
 import { VoiceJournalRecorder } from "./VoiceJournalRecorder";
+import { GrowthEventOpportunities } from "./GrowthEventOpportunities";
 
 const OUTCOMES: Array<[GrowthAttemptOutcome, string]> = [
   ["did_it", "Did it"],
@@ -646,6 +647,8 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         />
       )}
 
+      {user?.id && mode === "home" && <GrowthEventOpportunities userId={user.id} intakeId={activePlan.intake_id}
+        onChanged={refreshAfterMutation} blocked={saving || !!pendingInteractionId || response?.confirmation_status === "pending"} />}
       {saving && <ActivityIndicator color={colors.light.primary} />}
     </View>
   );
