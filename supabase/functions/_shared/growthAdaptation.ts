@@ -1,6 +1,6 @@
 export const GROWTH_ADAPTATION_MODEL = "gpt-4.1-mini";
 export const GROWTH_ADAPTATION_PROMPT_VERSION =
-  "growth-adaptation-v2-step-controls";
+  "growth-adaptation-v2.1-step-controls";
 
 type StepDraft = {
   title: string;
@@ -183,7 +183,7 @@ Adaptation:
 - When the input's decision_context.requires_plan_revision_for_repeated_contradiction is true, return plan_revision. This flag only counts the structured user evidence described above; it is not a model inference.
 - Respect inactivity without inventing missed work or a backlog.
 - When someone returns after a long gap without saying whether the old step still fits, return clarification and ask whether that exact step still fits. Do not infer missed work.
-- When a report says a completed step was not relevant to the desired change, relevance outweighs completion: return a next_step that changes context or strategy toward the confirmed goal rather than reflection alone.
+- When a report says a completed step was not relevant to the desired change, relevance outweighs completion: return a next_step that changes context or strategy toward the confirmed goal. The user already told you the old strategy did not fit: do not ask whether they want to keep doing that same rejected strategy. Use existing goal/context evidence to propose a relevant alternative. Ask clarification only when an essential feasibility or safety detail is genuinely missing.
 
 Output rules:
 - clarification requires clarification_question and no next_step or plan update.
