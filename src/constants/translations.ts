@@ -1,4 +1,6 @@
 export const translations = {
+  "A little room to reflect.": "Un piccolo spazio per riflettere.",
+  "Your entries will appear here. Write whenever you like.": "Le tue annotazioni appariranno qui. Scrivi quando vuoi.",
   "Send": "Invia",
   "Free": "Gratis",
   "Completed": "Completato",

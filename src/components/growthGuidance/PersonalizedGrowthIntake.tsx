@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GROWTH_GUIDANCE_EVENTS } from "../../constants/analyticsEvents";
 import { colors } from "../../constants/Colors";
+import { CoachingArtwork } from "./CoachingArtwork";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { captureEvent } from "../../lib/posthog";
@@ -333,6 +334,7 @@ export function PersonalizedGrowthIntake() {
       case "intro":
         return (
           <View style={styles.intro}>
+            <View style={styles.introArtwork}><CoachingArtwork size={96} /></View>
             <Text style={styles.eyebrow}>{t("PERSONALIZED GROWTH")}</Text>
             <Text style={styles.title}>{t("Take a small step toward a change that matters")}</Text>
             <Text style={styles.introBody}>
@@ -614,10 +616,10 @@ const styles = StyleSheet.create({
   chipText: { color: colors.light.primary, fontSize: 14, fontWeight: "600" },
   chipTextActive: { color: colors.neutral.white },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  closeButton: { paddingVertical: 6 },
+  closeButton: { paddingVertical: 12, minHeight: 44, justifyContent: "center" },
   closeText: { color: colors.light.lightText, fontSize: 15 },
   container: { backgroundColor: colors.light.background, flex: 1 },
-  content: { flexGrow: 1, paddingBottom: 32, paddingHorizontal: 20, paddingTop: 24, width: "100%", maxWidth: 680, alignSelf: "center" },
+  content: { flexGrow: 1, paddingBottom: 24, paddingHorizontal: 18, paddingTop: 18, width: "100%", maxWidth: 640, alignSelf: "center" },
   correctionInput: { minHeight: 150 },
   disclaimer: { color: colors.light.lightText, fontSize: 13, lineHeight: 19 },
   error: {
@@ -631,32 +633,33 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.light.primary, fontSize: 13, fontWeight: "800", letterSpacing: 1.1 },
   fitQuestion: { color: colors.light.text, fontSize: 21, fontWeight: "800", lineHeight: 28 },
   flex: { flex: 1 },
-  footer: { paddingBottom: 10, paddingHorizontal: 20, paddingTop: 8 },
+  footer: { paddingBottom: 10, paddingHorizontal: 18, paddingTop: 10, width: "100%", maxWidth: 640, alignSelf: "center" },
   footerActions: { gap: 8 },
   header: { alignItems: "center", flexDirection: "row", gap: 16, paddingHorizontal: 20, paddingTop: 8 },
   input: {
     backgroundColor: colors.neutral.white,
-    borderColor: colors.neutral.grey2,
+    borderColor: colors.light.accent2,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.light.text,
     fontSize: 16,
     lineHeight: 22,
     minHeight: 96,
-    padding: 13,
+    padding: 14,
   },
-  intro: { gap: 22 },
+  intro: { gap: 16 },
+  introArtwork: { alignItems: "center", backgroundColor: colors.light.accent2, borderRadius: 20, paddingVertical: 4 },
   introBody: { color: colors.light.text, fontSize: 16, lineHeight: 24 },
   optionalHint: { color: colors.light.lightText, fontSize: 13, lineHeight: 18 },
   planWrap: { gap: 28 },
   progressWrap: { flex: 1 },
-  promiseCard: { backgroundColor: colors.light.accent2, borderRadius: 16, gap: 8, padding: 17 },
+  promiseCard: { backgroundColor: colors.neutral.white, borderRadius: 16, gap: 8, padding: 16 },
   promiseTitle: { color: colors.light.primary, fontSize: 17, fontWeight: "800" },
   question: { color: colors.light.text, fontSize: 20, fontWeight: "700", lineHeight: 27 },
   questionBlock: { gap: 10 },
-  questions: { gap: 28 },
+  questions: { gap: 22 },
   savingFooter: { alignItems: "center", gap: 8, minHeight: 54 },
   secondaryButton: { alignItems: "center", padding: 12 },
   secondaryButtonText: { color: colors.light.primary, fontSize: 15, fontWeight: "700" },
-  title: { color: colors.light.text, fontSize: 29, fontWeight: "800", lineHeight: 37 },
+  title: { color: colors.light.primary, fontSize: 27, fontWeight: "700", lineHeight: 34, letterSpacing: -0.6 },
 });

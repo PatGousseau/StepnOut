@@ -493,21 +493,22 @@ export function VoiceJournalRecorder({
 }
 
 const styles = StyleSheet.create({
-  mic: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.light.accent3, alignItems: "center", justifyContent: "center", alignSelf: "center", marginVertical: 12 },
+  mic: { width: 96, height: 96, borderRadius: 48, borderWidth: 8, borderColor: colors.light.background, backgroundColor: colors.light.accent2, alignItems: "center", justifyContent: "center", alignSelf: "center", marginVertical: 10 },
   processing: { alignItems: "center", gap: 16, paddingVertical: 24 },
   body: { color: colors.light.text, fontSize: 14, lineHeight: 21 },
   card: {
-    gap: 18,
+    gap: 16,
   },
   input: {
-    backgroundColor: colors.light.background,
-    borderColor: colors.neutral.grey2,
+    backgroundColor: colors.neutral.white,
+    borderColor: colors.light.accent2,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.light.text,
     fontSize: 15,
     minHeight: 180,
-    padding: 12,
+    padding: 14,
+    lineHeight: 24,
   },
   message: { color: colors.light.primary, fontSize: 13, lineHeight: 19 },
   recordingLabel: {
@@ -516,7 +517,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "center",
   },
-  textButton: { alignItems: "center", padding: 8 },
+  textButton: { alignItems: "center", justifyContent: "center", padding: 10, minHeight: 44 },
   textButtonLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
-  timer: { color: colors.light.text, fontSize: 28, fontWeight: "800", textAlign: "center" },
+  timer: { color: colors.light.primary, fontSize: 36, fontWeight: "800", textAlign: "center", marginVertical: 24 },
 });

@@ -39,6 +39,7 @@ import { VoiceJournalRecorder } from "./VoiceJournalRecorder";
 import { StepEventSuggestion } from "./StepEventSuggestion";
 import { useIsFocused } from "@react-navigation/native";
 import { GrowthButton, GrowthHeading, GrowthRow, GrowthStepCard, ui, useGrowthConfirm } from "./GrowthUI";
+import { CoachingArtwork } from "./CoachingArtwork";
 
 type Screen = "home" | "history" | "direction" | "report" | "journal" | "voice" | "request" | "response" | "entry" | "pastStep";
 
@@ -168,11 +169,11 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
     return { ...activePlan, first_step: experience.activeStep };
   }, [activePlan, experience?.activeStep]);
   const followUps = outcome ? getGrowthAttemptFollowUps(outcome) : [];
-  const visibleInteractions = useMemo(() => {
+  const visibleJournals = useMemo(() => {
     const items = new Map<string, GrowthInteraction>();
     experience?.interactions.forEach((interaction) => items.set(interaction.id, interaction));
     journalEntries.forEach((interaction) => items.set(interaction.id, interaction));
-    return [...items.values()].sort((a, b) =>
+    return [...items.values()].filter((item) => item.kind === "journal").sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
   }, [experience?.interactions, journalEntries]);
@@ -489,7 +490,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
       <View style={styles.navigation}>
         {!["home", "history", "direction"].includes(mode) ? <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("Back")} disabled={saving || voiceBusy} onPress={goBack} style={styles.navButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.light.primary} />
-        </TouchableOpacity> : <View style={styles.navSpacer} />}
+        </TouchableOpacity> : <View style={styles.brandMark}><MaterialCommunityIcons name="creation" size={23} color={colors.light.primary} /></View>}
         <Text style={styles.brand}>{t("Coaching")}</Text>
         <View style={styles.navSpacer} />
       </View>
@@ -531,18 +532,21 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
           <Text style={ui.body}>{t(pendingInteractionId ? "Your words are saved. Your response needs another try." : "There's a suggestion waiting for your decision.")}</Text>
           <GrowthButton title={t(pendingInteractionId ? "Get my response" : "Review suggestion")} disabled={saving} onPress={() => setMode("response")} />
         </> : experience?.activeStep ? <>
-          <Text style={styles.kicker}>{t("Your next step")}</Text>
+          <View style={styles.stepHero}>
+          <View style={styles.heroTop}><View style={styles.heroBadge}><View style={styles.heroDot} /><Text style={styles.kicker}>{t("Your next step")}</Text></View><CoachingArtwork size={54} /></View>
           <Text accessibilityRole="header" style={styles.stepTitle}>{experience.activeStep.title}</Text>
           <Text style={styles.stepAction}>{experience.activeStep.action}</Text>
-          <Text style={ui.caption}>{experience.activeStep.completion_criterion}</Text>
-          <GrowthButton title={t("How did it go?")} disabled={saving} onPress={() => setMode("report")} />
-          <View style={styles.stepActions}>
-            <View style={styles.flex}><GrowthButton title={t("Make it easier")} secondary disabled={blocked} onPress={() => openRequest("easier")} /></View>
-            <View style={styles.flex}><GrowthButton title={t("Change step")} secondary disabled={blocked} onPress={() => openRequest("change")} /></View>
+          <View style={styles.heroCriterion}><MaterialCommunityIcons name="check-circle-outline" size={20} color={colors.light.primary} /><View style={ui.rowCopy}><Text style={styles.heroCriterionLabel}>{t("What counts as trying it")}</Text><Text style={styles.heroCriterionText}>{experience.activeStep.completion_criterion}</Text></View></View>
+          <GrowthButton title={t("How did it go?")} icon="arrow-right" disabled={saving} onPress={() => setMode("report")} />
           </View>
-          <Text style={ui.caption}>{experience.activeStep.if_then_plan}</Text>
+          <View style={styles.stepActions}>
+            <View style={styles.actionItem}><GrowthButton title={t("Make it easier")} secondary disabled={blocked} onPress={() => openRequest("easier")} /></View>
+            <View style={styles.actionItem}><GrowthButton title={t("Change step")} secondary disabled={blocked} onPress={() => openRequest("change")} /></View>
+          </View>
+          {!!experience.activeStep.if_then_plan && <View style={styles.cue}><MaterialCommunityIcons name="lightbulb-on-outline" size={21} color={colors.light.primary} /><Text style={styles.cueText}>{experience.activeStep.if_then_plan}</Text></View>}
           <TouchableOpacity accessibilityRole="button" style={styles.textButton} disabled={blocked} onPress={() => confirm(t("Set this step aside?"), t("Your plan stays available. You can ask for another step whenever it fits."), [{ text: t("Cancel"), style: "cancel" }, { text: t("Set aside"), onPress: () => { void chooseStep("dismiss"); } }])}><Text style={ui.link}>{t("Set aside")}</Text></TouchableOpacity>
         </> : <>
+          <View style={styles.emptyArtwork}><CoachingArtwork size={120} /></View>
           <GrowthHeading title={t("No step for now")} />
           <Text style={ui.body}>{t("You can still check in whenever you have something to share.")}</Text>
           <GrowthButton title={t("Find my next step")} disabled={saving} onPress={() => openRequest("period")} />
@@ -613,25 +617,28 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
       </>}
 
       {mode === "history" && <>
-        <GrowthHeading title={t("Journal")} />
-        <Text style={ui.caption}>{t("Write about anything on your mind. It doesn't have to be about your step.")}</Text>
-        <GrowthButton title={t("Write an entry")} disabled={blocked} onPress={() => setMode("journal")} />
-        {Platform.OS !== "web" && <GrowthButton title={t("Record a voice entry")} secondary disabled={blocked} onPress={() => setMode("voice")} />}
+        <View style={styles.journalIntro}><View style={ui.rowCopy}><GrowthHeading title={t("Journal")} /><Text style={styles.journalSubtitle}>{t("A little room to reflect.")}</Text></View><CoachingArtwork variant="journal" size={72} /></View>
+        <View style={styles.journalCompose}>
+          <Text style={styles.journalPrompt}>{t("What's on your mind?")}</Text>
+          <Text style={ui.caption}>{t("Write about anything on your mind. It doesn't have to be about your step.")}</Text>
+          <GrowthButton title={t("Write an entry")} icon="pencil-outline" disabled={blocked} onPress={() => setMode("journal")} />
+          {Platform.OS !== "web" && <GrowthButton title={t("Record a voice entry")} icon="microphone-outline" secondary disabled={blocked} onPress={() => setMode("voice")} />}
+        </View>
         {(!!response || !!pendingInteractionId) && <GrowthRow icon="message-text-outline" title={t("Latest response")} onPress={() => setMode("response")} />}
         <Text style={ui.rowTitle}>{t("Previous entries")}</Text>
-        {!visibleInteractions.length && <View style={styles.emptyCard}><MaterialCommunityIcons name="notebook-outline" size={36} color={colors.light.primary} /><Text style={ui.rowTitle}>{t("Your story starts here")}</Text><Text style={ui.caption}>{t("Your entries and step check-ins will collect here. No daily streak to keep up with.")}</Text></View>}
+        {!visibleJournals.length && <View style={styles.emptyCard}><MaterialCommunityIcons name="notebook-outline" size={36} color={colors.light.primary} /><Text style={ui.rowTitle}>{t("Your story starts here")}</Text><Text style={ui.caption}>{t("Your entries will appear here. Write whenever you like.")}</Text></View>}
       </>}
-      {mode === "history" && !!visibleInteractions.length && (
+      {mode === "history" && !!visibleJournals.length && (
         <View style={styles.history}>
-          {visibleInteractions.filter((item) => item.kind === "journal").map((interaction) => (
+          {visibleJournals.map((interaction) => (
             <TouchableOpacity accessibilityRole="button" key={interaction.id} style={styles.historyItem} onPress={() => { setSelectedEntry(interaction); setMode("entry"); }}>
-              <Text style={styles.historyTitle}>
+              <View style={styles.historyHeading}><MaterialCommunityIcons name={interaction.voice_journal_id ? "microphone-outline" : "text-box-outline"} size={18} color={colors.light.primary} /><Text style={styles.historyTitle}>
                 {t(interaction.request_kind ? REQUEST_LABELS[interaction.request_kind] : interaction.kind === "report" ? "Step report" : "Journal")}
                 {" · "}
                 {new Date(interaction.created_at).toLocaleDateString(
                   language === "it" ? "it-IT" : "en-CA"
                 )}
-              </Text>
+              </Text><MaterialCommunityIcons name="arrow-top-right" size={18} color={colors.light.primary} /></View>
               {interaction.report_outcome && interaction.follow_up && (
                 <Text style={styles.responseText}>
                   {t(OUTCOME_LABELS[interaction.report_outcome])}
@@ -664,6 +671,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
 
       {mode === "report" && (
         <View style={styles.formCard}>
+          <GrowthHeading title={t("How did it go?")} />
           <Text style={ui.caption}>{experience?.activeStep?.title}</Text>
           <>
           <Text style={styles.formTitle}>{t("Did you try it?")}</Text>
@@ -752,22 +760,38 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
 }
 
 const styles = StyleSheet.create({
-  sections: { flexDirection: "row", marginHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.light.accent2 },
-  sectionTab: { flex: 1, alignItems: "center", paddingVertical: 14, borderBottomWidth: 3, borderBottomColor: "transparent" },
-  sectionSelected: { borderBottomColor: colors.light.primary },
-  sectionLabel: { fontSize: 16, color: colors.light.lightText },
+  sections: { flexDirection: "row", padding: 3, backgroundColor: colors.light.accent2, borderRadius: 14, alignSelf: "center", width: "90%", maxWidth: 604, marginBottom: 2 },
+  sectionTab: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 6, paddingVertical: 8, minHeight: 44, borderRadius: 11 },
+  sectionSelected: { backgroundColor: colors.neutral.white },
+  sectionLabel: { fontSize: 14, color: colors.neutral.grey3 },
   sectionLabelSelected: { color: colors.light.primary, fontWeight: "700" },
-  stepActions: { flexDirection: "row", gap: 10 },
-  brand: { color: colors.light.primary, fontSize: 11, fontWeight: "800", letterSpacing: 1.6, flex: 1, textAlign: "center" },
+  stepActions: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  actionItem: { flexGrow: 1, flexBasis: 145 },
+  brand: { color: colors.light.primary, fontSize: 19, fontWeight: "700", letterSpacing: -0.5, flex: 1 },
+  brandMark: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   composeActions: { flexDirection: "row", alignItems: "center", gap: 12 },
-  kicker: { color: colors.sideQuest.text, fontSize: 15, fontWeight: "700" },
-  stepTitle: { color: colors.light.primary, fontSize: 30, lineHeight: 38, fontWeight: "700" },
-  stepAction: { color: colors.light.text, fontSize: 18, lineHeight: 28 },
-  content: { padding: 20, paddingBottom: 32, width: "100%", maxWidth: 680, alignSelf: "center", flexGrow: 1 },
+  kicker: { color: colors.light.primary, fontSize: 12, fontWeight: "700", flexShrink: 1 },
+  stepHero: { backgroundColor: colors.light.accent2, borderRadius: 20, padding: 18, gap: 14 },
+  heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: -6, marginBottom: -6 },
+  heroBadge: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
+  heroDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.light.primarySoft },
+  heroCriterion: { flexDirection: "row", alignItems: "flex-start", gap: 8, borderTopColor: colors.neutral.white, borderTopWidth: 1, paddingTop: 12 },
+  heroCriterionLabel: { color: colors.light.primary, fontSize: 12, fontWeight: "700", lineHeight: 18, marginBottom: 3 },
+  heroCriterionText: { color: colors.neutral.grey3, fontSize: 13, lineHeight: 20 },
+  stepTitle: { color: colors.light.primary, fontSize: 25, lineHeight: 31, fontWeight: "700", letterSpacing: -0.6 },
+  stepAction: { color: colors.light.text, fontSize: 15, lineHeight: 23 },
+  cue: { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 10, paddingTop: 2 },
+  cueText: { color: colors.neutral.grey3, fontSize: 14, lineHeight: 22, flex: 1 },
+  content: { padding: 18, paddingBottom: 24, width: "100%", maxWidth: 640, alignSelf: "center", flexGrow: 1 },
+  emptyArtwork: { alignItems: "center", paddingVertical: 12 },
+  journalIntro: { flexDirection: "row", alignItems: "center", gap: 12 },
+  journalSubtitle: { color: colors.neutral.grey3, fontSize: 14, lineHeight: 21, marginTop: 4 },
+  journalCompose: { backgroundColor: colors.neutral.white, borderRadius: 18, padding: 16, gap: 12, borderTopWidth: 3, borderTopColor: colors.light.accent2 },
+  journalPrompt: { color: colors.light.primary, fontSize: 18, lineHeight: 25, fontWeight: "700", letterSpacing: -0.3 },
   emptyCard: { alignItems: "center", gap: 12, padding: 28, backgroundColor: colors.light.accent3, borderRadius: 22 },
   flex: { flex: 1 },
   loading: { flex: 1, justifyContent: "center", alignItems: "center", gap: 14 },
-  navigation: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 4 },
+  navigation: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 10, paddingVertical: 4, width: "100%", maxWidth: 640, alignSelf: "center" },
   navButton: { height: 48, width: 48, alignItems: "center", justifyContent: "center" },
   navSpacer: { width: 48 },
   screen: { flex: 1, backgroundColor: colors.light.background },
@@ -776,17 +800,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.light.accent3,
     borderColor: colors.light.accent2,
-    borderRadius: 999,
+    borderRadius: 10,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   chipSelected: { backgroundColor: colors.light.primary, borderColor: colors.light.primary },
   chipText: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
   chipTextSelected: { color: colors.neutral.white },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   confirmationBlock: { gap: 8 },
-  container: { gap: 22 },
+  container: { gap: 14 },
   error: {
     backgroundColor: "#FCE8E8",
     borderRadius: 10,
@@ -794,17 +818,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 12,
   },
-  formCard: { gap: 20 },
-  formTitle: { color: colors.light.text, fontSize: 18, fontWeight: "800" },
+  formCard: { gap: 16 },
+  formTitle: { color: colors.light.text, fontSize: 16, fontWeight: "700", lineHeight: 23 },
   hint: { color: colors.neutral.grey3, fontSize: 14, lineHeight: 21 },
   history: { gap: 10 },
-  historyItem: { backgroundColor: colors.neutral.white, borderRadius: 18, padding: 18, gap: 10 },
+  historyItem: { borderBottomWidth: 1, borderBottomColor: colors.light.accent2, paddingVertical: 12, gap: 8 },
+  historyHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
   historyDeleteLabel: { color: colors.light.alertRed, fontSize: 13, fontWeight: "700" },
-  historyText: { color: colors.light.text, fontSize: 14, lineHeight: 20 },
-  historyTitle: { color: colors.light.text, fontSize: 13, fontWeight: "800" },
+  historyText: { color: colors.light.text, fontSize: 15, lineHeight: 24 },
+  historyTitle: { color: colors.light.primary, fontSize: 12, fontWeight: "700", flex: 1, lineHeight: 19 },
   input: {
-    backgroundColor: colors.light.background,
-    borderColor: colors.neutral.grey2,
+    backgroundColor: colors.neutral.white,
+    borderColor: colors.light.accent2,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.light.text,
@@ -812,7 +837,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
     padding: 12,
   },
-  journalInput: { minHeight: 220, lineHeight: 24, padding: 16 },
+  journalInput: { minHeight: 220, lineHeight: 24, padding: 14 },
   previewItem: { gap: 2 },
   previewLabel: {
     color: colors.light.primary,
@@ -829,9 +854,9 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   question: { color: colors.light.text, fontSize: 16, fontWeight: "700", lineHeight: 23 },
-  responseCard: { backgroundColor: colors.light.accent2, borderRadius: 16, gap: 10, padding: 16 },
+  responseCard: { backgroundColor: colors.neutral.white, borderRadius: 18, borderTopWidth: 3, borderTopColor: colors.light.accent2, gap: 12, padding: 16 },
   responseLabel: { color: colors.light.primary, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
-  responseText: { color: colors.light.text, fontSize: 16, lineHeight: 23 },
+  responseText: { color: colors.light.text, fontSize: 16, lineHeight: 26 },
   textButton: { alignItems: "center", justifyContent: "center", padding: 10, minHeight: 44 },
   textButtonLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
 });

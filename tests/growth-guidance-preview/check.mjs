@@ -1,4 +1,4 @@
-// Optional offline walkthrough. Not run during the September 6 code-only revision.
+// Offline walkthrough of the actual Coaching components with synthetic data.
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 const { chromium } = createRequire(import.meta.url)(process.argv[2] || "playwright");
@@ -33,9 +33,13 @@ try {
   await page.getByRole("tab", { name: "Journal", exact: true }).waitFor();
   await section("Journal"); await click("Record a voice entry");
   await button("Start recording").waitFor();
+  await page.goto("http://127.0.0.1:4173?reportonly");
+  await section("Journal");
+  await page.getByText("Your story starts here", { exact: true }).waitFor();
+  assert.equal(await page.getByText("Your entries will appear here. Write whenever you like.", { exact: true }).count(), 1);
   await page.goto("http://127.0.0.1:4173?event");
   await button("Use this for my step").waitFor(); await click("Not for me");
   assert.equal(await button("Use this for my step").count(), 0);
   assert.deepEqual(errors, []);
-  console.log("PASS: Coaching destinations, single-form report, draft retention, requests, empty-step voice, event rejection.");
+  console.log("PASS: Coaching destinations, single-form report, draft retention, requests, empty-step voice, report-only journal empty state, event rejection.");
 } finally { await browser.close(); }

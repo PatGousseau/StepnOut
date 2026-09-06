@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Linking, StyleSheet, TouchableOpacity, View } from "react-native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { colors } from "../../constants/Colors";
 import { EventArea, EventOpportunity, EventSelection, growthEventService } from "../../services/growthEventService";
@@ -79,8 +80,8 @@ export function StepEventSuggestion({ stepId, userId, eventId, onChanged }: {
   }
   if (!event || (!eventId && !selection?.proposed_step)) return null;
   return <View style={styles.card}>
-    <Text style={styles.eyebrow}>{t(eventId ? "Event details" : "A place to try this")}</Text>
-    <Text style={ui.rowTitle}>{event.title}</Text>
+    <View style={styles.top}><View style={styles.icon}><MaterialCommunityIcons name="map-marker-outline" size={23} color={colors.light.primary} /></View><Text style={styles.eyebrow}>{t(eventId ? "Event details" : "A place to try this")}</Text></View>
+    <Text style={styles.title}>{event.title}</Text>
     <Text style={ui.caption}>{event.location}{event.starts_at ? " · " + new Date(event.starts_at).toLocaleString(language === "it" ? "it-IT" : "en-CA", { dateStyle: "medium", timeStyle: "short", timeZone: event.timezone }) : ""}</Text>
     {!!event.availability && <Text style={ui.caption}>{event.availability}</Text>}
     {!eventId && !!selection?.proposed_step && <>
@@ -88,7 +89,7 @@ export function StepEventSuggestion({ stepId, userId, eventId, onChanged }: {
       <Text style={ui.caption}>{selection.proposed_step.completion_criterion}</Text>
     </>}
     <Text style={ui.caption}>{event.cost_eur === null ? t("Cost not confirmed") : event.cost_eur === 0 ? t("Free") : "€" + event.cost_eur}</Text>
-    <TouchableOpacity accessibilityRole="link" onPress={() => { void Linking.openURL(event.source_url).catch(() => setError(t("We couldn't open the event link."))); }}><Text style={ui.link}>{t("View event details")}</Text></TouchableOpacity>
+    <TouchableOpacity accessibilityRole="link" style={styles.sourceLink} onPress={() => { void Linking.openURL(event.source_url).catch(() => setError(t("We couldn't open the event link."))); }}><Text style={ui.link}>{t("View event details")}</Text><MaterialCommunityIcons name="arrow-top-right" size={18} color={colors.light.primary} /></TouchableOpacity>
     <Text style={ui.caption}>{t("Last verified")}{": "}{new Date(event.verified_at).toLocaleDateString(language === "it" ? "it-IT" : "en-CA")}</Text>
     {!eventId && <>
       <GrowthButton title={t("Use this for my step")} disabled={busy} onPress={() => choose(null)} />
@@ -98,6 +99,10 @@ export function StepEventSuggestion({ stepId, userId, eventId, onChanged }: {
   </View>;
 }
 const styles = StyleSheet.create({
-  card: { padding: 20, gap: 14, backgroundColor: colors.light.accent3, borderRadius: 20 },
-  eyebrow: { color: colors.light.primary, fontSize: 13, fontWeight: "700" },
+  card: { padding: 16, gap: 12, backgroundColor: colors.neutral.white, borderWidth: 1, borderColor: colors.light.accent2, borderRadius: 18 },
+  eyebrow: { color: colors.light.primary, fontSize: 12, fontWeight: "700", flex: 1 },
+  top: { flexDirection: "row", alignItems: "center", gap: 12 },
+  icon: { width: 34, height: 34, borderRadius: 11, backgroundColor: colors.light.accent2, alignItems: "center", justifyContent: "center" },
+  title: { color: colors.light.primary, fontSize: 19, fontWeight: "700", lineHeight: 26, letterSpacing: -0.4 },
+  sourceLink: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
 });
