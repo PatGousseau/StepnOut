@@ -163,6 +163,9 @@ function TabsLayoutNav() {
             case 'profile':
               iconName = 'person';
               break;
+            case 'coaching':
+              iconName = 'chatbubble-outline';
+              break;
             case 'admin':
               iconName = 'settings';
               break;
@@ -208,8 +211,12 @@ function TabsLayoutNav() {
       />
       <Tabs.Screen
         name="profile"
+        options={{ title: t('Profile') }}
+      />
+      <Tabs.Screen
+        name="coaching"
         options={{
-          title: t('Profile'),
+          title: t('Coaching'),
         }}
       />
       <Tabs.Screen

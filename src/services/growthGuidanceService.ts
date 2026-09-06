@@ -159,7 +159,7 @@ export const growthGuidanceService = {
       await Promise.all([
         supabase
           .from("growth_steps")
-          .select("id, plan_id, user_id, sequence, status, title, rationale, action, completion_criterion, if_then_plan, created_at, ended_at, accepted_at")
+          .select("id, plan_id, user_id, sequence, status, title, rationale, action, completion_criterion, if_then_plan, created_at, ended_at, accepted_at, event_id")
           .eq("user_id", userId)
           .eq("status", "active")
           .order("sequence", { ascending: false })
@@ -210,6 +210,22 @@ export const growthGuidanceService = {
       .eq("kind", "journal")
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
+    if (error) throw error;
+    return (data || []) as GrowthInteraction[];
+  },
+
+  async fetchStepHistory(userId: string, offset = 0, limit = 20): Promise<GrowthStep[]> {
+    const { data, error } = await supabase.from("growth_steps").select("*")
+      .eq("user_id", userId).neq("status", "active")
+      .order("sequence", { ascending: false }).range(offset, offset + limit - 1);
+    if (error) throw error;
+    return (data || []) as GrowthStep[];
+  },
+
+  async fetchStepReports(userId: string, stepId: string): Promise<GrowthInteraction[]> {
+    const { data, error } = await supabase.from("growth_interactions").select("*")
+      .eq("user_id", userId).eq("step_id", stepId).eq("kind", "report")
+      .order("created_at", { ascending: false });
     if (error) throw error;
     return (data || []) as GrowthInteraction[];
   },

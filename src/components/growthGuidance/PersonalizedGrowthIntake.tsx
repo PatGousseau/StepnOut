@@ -18,10 +18,8 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { captureEvent } from "../../lib/posthog";
 import { growthGuidanceService } from "../../services/growthGuidanceService";
 import {
-  EMPTY_EVENT_PREFERENCES,
   EMPTY_GROWTH_INTAKE,
   GrowthChallengeLevel,
-  GrowthEventPreferences,
   GrowthIntakeAnswers,
   GrowthPlanProposal,
 } from "../../types/growthGuidance";
@@ -34,7 +32,7 @@ import { ProgressSegments } from "../ProgressSegments";
 import { Text } from "../StyledText";
 import { GrowthPlanCard } from "./GrowthPlanCard";
 import { GrowthPlanExperience } from "./GrowthPlanExperience";
-import { GrowthButton, GrowthDisclosure } from "./GrowthUI";
+import { GrowthButton } from "./GrowthUI";
 
 type Step =
   | "intro"
@@ -88,45 +86,12 @@ function QuestionInput({
   );
 }
 
-function OptionalInput({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-}: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChangeText: (value: string) => void;
-}) {
-  const { t } = useLanguage();
-  return (
-    <View style={styles.optionalBlock}>
-      <Text style={styles.optionalLabel}>{t(label)}</Text>
-      <TextInput
-        style={styles.optionalInput}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={t(placeholder)}
-        placeholderTextColor={colors.light.lightText}
-        maxLength={300}
-      />
-    </View>
-  );
-}
-
 export function PersonalizedGrowthIntake() {
   const { user } = useAuth();
   const { language, t } = useLanguage();
-  const restoredPreferencesError = t(
-    "We restored your answers, but couldn't load your optional event preferences. Retry before building your direction."
-  );
   const [step, setStep] = useState<Step>("intro");
   const [intakeId, setIntakeId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<GrowthIntakeAnswers>({ ...EMPTY_GROWTH_INTAKE });
-  const [eventPreferences, setEventPreferences] = useState<GrowthEventPreferences>({
-    ...EMPTY_EVENT_PREFERENCES,
-  });
   const [plan, setPlan] = useState<GrowthPlanProposal | null>(null);
   const [clarificationQuestion, setClarificationQuestion] = useState("");
   const [clarificationAnswer, setClarificationAnswer] = useState("");
@@ -137,7 +102,6 @@ export function PersonalizedGrowthIntake() {
   const [correction, setCorrection] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [eventPreferencesReady, setEventPreferencesReady] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const clarificationWordCount = countWords(clarificationAnswer);
   const clarificationCanContinue = clarificationContext === "correction"
@@ -167,20 +131,6 @@ export function PersonalizedGrowthIntake() {
           setAnswers(restoredAnswers);
           setIntakeId(draft.id);
           setStep(getGrowthIntakeResumeStep(restoredAnswers));
-          setEventPreferencesReady(false);
-          void growthGuidanceService.fetchEventPreferencesForIntake(user.id, draft.id)
-            .then((preferences) => {
-              if (!active) return;
-              setEventPreferences({
-                ...EMPTY_EVENT_PREFERENCES,
-                ...(preferences || {}),
-              });
-              setEventPreferencesReady(true);
-            })
-            .catch(() => {
-              if (!active) return;
-              setErrorMessage(restoredPreferencesError);
-            });
         }
       })
       .catch(() => undefined)
@@ -188,7 +138,7 @@ export function PersonalizedGrowthIntake() {
     return () => {
       active = false;
     };
-  }, [restoredPreferencesError, user?.id]);
+  }, [user?.id]);
 
   useEffect(() => {
     captureEvent(GROWTH_GUIDANCE_EVENTS.STEP_VIEWED, { step });
@@ -201,12 +151,6 @@ export function PersonalizedGrowthIntake() {
     []
   );
 
-  const updateEventPreference = useCallback(
-    <K extends keyof GrowthEventPreferences>(key: K, value: GrowthEventPreferences[K]) => {
-      setEventPreferences((current) => ({ ...current, [key]: value }));
-    },
-    []
-  );
 
   const start = async () => {
     if (!user?.id || saving) return;
@@ -272,19 +216,18 @@ export function PersonalizedGrowthIntake() {
       captureEvent(GROWTH_GUIDANCE_EVENTS.GENERATION_FAILED, {
         context: correctionText ? "correction" : "intake",
       });
-      setErrorMessage(t("We couldn't build your direction. Please try again."));
+      setErrorMessage(t("We couldn't build your plan. Please try again."));
     } finally {
       setSaving(false);
     }
   };
 
   const finishIntake = async () => {
-    if (!intakeId || !user?.id || saving || !eventPreferencesReady) return;
+    if (!intakeId || !user?.id || saving) return;
     setSaving(true);
     setErrorMessage("");
     try {
       await growthGuidanceService.saveIntake(intakeId, answers);
-      await growthGuidanceService.saveEventPreferences(user.id, intakeId, eventPreferences);
     } catch {
       setErrorMessage(t("We couldn't save that answer. Please try again."));
       setSaving(false);
@@ -292,27 +235,6 @@ export function PersonalizedGrowthIntake() {
     }
     setSaving(false);
     await runGeneration();
-  };
-
-  const retryEventPreferences = async () => {
-    if (!intakeId || !user?.id || saving) return;
-    setSaving(true);
-    setErrorMessage("");
-    try {
-      const preferences = await growthGuidanceService.fetchEventPreferencesForIntake(
-        user.id,
-        intakeId
-      );
-      setEventPreferences({
-        ...EMPTY_EVENT_PREFERENCES,
-        ...(preferences || {}),
-      });
-      setEventPreferencesReady(true);
-    } catch {
-      setErrorMessage(restoredPreferencesError);
-    } finally {
-      setSaving(false);
-    }
   };
 
   const submitClarification = async () => {
@@ -368,11 +290,7 @@ export function PersonalizedGrowthIntake() {
   };
 
   const close = () => {
-    if (intakeId && !plan) {
-      growthGuidanceService.abandonIntake(intakeId).catch(() => undefined);
-      captureEvent(GROWTH_GUIDANCE_EVENTS.INTAKE_ABANDONED, { step });
-    }
-    router.back();
+    router.navigate("/(tabs)");
   };
 
   const progressIndex = useMemo(() => {
@@ -416,10 +334,10 @@ export function PersonalizedGrowthIntake() {
         return (
           <View style={styles.intro}>
             <Text style={styles.eyebrow}>{t("PERSONALIZED GROWTH")}</Text>
-            <Text style={styles.title}>{t("Turn where you feel stuck into one clear direction")}</Text>
+            <Text style={styles.title}>{t("Take a small step toward a change that matters")}</Text>
             <Text style={styles.introBody}>
               {t(
-                "Tell us what is happening in your own words. We'll propose a goal, a possible explanation, a short path, and one real-world experiment."
+                "Tell us what feels difficult. Together we’ll find a goal and a practical first step."
               )}
             </Text>
             <View style={styles.promiseCard}>
@@ -543,61 +461,6 @@ export function PersonalizedGrowthIntake() {
               value={answers.boundaries}
               onChangeText={(value) => updateAnswer("boundaries", value)}
             />
-            <GrowthDisclosure title={t("Optional: nearby opportunities")}>
-            <TouchableOpacity
-              style={styles.eventToggle}
-              onPress={() => updateEventPreference("enabled", !eventPreferences.enabled)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: eventPreferences.enabled }}
-            >
-              <View style={[styles.checkbox, eventPreferences.enabled && styles.checkboxActive]}>
-                {eventPreferences.enabled && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <View style={styles.eventToggleText}>
-                <Text style={styles.eventTitle}>{t("Nearby opportunities could be useful")}</Text>
-                <Text style={styles.optionalHint}>
-                  {t("Optional. Keep this off if local events are not relevant to your goal.")}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            {eventPreferences.enabled && (
-              <View style={styles.eventFields}>
-                <Text style={styles.optionalHint}>
-                  {t("Share only approximate details. Every field below is optional.")}
-                </Text>
-                <OptionalInput
-                  label="Approximate location"
-                  placeholder="City or neighbourhood"
-                  value={eventPreferences.approximate_location}
-                  onChangeText={(value) => updateEventPreference("approximate_location", value)}
-                />
-                <OptionalInput
-                  label="Travel radius"
-                  placeholder="For example: 5 km or 20 minutes"
-                  value={eventPreferences.travel_radius}
-                  onChangeText={(value) => updateEventPreference("travel_radius", value)}
-                />
-                <OptionalInput
-                  label="Availability"
-                  placeholder="For example: weekend afternoons"
-                  value={eventPreferences.availability}
-                  onChangeText={(value) => updateEventPreference("availability", value)}
-                />
-                <OptionalInput
-                  label="Cost preference"
-                  placeholder="For example: free events only"
-                  value={eventPreferences.cost_preference}
-                  onChangeText={(value) => updateEventPreference("cost_preference", value)}
-                />
-                <OptionalInput
-                  label="Accessibility needs"
-                  placeholder="Only what an opportunity must support"
-                  value={eventPreferences.accessibility_needs}
-                  onChangeText={(value) => updateEventPreference("accessibility_needs", value)}
-                />
-              </View>
-            )}
-            </GrowthDisclosure>
           </View>
         );
       case "clarification":
@@ -628,7 +491,7 @@ export function PersonalizedGrowthIntake() {
         return plan ? (
           <View style={styles.planWrap}>
             <GrowthPlanCard plan={plan} />
-            <Text style={styles.fitQuestion}>{t("Does this direction fit what you meant?")}</Text>
+            <Text style={styles.fitQuestion}>{t("Does this plan fit what you meant?")}</Text>
           </View>
         ) : null;
       case "correction":
@@ -636,7 +499,7 @@ export function PersonalizedGrowthIntake() {
           <View style={styles.questions}>
             <Text style={styles.title}>{t("What did we get wrong?")}</Text>
             <Text style={styles.introBody}>
-              {t("Tell us what does not fit. We'll revise the direction, not just its wording.")}
+              {t("Tell us what doesn’t fit. We’ll rethink the plan.")}
             </Text>
             <TextInput
               style={[styles.input, styles.correctionInput]}
@@ -663,7 +526,7 @@ export function PersonalizedGrowthIntake() {
           <ActivityIndicator color={colors.light.primary} />
           <Text style={styles.optionalHint}>
             {t(step === "boundaries" || step === "clarification" || step === "correction"
-              ? "Building your direction..."
+              ? "Building your plan..."
               : "Saving...")}
           </Text>
         </View>
@@ -683,10 +546,7 @@ export function PersonalizedGrowthIntake() {
       case "preferences":
         return <GrowthButton title={t("Next")} onPress={() => saveAndGo("boundaries")} disabled={!canContinue} />;
       case "boundaries":
-        if (!eventPreferencesReady) {
-          return <GrowthButton title={t("Retry loading preferences")} onPress={retryEventPreferences} />;
-        }
-        return <GrowthButton title={t("Build my direction")} onPress={finishIntake} disabled={!canContinue} />;
+        return <GrowthButton title={t("Build my plan")} onPress={finishIntake} disabled={!canContinue} />;
       case "clarification":
         return <GrowthButton title={t("Continue")} onPress={submitClarification} disabled={!clarificationCanContinue} />;
       case "proposal":
@@ -699,7 +559,7 @@ export function PersonalizedGrowthIntake() {
           </View>
         );
       case "correction":
-        return <GrowthButton title={t("Revise the direction")} onPress={submitCorrection} disabled={!correction.trim()} />;
+        return <GrowthButton title={t("Revise my plan")} onPress={submitCorrection} disabled={!correction.trim()} />;
       case "confirmed":
         return null;
     }
@@ -742,17 +602,6 @@ export function PersonalizedGrowthIntake() {
 
 const styles = StyleSheet.create({
   centered: { alignItems: "center", flex: 1, justifyContent: "center" },
-  checkbox: {
-    alignItems: "center",
-    borderColor: colors.light.primary,
-    borderRadius: 5,
-    borderWidth: 2,
-    height: 22,
-    justifyContent: "center",
-    width: 22,
-  },
-  checkboxActive: { backgroundColor: colors.light.primary },
-  checkmark: { color: colors.neutral.white, fontSize: 14, fontWeight: "800" },
   chip: {
     backgroundColor: colors.light.accent3,
     borderColor: colors.light.accent2,
@@ -779,10 +628,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 12,
   },
-  eventFields: { gap: 16 },
-  eventTitle: { color: colors.light.text, fontSize: 16, fontWeight: "700" },
-  eventToggle: { alignItems: "flex-start", flexDirection: "row", gap: 12, paddingVertical: 6 },
-  eventToggleText: { flex: 1, gap: 4 },
   eyebrow: { color: colors.light.primary, fontSize: 13, fontWeight: "800", letterSpacing: 1.1 },
   fitQuestion: { color: colors.light.text, fontSize: 21, fontWeight: "800", lineHeight: 28 },
   flex: { flex: 1 },
@@ -802,16 +647,7 @@ const styles = StyleSheet.create({
   },
   intro: { gap: 22 },
   introBody: { color: colors.light.text, fontSize: 16, lineHeight: 24 },
-  optionalBlock: { gap: 6 },
   optionalHint: { color: colors.light.lightText, fontSize: 13, lineHeight: 18 },
-  optionalInput: {
-    borderBottomColor: colors.neutral.grey1,
-    borderBottomWidth: 1,
-    color: colors.light.text,
-    fontSize: 15,
-    paddingBottom: 8,
-  },
-  optionalLabel: { color: colors.light.text, fontSize: 14, fontWeight: "600" },
   planWrap: { gap: 28 },
   progressWrap: { flex: 1 },
   promiseCard: { backgroundColor: colors.light.accent2, borderRadius: 16, gap: 8, padding: 17 },

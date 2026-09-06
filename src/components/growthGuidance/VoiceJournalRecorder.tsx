@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Audio } from "expo-av";
 import { randomUUID } from "expo-crypto";
@@ -58,6 +59,9 @@ export function VoiceJournalRecorder({
   onBusyChange?: (busy: boolean) => void;
 }) {
   const { t } = useLanguage();
+  const isFocused = useIsFocused();
+  const focusedRef = useRef(isFocused);
+  focusedRef.current = isFocused;
   const { confirm, confirmation } = useGrowthConfirm();
   const tRef = useRef(t);
   tRef.current = t;
@@ -210,6 +214,13 @@ export function VoiceJournalRecorder({
     };
   }, [planId]);
 
+  useEffect(() => {
+    if (!isFocused) {
+      startGenerationRef.current += 1;
+      if (recordingRef.current) void finishRecording(true);
+    }
+  }, [isFocused, finishRecording]);
+
   const startRecording = async () => {
     if (startingRef.current || recordingRef.current) return;
     recoveryRequestRef.current += 1;
@@ -217,7 +228,7 @@ export function VoiceJournalRecorder({
     startingRef.current = true;
     let recording: Audio.Recording | null = null;
     const startupIsActive = () =>
-      mountedRef.current && appStateRef.current === "active" &&
+      mountedRef.current && focusedRef.current && appStateRef.current === "active" &&
       generation === startGenerationRef.current;
     setMessage("");
     try {

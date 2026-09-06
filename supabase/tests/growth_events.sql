@@ -99,17 +99,17 @@ insert into public.growth_events(id,source_id,source_key,title,description,categ
 values('abababab-abab-abab-abab-abababababab','fixture','club','Library club','Facilitated conversation','community','https://example.org/club','event',now()+interval '1 day','Library',43.34,12.91,0,true,'active',now());
 select to_jsonb(p) as prefs from public.growth_event_preferences p where user_id='11111111-1111-1111-1111-111111111111' \gset
 select pg_temp.assert_true(public.growth_event_eligible('abababab-abab-abab-abab-abababababab',:'prefs'::jsonb),'Suitable event excluded');
-update public.growth_events set cost_eur=null;
+update public.growth_events set cost_eur=null where source_id='fixture';
 select pg_temp.assert_true(not public.growth_event_eligible('abababab-abab-abab-abab-abababababab',:'prefs'::jsonb),'Unknown cost treated as within budget');
-update public.growth_events set cost_eur=0,wheelchair_accessible=null;
+update public.growth_events set cost_eur=0,wheelchair_accessible=null where source_id='fixture';
 select pg_temp.assert_true(not public.growth_event_eligible('abababab-abab-abab-abab-abababababab',:'prefs'::jsonb),'Unknown access treated as accessible');
-update public.growth_events set wheelchair_accessible=true,verified_at=now()-interval '3 days';
+update public.growth_events set wheelchair_accessible=true,verified_at=now()-interval '3 days' where source_id='fixture';
 select pg_temp.assert_true(not public.growth_event_eligible('abababab-abab-abab-abab-abababababab',:'prefs'::jsonb),'Stale event eligible');
-update public.growth_events set verified_at=now(),latitude=45;
+update public.growth_events set verified_at=now(),latitude=45 where source_id='fixture';
 select pg_temp.assert_true(not public.growth_event_eligible('abababab-abab-abab-abab-abababababab',:'prefs'::jsonb),'Far event eligible');
-update public.growth_events set latitude=43.34,status='cancelled';
+update public.growth_events set latitude=43.34,status='cancelled' where source_id='fixture';
 select pg_temp.assert_true(not public.growth_event_eligible('abababab-abab-abab-abab-abababababab',:'prefs'::jsonb),'Cancelled event eligible');
-update public.growth_events set status='active';
+update public.growth_events set status='active' where source_id='fixture';
 select id from public.claim_growth_event_selection('abababab-1111-1111-1111-111111111111','11111111-1111-1111-1111-111111111111') \gset selection_
 select id from public.finish_growth_event_selection(:'selection_id'::uuid,'11111111-1111-1111-1111-111111111111','abababab-abab-abab-abab-abababababab',
 'The structured library setting offers repeated contact.',
@@ -132,25 +132,25 @@ end;
 $$;
 select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',true);
 select pg_temp.assert_true((select count(*)=1 from public.growth_event_detail(:'selection_id'::uuid)),'Eligible detail hidden');
-update public.growth_events set status='cancelled';
+update public.growth_events set status='cancelled' where source_id='fixture';
 select pg_temp.assert_true((select count(*)=0 from public.growth_event_detail(:'selection_id'::uuid)),'Cancelled detail shown');
-update public.growth_events set status='active',starts_at=now()-interval '1 hour';
-update public.growth_event_selections set event_snapshot=(select to_jsonb(e) from public.growth_events e where id='abababab-abab-abab-abab-abababababab');
+update public.growth_events set status='active',starts_at=now()-interval '1 hour' where source_id='fixture';
+update public.growth_event_selections set event_snapshot=(select to_jsonb(e) from public.growth_events e where id='abababab-abab-abab-abab-abababababab') where user_id='11111111-1111-1111-1111-111111111111';
 select pg_temp.assert_true((select count(*)=0 from public.growth_event_detail(:'selection_id'::uuid)),'Expired detail shown');
-update public.growth_events set starts_at=now()+interval '1 day';
-update public.growth_event_selections set event_snapshot=(select to_jsonb(e) from public.growth_events e where id='abababab-abab-abab-abab-abababababab');
-update public.growth_events set location='A changed venue';
+update public.growth_events set starts_at=now()+interval '1 day' where source_id='fixture';
+update public.growth_event_selections set event_snapshot=(select to_jsonb(e) from public.growth_events e where id='abababab-abab-abab-abab-abababababab') where user_id='11111111-1111-1111-1111-111111111111';
+update public.growth_events set location='A changed venue' where source_id='fixture';
 select pg_temp.expect_event_choice_blocked(:'selection_id'::uuid);
-update public.growth_events set location='Library';
+update public.growth_events set location='Library' where source_id='fixture';
 insert into public.growth_events(source_id,source_key,title,description,category,source_url,kind,starts_at,location,latitude,longitude,cost_eur,wheelchair_accessible,status,verified_at)
 select 'duplicate','cancelled-copy',title,description,category,'https://example.net/club',kind,starts_at,location,latitude,longitude,cost_eur,wheelchair_accessible,'cancelled',verified_at
 from public.growth_events where id='abababab-abab-abab-abab-abababababab';
 select pg_temp.assert_true((select count(*)=0 from public.growth_event_candidates('11111111-1111-1111-1111-111111111111',:'prefs'::jsonb)),'Duplicate cancellation was ignored');
 select pg_temp.expect_event_choice_blocked(:'selection_id'::uuid);
 delete from public.growth_events where source_id='duplicate';
-update public.growth_event_preferences set availability='Changed availability';
+update public.growth_event_preferences set availability='Changed availability' where user_id='11111111-1111-1111-1111-111111111111';
 select pg_temp.expect_event_choice_blocked(:'selection_id'::uuid);
-update public.growth_event_preferences set availability=(:'prefs'::jsonb)->>'availability';
+update public.growth_event_preferences set availability=(:'prefs'::jsonb)->>'availability' where user_id='11111111-1111-1111-1111-111111111111';
 set local role authenticated;
 select public.choose_growth_event(:'selection_id'::uuid,null);
 select public.choose_growth_event(:'selection_id'::uuid,null);
@@ -159,7 +159,13 @@ select pg_temp.assert_true((select event_id is not null and accepted_at is not n
 reset role;
 select pg_temp.assert_true((select count(*)=0 from public.growth_event_candidates('11111111-1111-1111-1111-111111111111',:'prefs'::jsonb)),'Accepted occurrence recommended again');
 -- New occurrence demonstrates rejection and privacy deletion.
-update public.growth_event_selections set status='rejected',rejection_reason='too_far';
+select pg_temp.assert_true((select count(*)=1 from public.growth_accepted_event_detail('abababab-abab-abab-abab-abababababab')),'Accepted details unavailable');
+insert into public.growth_events(source_id,source_key,title,description,category,source_url,kind,starts_at,location,latitude,longitude,cost_eur,wheelchair_accessible,status,verified_at)
+select 'duplicate','cancelled-after-acceptance',title,description,category,'https://example.net/club',kind,starts_at,location,latitude,longitude,cost_eur,wheelchair_accessible,'cancelled',verified_at
+from public.growth_events where id='abababab-abab-abab-abab-abababababab';
+select pg_temp.assert_true((select count(*)=0 from public.growth_accepted_event_detail('abababab-abab-abab-abab-abababababab')),'Accepted details ignored duplicate cancellation');
+delete from public.growth_events where source_id='duplicate';
+update public.growth_event_selections set status='rejected',rejection_reason='too_far' where user_id='11111111-1111-1111-1111-111111111111';
 select pg_temp.assert_true((select count(*)=0 from public.growth_event_candidates('11111111-1111-1111-1111-111111111111',:'prefs'::jsonb)),'Rejected occurrence recommended again');
 select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111',true);
 set local role authenticated;

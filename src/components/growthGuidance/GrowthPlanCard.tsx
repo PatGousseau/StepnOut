@@ -8,7 +8,7 @@ import { GrowthStepCard } from "./GrowthUI";
 
 export const MILESTONE_LABELS = {
   later: "Later", current: "Current focus", evidence: "Evidence of progress",
-  established: "Established enough to move forward",
+  established: "Completed",
 };
 
 export function GrowthPlanCard({
@@ -24,16 +24,16 @@ export function GrowthPlanCard({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.eyebrow}>{t("YOUR DIRECTION")}</Text>
+      <Text style={styles.eyebrow}>{t("Your goal")}</Text>
       <Text style={styles.goal}>{plan.goal}</Text>
 
       <View style={styles.section}>
         <Text style={styles.body}>{plan.formulation}</Text>
-        <Text style={styles.tentative}>{t("This is a starting hypothesis, not a label.")}</Text>
+        <Text style={styles.tentative}>{t("We can adjust this as you learn what works.")}</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t("A possible path")}</Text>
+        <Text style={styles.sectionTitle}>{t("Milestones")}</Text>
         {plan.milestones.map((milestone, index) => (
           <View key={`${index}-${milestone.title}`} style={styles.milestone}>
             <View style={styles.milestoneNumber}>

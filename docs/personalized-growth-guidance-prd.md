@@ -1,5 +1,14 @@
 # Personalized Growth Guidance
 
+### September 6 UX decision (supersedes earlier navigation and event-setup descriptions)
+
+Coaching is its own app tab, separate from Sidequests. Its visible sections are Step, Journal, and Goal. Step shows the current action, completion criterion, How did it go?, Make it easier, Change step, and Set aside. Reporting is one form with an outcome, contextual follow-up, optional notes, and Save. Journal contains writing, reviewed voice input, and readable/deletable history, including change requests. Goal contains the goal, milestones, and paginated previous steps and reports.
+
+Events are automatic contextual aids to suitable steps. The model first decides whether a public event would materially help; irrelevant or unavailable matches produce no extra UI. There is no opt-in, radius control, or accessibility questionnaire. When relevant and needed, ask only for a supported city; local means 25 km internally. Preserve already stated constraints, use approved fresh sources, and let the user accept or decline a suggestion. Accepted steps retain event details. Never infer a city or request precise location.
+
+User-facing language uses goal, plan, milestone, step, and journal—not direction, path, or experiment as feature-specific labels.
+
+
 
 *An adaptive, research-informed coaching experience for StepnOut*
 

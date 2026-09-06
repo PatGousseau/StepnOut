@@ -91,7 +91,7 @@ function RootLayoutNav() {
     pathname.includes('/esplora/category/') ||
     pathname === '/esplora/saved';
 
-  const isGrowthGuidanceFlow = pathname.includes('/growth-guidance/');
+  const isGrowthGuidanceFlow = pathname.includes('/growth-guidance/') || pathname === '/coaching';
 
   // hide logo on auth screens
   const hideLogo =
