@@ -1,24 +1,25 @@
-# Guidance UX pass
+# Guidance: one next step, one check-in
 
 This is a UI-only layer on top of #289. The guidance, journal, voice, and event service contracts are unchanged; there are no migrations or model changes.
 
 ## Experience
 
-- **Today** centers the current step, its action, and what counts as trying. Acceptance and check-in are the main actions; rationale and cues expand on demand.
-- **Journal** offers writing and voice as separate destinations, with a compact history and full entry detail. Submitting opens a focused response screen.
-- **My direction** holds the goal, working explanation, and milestones, with an explicit way to revisit the direction.
-- Check-ins ask about the attempt, then the follow-up, then optional notes. Back preserves answers within the check-in.
-- Step adjustments, immediate guidance, events, and pending-change review each have their own focused view. Event rejection reasons appear only after “Not for me.”
-- Cross-platform dialogs protect journal and preference drafts. Voice navigation is blocked during recording/processing and warns about unsaved audio/transcript edits before leaving.
-- The intake keeps its existing questions, adds back navigation, and folds optional event setup into a disclosure. Confirming opens Today directly.
+- The opening screen shows the next step and one primary action: **Check in**. No internal tabs, introductory slogans, dashboard cards, or inline adjustment menu.
+- **Check in** opens a text box directly. The microphone is an alternative input on mobile. Sending opens the response; **Done** returns to the step.
+- A small attempt-report link is available inside the composer. Choosing an outcome advances directly to the follow-up, then optional notes—no extra Continue buttons. Back preserves text.
+- **More** contains step details, a request for a different step, the direction, past check-ins, nearby opportunities, and the latest response. Requests use free text; the user needn't choose among five kinds of guidance request.
+- The plan reads as a single document with no per-milestone disclosure controls. The step's acceptance/set-aside controls live in its details, outside the everyday flow.
+- Pending suggestions take precedence over a new check-in. A check-in remains available even when no step is active.
+- Cross-platform dialogs protect text and event preference drafts. Switching a nonempty written draft to voice explicitly asks to discard it. Native recording/processing blocks back navigation; leaving unsaved audio/transcript edits requires confirmation.
+- The intake keeps its existing questions, back navigation, and optional event disclosure. Confirming opens the step directly.
 
 ## Screenshots
 
 These are the real components rendered with React Native Web, bundled offline with synthetic service responses and the app's font/icon assets. They are not native-device screenshots. The mobile journal/voice introduction previews simulate the platform flag; microphone APIs are stubbed and were not exercised. Italian screenshots translate UI chrome; generated fixture content intentionally stays in English.
 
-| Today | Journal | Writing |
+| Next step | Check-in (mobile) | Writing |
 | --- | --- | --- |
-| ![Today](today.png) | ![Journal](journal-mobile.png) | ![Writing](write.png) |
+| ![Next step](today.png) | ![Check-in](journal-mobile.png) | ![Writing](write.png) |
 
 | Check-in | Voice introduction | Direction |
 | --- | --- | --- |
@@ -31,10 +32,10 @@ Additional captures: [event setup](events.png), [event match](event-match.png), 
 - `npx eslint src/components/growthGuidance/*.tsx src/constants/translations.ts`
 - `npx jest src/utils/__tests__/growthGuidance.test.ts src/utils/__tests__/voiceJournal.test.ts --runInBand` — 11 tests pass.
 - `npx expo export --platform ios --platform android --output-dir .local/growth-guidance-verification/ux-final-export` — both native bundles build.
-- Offline browser walkthrough covers tab separation, step acceptance, text draft keep/discard, journal submission, check-in stages/back, proposal rejection, preference draft keep/discard, all six event rejection reasons, event acceptance confirmation/cancel, voice introduction/leave guard, empty states, Italian, 320px horizontal overflow, and failed-load recovery. No browser runtime errors.
+- Offline browser walkthrough asserts no tabs and exactly three opening-screen buttons (Close, More, Check in). It covers text draft keep/discard, writing/voice replacement consent and successful recovered-transcript submission, no-step and dismissed-step composition, report stages/back, proposal review, all menu destinations, preference draft guards, all six event rejection reasons, event acceptance/cancel, Italian, narrow layouts, and failed-load recovery. No browser runtime errors.
 - Literal translation coverage checked; all static `t()` calls in guidance components have Italian entries.
 - Root `npx tsc --noEmit` remains blocked by existing app and Deno configuration/type errors outside this change. Changed feature files have no reported type errors. Removed one duplicate translation key while editing the dictionary.
-- Three comprehensive autoreview passes; navigation findings fixed and covered by the browser walkthrough. Ledger remains local at `tmp/autoreview-ledger.md`.
+- The initial UX had three review passes; this simplification revision had two further passes. Accepted draft-safety and no-step navigation findings are fixed and covered by the walkthrough; the second pass found no new issues. Ledger remains local at `tmp/autoreview-ledger.md`.
 
 The iPhone simulator boots and has a StepnOut build installed, but an authenticated native walkthrough was not completed. Still verify physical microphone permission/recording/transcription, keyboard and accessibility behavior on iOS/Android, and live backend flows on a test account. No production data, deployments, event-source activation, or beta-readiness work is included.
 

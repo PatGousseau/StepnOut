@@ -38,7 +38,7 @@ export function GrowthRow({ title, subtitle, icon, onPress, disabled = false }: 
 }) {
   return <TouchableOpacity accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled}
     onPress={onPress} style={[ui.row, disabled && ui.disabled]}>
-    <View style={ui.icon}><MaterialCommunityIcons name={icon} size={23} color={colors.light.primary} /></View>
+    <MaterialCommunityIcons name={icon} size={21} color={colors.light.primary} />
     <View style={ui.rowCopy}><Text style={ui.rowTitle}>{title}</Text>{!!subtitle && <Text style={ui.caption}>{subtitle}</Text>}</View>
     <MaterialCommunityIcons name="chevron-right" size={22} color={colors.light.primary} />
   </TouchableOpacity>;
@@ -91,12 +91,11 @@ export const ui = StyleSheet.create({
   disclosureToggle: { minHeight: 44, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   eyebrow: { color: colors.light.primary, fontSize: 12, letterSpacing: 1.5, fontWeight: "800" },
   heading: { gap: 10 },
-  icon: { width: 44, height: 44, borderRadius: 15, backgroundColor: colors.light.accent3, alignItems: "center", justifyContent: "center" },
   link: { color: colors.light.primary, fontSize: 14, fontWeight: "700", flexShrink: 1 },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(25, 27, 46, 0.45)", justifyContent: "center", padding: 24 },
   modalCard: { width: "100%", maxWidth: 440, maxHeight: "90%", flexGrow: 0, alignSelf: "center", backgroundColor: colors.light.background, borderRadius: 24 },
   modalContent: { padding: 24, gap: 18 },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: 20, backgroundColor: colors.neutral.white, minHeight: 82 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.neutral.grey2, minHeight: 56 },
   rowCopy: { flex: 1, gap: 3 },
   rowTitle: { color: colors.light.text, fontSize: 16, fontWeight: "700", lineHeight: 22 },
   secondaryButton: { backgroundColor: colors.light.accent2 },

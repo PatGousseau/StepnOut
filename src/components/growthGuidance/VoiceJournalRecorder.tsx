@@ -26,7 +26,7 @@ import {
   normalizeVoiceJournalDuration,
 } from "../../utils/voiceJournal";
 import { Text } from "../StyledText";
-import { GrowthButton, GrowthDisclosure, GrowthHeading, ui, useGrowthConfirm } from "./GrowthUI";
+import { GrowthButton, GrowthHeading, ui, useGrowthConfirm } from "./GrowthUI";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 type VoicePhase =
@@ -375,14 +375,12 @@ export function VoiceJournalRecorder({
   return (
     <View style={styles.card}>
       {confirmation}
-      <GrowthHeading eyebrow={t("VOICE JOURNAL")} title={t(phase === "review" ? "Make it your words" : "Talk it through")} />
-      <View style={styles.stages}>{["Record", "Review", "Reflect"].map((label, index) => <Text key={label} style={[styles.stage, (index === 0 && phase !== "review" || index === 1 && phase === "review") && styles.activeStage]}>{index + 1} · {t(label)}</Text>)}</View>
+      <GrowthHeading title={t(phase === "review" ? "Review your words" : "Say it in your own words")} />
       {phase === "intro" && (
         <>
           <View style={styles.mic}><MaterialCommunityIcons name="microphone-outline" size={44} color={colors.light.primary} /></View>
-          <Text style={ui.body}>{t("Up to 3 minutes, just for you. Review and edit the transcript before it shapes your guidance.")}</Text>
+          <Text style={ui.body}>{t("Record up to 3 minutes. Review the text before sending.")}</Text>
           <Text style={ui.caption}>{t("Audio is uploaded privately for transcription. Audio and text stay saved until you delete the journal.")}</Text>
-          <GrowthDisclosure title={t("How your recording is used")}><Text style={ui.caption}>{t("The transcript becomes evidence only after you review and submit it. You can edit or discard it, and voice journaling never collects your location.")}</Text></GrowthDisclosure>
           <GrowthButton
             title={t("Start recording")}
             onPress={startRecording}
@@ -435,7 +433,7 @@ export function VoiceJournalRecorder({
             placeholderTextColor={colors.light.lightText}
           />
           <GrowthButton
-            title={t("Submit reviewed transcript")}
+            title={t("Send")}
             onPress={submit}
             disabled={!reviewedTranscript.trim()}
           />
@@ -484,17 +482,11 @@ export function VoiceJournalRecorder({
 }
 
 const styles = StyleSheet.create({
-  activeStage: { color: colors.light.primary, backgroundColor: colors.light.accent2 },
   mic: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.light.accent3, alignItems: "center", justifyContent: "center", alignSelf: "center", marginVertical: 12 },
   processing: { alignItems: "center", gap: 16, paddingVertical: 24 },
-  stage: { color: colors.neutral.grey3, fontSize: 12, padding: 10, borderRadius: 12, overflow: "hidden" },
-  stages: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   body: { color: colors.light.text, fontSize: 14, lineHeight: 21 },
   card: {
-    backgroundColor: colors.neutral.white,
-    borderRadius: 24,
     gap: 18,
-    padding: 22,
   },
   input: {
     backgroundColor: colors.light.background,

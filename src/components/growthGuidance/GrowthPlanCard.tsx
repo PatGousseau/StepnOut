@@ -4,7 +4,7 @@ import { colors } from "../../constants/Colors";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { GrowthPlanProposal } from "../../types/growthGuidance";
 import { Text } from "../StyledText";
-import { GrowthDisclosure, GrowthStepCard } from "./GrowthUI";
+import { GrowthStepCard } from "./GrowthUI";
 
 export const MILESTONE_LABELS = {
   later: "Later", current: "Current focus", evidence: "Evidence of progress",
@@ -27,10 +27,10 @@ export function GrowthPlanCard({
       <Text style={styles.eyebrow}>{t("YOUR DIRECTION")}</Text>
       <Text style={styles.goal}>{plan.goal}</Text>
 
-      <GrowthDisclosure title={t("What may be getting in the way")}>
+      <View style={styles.section}>
         <Text style={styles.body}>{plan.formulation}</Text>
         <Text style={styles.tentative}>{t("This is a starting hypothesis, not a label.")}</Text>
-      </GrowthDisclosure>
+      </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t("A possible path")}</Text>
@@ -46,7 +46,7 @@ export function GrowthPlanCard({
                   {t(MILESTONE_LABELS[milestone.status || (index === 0 ? "current" : "later")])}
                 </Text>
               )}
-              <GrowthDisclosure title={t("About this part")}><Text style={styles.body}>{milestone.description}</Text></GrowthDisclosure>
+              <Text style={styles.body}>{milestone.description}</Text>
             </View>
           </View>
         ))}
