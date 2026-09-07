@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   AppState,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -26,8 +27,7 @@ import {
   MAX_VOICE_JOURNAL_DURATION_MS,
   normalizeVoiceJournalDuration,
 } from "../../utils/voiceJournal";
-import { Text } from "../StyledText";
-import { GrowthButton, GrowthHeading, ui, useGrowthConfirm } from "./GrowthUI";
+import { coaching, GrowthButton, GrowthHeading, ui, useGrowthConfirm } from "./GrowthUI";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 type VoicePhase =
@@ -441,7 +441,8 @@ export function VoiceJournalRecorder({
             maxLength={4000}
             textAlignVertical="top"
             placeholder={t("Review your transcript")}
-            placeholderTextColor={colors.light.lightText}
+            placeholderTextColor={coaching.muted}
+            selectionColor={colors.light.primary}
           />
           <GrowthButton
             title={t("Send")}
@@ -501,11 +502,11 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.neutral.white,
-    borderColor: colors.light.accent2,
+    borderColor: coaching.border,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.light.text,
-    fontSize: 15,
+    fontSize: 17,
     minHeight: 180,
     padding: 14,
     lineHeight: 24,
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "center",
   },
-  textButton: { alignItems: "center", justifyContent: "center", padding: 10, minHeight: 44 },
+  textButton: { alignItems: "center", justifyContent: "center", padding: 8, minHeight: coaching.touch },
   textButtonLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
   timer: { color: colors.light.primary, fontSize: 36, fontWeight: "800", textAlign: "center", marginVertical: 24 },
 });

@@ -1,12 +1,10 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { colors } from "../../constants/Colors";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { GrowthPlanProposal } from "../../types/growthGuidance";
-import { Text } from "../StyledText";
-import { GrowthStepCard } from "./GrowthUI";
-import { CoachingArtwork } from "./CoachingArtwork";
+import { coaching, GrowthStepCard } from "./GrowthUI";
 
 export const MILESTONE_LABELS = {
   later: "Later", current: "Current focus", evidence: "Evidence of progress",
@@ -27,9 +25,7 @@ export function GrowthPlanCard({
   return (
     <View style={styles.container}>
       <View style={styles.goalHero}>
-        <View style={styles.goalTop}><Text style={styles.eyebrow}>{t("Your goal")}</Text><CoachingArtwork variant="goal" size={56} /></View>
         <Text accessibilityRole="header" style={styles.goal}>{plan.goal}</Text>
-        <View style={styles.goalRule} />
         <Text style={styles.body}>{plan.formulation}</Text>
       </View>
 
@@ -58,7 +54,7 @@ export function GrowthPlanCard({
       </View>
 
       <View style={styles.focusCard}><MaterialCommunityIcons name="flag-outline" size={23} color={colors.light.primary} /><View style={styles.focusCopy}>
-        <Text style={styles.focusLabel}>{t("CURRENT FOCUS")}</Text>
+        <Text style={styles.focusLabel}>{t("Current focus")}</Text>
         <Text style={styles.focus}>{plan.current_focus}</Text>
       </View></View>
 
@@ -69,19 +65,12 @@ export function GrowthPlanCard({
 
 const styles = StyleSheet.create({
   body: {
-    color: colors.light.text,
-    fontSize: 15,
-    lineHeight: 22,
+    color: coaching.muted,
+    fontSize: 16,
+    lineHeight: 24,
   },
   container: {
     gap: 20,
-  },
-  eyebrow: {
-    color: colors.light.primary,
-    fontSize: 13,
-    fontWeight: "800",
-    letterSpacing: 1.1,
-    flex: 1,
   },
   focus: {
     color: colors.light.text,
@@ -90,8 +79,8 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   focusCard: {
-    backgroundColor: colors.light.accent2,
-    borderRadius: 16,
+    backgroundColor: colors.light.accent3,
+    borderRadius: 12,
     gap: 10,
     padding: 16,
     flexDirection: "row",
@@ -99,20 +88,17 @@ const styles = StyleSheet.create({
   focusCopy: { flex: 1, gap: 8 },
   focusLabel: {
     color: colors.light.primary,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.9,
+    fontSize: 14,
+    fontWeight: "600",
   },
   goal: {
-    color: colors.light.primary,
-    fontSize: 24,
+    color: coaching.ink,
+    fontSize: 28,
     fontWeight: "700",
-    lineHeight: 30,
+    lineHeight: 34,
     letterSpacing: -0.6,
   },
-  goalHero: { backgroundColor: colors.light.accent2, borderRadius: 20, padding: 18, gap: 12 },
-  goalTop: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: -6, marginBottom: -6 },
-  goalRule: { width: 40, height: 2, backgroundColor: colors.light.primary, opacity: 0.4 },
+  goalHero: { gap: 12, paddingBottom: 4 },
   milestone: {
     alignItems: "flex-start",
     flexDirection: "row",
@@ -121,7 +107,7 @@ const styles = StyleSheet.create({
   milestoneNumber: {
     alignItems: "center",
     backgroundColor: colors.light.background,
-    borderColor: colors.light.accent2,
+    borderColor: coaching.border,
     borderWidth: 1,
     borderRadius: 15,
     height: 30,
@@ -129,7 +115,7 @@ const styles = StyleSheet.create({
     width: 30,
   },
   milestoneTrack: { alignItems: "center", alignSelf: "stretch", width: 30 },
-  milestoneLine: { flex: 1, width: 1, backgroundColor: colors.light.accent2, marginTop: 6, marginBottom: 6, minHeight: 18 },
+  milestoneLine: { flex: 1, width: 1, backgroundColor: coaching.border, marginTop: 6, marginBottom: 6, minHeight: 18 },
   milestoneActive: { backgroundColor: colors.light.primary, borderColor: colors.light.primary },
   milestoneDone: { backgroundColor: colors.light.accent2, borderColor: colors.light.accent2 },
   milestoneActiveText: { color: colors.neutral.white },
@@ -146,13 +132,13 @@ const styles = StyleSheet.create({
   },
   milestoneTitle: {
     color: colors.light.text,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 17,
+    fontWeight: "600",
   },
   milestoneState: {
     color: colors.light.primary,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "500",
   },
   section: {
     gap: 0,

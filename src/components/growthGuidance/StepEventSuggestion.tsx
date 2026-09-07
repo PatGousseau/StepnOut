@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Linking, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { colors } from "../../constants/Colors";
 import { EventArea, EventOpportunity, EventSelection, growthEventService } from "../../services/growthEventService";
-import { Text } from "../StyledText";
-import { GrowthButton, ui } from "./GrowthUI";
+import { coaching, GrowthButton, ui } from "./GrowthUI";
 
 /** A contextual aid, not a finder. Quiet failures never block the ordinary step. */
 export function StepEventSuggestion({ stepId, userId, eventId, onChanged }: {
@@ -80,7 +79,7 @@ export function StepEventSuggestion({ stepId, userId, eventId, onChanged }: {
   }
   if (!event || (!eventId && !selection?.proposed_step)) return null;
   return <View style={styles.card}>
-    <View style={styles.top}><View style={styles.icon}><MaterialCommunityIcons name="map-marker-outline" size={23} color={colors.light.primary} /></View><Text style={styles.eyebrow}>{t(eventId ? "Event details" : "A place to try this")}</Text></View>
+    <View style={styles.top}><MaterialCommunityIcons name="map-marker-outline" size={21} color={colors.light.primary} /><Text style={[ui.rowTitle, styles.headerText]}>{t(eventId ? "Event details" : "A place to try this")}</Text></View>
     <Text style={styles.title}>{event.title}</Text>
     <Text style={ui.caption}>{event.location}{event.starts_at ? " · " + new Date(event.starts_at).toLocaleString(language === "it" ? "it-IT" : "en-CA", { dateStyle: "medium", timeStyle: "short", timeZone: event.timezone }) : ""}</Text>
     {!!event.availability && <Text style={ui.caption}>{event.availability}</Text>}
@@ -93,16 +92,15 @@ export function StepEventSuggestion({ stepId, userId, eventId, onChanged }: {
     <Text style={ui.caption}>{t("Last verified")}{": "}{new Date(event.verified_at).toLocaleDateString(language === "it" ? "it-IT" : "en-CA")}</Text>
     {!eventId && <>
       <GrowthButton title={t("Use this for my step")} disabled={busy} onPress={() => choose(null)} />
-      <GrowthButton title={t("Not for me")} secondary disabled={busy} onPress={() => choose("not_relevant")} />
+      <GrowthButton title={t("Not for me")} quiet disabled={busy} onPress={() => choose("not_relevant")} />
     </>}
     {!!error && <Text style={ui.caption}>{error}</Text>}
   </View>;
 }
 const styles = StyleSheet.create({
-  card: { padding: 16, gap: 12, backgroundColor: colors.neutral.white, borderWidth: 1, borderColor: colors.light.accent2, borderRadius: 18 },
-  eyebrow: { color: colors.light.primary, fontSize: 12, fontWeight: "700", flex: 1 },
+  card: { padding: 16, gap: 12, backgroundColor: coaching.surface, borderWidth: 1, borderColor: coaching.border, borderRadius: 12 },
   top: { flexDirection: "row", alignItems: "center", gap: 12 },
-  icon: { width: 34, height: 34, borderRadius: 11, backgroundColor: colors.light.accent2, alignItems: "center", justifyContent: "center" },
-  title: { color: colors.light.primary, fontSize: 19, fontWeight: "700", lineHeight: 26, letterSpacing: -0.4 },
-  sourceLink: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
+  headerText: { flex: 1 },
+  title: { color: coaching.ink, fontSize: 19, fontWeight: "600", lineHeight: 26 },
+  sourceLink: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: coaching.touch },
 });

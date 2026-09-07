@@ -62,6 +62,24 @@ try {
   await capture("journal-italian-320");
   await page.getByRole("tab", { name: "Obiettivo", exact: true }).click();
   await capture("goal-italian-320");
+  await open("?event&lang=it");
+  const eventHeading = page.getByText("Un posto dove provare", { exact: true });
+  await eventHeading.waitFor();
+  // Stress wrapping without claiming this replaces native Dynamic Type coverage.
+  await page.locator('[dir="auto"]').evaluateAll(elements => elements.forEach(element => {
+    const computed = getComputedStyle(element);
+    if (computed.fontFamily.includes("MaterialCommunityIcons")) return;
+    const size = parseFloat(computed.fontSize);
+    const line = parseFloat(computed.lineHeight);
+    element.style.fontSize = `${size * 1.5}px`;
+    if (Number.isFinite(line)) element.style.lineHeight = `${line * 1.5}px`;
+  }));
+  await eventHeading.scrollIntoViewIfNeeded();
+  assert.equal(await eventHeading.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    return bounds.right <= element.parentElement.getBoundingClientRect().right + 1;
+  }), true, "Enlarged event heading stays inside its row");
+  await capture("event-italian-large-text");
   await page.setViewportSize({ width: 1100, height: 900 });
   await open();
   await capture("step-wide");

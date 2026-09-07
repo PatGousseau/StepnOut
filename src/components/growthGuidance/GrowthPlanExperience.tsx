@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -33,13 +34,11 @@ import {
   getGrowthAttemptFollowUps,
   GROWTH_ATTEMPT_FOLLOW_UPS,
 } from "../../utils/growthGuidance";
-import { Text } from "../StyledText";
 import { GrowthPlanCard, MILESTONE_LABELS } from "./GrowthPlanCard";
 import { VoiceJournalRecorder } from "./VoiceJournalRecorder";
 import { StepEventSuggestion } from "./StepEventSuggestion";
 import { useIsFocused } from "@react-navigation/native";
-import { GrowthButton, GrowthHeading, GrowthRow, GrowthStepCard, ui, useGrowthConfirm } from "./GrowthUI";
-import { CoachingArtwork } from "./CoachingArtwork";
+import { coaching, GrowthButton, GrowthHeading, GrowthRow, GrowthStepCard, ui, useGrowthConfirm } from "./GrowthUI";
 
 type Screen = "home" | "history" | "direction" | "report" | "journal" | "voice" | "request" | "response" | "entry" | "pastStep";
 
@@ -490,7 +489,7 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
       <View style={styles.navigation}>
         {!["home", "history", "direction"].includes(mode) ? <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("Back")} disabled={saving || voiceBusy} onPress={goBack} style={styles.navButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.light.primary} />
-        </TouchableOpacity> : <View style={styles.brandMark}><MaterialCommunityIcons name="creation" size={23} color={colors.light.primary} /></View>}
+        </TouchableOpacity> : null}
         <Text style={styles.brand}>{t("Coaching")}</Text>
         <View style={styles.navSpacer} />
       </View>
@@ -533,20 +532,18 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
           <GrowthButton title={t(pendingInteractionId ? "Get my response" : "Review suggestion")} disabled={saving} onPress={() => setMode("response")} />
         </> : experience?.activeStep ? <>
           <View style={styles.stepHero}>
-          <View style={styles.heroTop}><View style={styles.heroBadge}><View style={styles.heroDot} /><Text style={styles.kicker}>{t("Your next step")}</Text></View><CoachingArtwork size={54} /></View>
           <Text accessibilityRole="header" style={styles.stepTitle}>{experience.activeStep.title}</Text>
           <Text style={styles.stepAction}>{experience.activeStep.action}</Text>
           <View style={styles.heroCriterion}><MaterialCommunityIcons name="check-circle-outline" size={20} color={colors.light.primary} /><View style={ui.rowCopy}><Text style={styles.heroCriterionLabel}>{t("What counts as trying it")}</Text><Text style={styles.heroCriterionText}>{experience.activeStep.completion_criterion}</Text></View></View>
-          <GrowthButton title={t("How did it go?")} icon="arrow-right" disabled={saving} onPress={() => setMode("report")} />
+          <GrowthButton title={t("How did it go?")} disabled={saving} onPress={() => setMode("report")} />
           </View>
           <View style={styles.stepActions}>
-            <View style={styles.actionItem}><GrowthButton title={t("Make it easier")} secondary disabled={blocked} onPress={() => openRequest("easier")} /></View>
-            <View style={styles.actionItem}><GrowthButton title={t("Change step")} secondary disabled={blocked} onPress={() => openRequest("change")} /></View>
+            <View style={styles.actionItem}><GrowthButton title={t("Make it easier")} quiet disabled={blocked} onPress={() => openRequest("easier")} /></View>
+            <View style={styles.actionItem}><GrowthButton title={t("Change step")} quiet disabled={blocked} onPress={() => openRequest("change")} /></View>
           </View>
           {!!experience.activeStep.if_then_plan && <View style={styles.cue}><MaterialCommunityIcons name="lightbulb-on-outline" size={21} color={colors.light.primary} /><Text style={styles.cueText}>{experience.activeStep.if_then_plan}</Text></View>}
           <TouchableOpacity accessibilityRole="button" style={styles.textButton} disabled={blocked} onPress={() => confirm(t("Set this step aside?"), t("Your plan stays available. You can ask for another step whenever it fits."), [{ text: t("Cancel"), style: "cancel" }, { text: t("Set aside"), onPress: () => { void chooseStep("dismiss"); } }])}><Text style={ui.link}>{t("Set aside")}</Text></TouchableOpacity>
         </> : <>
-          <View style={styles.emptyArtwork}><CoachingArtwork size={120} /></View>
           <GrowthHeading title={t("No step for now")} />
           <Text style={ui.body}>{t("You can still check in whenever you have something to share.")}</Text>
           <GrowthButton title={t("Find my next step")} disabled={saving} onPress={() => openRequest("period")} />
@@ -617,12 +614,10 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
       </>}
 
       {mode === "history" && <>
-        <View style={styles.journalIntro}><View style={ui.rowCopy}><GrowthHeading title={t("Journal")} /><Text style={styles.journalSubtitle}>{t("A little room to reflect.")}</Text></View><CoachingArtwork variant="journal" size={72} /></View>
+        <GrowthHeading title={t("What's on your mind?")} subtitle={t("Write about anything on your mind. It doesn't have to be about your step.")} />
         <View style={styles.journalCompose}>
-          <Text style={styles.journalPrompt}>{t("What's on your mind?")}</Text>
-          <Text style={ui.caption}>{t("Write about anything on your mind. It doesn't have to be about your step.")}</Text>
-          <GrowthButton title={t("Write an entry")} icon="pencil-outline" disabled={blocked} onPress={() => setMode("journal")} />
-          {Platform.OS !== "web" && <GrowthButton title={t("Record a voice entry")} icon="microphone-outline" secondary disabled={blocked} onPress={() => setMode("voice")} />}
+          <GrowthRow title={t("Write an entry")} icon="pencil-outline" disabled={blocked} onPress={() => setMode("journal")} />
+          {Platform.OS !== "web" && <><View style={styles.rowSeparator} /><GrowthRow title={t("Record a voice entry")} icon="microphone-outline" disabled={blocked} onPress={() => setMode("voice")} /></>}
         </View>
         {(!!response || !!pendingInteractionId) && <GrowthRow icon="message-text-outline" title={t("Latest response")} onPress={() => setMode("response")} />}
         <Text style={ui.rowTitle}>{t("Previous entries")}</Text>
@@ -632,13 +627,13 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
         <View style={styles.history}>
           {visibleJournals.map((interaction) => (
             <TouchableOpacity accessibilityRole="button" key={interaction.id} style={styles.historyItem} onPress={() => { setSelectedEntry(interaction); setMode("entry"); }}>
-              <View style={styles.historyHeading}><MaterialCommunityIcons name={interaction.voice_journal_id ? "microphone-outline" : "text-box-outline"} size={18} color={colors.light.primary} /><Text style={styles.historyTitle}>
+              <View style={styles.historyHeading}><Text style={styles.historyTitle}>
                 {t(interaction.request_kind ? REQUEST_LABELS[interaction.request_kind] : interaction.kind === "report" ? "Step report" : "Journal")}
                 {" · "}
                 {new Date(interaction.created_at).toLocaleDateString(
-                  language === "it" ? "it-IT" : "en-CA"
+                  language === "it" ? "it-IT" : "en-CA", { day: "numeric", month: "short", year: "numeric" }
                 )}
-              </Text><MaterialCommunityIcons name="arrow-top-right" size={18} color={colors.light.primary} /></View>
+              </Text><MaterialCommunityIcons name="chevron-right" size={18} color={coaching.muted} /></View>
               {interaction.report_outcome && interaction.follow_up && (
                 <Text style={styles.responseText}>
                   {t(OUTCOME_LABELS[interaction.report_outcome])}
@@ -703,7 +698,8 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
             value={journalText}
             onChangeText={setJournalText}
             placeholder={t("Optional: add what happened")}
-            placeholderTextColor={colors.light.lightText}
+            placeholderTextColor={coaching.muted}
+            selectionColor={colors.light.primary}
             multiline
             accessibilityLabel={t("Optional: add what happened")}
             editable={!saving}
@@ -722,7 +718,8 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
             value={journalText}
             onChangeText={setJournalText}
             placeholder={t(mode === "request" ? "Tell us what you'd like to change…" : "Tell us what happened, or what's on your mind…")}
-            placeholderTextColor={colors.light.lightText}
+            placeholderTextColor={coaching.muted}
+            selectionColor={colors.light.primary}
             multiline
             maxLength={4000}
             accessibilityLabel={t(mode === "request" ? "What would help?" : "Your journal entry")}
@@ -760,57 +757,50 @@ export function GrowthPlanExperience({ initialPlan }: { initialPlan: GrowthPlanP
 }
 
 const styles = StyleSheet.create({
-  sections: { flexDirection: "row", padding: 3, backgroundColor: colors.light.accent2, borderRadius: 14, alignSelf: "center", width: "90%", maxWidth: 604, marginBottom: 2 },
-  sectionTab: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 6, paddingVertical: 8, minHeight: 44, borderRadius: 11 },
-  sectionSelected: { backgroundColor: colors.neutral.white },
-  sectionLabel: { fontSize: 14, color: colors.neutral.grey3 },
-  sectionLabelSelected: { color: colors.light.primary, fontWeight: "700" },
-  stepActions: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  sections: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: coaching.border, alignSelf: "center", width: "90%", maxWidth: 604 },
+  sectionTab: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 6, paddingVertical: 10, minHeight: coaching.touch, borderBottomWidth: 2, borderBottomColor: "transparent" },
+  sectionSelected: { borderBottomColor: colors.light.primary },
+  sectionLabel: { fontSize: 16, color: coaching.muted },
+  sectionLabelSelected: { color: colors.light.primary, fontWeight: "600" },
+  stepActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: -8 },
   actionItem: { flexGrow: 1, flexBasis: 145 },
-  brand: { color: colors.light.primary, fontSize: 19, fontWeight: "700", letterSpacing: -0.5, flex: 1 },
-  brandMark: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  brand: { color: coaching.ink, fontSize: 22, fontWeight: "700", letterSpacing: -0.4, flex: 1 },
   composeActions: { flexDirection: "row", alignItems: "center", gap: 12 },
-  kicker: { color: colors.light.primary, fontSize: 12, fontWeight: "700", flexShrink: 1 },
-  stepHero: { backgroundColor: colors.light.accent2, borderRadius: 20, padding: 18, gap: 14 },
-  heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: -6, marginBottom: -6 },
-  heroBadge: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
-  heroDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.light.primarySoft },
-  heroCriterion: { flexDirection: "row", alignItems: "flex-start", gap: 8, borderTopColor: colors.neutral.white, borderTopWidth: 1, paddingTop: 12 },
-  heroCriterionLabel: { color: colors.light.primary, fontSize: 12, fontWeight: "700", lineHeight: 18, marginBottom: 3 },
-  heroCriterionText: { color: colors.neutral.grey3, fontSize: 13, lineHeight: 20 },
-  stepTitle: { color: colors.light.primary, fontSize: 25, lineHeight: 31, fontWeight: "700", letterSpacing: -0.6 },
-  stepAction: { color: colors.light.text, fontSize: 15, lineHeight: 23 },
-  cue: { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 10, paddingTop: 2 },
-  cueText: { color: colors.neutral.grey3, fontSize: 14, lineHeight: 22, flex: 1 },
-  content: { padding: 18, paddingBottom: 24, width: "100%", maxWidth: 640, alignSelf: "center", flexGrow: 1 },
-  emptyArtwork: { alignItems: "center", paddingVertical: 12 },
-  journalIntro: { flexDirection: "row", alignItems: "center", gap: 12 },
-  journalSubtitle: { color: colors.neutral.grey3, fontSize: 14, lineHeight: 21, marginTop: 4 },
-  journalCompose: { backgroundColor: colors.neutral.white, borderRadius: 18, padding: 16, gap: 12, borderTopWidth: 3, borderTopColor: colors.light.accent2 },
-  journalPrompt: { color: colors.light.primary, fontSize: 18, lineHeight: 25, fontWeight: "700", letterSpacing: -0.3 },
-  emptyCard: { alignItems: "center", gap: 12, padding: 28, backgroundColor: colors.light.accent3, borderRadius: 22 },
+  stepHero: { gap: 18 },
+  heroCriterion: { flexDirection: "row", alignItems: "flex-start", gap: 10, backgroundColor: colors.light.accent3, borderRadius: 12, padding: 14 },
+  heroCriterionLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "600", lineHeight: 20, marginBottom: 3 },
+  heroCriterionText: { color: colors.light.primary, fontSize: 15, lineHeight: 22 },
+  stepTitle: { color: coaching.ink, fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.5 },
+  stepAction: { color: coaching.ink, fontSize: 17, lineHeight: 26 },
+  cue: { flexDirection: "row", alignItems: "flex-start", gap: 10, borderTopWidth: 1, borderTopColor: coaching.border, paddingTop: 18 },
+  cueText: { color: coaching.muted, fontSize: 15, lineHeight: 23, flex: 1 },
+  content: { padding: 20, paddingTop: 24, paddingBottom: 24, width: "100%", maxWidth: 640, alignSelf: "center", flexGrow: 1 },
+  journalCompose: { backgroundColor: coaching.surface, borderRadius: 12, paddingHorizontal: 14, borderWidth: 1, borderColor: coaching.border, marginBottom: 8 },
+  rowSeparator: { height: 1, backgroundColor: coaching.border, marginLeft: 33 },
+  emptyCard: { gap: 8, paddingVertical: 16 },
   flex: { flex: 1 },
   loading: { flex: 1, justifyContent: "center", alignItems: "center", gap: 14 },
-  navigation: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 10, paddingVertical: 4, width: "100%", maxWidth: 640, alignSelf: "center" },
+  navigation: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, minHeight: 56, width: "100%", maxWidth: 640, alignSelf: "center" },
   navButton: { height: 48, width: 48, alignItems: "center", justifyContent: "center" },
   navSpacer: { width: 48 },
   screen: { flex: 1, backgroundColor: colors.light.background },
   chip: {
-    minHeight: 44,
+    minHeight: coaching.touch,
     justifyContent: "center",
-    backgroundColor: colors.light.accent3,
-    borderColor: colors.light.accent2,
+    backgroundColor: coaching.surface,
+    borderColor: coaching.border,
     borderRadius: 10,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    maxWidth: "100%",
   },
   chipSelected: { backgroundColor: colors.light.primary, borderColor: colors.light.primary },
-  chipText: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
+  chipText: { color: coaching.ink, fontSize: 15, fontWeight: "500", flexShrink: 1 },
   chipTextSelected: { color: colors.neutral.white },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   confirmationBlock: { gap: 8 },
-  container: { gap: 14 },
+  container: { gap: 18 },
   error: {
     backgroundColor: "#FCE8E8",
     borderRadius: 10,
@@ -826,14 +816,14 @@ const styles = StyleSheet.create({
   historyHeading: { flexDirection: "row", alignItems: "center", gap: 8 },
   historyDeleteLabel: { color: colors.light.alertRed, fontSize: 13, fontWeight: "700" },
   historyText: { color: colors.light.text, fontSize: 15, lineHeight: 24 },
-  historyTitle: { color: colors.light.primary, fontSize: 12, fontWeight: "700", flex: 1, lineHeight: 19 },
+  historyTitle: { color: coaching.muted, fontSize: 13, fontWeight: "500", flex: 1, lineHeight: 19 },
   input: {
     backgroundColor: colors.neutral.white,
-    borderColor: colors.light.accent2,
+    borderColor: coaching.border,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.light.text,
-    fontSize: 15,
+    fontSize: 17,
     minHeight: 52,
     padding: 12,
   },
@@ -854,9 +844,9 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   question: { color: colors.light.text, fontSize: 16, fontWeight: "700", lineHeight: 23 },
-  responseCard: { backgroundColor: colors.neutral.white, borderRadius: 18, borderTopWidth: 3, borderTopColor: colors.light.accent2, gap: 12, padding: 16 },
+  responseCard: { gap: 16, paddingVertical: 8 },
   responseLabel: { color: colors.light.primary, fontSize: 12, fontWeight: "800", letterSpacing: 0.8 },
   responseText: { color: colors.light.text, fontSize: 16, lineHeight: 26 },
-  textButton: { alignItems: "center", justifyContent: "center", padding: 10, minHeight: 44 },
+  textButton: { alignItems: "center", justifyContent: "center", padding: 8, minHeight: coaching.touch },
   textButtonLabel: { color: colors.light.primary, fontSize: 14, fontWeight: "700" },
 });

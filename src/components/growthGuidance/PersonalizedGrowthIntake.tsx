@@ -5,6 +5,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -13,7 +14,6 @@ import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GROWTH_GUIDANCE_EVENTS } from "../../constants/analyticsEvents";
 import { colors } from "../../constants/Colors";
-import { CoachingArtwork } from "./CoachingArtwork";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { captureEvent } from "../../lib/posthog";
@@ -30,10 +30,9 @@ import {
   MIN_GROWTH_CLARIFICATION_WORDS,
 } from "../../utils/growthGuidance";
 import { ProgressSegments } from "../ProgressSegments";
-import { Text } from "../StyledText";
 import { GrowthPlanCard } from "./GrowthPlanCard";
 import { GrowthPlanExperience } from "./GrowthPlanExperience";
-import { GrowthButton } from "./GrowthUI";
+import { coaching, GrowthButton } from "./GrowthUI";
 
 type Step =
   | "intro"
@@ -78,7 +77,8 @@ function QuestionInput({
         value={value}
         onChangeText={onChangeText}
         placeholder={t(placeholder)}
-        placeholderTextColor={colors.light.lightText}
+        placeholderTextColor={coaching.muted}
+        selectionColor={colors.light.primary}
         multiline
         maxLength={800}
         textAlignVertical="top"
@@ -334,8 +334,6 @@ export function PersonalizedGrowthIntake() {
       case "intro":
         return (
           <View style={styles.intro}>
-            <View style={styles.introArtwork}><CoachingArtwork size={96} /></View>
-            <Text style={styles.eyebrow}>{t("PERSONALIZED GROWTH")}</Text>
             <Text style={styles.title}>{t("Take a small step toward a change that matters")}</Text>
             <Text style={styles.introBody}>
               {t(
@@ -468,7 +466,6 @@ export function PersonalizedGrowthIntake() {
       case "clarification":
         return (
           <View style={styles.questions}>
-            <Text style={styles.eyebrow}>{t("ONE MORE THING")}</Text>
             <QuestionInput
               label={clarificationQuestion}
               placeholder={clarificationContext === "intake"
@@ -508,7 +505,8 @@ export function PersonalizedGrowthIntake() {
               value={correction}
               onChangeText={setCorrection}
               placeholder={t("For example: I want enjoyment, not achievement")}
-              placeholderTextColor={colors.light.lightText}
+              placeholderTextColor={coaching.muted}
+              selectionColor={colors.light.primary}
               multiline
               maxLength={800}
               autoFocus
@@ -605,6 +603,8 @@ export function PersonalizedGrowthIntake() {
 const styles = StyleSheet.create({
   centered: { alignItems: "center", flex: 1, justifyContent: "center" },
   chip: {
+    minHeight: coaching.touch,
+    maxWidth: "100%",
     backgroundColor: colors.light.accent3,
     borderColor: colors.light.accent2,
     borderRadius: 999,
@@ -613,15 +613,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   chipActive: { backgroundColor: colors.light.primary, borderColor: colors.light.primary },
-  chipText: { color: colors.light.primary, fontSize: 14, fontWeight: "600" },
+  chipText: { color: colors.light.primary, fontSize: 15, fontWeight: "600", flexShrink: 1 },
   chipTextActive: { color: colors.neutral.white },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  closeButton: { paddingVertical: 12, minHeight: 44, justifyContent: "center" },
+  closeButton: { paddingVertical: 10, minHeight: coaching.touch, justifyContent: "center" },
   closeText: { color: colors.light.lightText, fontSize: 15 },
   container: { backgroundColor: colors.light.background, flex: 1 },
   content: { flexGrow: 1, paddingBottom: 24, paddingHorizontal: 18, paddingTop: 18, width: "100%", maxWidth: 640, alignSelf: "center" },
   correctionInput: { minHeight: 150 },
-  disclaimer: { color: colors.light.lightText, fontSize: 13, lineHeight: 19 },
+  disclaimer: { color: coaching.muted, fontSize: 14, lineHeight: 21 },
   error: {
     backgroundColor: "#FCE8E8",
     borderRadius: 10,
@@ -630,7 +630,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 12,
   },
-  eyebrow: { color: colors.light.primary, fontSize: 13, fontWeight: "800", letterSpacing: 1.1 },
   fitQuestion: { color: colors.light.text, fontSize: 21, fontWeight: "800", lineHeight: 28 },
   flex: { flex: 1 },
   footer: { paddingBottom: 10, paddingHorizontal: 18, paddingTop: 10, width: "100%", maxWidth: 640, alignSelf: "center" },
@@ -638,7 +637,7 @@ const styles = StyleSheet.create({
   header: { alignItems: "center", flexDirection: "row", gap: 16, paddingHorizontal: 20, paddingTop: 8 },
   input: {
     backgroundColor: colors.neutral.white,
-    borderColor: colors.light.accent2,
+    borderColor: coaching.border,
     borderRadius: 12,
     borderWidth: 1,
     color: colors.light.text,
@@ -648,12 +647,11 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   intro: { gap: 16 },
-  introArtwork: { alignItems: "center", backgroundColor: colors.light.accent2, borderRadius: 20, paddingVertical: 4 },
   introBody: { color: colors.light.text, fontSize: 16, lineHeight: 24 },
   optionalHint: { color: colors.light.lightText, fontSize: 13, lineHeight: 18 },
   planWrap: { gap: 28 },
   progressWrap: { flex: 1 },
-  promiseCard: { backgroundColor: colors.neutral.white, borderRadius: 16, gap: 8, padding: 16 },
+  promiseCard: { borderTopWidth: 1, borderTopColor: coaching.border, gap: 8, paddingTop: 18 },
   promiseTitle: { color: colors.light.primary, fontSize: 17, fontWeight: "800" },
   question: { color: colors.light.text, fontSize: 20, fontWeight: "700", lineHeight: 27 },
   questionBlock: { gap: 10 },
@@ -661,5 +659,5 @@ const styles = StyleSheet.create({
   savingFooter: { alignItems: "center", gap: 8, minHeight: 54 },
   secondaryButton: { alignItems: "center", padding: 12 },
   secondaryButtonText: { color: colors.light.primary, fontSize: 15, fontWeight: "700" },
-  title: { color: colors.light.primary, fontSize: 27, fontWeight: "700", lineHeight: 34, letterSpacing: -0.6 },
+  title: { color: coaching.ink, fontSize: 28, fontWeight: "700", lineHeight: 34, letterSpacing: -0.5 },
 });
