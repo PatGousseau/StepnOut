@@ -86,6 +86,7 @@ export interface GrowthStep extends GrowthFirstStep {
   created_at: string;
   ended_at: string | null;
   accepted_at: string | null;
+  event_id?: string | null;
 }
 
 export type GrowthRequestKind = "easier" | "change" | "immediate" | "period" | "review";

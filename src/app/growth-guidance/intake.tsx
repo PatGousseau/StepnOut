@@ -1,5 +1,5 @@
-import { PersonalizedGrowthIntake } from "../../components/growthGuidance/PersonalizedGrowthIntake";
+import { Redirect } from "expo-router";
 
 export default function GrowthGuidanceIntakeScreen() {
-  return <PersonalizedGrowthIntake />;
+  return <Redirect href="/(tabs)/coaching" />;
 }

@@ -1,0 +1,45 @@
+// Offline walkthrough of the actual Coaching components with synthetic data.
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+const { chromium } = createRequire(import.meta.url)(process.argv[2] || "playwright");
+const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
+try {
+  const page = await browser.newPage({ viewport: { width: 393, height: 852 } });
+  const errors = [];
+  page.on("pageerror", error => errors.push(error.message));
+  const button = name => page.getByRole("button", { name, exact: true });
+  const click = name => button(name).click();
+  const section = name => page.getByRole("tab", { name, exact: true }).click();
+  await page.goto("http://127.0.0.1:4173");
+  await button("How did it go?").waitFor();
+  assert.equal(await page.getByRole("tab").count(), 3);
+  assert.equal(await button("More").count(), 0);
+  await click("How did it go?");
+  await click("Partly");
+  await click("Harder than expected");
+  assert.equal(await button("Partly").count(), 1);
+  await page.getByRole("textbox").fill("A note about my attempt.");
+  await click("Save"); await click("Done");
+  await section("Journal"); await click("Write an entry");
+  await page.getByRole("textbox").fill("Keep my draft.");
+  await click("Back"); await click("Keep writing");
+  assert.equal(await page.getByRole("textbox").inputValue(), "Keep my draft.");
+  await click("Send"); await click("Done");
+  await section("Goal"); await button("Edit my goal").waitFor();
+  await section("Step"); await click("Make it easier");
+  await page.getByRole("textbox").fill("I only have one minute.");
+  await click("Send"); await click("Keep my plan as it is"); await click("Done");
+  await page.goto("http://127.0.0.1:4173?empty&voice");
+  await page.getByRole("tab", { name: "Journal", exact: true }).waitFor();
+  await section("Journal"); await click("Record a voice entry");
+  await button("Start recording").waitFor();
+  await page.goto("http://127.0.0.1:4173?reportonly");
+  await section("Journal");
+  await page.getByText("Your story starts here", { exact: true }).waitFor();
+  assert.equal(await page.getByText("Your entries will appear here. Write whenever you like.", { exact: true }).count(), 1);
+  await page.goto("http://127.0.0.1:4173?event");
+  await button("Use this for my step").waitFor(); await click("Not for me");
+  assert.equal(await button("Use this for my step").count(), 0);
+  assert.deepEqual(errors, []);
+  console.log("PASS: Coaching destinations, single-form report, draft retention, requests, empty-step voice, report-only journal empty state, event rejection.");
+} finally { await browser.close(); }

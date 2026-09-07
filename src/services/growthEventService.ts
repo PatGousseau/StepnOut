@@ -31,10 +31,13 @@ export type EventOpportunity = {
   accessibility: string | null;
   wheelchair_accessible: boolean | null;
   verified_at: string;
+  status?: string;
+  kind?: "event" | "place";
   provenance: Array<{ source_id: string; source_url: string }>;
 };
 export type EventSelection = {
   id: string;
+  model_name?: string;
   event_id: string | null;
   status: string;
   explanation: string | null;
@@ -43,6 +46,22 @@ export type EventSelection = {
 };
 
 export const growthEventService = {
+  async details(eventId: string): Promise<EventOpportunity | null> {
+    const { data, error } = await supabase.rpc("growth_accepted_event_detail", { p_event_id: eventId }).maybeSingle();
+    if (error) throw error;
+    return data as EventOpportunity | null;
+  },
+  async automatic(stepId: string, locale: string): Promise<EventSelection> {
+    const { data, error } = await supabase.functions.invoke("find-growth-event", {
+      body: { step_id: stepId, locale },
+    });
+    if (error || data?.error) throw error || new Error(data.error);
+    return data.selection;
+  },
+  async setCity(sourceId: string) {
+    const { error } = await supabase.rpc("set_growth_guidance_city", { p_source_id: sourceId });
+    if (error) throw error;
+  },
   async load(userId: string) {
     const [prefs, areas, selection] = await Promise.all([
       supabase.from("growth_event_preferences").select("*").eq(

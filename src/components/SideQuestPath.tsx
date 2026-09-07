@@ -25,7 +25,6 @@ import { SideQuestDailyDraw } from "./sideQuest/SideQuestDailyDraw";
 import { SideQuestQuestionnaire } from "./sideQuest/SideQuestQuestionnaire";
 import { SideQuestResults } from "./sideQuest/SideQuestResults";
 import { QuestPreviewCard } from "./ChallengePreviewCard";
-import { GrowthGuidanceEntry } from "./growthGuidance/GrowthGuidanceEntry";
 
 function buildDraft(profile: ReturnType<typeof useSideQuests>["profile"]): SideQuestQuestionnaireDraft {
   if (!profile) return SIDE_QUEST_EMPTY_DRAFT;
@@ -332,7 +331,6 @@ export const SideQuestPath: React.FC = () => {
 
       {!isRevealing && (
         <View style={styles.growthGuidanceWrap}>
-          <GrowthGuidanceEntry />
         </View>
       )}
 
